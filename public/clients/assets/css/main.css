@@ -1,0 +1,829 @@
+:root {
+    --primary-color: #ff3366;
+    --secondary-color: #ff99aa;
+    --support-color: #3bb77e;
+    --background-color: #fff5f7;
+    --text-color-light: white;
+    --text-color-dark: #232629;
+    --font-family: "Open Sans", sans-serif;
+    --font-size: 16px;
+    --border-radius: 5px;
+    --box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    --transition: all 0.3s ease;
+    --light-color: #ffe6ec;
+    --dark-color: #1e1e2f;
+    --hover-color: #e62e5c;
+    --border-color: #ffe0e5;
+    --border: 1px solid var(--border-color);
+    --active-color: #cc2a55;
+}
+
+/* Breadcrumb styling */
+.breadcrumb-current {
+    color: #464646 !important;
+    font-weight: 400;
+    text-decoration: none !important;
+    cursor: default;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    text-decoration: none !important;
+    list-style: none;
+    font-weight: 400;
+    line-height: 1.5;
+    font-size: 16px;
+    font-family: var(--font-family);
+    box-sizing: border-box;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+    display: none; /* Chrome, Safari */
+}
+
+html,
+body {
+    overflow-x: hidden;
+    background-color: white;
+    width: 100%;
+    position: relative;
+    max-width: 100vw;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* IE 10+ */
+}
+
+svg {
+    display: inline !important;
+    fill: var(--primary-color);
+    width: 20px;
+    height: 20px;
+}
+
+svg:hover {
+    fill: var(--hover-color);
+    transition: var(--transition);
+}
+
+.display_none {
+    display: none !important;
+}
+
+.display_block {
+    display: block !important;
+}
+
+.display_flex {
+    display: flex !important;
+}
+
+.display_grid {
+    display: grid !important;
+}
+
+[id] {
+    scroll-margin-top: 120px; /* khi scroll đến id, nó tự chừa 200px */
+}
+
+strong {
+    font-weight: 700;
+}
+
+.disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.nobifashion_required {
+    color: red;
+}
+
+/* Favorite (heart) button) */
+.nobifashion_fav_btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid #ef4444;
+    border-radius: 50%;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+.nobifashion_fav_btn .heart {
+    width: 18px;
+    height: 18px;
+    position: relative;
+    display: inline-block;
+}
+.nobifashion_fav_btn .heart:before,
+.nobifashion_fav_btn .heart:after {
+    content: "";
+    position: absolute;
+    left: 9px;
+    top: 5px;
+    width: 9px;
+    height: 14px;
+    background: transparent;
+    border: 2px solid #ef4444;
+    border-top-left-radius: 9px;
+    border-top-right-radius: 9px;
+    border-bottom: none;
+    transform: rotate(-45deg);
+    transform-origin: left bottom;
+}
+.nobifashion_fav_btn .heart:after {
+    left: 0;
+    transform: rotate(45deg);
+    transform-origin: right bottom;
+}
+.nobifashion_fav_btn.active {
+    background: white;
+    border-color: #ef4444;
+}
+.nobifashion_fav_btn.active .heart:before,
+.nobifashion_fav_btn.active .heart:after {
+    background: #ef4444;
+    border-color: #ef4444;
+}
+.nobifashion_fav_btn svg {
+    width: 30px !important;
+    height: 30px !important;
+}
+input:disabled {
+    opacity: 0.4 !important;
+    cursor: not-allowed !important;
+    pointer-events: none !important;
+    background-color: #f5f5f5 !important;
+    color: #999 !important;
+}
+
+.nobifashion {
+    position: relative;
+}
+
+.nobifashion_faqs {
+    max-width: 800px;
+    margin: 50px auto;
+    background: linear-gradient(135deg, #ffffff, #f2f9ff);
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+    font-family: "Segoe UI", "Poppins", sans-serif;
+}
+
+.nobifashion_faqs h4 {
+    text-align: center;
+    margin-bottom: 30px;
+    color: #004a99;
+    font-size: 22px;
+    font-weight: 600;
+    position: relative;
+}
+
+.nobifashion_faqs details {
+    border: 2px solid #e0ecf8;
+    border-radius: 12px;
+    padding: 18px 20px;
+    background-color: #fff;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 12px rgba(0, 74, 153, 0.05);
+    transition: all 0.3s ease;
+}
+
+.nobifashion_faqs details:hover {
+    box-shadow: 0 6px 16px rgba(0, 74, 153, 0.15);
+    border-color: #b3d1f7;
+}
+
+.nobifashion_faqs summary {
+    cursor: pointer;
+    list-style: none;
+    position: relative;
+    font-size: 18px;
+    font-weight: 600;
+    color: #004a99;
+    padding-right: 30px;
+}
+
+.nobifashion_faqs summary::marker {
+    display: none;
+}
+
+.nobifashion_faqs summary::after {
+    content: "+";
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 22px;
+    color: #004a99;
+    transition: transform 0.3s ease;
+}
+
+.nobifashion_faqs details[open] summary::after {
+    content: "−";
+    transform: translateY(-50%) rotate(180deg);
+}
+
+.nobifashion_faqs p {
+    margin-top: 12px;
+    font-size: 16px;
+    color: #333;
+    line-height: 1.7;
+    animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.product_chatstyle {
+    max-width: 800px;
+    margin: 50px auto;
+    background: linear-gradient(135deg, #ffffff, #f9f9ff);
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    font-family: "Segoe UI", "Poppins", sans-serif;
+}
+
+.product_chatstyle h2 {
+    text-align: center;
+    color: #004a99;
+    margin-bottom: 25px;
+    font-size: 26px;
+}
+
+.product_chatstyle .chat {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.product_chatstyle .chat .user,
+.product_chatstyle .chat .shop {
+    padding: 12px 18px;
+    border-radius: 20px;
+    max-width: 80%;
+    position: relative;
+    line-height: 1.6;
+    font-size: 16px;
+}
+
+.product_chatstyle .chat .user {
+    background-color: #e6f0ff;
+    align-self: flex-start;
+    border: 1px solid #cce0ff;
+}
+
+.product_chatstyle .chat .shop {
+    background-color: #d8f8d8;
+    align-self: flex-end;
+    border: 1px solid #b3e6b3;
+}
+
+.product_chatstyle .chat .user::before {
+    content: "";
+    position: absolute;
+    top: 10px;
+    left: -10px;
+    border-width: 8px;
+    border-style: solid;
+    border-color: transparent #e6f0ff transparent transparent;
+}
+
+.product_chatstyle .chat .shop::before {
+    content: "";
+    position: absolute;
+    top: 10px;
+    right: -10px;
+    border-width: 8px;
+    border-style: solid;
+    border-color: transparent transparent transparent #d8f8d8;
+}
+
+.product_chatstyle .chat b {
+    display: block;
+    margin-bottom: 4px;
+    color: #333;
+}
+
+/* Overlay phủ trọn container */
+.nobifashion_main_loading_form_overlay {
+    position: absolute;
+    inset: 0; /* top:0; right:0; bottom:0; left:0 */
+    z-index: 50;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(1px);
+    pointer-events: all; /* chặn click xuyên qua */
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 100;
+}
+
+/* Ẩn/hiện overlay bằng thuộc tính hidden */
+.nobifashion_main_loading_form_overlay[hidden] {
+    display: none !important;
+}
+
+/* Loader (đã dùng tiền tố class như bạn đặt) */
+.nobifashion_main_loading_form_loader {
+    position: relative;
+    width: 54px;
+    height: 54px;
+    border-radius: 10px;
+}
+.nobifashion_main_loading_form_loader div {
+    width: 8%;
+    height: 24%;
+    background: var(--primary-color);
+    position: absolute;
+    left: 50%;
+    top: 30%;
+    opacity: 0;
+    border-radius: 50px;
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.2);
+    animation: nobi_fade 1s linear infinite;
+}
+@keyframes nobi_fade {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0.25;
+    }
+}
+
+/* 12 thanh quay */
+.nobifashion_main_loading_form_loader .nobifashion_main_loading_form_bar1 {
+    transform: rotate(0deg) translate(0, -130%);
+    animation-delay: 0s;
+}
+.nobifashion_main_loading_form_loader .nobifashion_main_loading_form_bar2 {
+    transform: rotate(30deg) translate(0, -130%);
+    animation-delay: -1.1s;
+}
+.nobifashion_main_loading_form_loader .nobifashion_main_loading_form_bar3 {
+    transform: rotate(60deg) translate(0, -130%);
+    animation-delay: -1s;
+}
+.nobifashion_main_loading_form_loader .nobifashion_main_loading_form_bar4 {
+    transform: rotate(90deg) translate(0, -130%);
+    animation-delay: -0.9s;
+}
+.nobifashion_main_loading_form_loader .nobifashion_main_loading_form_bar5 {
+    transform: rotate(120deg) translate(0, -130%);
+    animation-delay: -0.8s;
+}
+.nobifashion_main_loading_form_loader .nobifashion_main_loading_form_bar6 {
+    transform: rotate(150deg) translate(0, -130%);
+    animation-delay: -0.7s;
+}
+.nobifashion_main_loading_form_loader .nobifashion_main_loading_form_bar7 {
+    transform: rotate(180deg) translate(0, -130%);
+    animation-delay: -0.6s;
+}
+.nobifashion_main_loading_form_loader .nobifashion_main_loading_form_bar8 {
+    transform: rotate(210deg) translate(0, -130%);
+    animation-delay: -0.5s;
+}
+.nobifashion_main_loading_form_loader .nobifashion_main_loading_form_bar9 {
+    transform: rotate(240deg) translate(0, -130%);
+    animation-delay: -0.4s;
+}
+.nobifashion_main_loading_form_loader .nobifashion_main_loading_form_bar10 {
+    transform: rotate(270deg) translate(0, -130%);
+    animation-delay: -0.3s;
+}
+.nobifashion_main_loading_form_loader .nobifashion_main_loading_form_bar11 {
+    transform: rotate(300deg) translate(0, -130%);
+    animation-delay: -0.2s;
+}
+.nobifashion_main_loading_form_loader .nobifashion_main_loading_form_bar12 {
+    transform: rotate(330deg) translate(0, -130%);
+    animation-delay: -0.1s;
+}
+
+.nobifashion_single_desc_tabs_describe_product_new_title {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #e60012;
+    border-left: 4px solid #e60012;
+    padding-left: 8px;
+    text-transform: uppercase;
+}
+
+.nobifashion_single_desc_tabs_describe_product_new_grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
+}
+
+.nobifashion_single_desc_tabs_describe_product_new_item {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+}
+
+.nobifashion_single_desc_tabs_describe_product_new_item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.nobifashion_single_desc_tabs_describe_product_new_img {
+    position: relative;
+    overflow: hidden;
+}
+
+.nobifashion_single_desc_tabs_describe_product_new_img img {
+    width: 100%;
+    display: block;
+    transition: transform 0.3s ease;
+    min-height: 170px;
+}
+
+.nobifashion_single_desc_tabs_describe_product_new_item:hover img {
+    transform: scale(1.05);
+}
+
+.nobifashion_single_desc_tabs_describe_product_new_badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: #e60012;
+    color: #fff;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.nobifashion_single_desc_tabs_describe_product_new_info {
+    padding: 10px;
+    text-align: center;
+}
+
+.nobifashion_single_desc_tabs_describe_product_new_name,
+.nobifashion_single_desc_tabs_describe_product_new_name a {
+    font-size: 14px;
+    margin: 5px 0;
+    color: #333;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    text-decoration: none;
+}
+
+.nobifashion_single_desc_tabs_describe_product_new_price {
+    font-size: 15px;
+    font-weight: bold;
+    color: #e60012;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .nobifashion_single_desc_tabs_describe_product_new_grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.nobifashion_single_product_new {
+    max-width: 90vw;
+    margin: 0 auto;
+    padding: 20px;
+    background: linear-gradient(135deg, #ffffff, #f9fbff);
+    border-radius: 20px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+    font-family: "Segoe UI", "Poppins", sans-serif;
+}
+
+.nobifashion_single_product_new h2 {
+    text-align: center;
+    font-size: 28px;
+    color: #004a99;
+    margin-bottom: 30px;
+    position: relative;
+}
+
+.nobifashion_single_product_new .product-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 25px;
+}
+
+.nobifashion_single_product_new .product-item {
+    background-color: #fff;
+    border-radius: 16px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: all 0.3s ease;
+    border: 1px solid #f0f0f0;
+}
+
+.nobifashion_single_product_new .product-item:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 28px rgba(0, 74, 153, 0.15);
+    border-color: #dceeff;
+}
+
+.nobifashion_single_product_new .product-item img {
+    width: 100%;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    transition: transform 0.3s ease;
+}
+
+.nobifashion_single_product_new .product-item:hover img {
+    transform: scale(1.05);
+}
+
+.nobifashion_single_product_new .product-item h3 {
+    font-size: 18px;
+    color: #333;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.nobifashion_single_product_new .product-item .price {
+    color: #e60023;
+    font-weight: bold;
+    margin-bottom: 12px;
+    font-size: 17px;
+}
+
+.nobifashion_single_product_new .product-item a {
+    display: inline-block;
+    padding: 8px 18px;
+    background-color: #004a99;
+    color: #fff;
+    border-radius: 30px;
+    text-decoration: none;
+    font-size: 14px;
+    transition: background-color 0.3s ease;
+}
+
+.nobifashion_single_product_new .product-item a:hover {
+    background-color: #0073e6;
+}
+
+/* ===== WRAPPER ===== */
+.nobifashion_main_newsletter_banner_section {
+    padding: 60px 20px;
+    margin: 10px 0;
+    background: linear-gradient(135deg, #ffe1ea, #ffffff);
+    display: flex;
+    justify-content: center;
+}
+
+/* ===== CONTAINER ===== */
+.nobifashion_main_newsletter_banner {
+    display: flex;
+    align-items: center;
+    background: #fff;
+    border-radius: 14px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+    max-width: 1150px;
+    width: 100%;
+}
+
+/* ===== CONTENT ===== */
+.nobifashion_main_newsletter_banner_content {
+    flex: 1;
+    padding: 40px 48px;
+}
+
+.nobifashion_main_newsletter_banner_title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #111;
+    margin-bottom: 12px;
+}
+
+.nobifashion_main_newsletter_banner_desc {
+    font-size: 16px;
+    color: #444;
+    margin-bottom: 24px;
+}
+
+/* ===== FORM ===== */
+.nobifashion_main_newsletter_banner_form {
+    display: flex;
+    gap: 12px;
+    max-width: 460px;
+}
+
+.nobifashion_main_newsletter_banner_input {
+    flex: 1;
+    padding: 14px 16px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 15px;
+    outline: none;
+    transition: 0.25s ease;
+}
+
+.nobifashion_main_newsletter_banner_input:focus {
+    border-color: #ff4b6e;
+    box-shadow: 0 0 0 3px rgba(255, 75, 110, 0.2);
+}
+
+.nobifashion_main_newsletter_banner_btn {
+    padding: 14px 22px;
+    background: #ff4b6e;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.25s ease;
+    white-space: nowrap;
+}
+
+.nobifashion_main_newsletter_banner_btn:hover {
+    background: #ff2b52;
+    box-shadow: 0 6px 12px rgba(255, 75, 110, 0.3);
+}
+
+/* ===== IMAGE ===== */
+.nobifashion_main_newsletter_banner_img {
+    flex: 1;
+    height: 100%;
+}
+
+.nobifashion_main_newsletter_banner_img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 900px) {
+    .nobifashion_main_newsletter_banner {
+        flex-direction: column-reverse;
+        text-align: center;
+    }
+
+    .nobifashion_main_newsletter_banner_content {
+        padding: 32px 24px;
+    }
+
+    .nobifashion_main_newsletter_banner_form {
+        flex-direction: column;
+        max-width: 100%;
+    }
+
+    .nobifashion_main_newsletter_banner_btn {
+        width: 100%;
+    }
+}
+
+.nobifashion_loading_overlay {
+    position: fixed;
+    inset: 0;
+    display: none; /* flex */
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.7); /* Optional blur bg */
+}
+
+.nobifashion_loading_overlay_loader {
+    position: relative;
+    width: 80px;
+    height: 80px;
+}
+
+.nobifashion_loading_overlay_loader span {
+    position: absolute;
+    width: 36px;
+    height: 36px;
+    background: #ff6600;
+    border-radius: 5px;
+    animation: scaleUp 1.2s infinite ease-in-out;
+}
+
+.nobifashion_loading_overlay_loader span:nth-child(1) {
+    top: 0;
+    left: 0;
+    animation-delay: 0s;
+}
+
+.nobifashion_loading_overlay_loader span:nth-child(2) {
+    top: 0;
+    right: 0;
+    animation-delay: 0.3s;
+    background: red;
+}
+
+.nobifashion_loading_overlay_loader span:nth-child(3) {
+    bottom: 0;
+    left: 0;
+    animation-delay: 0.6s;
+    background: green;
+}
+
+.nobifashion_loading_overlay_loader span:nth-child(4) {
+    bottom: 0;
+    right: 0;
+    animation-delay: 0.9s;
+    background: purple;
+}
+
+.custom-toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 9999;
+    cursor: pointer;
+}
+
+.custom-toast {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 16px;
+    color: #fff;
+    max-width: 320px;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: transform 0.4s ease, opacity 0.3s ease;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.custom-toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.custom-toast.success {
+    background-color: #1c9a4a;
+    /* xanh lá */
+}
+
+.custom-toast.error {
+    background-color: #ef4444;
+    /* đỏ */
+}
+
+.custom-toast.warning {
+    background-color: #f59e0b;
+    /* cam */
+}
+
+.custom-toast.info {
+    background-color: #3b82f6;
+    /* xanh dương */
+}
+
+.custom-toast-icon {
+    font-size: 18px;
+}
+
+@keyframes scaleUp {
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(0.6);
+        opacity: 0.3;
+    }
+}
+
+

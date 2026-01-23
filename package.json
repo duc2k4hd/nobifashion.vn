@@ -1,0 +1,17 @@
+{
+  "name": "playwright-crawler",
+  "version": "1.0.0",
+  "description": "Playwright crawler service for Laravel",
+  "main": "playwright-crawler.js",
+  "scripts": {
+    "start": "node playwright-crawler.js",
+    "dev": "nodemon playwright-crawler.js"
+  },
+  "dependencies": {
+    "express": "^4.22.1",
+    "playwright": "^1.57.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}

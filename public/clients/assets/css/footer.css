@@ -1,0 +1,195 @@
+.nobifashion_context_menu {
+    position: fixed;
+    display: none;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 10px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    min-width: 220px;
+    z-index: 9999;
+    font-family: "Segoe UI", Roboto, sans-serif;
+    animation: nobifashion_context_menu_fade 0.15s ease-out;
+}
+
+.nobifashion_context_menu ul {
+    list-style: none;
+    margin: 0;
+    padding: 6px 0;
+}
+
+.nobifashion_context_menu_item {
+    padding: 10px 16px;
+    cursor: pointer;
+    font-size: 15px;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.2s, color 0.2s;
+}
+
+.nobifashion_context_menu_item:hover {
+    background: #f5f9ff;
+    color: #007bff;
+}
+
+.nobifashion_context_menu_divider {
+    height: 1px;
+    margin: 6px 0;
+    background: #f0f0f0;
+}
+
+@keyframes nobifashion_context_menu_fade {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.nobifashion_footer {
+    background-color: var(--support-color);
+    color: white;
+    padding: 3rem 2rem 1.5rem;
+    font-size: 0.95rem;
+}
+
+.nobifashion_footer_content {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 2rem;
+}
+
+.nobifashion_footer_content_business p {
+    margin: 10px 0;
+}
+
+.nobifashion_footer_content_business img {
+    width: 180px;
+    height: 55px;
+    margin-bottom: 1rem;
+}
+
+.nobifashion_footer_content_business_title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: white;
+    text-transform: uppercase;
+}
+
+.nobifashion_footer_content_business_desc,
+.nobifashion_footer_content_business_address,
+.nobifashion_footer_content_business_phone,
+.nobifashion_footer_content_business_email,
+.nobifashion_footer_content_business_hours {
+    margin: 0.2rem 0;
+    line-height: 1.4;
+}
+
+.nobifashion_footer_content_business_socials {
+    margin-top: 0.5rem;
+    display: flex;
+    column-gap: 10px;
+}
+
+.nobifashion_footer_content_business_socials a img {
+    width: 34px;
+    height: 34px;
+    margin-right: 0.5rem;
+    transition: transform 0.3s ease;
+}
+
+.nobifashion_footer_content_business_socials a:hover img {
+    transform: scale(1.1);
+}
+
+.nobifashion_footer_content_company_title,
+.nobifashion_footer_content_accounts_title,
+.nobifashion_footer_content_corporate_title,
+.nobifashion_footer_content_services_title,
+.nobifashion_footer_content_newsletter_title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: white;
+}
+
+.nobifashion_footer_content_company_links,
+.nobifashion_footer_content_accounts_links,
+.nobifashion_footer_content_corporate_links,
+.nobifashion_footer_content_services_links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.nobifashion_footer_content_company_links a,
+.nobifashion_footer_content_accounts_links a,
+.nobifashion_footer_content_corporate_links a,
+.nobifashion_footer_content_services_links a {
+    color: white;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.nobifashion_footer_content_company_links a:hover,
+.nobifashion_footer_content_accounts_links a:hover,
+.nobifashion_footer_content_corporate_links a:hover,
+.nobifashion_footer_content_services_links a:hover {
+    color: white;
+}
+
+.nobifashion_footer_content_newsletter_desc {
+    margin-bottom: 0.5rem;
+}
+
+.nobifashion_footer_content_newsletter_form {
+    display: flex;
+    margin-top: 0.5rem;
+}
+
+.nobifashion_footer_content_newsletter_form input[type="email"] {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    border: none;
+    border-radius: 0.25rem 0 0 0.25rem;
+    outline: none;
+    font-size: 0.9rem;
+}
+
+.nobifashion_footer_content_newsletter_form button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 0 0.25rem 0.25rem 0;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.nobifashion_footer_content_newsletter_form button:hover {
+    background-color: #0056b3;
+}
+
+.nobifashion_footer_bottom {
+    text-align: center;
+    margin-top: 1rem;
+    font-size: 0.85rem;
+    color: white;
+}
+
+.nobifashion_footer_bottom a {
+    color: green;
+    font-weight: 900;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.nobifashion_footer_bottom a:hover {
+    color: #fff;
+}

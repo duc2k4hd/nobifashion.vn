@@ -1,0 +1,768 @@
+/* Wrapper */
+.nobifashion_order_wrapper {
+    width: 92%;
+    margin: auto;
+    font-family: "Segoe UI", sans-serif;
+    color: #333;
+    line-height: 1.5;
+}
+
+/* Breadcrumb */
+.nobifashion_order_breadcrumb {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    font-size: 0.9rem;
+    color: #555;
+    margin: 1rem 0;
+}
+
+.nobifashion_order_breadcrumb a {
+    text-decoration: none;
+    color: var(--primary-color);
+    transition: color 0.3s ease;
+}
+
+.nobifashion_order_breadcrumb a:hover {
+    color: var(--secondary-color);
+}
+
+.nobifashion_order_breadcrumb span.separator {
+    margin: 0 0.5rem;
+    color: #ccc;
+}
+
+/* Layout */
+.nobifashion_main_checkout {
+    background: #f8f9fa;
+    position: relative;
+}
+
+.nobifashion_main_checkout_container {
+    /* max-width: 1200px; */
+    margin: auto;
+}
+
+.nobifashion_checkout_form_wrapper {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 30px;
+}
+
+.nobifashion_main_checkout_left {
+    flex: 2;
+    display: grid;
+    /* grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); */
+    gap: 24px;
+}
+
+.nobifashion_main_checkout_right {
+    flex: 1.2;
+    overflow: visible;
+}
+
+/* Box */
+.nobifashion_main_checkout_box {
+    background: #fff;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    margin-bottom: 0;
+    z-index: 1;
+}
+
+.nobifashion_main_checkout_left .nobifashion_main_checkout_box {
+    height: 100%;
+}
+
+.nobifashion_main_checkout_right .nobifashion_main_checkout_box {
+    position: sticky;
+    top: 0;
+}
+
+.nobifashion_box_full {
+    grid-column: 1 / -1;
+}
+
+.nobifashion_main_checkout_title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    border-left: 4px solid #007bff;
+    padding-left: 10px;
+    color: #222;
+}
+
+/* Form */
+.nobifashion_main_checkout_form label {
+    display: block;
+    margin: 10px 0 6px;
+    font-weight: 500;
+    color: #444;
+}
+
+.nobifashion_main_checkout_form input,
+.nobifashion_main_checkout_form select,
+.nobifashion_main_checkout_form textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border 0.3s, box-shadow 0.3s;
+    background: #fff;
+}
+
+.nobifashion_main_checkout_form input:focus,
+.nobifashion_main_checkout_form select:focus,
+.nobifashion_main_checkout_form textarea:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    outline: none;
+}
+
+.nobifashion_main_checkout_form textarea {
+    resize: vertical;
+    min-height: 90px;
+}
+
+.nobifashion_checkout_grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 18px 22px;
+}
+
+.nobifashion_checkout_field {
+    display: flex;
+    flex-direction: column;
+}
+
+.nobifashion_checkout_field label {
+    margin: 0 0 6px;
+}
+
+.nobifashion_checkout_field--full {
+    grid-column: 1 / -1;
+}
+
+.nobifashion_checkout_hint small {
+    display: block;
+    font-size: 12px;
+    color: #e63946;
+    text-align: right;
+    font-weight: 500;
+}
+
+.character-counter {
+    text-align: right;
+    font-size: 12px;
+    color: #666;
+    margin-top: 4px;
+}
+
+@media (max-width: 768px) {
+    .nobifashion_checkout_form_wrapper {
+        flex-direction: column;
+    }
+
+    .nobifashion_main_checkout_left {
+        grid-template-columns: 1fr;
+    }
+
+    .nobifashion_main_checkout_right .nobifashion_main_checkout_box {
+        position: static;
+    }
+
+    .nobifashion_checkout_grid {
+        grid-template-columns: 1fr;
+    }
+
+    .nobifashion_checkout_field--full {
+        grid-column: 1 / 2;
+    }
+}
+
+.nobifashion_main_checkout_box_note {
+    resize: vertical;
+    min-height: 80px;
+    max-height: 150px;
+    font-family: inherit;
+    line-height: 1.5;
+    background: #fafafa;
+    border: 2px solid #e5e7eb;
+    transition: all 0.3s ease;
+}
+
+.nobifashion_main_checkout_box_note:focus {
+    border-color: #007bff;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    outline: none;
+}
+
+.nobifashion_main_checkout_box_note::placeholder {
+    color: #9ca3af;
+    font-style: italic;
+}
+
+.nobifashion_main_checkout_flex {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 10px;
+}
+
+.nobifashion_main_checkout_flex>div {
+    flex: 1;
+}
+
+/* Options (shipping, payment) */
+.nobifashion_main_checkout_options label {
+    display: flex;
+    align-items: center;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.25s;
+    background: #fafafa;
+}
+
+.nobifashion_main_checkout_options input {
+    margin-right: 8px;
+}
+
+.nobifashion_main_checkout_options label:hover {
+    border-color: #007bff;
+    background: #f0f7ff;
+}
+
+/* Table */
+.nobifashion_main_checkout_table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    margin-top: 20px;
+}
+
+.nobifashion_main_checkout_table th,
+.nobifashion_main_checkout_table td {
+    padding: 12px 10px;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+}
+
+.nobifashion_main_checkout_table_head_product,
+.nobifashion_main_checkout_table_head_total {
+    background: #f9f9f9;
+    font-weight: 600;
+    text-align: left;
+}
+
+.nobifashion_main_checkout_table_product {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.nobifashion_main_checkout_table_product_img {
+    width: 55px;
+    height: 55px;
+    object-fit: cover;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+.nobifashion_main_checkout_table_product_info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.nobifashion_main_checkout_table_product_name {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.nobifashion_main_checkout_table_product_attrs {
+    font-size: 13px;
+    color: #666;
+}
+
+.nobifashion_main_checkout_table_product_qty {
+    font-size: 13px;
+    color: #444;
+}
+
+.nobifashion_main_checkout_table_total {
+    font-weight: 600;
+    text-align: right;
+    color: #e63946;
+}
+
+/* Footer row */
+.nobifashion_main_checkout_table_foot_label {
+    text-align: left;
+    background: #fafafa;
+    font-weight: 600;
+}
+
+.nobifashion_main_checkout_table_foot_value {
+    text-align: right;
+    font-weight: 500;
+}
+
+.nobifashion_main_checkout_table_foot_total {
+    font-size: 16px;
+}
+
+.nobifashion_main_checkout_table_foot_total_value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #2a9d8f;
+}
+
+/* Button */
+.nobifashion_main_checkout_btn {
+    width: 100%;
+    background: #007bff;
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 14px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 22px;
+    transition: background 0.3s, transform 0.2s;
+}
+
+.nobifashion_main_checkout_btn:hover {
+    background: #0056b3;
+    transform: translateY(-1px);
+}
+
+/* Giữ 1 dòng + căn giữa + ellipsis */
+.nobifashion_main_checkout_form .ss-main { width: 100%; }
+
+.nobifashion_main_checkout_form .ss-main .ss-single {
+  display: flex;                 /* căn giữa dọc */
+  align-items: center;
+  min-height: 42px;
+  padding: 8px 36px 8px 12px;    /* chừa chỗ cho mũi tên */
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 12px;
+}
+
+/* Vùng chứa text (giãn chiếm hết chiều ngang) */
+.nobifashion_main_checkout_form .ss-main .ss-values {
+  flex: 1 1 auto;
+  min-width: 0;                  /* để ellipsis hoạt động */
+}
+
+/* Text (placeholder hoặc value) không xuống dòng */
+.nobifashion_main_checkout_form .ss-main .ss-single .ss-value,
+.nobifashion_main_checkout_form .ss-main .ss-single .ss-placeholder {
+  display: block;
+  white-space: nowrap;           /* không wrap */
+  overflow: hidden;
+  text-overflow: ellipsis;       /* ... */
+  line-height: 1.4;
+}
+
+/* Mũi tên không đẩy text */
+.nobifashion_main_checkout_form .ss-main .ss-arrow {
+  flex: 0 0 auto;
+  right: 10px;
+  margin-left: 8px;
+}
+
+/* Trạng thái disabled giữ layout gọn, không wrap */
+.nobifashion_main_checkout_form .ss-main.ss-disabled .ss-single {
+  background: #f3f4f6;
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Dropdown menu (tuỳ chọn, cho đồng bộ) */
+.nobifashion_main_checkout_form .ss-content {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.05);
+  font-size: 14px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+.nobifashion_main_checkout_form .ss-list .ss-option {
+  padding: 10px 12px;
+}
+.nobifashion_main_checkout_form .ss-list .ss-option:hover,
+.nobifashion_main_checkout_form .ss-list .ss-option.ss-highlighted {
+  background: #0d6efd;
+  color: #fff;
+}
+
+input.error, select.error, textarea.error {
+  border: 1px solid #ff3366 !important;
+  background: #fff5f7;
+}
+
+label.error {
+  color: #ff3366;
+}
+
+input.error, textarea.error, select.error {
+  border: 1px solid #ff4d4f !important;
+  background-color: #fff5f5;
+}
+
+.ss-main.error {
+  border: 1px solid #ff4d4f !important;
+  background-color: #fff5f5 !important;
+  border-radius: 5px;
+}
+
+.nobifashion_main_checkout_form_address {
+    position: relative;
+    z-index: 999;
+}
+
+.nobifashion_main_checkout_form_address_all {
+    position: absolute;
+    width: 100%;
+    height: max-content;
+    padding: 10px;
+    border: 1px solid rgb(97, 252, 255);
+    background: white;
+    border-radius: var(--border-radius);
+}
+
+.nobifashion_main_checkout_form_address_item {
+  padding: 8px;
+  background-color: #f2fdfe;
+  color: #333;
+  border-radius: var(--border-radius, 5px);
+  cursor: pointer;
+  transition: background-color 0.25s ease;
+  margin: 3px 0;
+}
+
+.nobifashion_main_checkout_form_address_item:hover {
+  background-color: #00bcd4;
+  color: white;
+}
+
+/* ================== VOUCHER STYLES ================== */
+.nobifashion_main_checkout_voucher {
+    margin-top: 15px;
+    position: relative;
+}
+
+.nobifashion_main_checkout_voucher::before {
+    content: "🎟️";
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    font-size: 20px;
+    opacity: 0.7;
+    animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-5px); }
+}
+
+.nobifashion_main_checkout_voucher_input {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.nobifashion_main_checkout_voucher_input input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    background: #fafafa;
+    transition: all 0.3s ease;
+    color: #374151;
+}
+
+.nobifashion_main_checkout_voucher_input input:focus {
+    border-color: #007bff;
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    outline: none;
+    transform: translateY(-1px);
+}
+
+.nobifashion_main_checkout_voucher_input input:valid {
+    border-color: #22c55e;
+    background: #f0fdf4;
+}
+
+.nobifashion_main_checkout_voucher_input input:invalid {
+    border-color: #ef4444;
+    background: #fef2f2;
+}
+
+.nobifashion_main_checkout_voucher_input input::placeholder {
+    color: #9ca3af;
+    font-weight: 400;
+}
+
+.nobifashion_main_checkout_voucher_input button {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+    min-width: 100px;
+    position: relative;
+    overflow: hidden;
+}
+
+.nobifashion_main_checkout_voucher_input button .btn-text {
+    position: relative;
+    z-index: 1;
+}
+
+.nobifashion_main_checkout_voucher_input button:hover {
+    background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+}
+
+.nobifashion_main_checkout_voucher_input button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.2);
+}
+
+.nobifashion_main_checkout_voucher_input button:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Voucher Result Messages */
+.nobifashion_main_checkout_voucher_result {
+    margin-top: 12px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    animation: slideDown 0.3s ease;
+}
+
+.nobifashion_main_checkout_voucher_result .voucher_success {
+    color: #059669;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    padding: 8px 12px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nobifashion_main_checkout_voucher_result .voucher_success::before {
+    content: "✓";
+    font-weight: bold;
+    font-size: 16px;
+}
+
+.nobifashion_main_checkout_voucher_result .voucher_error {
+    color: #dc2626;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    padding: 8px 12px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.nobifashion_main_checkout_voucher_result .voucher_error::before {
+    content: "⚠";
+    font-weight: bold;
+    font-size: 16px;
+}
+
+/* Applied Voucher Info */
+.nobifashion_main_checkout_voucher_info {
+    margin-top: 12px;
+    padding: 16px;
+    background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+    border: 2px solid #0ea5e9;
+    border-radius: 12px;
+    animation: slideDown 0.3s ease;
+}
+
+.nobifashion_main_checkout_voucher_info .voucher_applied {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.nobifashion_main_checkout_voucher_info .voucher_name {
+    font-weight: 600;
+    color: #0c4a6e;
+    font-size: 15px;
+    flex: 1;
+    min-width: 120px;
+}
+
+.nobifashion_main_checkout_voucher_info .voucher_discount {
+    font-weight: 700;
+    color: #059669;
+    font-size: 16px;
+    background: #dcfce7;
+    padding: 4px 8px;
+    border-radius: 6px;
+    border: 1px solid #bbf7d0;
+}
+
+.nobifashion_main_checkout_voucher_info #remove_voucher_btn {
+    color: #dc2626;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+}
+
+.nobifashion_main_checkout_voucher_info #remove_voucher_btn:hover {
+    background: #dc2626;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+}
+
+/* Voucher Discount Row in Order Summary */
+#voucher_discount_row {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border-left: 4px solid #22c55e;
+}
+
+#voucher_discount_row th {
+    color: #166534;
+    font-weight: 600;
+    background: transparent !important;
+}
+
+#checkout_voucher_discount {
+    color: #059669 !important;
+    font-weight: 700;
+    font-size: 15px;
+}
+
+/* Animations */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+/* Loading state for voucher button */
+.nobifashion_main_checkout_voucher_input button.loading {
+    position: relative;
+    color: transparent;
+}
+
+.nobifashion_main_checkout_voucher_input button.loading::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border: 2px solid transparent;
+    border-top: 2px solid #ffffff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .nobifashion_main_checkout_voucher_input {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .nobifashion_main_checkout_voucher_input button {
+        width: 100%;
+        min-width: auto;
+    }
+    
+    .nobifashion_main_checkout_voucher_info .voucher_applied {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+    
+    .nobifashion_main_checkout_voucher_info #remove_voucher_btn {
+        align-self: flex-end;
+    }
+}
+
+/* Dark mode support (if needed) */
+@media (prefers-color-scheme: dark) {
+    .nobifashion_main_checkout_voucher_input input {
+        background: #1f2937;
+        border-color: #374151;
+        color: #f9fafb;
+    }
+    
+    .nobifashion_main_checkout_voucher_input input::placeholder {
+        color: #6b7280;
+    }
+    
+    .nobifashion_main_checkout_voucher_info {
+        background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+        border-color: #3b82f6;
+    }
+    
+    .nobifashion_main_checkout_voucher_info .voucher_name {
+        color: #dbeafe;
+    }
+}
