@@ -1,36 +1,508 @@
-// Hiển thị ảnh chính khi click vào ảnh
-const boxIMG = document.querySelector(".nobifashion_single_info_images_main");
-const mainIMG = document.querySelector(
-    ".nobifashion_single_info_images_main_image"
-);
+// Image Lightbox Gallery
+(function() {
+    const lightbox = document.getElementById('nobifashion_image_lightbox');
+    const lightboxImage = document.getElementById('nobifashion_lightbox_image');
+    const lightboxClose = document.querySelector('.nobifashion_lightbox_close');
+    const lightboxPrev = document.querySelector('.nobifashion_lightbox_prev');
+    const lightboxNext = document.querySelector('.nobifashion_lightbox_next');
+    const lightboxOverlay = document.querySelector('.nobifashion_lightbox_overlay');
+    const lightboxThumbnails = document.querySelectorAll('.nobifashion_lightbox_thumbnail');
+    const lightboxDownload = document.getElementById('nobifashion_lightbox_download');
+    const zoomInBtn = document.querySelector('.nobifashion_lightbox_zoom_in');
+    const zoomOutBtn = document.querySelector('.nobifashion_lightbox_zoom_out');
+    const resetBtn = document.querySelector('.nobifashion_lightbox_reset');
+    
+    let currentIndex = 0;
+    let images = [];
+    let currentScale = 1;
+    let currentTranslateX = 0;
+    let currentTranslateY = 0;
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let initialDistance = 0;
+    let initialScale = 1;
+    
+    // Swipe/Drag variables
+    let swipeStartX = 0;
+    let swipeStartY = 0;
+    let swipeCurrentX = 0;
+    let swipeCurrentY = 0;
+    let isSwiping = false;
+    let swipeOffset = 0;
+    let isChangingImage = false;
 
-boxIMG?.addEventListener("click", (e) => {
-    e.stopPropagation();
-    const url = mainIMG?.getAttribute("src");
-    if (!url) return;
+    // Collect all images
+    function initImages() {
+        images = [];
+        const mainImage = document.querySelector('.nobifashion_single_info_images_main_image');
+        const galleryImages = document.querySelectorAll('.nobifashion_single_info_images_gallery_image');
+        
+        if (mainImage) {
+            images.push({
+                src: mainImage.getAttribute('src') || mainImage.getAttribute('data-default-src'),
+                alt: mainImage.getAttribute('alt') || ''
+            });
+        }
+        
+        galleryImages.forEach(img => {
+            const src = img.getAttribute('src') || img.getAttribute('data-src');
+            if (src && !images.some(i => i.src === src)) {
+                images.push({
+                    src: src,
+                    alt: img.getAttribute('alt') || ''
+                });
+            }
+        });
+    }
 
-    // Nếu overlay đã tồn tại thì remove
-    const oldOverlay = document.querySelector(
-        ".nobifashion_single_info_images_main_overlay"
-    );
-    if (oldOverlay) oldOverlay.remove();
+    // Open lightbox
+    function openLightbox(index = 0) {
+        if (images.length === 0) return;
+        
+        currentIndex = Math.max(0, Math.min(index, images.length - 1));
+        updateImage();
+        lightbox.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        resetZoom();
+    }
 
-    // Tạo overlay
-    const overlay = document.createElement("div");
-    overlay.classList.add("nobifashion_single_info_images_main_overlay");
+    // Close lightbox
+    function closeLightbox() {
+        lightbox.classList.remove('active');
+        document.body.style.overflow = '';
+        resetZoom();
+    }
 
-    // Tạo ảnh popup
-    const popupIMG = document.createElement("img");
-    popupIMG.src = url;
-    popupIMG.alt = "Preview";
-    popupIMG.classList.add("nobifashion_single_info_images_main_image_show");
+    // Update displayed image with smooth transition
+    function updateImage(animate = true) {
+        if (!lightboxImage || !images[currentIndex] || isChangingImage) return;
+        
+        isChangingImage = true;
+        
+        if (animate && lightboxImage.src) {
+            // Fade out
+            lightboxImage.style.opacity = '0';
+            lightboxImage.style.transform = 'scale(0.95)';
+            
+            setTimeout(() => {
+                // Change image
+                lightboxImage.src = images[currentIndex].src;
+                lightboxImage.alt = images[currentIndex].alt || '';
+                if (lightboxDownload) {
+                    lightboxDownload.href = images[currentIndex].src;
+                    lightboxDownload.download = images[currentIndex].src.split('/').pop();
+                }
+                
+                // Update thumbnails
+                lightboxThumbnails.forEach((thumb, index) => {
+                    thumb.classList.toggle('active', index === currentIndex);
+                });
+                
+                resetZoom();
+                
+                // Fade in
+                setTimeout(() => {
+                    lightboxImage.style.opacity = '1';
+                    lightboxImage.style.transform = 'scale(1)';
+                    isChangingImage = false;
+                }, 50);
+            }, 150);
+        } else {
+            // No animation for first load
+            lightboxImage.src = images[currentIndex].src;
+            lightboxImage.alt = images[currentIndex].alt || '';
+            if (lightboxDownload) {
+                lightboxDownload.href = images[currentIndex].src;
+                lightboxDownload.download = images[currentIndex].src.split('/').pop();
+            }
+            
+            lightboxThumbnails.forEach((thumb, index) => {
+                thumb.classList.toggle('active', index === currentIndex);
+            });
+            
+            resetZoom();
+            isChangingImage = false;
+        }
+    }
 
-    overlay.appendChild(popupIMG);
-    document.body.appendChild(overlay);
+    // Navigate
+    function prevImage() {
+        if (images.length === 0) return;
+        currentIndex = (currentIndex - 1 + images.length) % images.length;
+        updateImage();
+    }
 
-    // Đóng khi click overlay
-    overlay.addEventListener("click", () => overlay.remove());
-});
+    function nextImage() {
+        if (images.length === 0) return;
+        currentIndex = (currentIndex + 1) % images.length;
+        updateImage();
+    }
+
+    // Zoom functions
+    function zoomIn() {
+        currentScale = Math.min(currentScale * 1.5, 5);
+        applyTransform();
+    }
+
+    function zoomOut() {
+        currentScale = Math.max(currentScale / 1.5, 1);
+        applyTransform();
+    }
+
+    function resetZoom() {
+        currentScale = 1;
+        currentTranslateX = 0;
+        currentTranslateY = 0;
+        applyTransform();
+    }
+
+    function applyTransform() {
+        if (!lightboxImage) return;
+        requestAnimationFrame(() => {
+            lightboxImage.style.transform = `translate(${currentTranslateX}px, ${currentTranslateY}px) scale(${currentScale})`;
+        });
+    }
+    
+    function applySwipeTransform(offset) {
+        if (!lightboxImage || isChangingImage) return;
+        requestAnimationFrame(() => {
+            lightboxImage.style.transform = `translate(${offset}px, 0) scale(${currentScale})`;
+            lightboxImage.style.opacity = Math.max(0.3, 1 - Math.abs(offset) / window.innerWidth);
+        });
+    }
+
+    // Drag to pan
+    function startDrag(e) {
+        if (currentScale <= 1) return;
+        isDragging = true;
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        startX = clientX - currentTranslateX;
+        startY = clientY - currentTranslateY;
+    }
+
+    function drag(e) {
+        if (!isDragging || currentScale <= 1) return;
+        e.preventDefault();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        currentTranslateX = clientX - startX;
+        currentTranslateY = clientY - startY;
+        applyTransform();
+    }
+
+    function endDrag() {
+        isDragging = false;
+    }
+
+    // Pinch zoom for mobile
+    function handlePinch(e) {
+        if (e.touches.length !== 2) return;
+        e.preventDefault();
+        
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        const distance = Math.hypot(
+            touch2.clientX - touch1.clientX,
+            touch2.clientY - touch1.clientY
+        );
+        
+        if (initialDistance === 0) {
+            initialDistance = distance;
+            initialScale = currentScale;
+        } else {
+            const scale = initialScale * (distance / initialDistance);
+            currentScale = Math.max(1, Math.min(scale, 5));
+            applyTransform();
+        }
+    }
+
+    function endPinch() {
+        initialDistance = 0;
+    }
+
+    // Event listeners
+    if (lightbox) {
+        // Click main image to open
+        const mainImage = document.querySelector('.nobifashion_single_image_clickable');
+        if (mainImage) {
+            mainImage.addEventListener('click', function() {
+                initImages();
+                const mainSrc = this.getAttribute('src') || this.getAttribute('data-default-src');
+                const index = images.findIndex(img => img.src === mainSrc);
+                openLightbox(index >= 0 ? index : 0);
+            });
+        }
+
+        // Close buttons
+        if (lightboxClose) {
+            lightboxClose.addEventListener('click', closeLightbox);
+        }
+        if (lightboxOverlay) {
+            lightboxOverlay.addEventListener('click', closeLightbox);
+        }
+
+        // Navigation
+        if (lightboxPrev) {
+            lightboxPrev.addEventListener('click', (e) => {
+                e.stopPropagation();
+                prevImage();
+            });
+        }
+        if (lightboxNext) {
+            lightboxNext.addEventListener('click', (e) => {
+                e.stopPropagation();
+                nextImage();
+            });
+        }
+
+        // Thumbnails
+        lightboxThumbnails.forEach((thumb, index) => {
+            thumb.addEventListener('click', (e) => {
+                e.stopPropagation();
+                currentIndex = index;
+                updateImage();
+            });
+        });
+
+        // Zoom controls
+        if (zoomInBtn) {
+            zoomInBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                zoomIn();
+            });
+        }
+        if (zoomOutBtn) {
+            zoomOutBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                zoomOut();
+            });
+        }
+        if (resetBtn) {
+            resetBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                resetZoom();
+            });
+        }
+
+        // Image interactions
+        if (lightboxImage) {
+            const imageWrapper = lightboxImage.parentElement;
+            
+            // Click to zoom (desktop) - only if not swiping
+            lightboxImage.addEventListener('click', function(e) {
+                if (!isSwiping && currentScale === 1) {
+                    zoomIn();
+                } else if (!isSwiping && currentScale > 1) {
+                    resetZoom();
+                }
+            });
+
+            // Drag to pan (only when zoomed)
+            imageWrapper.addEventListener('mousedown', function(e) {
+                if (currentScale > 1 && e.button === 0) {
+                    startDrag(e);
+                }
+            });
+            
+            document.addEventListener('mousemove', function(e) {
+                if (isDragging && currentScale > 1) {
+                    drag(e);
+                }
+            });
+            
+            document.addEventListener('mouseup', function(e) {
+                if (isDragging) {
+                    endDrag();
+                }
+            });
+
+            // Touch events for zoom/pan (only when zoomed)
+            imageWrapper.addEventListener('touchstart', function(e) {
+                if (e.touches.length === 1 && currentScale > 1) {
+                    startDrag(e);
+                } else if (e.touches.length === 2) {
+                    endDrag();
+                    handlePinch(e);
+                }
+            });
+            
+            imageWrapper.addEventListener('touchmove', function(e) {
+                if (e.touches.length === 1 && currentScale > 1) {
+                    drag(e);
+                } else if (e.touches.length === 2) {
+                    handlePinch(e);
+                }
+            });
+            
+            imageWrapper.addEventListener('touchend', function(e) {
+                endDrag();
+                if (e.touches.length < 2) {
+                    endPinch();
+                }
+            });
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (!lightbox.classList.contains('active')) return;
+            
+            switch(e.key) {
+                case 'Escape':
+                    closeLightbox();
+                    break;
+                case 'ArrowLeft':
+                    prevImage();
+                    break;
+                case 'ArrowRight':
+                    nextImage();
+                    break;
+                case '+':
+                case '=':
+                    zoomIn();
+                    break;
+                case '-':
+                    zoomOut();
+                    break;
+                case '0':
+                    resetZoom();
+                    break;
+            }
+        });
+
+        // Smooth swipe/drag gestures for both touch and mouse
+        if (lightboxImage) {
+            const imageWrapper = lightboxImage.parentElement;
+            let swipeStartTime = 0;
+            
+            // Touch swipe events (only when not zoomed)
+            imageWrapper.addEventListener('touchstart', function(e) {
+                if (e.touches.length === 1 && currentScale === 1 && !isChangingImage) {
+                    isSwiping = true;
+                    swipeStartX = e.touches[0].clientX;
+                    swipeStartY = e.touches[0].clientY;
+                    swipeCurrentX = swipeStartX;
+                    swipeOffset = 0;
+                    swipeStartTime = Date.now();
+                    lightboxImage.style.transition = 'none';
+                }
+            }, { passive: true });
+
+            imageWrapper.addEventListener('touchmove', function(e) {
+                if (isSwiping && e.touches.length === 1 && currentScale === 1 && !isChangingImage) {
+                    e.preventDefault();
+                    swipeCurrentX = e.touches[0].clientX;
+                    swipeCurrentY = e.touches[0].clientY;
+                    
+                    // Only swipe horizontally if horizontal movement is greater
+                    const deltaX = swipeCurrentX - swipeStartX;
+                    const deltaY = Math.abs(swipeCurrentY - swipeStartY);
+                    
+                    if (Math.abs(deltaX) > deltaY || Math.abs(deltaX) > 10) {
+                        swipeOffset = deltaX;
+                        applySwipeTransform(swipeOffset);
+                    }
+                }
+            }, { passive: false });
+
+            imageWrapper.addEventListener('touchend', function(e) {
+                if (isSwiping && currentScale === 1 && !isChangingImage) {
+                    isSwiping = false;
+                    lightboxImage.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                    
+                    const swipeTime = Date.now() - swipeStartTime;
+                    const swipeThreshold = window.innerWidth * 0.15;
+                    const velocity = Math.abs(swipeOffset) / Math.max(swipeTime, 1);
+                    
+                    if (Math.abs(swipeOffset) > swipeThreshold || (velocity > 0.3 && Math.abs(swipeOffset) > 30)) {
+                        if (swipeOffset > 0) {
+                            prevImage();
+                        } else {
+                            nextImage();
+                        }
+                    } else {
+                        // Snap back
+                        swipeOffset = 0;
+                        applySwipeTransform(0);
+                        setTimeout(() => {
+                            lightboxImage.style.opacity = '1';
+                        }, 300);
+                    }
+                }
+            }, { passive: true });
+
+            // Mouse drag swipe events (only when not zoomed)
+            imageWrapper.addEventListener('mousedown', function(e) {
+                if (currentScale === 1 && !isChangingImage && e.button === 0) {
+                    isSwiping = true;
+                    swipeStartX = e.clientX;
+                    swipeStartY = e.clientY;
+                    swipeCurrentX = swipeStartX;
+                    swipeOffset = 0;
+                    swipeStartTime = Date.now();
+                    lightboxImage.style.transition = 'none';
+                    lightboxImage.style.cursor = 'grabbing';
+                    e.preventDefault();
+                }
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (isSwiping && currentScale === 1 && !isChangingImage) {
+                    swipeCurrentX = e.clientX;
+                    swipeCurrentY = e.clientY;
+                    
+                    const deltaX = swipeCurrentX - swipeStartX;
+                    const deltaY = Math.abs(swipeCurrentY - swipeStartY);
+                    
+                    if (Math.abs(deltaX) > deltaY || Math.abs(deltaX) > 10) {
+                        swipeOffset = deltaX;
+                        applySwipeTransform(swipeOffset);
+                    }
+                }
+            });
+
+            document.addEventListener('mouseup', function(e) {
+                if (isSwiping && currentScale === 1 && !isChangingImage) {
+                    isSwiping = false;
+                    lightboxImage.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                    lightboxImage.style.cursor = 'grab';
+                    
+                    const swipeTime = Date.now() - swipeStartTime;
+                    const swipeThreshold = window.innerWidth * 0.15;
+                    const velocity = Math.abs(swipeOffset) / Math.max(swipeTime, 1);
+                    
+                    if (Math.abs(swipeOffset) > swipeThreshold || (velocity > 0.3 && Math.abs(swipeOffset) > 30)) {
+                        if (swipeOffset > 0) {
+                            prevImage();
+                        } else {
+                            nextImage();
+                        }
+                    } else {
+                        swipeOffset = 0;
+                        applySwipeTransform(0);
+                        setTimeout(() => {
+                            lightboxImage.style.opacity = '1';
+                        }, 300);
+                    }
+                }
+            });
+
+            imageWrapper.addEventListener('mouseleave', function(e) {
+                if (isSwiping && currentScale === 1 && !isChangingImage) {
+                    isSwiping = false;
+                    lightboxImage.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+                    lightboxImage.style.cursor = 'grab';
+                    swipeOffset = 0;
+                    applySwipeTransform(0);
+                    setTimeout(() => {
+                        lightboxImage.style.opacity = '1';
+                    }, 300);
+                }
+            });
+        }
+    }
+})();
 
 // Tabs mô tả
 const tabButtons = document.querySelectorAll(
@@ -72,11 +544,13 @@ function tabSizeGuide() {
 const galleryImages = document.querySelectorAll(
     ".nobifashion_single_info_images_gallery_image"
 );
+const mainIMG = document.querySelector(".nobifashion_single_info_images_main_image");
+
 galleryImages.forEach((img) => {
     img.addEventListener("click", () => {
         const newSrc = img.dataset.src || img.src;
-        if (newSrc) {
-            mainIMG?.setAttribute("src", newSrc);
+        if (newSrc && mainIMG) {
+            mainIMG.setAttribute("src", newSrc);
             galleryImages.forEach((i) =>
                 i.classList.remove(
                     "nobifashion_single_info_images_gallery_image_active"

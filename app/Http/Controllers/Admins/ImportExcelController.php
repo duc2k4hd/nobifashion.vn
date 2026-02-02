@@ -11,6 +11,7 @@ use App\Models\ProductHowTo;
 use App\Models\Category;
 use App\Models\Setting;
 use App\Models\Tag;
+use App\Models\ProductSlugRedirect;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -155,6 +156,10 @@ class ImportExcelController extends Controller
             $sku = trim($row[0] ?? '');
             $name = trim($row[1] ?? '');
             $slug = trim($row[2] ?? '') ?: Str::slug($name);
+            
+            // Đảm bảo slug là duy nhất
+            $slug = $this->makeUniqueSlug($slug, $sku);
+            
             $description = trim($row[3] ?? '');
             $shortDescription = trim($row[4] ?? '');
             $price = (float)($row[5] ?? 0);
@@ -301,6 +306,15 @@ class ImportExcelController extends Controller
             $domain_name = Setting::where('key', 'site_url')->first();
             $domain_name = $domain_name->value;
 
+            // Tìm product hiện tại (nếu có) để kiểm tra slug cũ
+            $existingProduct = Product::where('sku', $sku ?: null)->first();
+            $oldSlug = $existingProduct ? $existingProduct->slug : null;
+            
+            // Nếu slug thay đổi hoặc product mới, đảm bảo slug là duy nhất
+            if (!$existingProduct || $oldSlug !== $slug) {
+                $slug = $this->makeUniqueSlug($slug, $sku);
+            }
+
             // Tạo hoặc cập nhật product
             $product = Product::updateOrCreate(
                 ['sku' => $sku ?: null],
@@ -327,6 +341,25 @@ class ImportExcelController extends Controller
                 ]
             );
 
+            // Nếu slug thay đổi, lưu redirect từ slug cũ sang slug mới
+            if ($oldSlug !== $slug && !empty($oldSlug) && !empty($slug)) {
+                // Kiểm tra xem redirect đã tồn tại chưa
+                $existingRedirect = ProductSlugRedirect::where('old_slug', $oldSlug)
+                    ->where('product_id', $product->id)
+                    ->first();
+
+                if (!$existingRedirect) {
+                    ProductSlugRedirect::create([
+                        'product_id' => $product->id,
+                        'old_slug' => $oldSlug,
+                        'new_slug' => $slug,
+                    ]);
+                } else {
+                    // Cập nhật redirect nếu đã tồn tại
+                    $existingRedirect->update(['new_slug' => $slug]);
+                }
+            }
+
             $productMap[$sku ?: $product->id] = $product->id;
         }
     }
@@ -337,20 +370,13 @@ class ImportExcelController extends Controller
     private function importImages($spreadsheet, $productMap, &$imageMap, &$errors)
     {
         // XÓA TOÀN BỘ ẢNH CŨ CỦA SẢN PHẨM TRƯỚC KHI IMPORT MỚI
+        // Lưu danh sách productId đã xóa ảnh để tránh xóa lại
+        $processedProductIds = [];
         foreach ($productMap as $sku => $productId) {
-            $oldImages = Image::where('product_id', $productId)->get();
-
-            foreach ($oldImages as $img) {
-                // Xóa file
-                $filePath = public_path('clients/assets/img/clothes/' . $img->url);
-                if (file_exists($filePath)) {
-                    @unlink($filePath);
-                }
-
-                // Xóa record DB
-                $img->delete();
-            }
+            $this->deleteProductImages($productId);
+            $processedProductIds[$productId] = true;
         }
+        
         $sheet = $spreadsheet->getSheetByName('images');
         if (!$sheet) return; // Sheet tùy chọn
 
@@ -388,10 +414,97 @@ class ImportExcelController extends Controller
                 }
                 $productId = $product->id;
                 $productMap[$sku] = $productId;
+                
+                // Nếu product này chưa được xóa ảnh (không có trong productMap ban đầu)
+                // thì xóa ảnh cũ của nó ngay bây giờ
+                if (!isset($processedProductIds[$productId])) {
+                    $this->deleteProductImages($productId);
+                    $processedProductIds[$productId] = true;
+                }
             }
 
             // Upload ảnh từ local_path (copy từ imports sang clothes)
-            $filename = $this->uploadImage($localPath);
+            // Trước tiên, kiểm tra xem image_key có tương ứng với image đã tồn tại trong DB không
+            $filename = null;
+            if (!empty($imageKey) && isset($imageMap[$imageKey])) {
+                // Nếu image_key đã có trong map, lấy filename từ image đã tồn tại
+                $existingImage = Image::find($imageMap[$imageKey]);
+                if ($existingImage && !empty($existingImage->url)) {
+                    $filename = basename($existingImage->url);
+                    Log::debug('uploadImage: Using existing image from DB (imageMap)', [
+                        'image_key' => $imageKey,
+                        'image_id' => $existingImage->id,
+                        'filename' => $filename,
+                        'sku' => $sku
+                    ]);
+                }
+            }
+            
+            // Nếu chưa tìm thấy, kiểm tra xem có image đã tồn tại với cùng product_id và order không
+            if (!$filename) {
+                $existingImage = Image::where('product_id', $productId)
+                    ->where('order', $order)
+                    ->first();
+                if ($existingImage && !empty($existingImage->url)) {
+                    $filename = basename($existingImage->url);
+                    // Kiểm tra file có tồn tại không
+                    $filePath = public_path('clients/assets/img/clothes/' . $filename);
+                    if (file_exists($filePath)) {
+                        Log::debug('uploadImage: Using existing image from DB (product_id + order)', [
+                            'image_id' => $existingImage->id,
+                            'filename' => $filename,
+                            'sku' => $sku,
+                            'order' => $order
+                        ]);
+                    } else {
+                        // File không tồn tại, reset filename để thử upload mới
+                        $filename = null;
+                        Log::debug('uploadImage: Existing image record found but file missing', [
+                            'image_id' => $existingImage->id,
+                            'filename' => $filename,
+                            'sku' => $sku,
+                            'order' => $order
+                        ]);
+                    }
+                }
+            }
+            
+            // Nếu chưa tìm thấy, thử upload từ localPath
+            if (!$filename) {
+                $filename = $this->uploadImage($localPath, $sku, $imageKey);
+            }
+            
+            // Nếu vẫn không tìm thấy, thử lấy từ localPath trực tiếp (nếu là tên file)
+            if (!$filename && !empty($localPath)) {
+                $basename = basename($localPath);
+                $clothesPath = public_path('clients/assets/img/clothes/' . $basename);
+                if (file_exists($clothesPath)) {
+                    $filename = $basename;
+                    Log::debug('uploadImage: Found file directly in clothes', [
+                        'filename' => $filename,
+                        'path' => $clothesPath,
+                        'sku' => $sku
+                    ]);
+                }
+            }
+            
+            // Nếu vẫn không tìm thấy文件，但数据库中有记录，使用数据库中的文件名（即使文件不存在）
+            if (!$filename) {
+                $existingImage = Image::where('product_id', $productId)
+                    ->where('order', $order)
+                    ->first();
+                if ($existingImage && !empty($existingImage->url)) {
+                    $filename = basename($existingImage->url);
+                    Log::debug('uploadImage: Using DB filename even though file missing', [
+                        'image_id' => $existingImage->id,
+                        'filename' => $filename,
+                        'sku' => $sku,
+                        'order' => $order,
+                        'note' => 'File may have been deleted but using DB record'
+                    ]);
+                }
+            }
+            
             if (!$filename) {
                 $errors[] = [
                     'type' => 'IMAGE_UPLOAD_FAILED',
@@ -1063,51 +1176,32 @@ class ImportExcelController extends Controller
     /**
      * Upload ảnh từ local_path: copy từ imports sang clothes
      * Trả về tên file (chỉ tên file, không có đường dẫn)
+     * Nếu file đã tồn tại trong clothes thì trả về luôn, không cần copy
      */
-    private function uploadImage($localPath)
+    private function uploadImage($localPath, $sku = null, $imageKey = null)
     {
-        if (empty($localPath)) return null;
+        if (empty($localPath)) {
+            Log::debug('uploadImage: localPath is empty', ['sku' => $sku, 'image_key' => $imageKey]);
+            return null;
+        }
 
         // Nếu là URL thì không xử lý (trả về null để log lỗi)
         if (filter_var($localPath, FILTER_VALIDATE_URL)) {
+            Log::debug('uploadImage: localPath is URL', ['local_path' => $localPath, 'sku' => $sku]);
             return null;
         }
 
-        // Xác định đường dẫn file nguồn
-        $sourcePath = null;
-        
-        // Nếu là đường dẫn tuyệt đối
-        if (file_exists($localPath)) {
-            $sourcePath = $localPath;
-        } 
-        // Nếu chỉ là tên file, tìm trong folder imports
-        else {
-            $importsPath = public_path('clients/assets/img/imports/' . basename($localPath));
-            if (file_exists($importsPath)) {
-                $sourcePath = $importsPath;
-            }
-            // Thử với đường dẫn đầy đủ trong imports
-            else {
-                $importsPathFull = public_path('clients/assets/img/imports/' . $localPath);
-                if (file_exists($importsPathFull)) {
-                    $sourcePath = $importsPathFull;
-                }
-            }
-        }
-
-        if (!$sourcePath || !file_exists($sourcePath)) {
-            return null;
-        }
-
-        // Lấy tên file (giữ nguyên tên gốc hoặc dùng tên từ localPath)
+        // Lấy tên file (chỉ tên file, không có đường dẫn)
         $filename = basename($localPath);
         if (empty($filename) || $filename === $localPath) {
-            $filename = basename($sourcePath);
+            // Nếu localPath là đường dẫn đầy đủ, lấy basename
+            $filename = basename($localPath);
         }
 
         // Đảm bảo có extension
         if (empty(pathinfo($filename, PATHINFO_EXTENSION))) {
-            $extension = pathinfo($sourcePath, PATHINFO_EXTENSION);
+            // Thử lấy extension từ localPath
+            $extension = pathinfo($localPath, PATHINFO_EXTENSION);
             if (empty($extension)) {
                 $extension = 'jpg'; // Default
             }
@@ -1115,8 +1209,78 @@ class ImportExcelController extends Controller
         }
 
         // Đường dẫn đích trong folder clothes
-        $destination = 'clients/assets/img/clothes/' . $filename;
-        $destinationPath = public_path($destination);
+        $destinationPath = public_path('clients/assets/img/clothes/' . $filename);
+
+        // Nếu file đã tồn tại trong clothes, trả về luôn (không cần copy)
+        if (file_exists($destinationPath)) {
+            Log::debug('uploadImage: File already exists in clothes', [
+                'filename' => $filename,
+                'destination' => $destinationPath,
+                'sku' => $sku,
+                'image_key' => $imageKey
+            ]);
+            return $filename;
+        }
+
+        // Nếu chưa có trong clothes, tìm file nguồn để copy
+        $sourcePath = null;
+        $searchPaths = [];
+        
+        // 1. Nếu là đường dẫn tuyệt đối và file tồn tại
+        if (file_exists($localPath)) {
+            $sourcePath = $localPath;
+            $searchPaths[] = $localPath . ' (absolute)';
+        } 
+        // 2. Tìm trong folder clothes (nếu có subfolder)
+        else {
+            $clothesPath = public_path('clients/assets/img/clothes/' . $localPath);
+            $searchPaths[] = $clothesPath;
+            if (file_exists($clothesPath)) {
+                $sourcePath = $clothesPath;
+            }
+        }
+        
+        // 3. Tìm trong folder clothes với chỉ tên file
+        if (!$sourcePath) {
+            $clothesPathBasename = public_path('clients/assets/img/clothes/' . $filename);
+            $searchPaths[] = $clothesPathBasename;
+            if (file_exists($clothesPathBasename)) {
+                $sourcePath = $clothesPathBasename;
+            }
+        }
+        
+        // 4. Tìm trong folder imports (chỉ tên file)
+        if (!$sourcePath) {
+            $importsPath = public_path('clients/assets/img/imports/' . basename($localPath));
+            $searchPaths[] = $importsPath;
+            if (file_exists($importsPath)) {
+                $sourcePath = $importsPath;
+            }
+        }
+        
+        // 5. Tìm trong folder imports (đường dẫn đầy đủ)
+        if (!$sourcePath) {
+            $importsPathFull = public_path('clients/assets/img/imports/' . $localPath);
+            $searchPaths[] = $importsPathFull;
+            if (file_exists($importsPathFull)) {
+                $sourcePath = $importsPathFull;
+            }
+        }
+
+        // Log các đường dẫn đã tìm
+        Log::debug('uploadImage: File search', [
+            'local_path' => $localPath,
+            'filename' => $filename,
+            'sku' => $sku,
+            'image_key' => $imageKey,
+            'searched_paths' => $searchPaths,
+            'found_source' => $sourcePath ?: 'NOT FOUND'
+        ]);
+
+        // Nếu không tìm thấy file nguồn, trả về null
+        if (!$sourcePath || !file_exists($sourcePath)) {
+            return null;
+        }
 
         // Tạo thư mục nếu chưa có
         $dir = dirname($destinationPath);
@@ -1124,12 +1288,88 @@ class ImportExcelController extends Controller
             mkdir($dir, 0755, true);
         }
 
-        // Copy file từ imports sang clothes
+        // Copy file từ nguồn sang clothes
         if (copy($sourcePath, $destinationPath)) {
+            Log::debug('uploadImage: File copied successfully', [
+                'source' => $sourcePath,
+                'destination' => $destinationPath,
+                'filename' => $filename,
+                'sku' => $sku
+            ]);
             return $filename; // Trả về chỉ tên file
         }
 
+        Log::debug('uploadImage: Copy failed', [
+            'source' => $sourcePath,
+            'destination' => $destinationPath,
+            'sku' => $sku
+        ]);
+
         return null;
+    }
+
+    /**
+     * Tạo slug duy nhất cho sản phẩm
+     * Nếu slug đã tồn tại, thêm số vào cuối để tạo slug mới
+     */
+    private function makeUniqueSlug($slug, $sku = null)
+    {
+        if (empty($slug)) {
+            return $slug;
+        }
+
+        $originalSlug = $slug;
+        $counter = 1;
+
+        // Kiểm tra slug đã tồn tại chưa (trừ sản phẩm hiện tại nếu có SKU)
+        while (true) {
+            $existingProduct = Product::where('slug', $slug);
+            
+            // Nếu có SKU, loại trừ sản phẩm có cùng SKU (để cho phép update cùng slug)
+            if ($sku) {
+                $existingProduct->where('sku', '!=', $sku);
+            }
+            
+            $exists = $existingProduct->exists();
+            
+            if (!$exists) {
+                break; // Slug là duy nhất
+            }
+            
+            // Slug đã tồn tại, thêm số vào cuối
+            $slug = $originalSlug . '-' . $counter;
+            $counter++;
+            
+            // Giới hạn số lần thử để tránh vòng lặp vô hạn
+            if ($counter > 1000) {
+                // Nếu vẫn không tìm được, thêm timestamp
+                $slug = $originalSlug . '-' . time();
+                break;
+            }
+        }
+
+        return $slug;
+    }
+
+    /**
+     * Xóa tất cả ảnh cũ của một sản phẩm
+     */
+    private function deleteProductImages($productId)
+    {
+        $oldImages = Image::where('product_id', $productId)->get();
+
+        foreach ($oldImages as $img) {
+            // Xóa file
+            if (!empty($img->url)) {
+                $filePath = public_path('clients/assets/img/clothes/' . $img->url);
+                if (file_exists($filePath)) {
+                    @unlink($filePath);
+                }
+            }
+
+            // Xóa record DB
+            $img->delete();
+        }
     }
 
     /**

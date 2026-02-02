@@ -524,3 +524,46 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+// Mobile category selection function
+function selectMobileCategory(categoryId) {
+    // Remove active class from all sidebar items
+    document.querySelectorAll('.nobifashion_mobile_categories_sidebar_item').forEach(item => {
+        item.classList.remove('active');
+    });
+    
+    // Add active class to clicked item
+    const clickedItem = document.querySelector(`[data-category-id="${categoryId}"]`);
+    if (clickedItem) {
+        clickedItem.classList.add('active');
+    }
+    
+    // Hide all content lists
+    document.querySelectorAll('.nobifashion_mobile_categories_content_list').forEach(list => {
+        list.style.display = 'none';
+    });
+    
+    // Show selected category content
+    const selectedContent = document.querySelector(`[data-category-content="${categoryId}"]`);
+    if (selectedContent) {
+        selectedContent.style.display = 'block';
+    }
+}
+
+// Image search modal function
+function openImageSearchModal() {
+    // Placeholder function - implement image search functionality as needed
+    if (typeof showCustomToast === "function") {
+        showCustomToast('Tính năng tìm kiếm bằng hình ảnh đang phát triển', 'info', 3000);
+    } else {
+        alert('Tính năng tìm kiếm bằng hình ảnh đang phát triển');
+    }
+}
+
+// Toggle subcategory (danh mục cháu chắt)
+function toggleSubCategory(toggleBtn) {
+    const wrapper = toggleBtn.closest('.nobifashion_mobile_categories_content_item_wrapper');
+    if (wrapper) {
+        wrapper.classList.toggle('expanded');
+    }
+}

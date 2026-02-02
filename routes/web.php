@@ -384,6 +384,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/update/{id}', [AdminMediaController::class, 'update'])->name('update');
             Route::post('/delete/{id}', AdminMediaDeleteController::class)->name('delete');
             Route::post('/assign-to-model', AdminMediaAssignController::class)->name('assign');
+            
+            // Media Library routes (WordPress-style)
+            Route::get('/library', [\App\Http\Controllers\Admins\MediaLibraryController::class, 'index'])->name('library.index');
+            Route::post('/library', [\App\Http\Controllers\Admins\MediaLibraryController::class, 'store'])->name('library.store');
+            Route::delete('/library/{id}', [\App\Http\Controllers\Admins\MediaLibraryController::class, 'destroy'])->name('library.destroy');
         });
 
         Route::prefix('vouchers')->name('vouchers.')->group(function () {

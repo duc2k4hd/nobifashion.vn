@@ -1,6 +1,6 @@
 @extends('clients.layouts.master')
 
-@section('title', renderMeta($post->meta_title ?? $post->title) . ' | ' . config('app.name'))
+@section('title', renderMeta($post->meta_title ?? $post->title) . ' | ' . ($settings->site_name ?? $settings->subname ?? 'NOBI FASHION VIỆT NAM'))
 
 @section('head')
     {{-- SEO Meta Tags --}}
@@ -1512,8 +1512,50 @@
             });
 
         };
-    </script>
 
+        // Add onerror handler to all images in blog post
+        document.addEventListener('DOMContentLoaded', function() {
+            const fallbackImage = '{{ asset("clients/assets/img/clothes/no-image.webp") }}';
+            
+            // Function to handle image error
+            function handleImageError(img) {
+                if (img.src !== fallbackImage) {
+                    img.onerror = null; // Prevent infinite loop
+                    img.src = fallbackImage;
+                }
+            }
+
+            // Add onerror to hero image
+            const heroImage = document.querySelector('.hero-image-container img');
+            if (heroImage) {
+                heroImage.onerror = function() {
+                    handleImageError(this);
+                };
+            }
+
+            // Add onerror to related posts images
+            document.querySelectorAll('.related-post-item img').forEach(img => {
+                img.onerror = function() {
+                    handleImageError(this);
+                };
+            });
+
+            // Add onerror to all images in rich content
+            document.querySelectorAll('.rich-content img').forEach(img => {
+                img.onerror = function() {
+                    handleImageError(this);
+                };
+            });
+
+            // Add onerror to any other images in the article
+            document.querySelectorAll('article img, .blog-post img').forEach(img => {
+                if (!img.onerror) {
+                    img.onerror = function() {
+                        handleImageError(this);
+                    };
+                }
+            });
+        });
     </script>
 
     {{-- FontAwesome Icons --}}

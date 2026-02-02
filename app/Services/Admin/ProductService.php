@@ -7,6 +7,7 @@ use App\Models\Image;
 use App\Models\Product;
 use App\Models\ProductFaq;
 use App\Models\ProductHowTo;
+use App\Models\ProductSlugRedirect;
 use App\Models\ProductVariant;
 use App\Models\Setting;
 use App\Models\Tag;
@@ -42,8 +43,29 @@ class ProductService
     public function update(Product $product, array $data): Product
     {
         return DB::transaction(function () use ($product, $data) {
+            $oldSlug = $product->slug;
             $payload = $this->extractProductPayload($data);
             $payload['category_ids'] = $this->resolveCategoryIds($data);
+            $newSlug = $payload['slug'];
+
+            // Nếu slug thay đổi, lưu redirect từ slug cũ sang slug mới
+            if ($oldSlug !== $newSlug && !empty($oldSlug)) {
+                // Kiểm tra xem redirect đã tồn tại chưa
+                $existingRedirect = ProductSlugRedirect::where('old_slug', $oldSlug)
+                    ->where('product_id', $product->id)
+                    ->first();
+
+                if (!$existingRedirect) {
+                    ProductSlugRedirect::create([
+                        'product_id' => $product->id,
+                        'old_slug' => $oldSlug,
+                        'new_slug' => $newSlug,
+                    ]);
+                } else {
+                    // Cập nhật redirect nếu đã tồn tại
+                    $existingRedirect->update(['new_slug' => $newSlug]);
+                }
+            }
 
             $product->update($payload);
             

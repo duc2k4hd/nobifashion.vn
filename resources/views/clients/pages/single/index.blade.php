@@ -25,14 +25,14 @@
     <meta name="keywords" content="{{ is_array($product->meta_keywords ?? null) ? implode(', ', $product->meta_keywords) : 'quần áo, phụ kiện, thời trang nam, thời trang nữ, áo phông, sơ mi, quần jean, váy, mũ nón, thắt lưng, NOBI FASHION' }}">
 
     <meta name="description"
-        content="{{ renderMeta($product->meta_desc ?? ($product->meta_title ?? ($product->name ?? 'Cửa hàng thời trang NOBI FASHION: quần áo & phụ kiện chính hãng, chất liệu đẹp, form chuẩn, giao nhanh 1–3 ngày, đổi size 7 ngày.'))) }}">
+        content="{{ renderMeta($product->meta_description ?? ($product->meta_title ?? ($product->name ?? 'Cửa hàng thời trang NOBI FASHION: quần áo & phụ kiện chính hãng, chất liệu đẹp, form chuẩn, giao nhanh 1–3 ngày, đổi size 7 ngày.'))) }}">
 
     <meta http-equiv="date" content="{{ \Carbon\Carbon::parse('2025-06-11 13:10:59')->format('d/m/y') }}" />
 
     <meta property="og:title"
         content="{{ renderMeta($product->meta_title ?? ($product->name ?? 'NOBI FASHION - Quần áo & phụ kiện thời trang')) }}">
     <meta property="og:description"
-        content="{{ renderMeta($product->meta_desc ?? 'NOBI FASHION: Mua sắm quần áo & phụ kiện thời trang nam nữ. Hàng mới, giá tốt, giao nhanh 1–3 ngày, đổi size 7 ngày.') }}">
+        content="{{ renderMeta($product->meta_description ?? 'NOBI FASHION: Mua sắm quần áo & phụ kiện thời trang nam nữ. Hàng mới, giá tốt, giao nhanh 1–3 ngày, đổi size 7 ngày.') }}">
     <meta property="og:url"
         content="{{ $product->canonical_url ?? ($settings->site_url ?? 'https://nobifashion.vn') . '/san-pham/' . ($product->slug ?? '') }}">
     <meta property="og:image"
@@ -51,7 +51,7 @@
     <meta name="twitter:title"
         content="{{ renderMeta($product->meta_title ?? ($product->name ?? 'NOBI FASHION - Quần áo & phụ kiện thời trang')) }}">
     <meta name="twitter:description"
-        content="{{ renderMeta($product->meta_desc ?? 'NOBI FASHION: Mua sắm quần áo & phụ kiện thời trang nam nữ. Hàng mới, giá tốt, giao nhanh 1–3 ngày, đổi size 7 ngày.') }}">
+        content="{{ renderMeta($product->meta_description ?? 'NOBI FASHION: Mua sắm quần áo & phụ kiện thời trang nam nữ. Hàng mới, giá tốt, giao nhanh 1–3 ngày, đổi size 7 ngày.') }}">
     <meta name="twitter:image"
         content="{{ asset('clients/assets/img/clothes/' . ($product?->primaryImage?->url ?? 'no-image.webp')) }}">
     <meta name="twitter:creator" content="{{ $settings->seo_author ?? 'NOBI FASHION' }}">
@@ -181,12 +181,13 @@
             <div class="nobifashion_single_info">
                 <div class="nobifashion_single_info_images">
                     <div class="nobifashion_single_info_images_main">
-                        <img loading="eager" fetchpriority="high" width="400" height="400" decoding="async"
+                        <img loading="eager" fetchpriority="high" width="500" height="500" decoding="async"
                             src="{{ asset('clients/assets/img/clothes/' . ($product?->primaryImage?->url ?? 'no-image.webp')) }}"
                             alt="{{ $product->primaryImage->alt ?? null ?: renderMeta($product->name) ?? 'NOBI FASHION' }}"
                             title="{{ $product->primaryImage->title ?? null ?: renderMeta($product->name) ?? 'NOBI FASHION' }}"
-                            class="nobifashion_single_info_images_main_image"
-                            data-default-src="{{ asset('clients/assets/img/clothes/' . ($product?->primaryImage?->url ?? 'no-image.webp')) }}">
+                            class="nobifashion_single_info_images_main_image nobifashion_single_image_clickable"
+                            data-default-src="{{ asset('clients/assets/img/clothes/' . ($product?->primaryImage?->url ?? 'no-image.webp')) }}"
+                            style="cursor: pointer;">
                     </div>
                     <div class="nobifashion_single_info_images_gallery">
                         @foreach ($product->images as $image)
@@ -548,7 +549,7 @@
                         </button>
                     </form>
 
-                    <div class="nobifashion_single_info_specifications_desc">
+                    <div class="nobifashion_single_info_specifications_desc" data-nospinet>
                         <h3 class="nobifashion_single_info_specifications_desc_title">
                             🎁 Khuyến mãi hấp dẫn tại NOBI FASHION
                         </h3>
@@ -925,5 +926,68 @@
         <hr style="flex: 1; height: 2px; background-color: #e6525e; border: none; margin: 0;">
         <span style="padding: 0 12px; color: #f74a4a; font-weight: bold; text-align: center;">Đăng ký Email nhận thông báo từ {{ $settings->subname ?? '' }}</span>
         <hr style="flex: 1; height: 2px; background-color: #e6525e; border: none; margin: 0;">
+    </div>
+
+    <!-- Image Lightbox Modal -->
+    <div id="nobifashion_image_lightbox" class="nobifashion_lightbox">
+        <div class="nobifashion_lightbox_overlay"></div>
+        <div class="nobifashion_lightbox_container">
+            <button class="nobifashion_lightbox_close" aria-label="Đóng">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512" width="24" height="24" fill="currentColor">
+                    <path d="M324.5 411.1c6.2 6.2 16.4 6.2 22.6 0s6.2-16.4 0-22.6L214.6 256 347.1 123.5c6.2-6.2 6.2-16.4 0-22.6s-16.4-6.2-22.6 0L192 233.4 59.5 100.9c-6.2-6.2-16.4-6.2-22.6 0s-6.2 16.4 0 22.6L169.4 256 36.9 388.5c-6.2 6.2-6.2 16.4 0 22.6s16.4 6.2 22.6 0L192 278.6 324.5 411.1z"/>
+                </svg>
+            </button>
+            
+            <button class="nobifashion_lightbox_prev" aria-label="Ảnh trước">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="24" height="24" fill="currentColor">
+                    <path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/>
+                </svg>
+            </button>
+            
+            <button class="nobifashion_lightbox_next" aria-label="Ảnh sau">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" width="24" height="24" fill="currentColor">
+                    <path d="M278.6 233.4c12.5 12.5 12.5 32.8 0 45.3l-160 160c-12.5 12.5-32.8 12.5-45.3 0s-12.5-32.8 0-45.3L210.7 256 73.4 118.6c-12.5-12.5-12.5-32.8 0-45.3s32.8-12.5 45.3 0l160 160z"/>
+                </svg>
+            </button>
+
+            <div class="nobifashion_lightbox_content">
+                <div class="nobifashion_lightbox_image_wrapper">
+                    <img id="nobifashion_lightbox_image" src="" alt="" class="nobifashion_lightbox_image">
+                </div>
+                
+                <div class="nobifashion_lightbox_controls">
+                    <button class="nobifashion_lightbox_zoom_in" aria-label="Phóng to">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="20" height="20" fill="currentColor">
+                            <path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288zm64-208c0-8.8-7.2-16-16-16s-16 7.2-16 16v48H192c-8.8 0-16 7.2-16 16s7.2 16 16 16h48v48c0 8.8 7.2 16 16 16s16-7.2 16-16V288h48c8.8 0 16-7.2 16-16s-7.2-16-16-16H272V144z"/>
+                        </svg>
+                    </button>
+                    <button class="nobifashion_lightbox_zoom_out" aria-label="Thu nhỏ">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="20" height="20" fill="currentColor">
+                            <path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM144 192c-8.8 0-16 7.2-16 16s7.2 16 16 16H272c8.8 0 16-7.2 16-16s-7.2-16-16-16H144z"/>
+                        </svg>
+                    </button>
+                    <button class="nobifashion_lightbox_reset" aria-label="Đặt lại">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="20" height="20" fill="currentColor">
+                            <path d="M463.5 224H472c13.3 0 24-10.7 24-24V72c0-9.7-5.8-18.5-14.8-22.2s-19.3-1.7-26.2 5.2L413.4 96.6c-87.6-86.5-228.7-86.2-315.8 1c-87.5 87.5-87.5 229.3 0 316.8s229.3 87.5 316.8 0c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0c-62.5 62.5-163.8 62.5-226.3 0s-62.5-163.8 0-226.3c62.2-62.2 162.7-62.5 225.3-1L327 183c-6.9 6.9-8.9 17.2-5.2 26.2s12.5 14.8 22.2 14.8H463.5z"/>
+                        </svg>
+                    </button>
+                    <a id="nobifashion_lightbox_download" class="nobifashion_lightbox_download" download aria-label="Tải xuống">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="20" height="20" fill="currentColor">
+                            <path d="M288 32c0-17.7-14.3-32-32-32s-32 14.3-32 32V274.7l-73.4-73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l128 128c12.5 12.5 32.8 12.5 45.3 0l128-128c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L288 274.7V32zM64 352c-35.3 0-64 28.7-64 64v32c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V416c0-35.3-28.7-64-64-64H346.5l-45.3 45.3c-25 25-65.5 25-90.5 0L165.5 352H64zm368 56a24 24 0 1 1 0 48 24 24 0 1 1 0-48z"/>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+
+            <div class="nobifashion_lightbox_thumbnails">
+                @foreach ($product->images as $index => $image)
+                    <img src="{{ asset('clients/assets/img/clothes/' . ($image->url ?? 'no-image.webp')) }}"
+                        alt="{{ $image->alt ?? (renderMeta($product->name) ?? 'NOBI FASHION') }}"
+                        class="nobifashion_lightbox_thumbnail {{ $image->is_primary ? 'active' : '' }}"
+                        data-index="{{ $index }}"
+                        data-src="{{ asset('clients/assets/img/clothes/' . ($image->url ?? 'no-image.webp')) }}">
+                @endforeach
+            </div>
+        </div>
     </div>
 @endsection

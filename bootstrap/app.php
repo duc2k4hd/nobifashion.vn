@@ -3,7 +3,6 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Support\Facades\Log;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -17,28 +16,35 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\AdminOnly::class,
         ]);
 
-        // Redirect guests to admin login only for admin routes
+        // TẠM THỜI COMMENT để tránh lỗi khi chạy artisan command
+        // TODO: Tạo middleware class riêng để xử lý redirect này
+        /*
         $middleware->redirectGuestsTo(function ($request) {
-            Log::info('=== REDIRECT GUESTS DEBUG ===');
-            Log::info('Request path: ' . $request->path());
-            Log::info('Request full URL: ' . $request->fullUrl());
-            Log::info('Request is admin/*: ' . ($request->is('admin/*') ? 'true' : 'false'));
-            Log::info('Request is admin/login: ' . ($request->is('admin/login') ? 'true' : 'false'));
-            Log::info('Auth check: ' . (auth('web')->check() ? 'true' : 'false'));
+            // Tránh lỗi khi chạy artisan command
+            if (!$request || !($request instanceof \Illuminate\Http\Request) || app()->runningInConsole()) {
+                return null;
+            }
             
             // Don't redirect if it's the login page
             if ($request->is('admin/login')) {
-                Log::info('Skipping redirect for admin/login');
                 return null; // Return null to allow access
             }
             
             if ($request->is('admin/*')) {
-                Log::info('Redirecting to admin.login');
+                try {
                 return route('admin.login');
+                } catch (\Throwable $e) {
+                    return '/admin/login';
+                }
             }
-            Log::info('Redirecting to client.home.index');
+            
+            try {
             return route('client.home.index');
+            } catch (\Throwable $e) {
+                return '/';
+            }
         });
+        */
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

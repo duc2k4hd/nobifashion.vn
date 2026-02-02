@@ -1,4 +1,4 @@
-@if ($settings->is_demo == 'true')
+@if ($settings->is_demo == true)
     <div
         style="
     position: fixed;

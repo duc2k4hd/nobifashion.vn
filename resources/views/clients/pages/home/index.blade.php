@@ -357,7 +357,7 @@
         <hr>
 
         <!-- Ảnh khuyến mãi -->
-        <section>
+        {{-- <section>
             <div class="nobifashion_main_promotion">
                 @foreach ($vouchers->limit(3)->get() as $coupon)
                     <div class="nobifashion_main_promotion_item">
@@ -375,7 +375,7 @@
                     </div>
                 @endforeach
             </div>
-        </section>
+        </section> --}}
 
         <hr>
 

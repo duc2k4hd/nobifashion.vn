@@ -12,11 +12,11 @@
                     <label class="form-label fw-semibold">Tiêu đề *</label>
                     <input type="text" name="title" class="form-control form-control-lg" value="{{ old('title', $post->title ?? '') }}" required>
                 </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
+                <div class="mb-3">
                         <label class="form-label fw-semibold">Slug</label>
                         <input type="text" name="slug" class="form-control" value="{{ old('slug', $post->slug ?? '') }}" placeholder="Tự tạo nếu để trống">
                     </div>
+                <div class="row">
                     <div class="col-md-6 mb-3">
                         <label class="form-label fw-semibold">Danh mục</label>
                         <select name="category_id" class="form-select">
@@ -29,71 +29,10 @@
                         </select>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-semibold">Trạng thái</label>
-                        <select name="status" class="form-select">
-                            @foreach(['draft'=>'Bản nháp','pending'=>'Chờ duyệt','published'=>'Xuất bản','archived'=>'Lưu trữ'] as $value => $label)
-                                <option value="{{ $value }}" @selected(old('status', $post->status ?? 'draft') === $value)>{{ $label }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label fw-semibold">Thời gian xuất bản</label>
-                        <input type="datetime-local" name="published_at" class="form-control"
-                               value="{{ old('published_at', isset($post->published_at) ? $post->published_at->format('Y-m-d\TH:i') : '') }}">
-                    </div>
-                </div>
-                <div class="mb-3 form-check form-switch">
-                    <input type="hidden" name="is_featured" value="0">
-                    <input class="form-check-input" type="checkbox" name="is_featured" value="1" id="isFeaturedSwitch"
-                           @checked(old('is_featured', $post->is_featured ?? false))>
-                    <label class="form-check-label" for="isFeaturedSwitch">Đặt làm bài viết nổi bật</label>
-                </div>
 
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Tóm tắt</label>
                     <textarea name="excerpt" class="form-control" rows="3">{{ old('excerpt', $post->excerpt ?? '') }}</textarea>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label fw-semibold">Tags</label>
-                    
-                    <!-- Dropdown để chọn tags có sẵn -->
-                    <div class="mb-2">
-                        <label class="form-label small text-muted">Chọn từ danh sách có sẵn:</label>
-                        <select name="tag_ids[]" id="tagSelect" class="form-select" multiple>
-                            @php
-                                // Lấy tag IDs từ relationship nếu có post, hoặc từ old input
-                                $selectedTagIds = old('tag_ids', []);
-                                if (empty($selectedTagIds) && isset($post) && $post->exists) {
-                                    // Lấy tags từ relationship
-                                    $selectedTagIds = $post->tags()->pluck('id')->toArray();
-                                }
-                                // Nếu vẫn không có, thử lấy từ tag_ids JSON (backward compatibility)
-                                if (empty($selectedTagIds) && isset($post) && !empty($post->tag_ids)) {
-                                    $selectedTagIds = is_array($post->tag_ids) ? $post->tag_ids : [];
-                                }
-                            @endphp
-                            @foreach($tags as $tag)
-                                <option value="{{ $tag->id }}" @selected(in_array($tag->id, $selectedTagIds))>
-                                    {{ $tag->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    
-                    <!-- Input để thêm tags mới -->
-                    <div>
-                        <label class="form-label small text-muted">Hoặc thêm tags mới (phân cách bằng dấu phẩy):</label>
-                        <input type="text" 
-                               name="tag_names" 
-                               id="tagNamesInput" 
-                               class="form-control" 
-                               placeholder="Ví dụ: Fashion, Style, Trend"
-                               value="{{ old('tag_names', '') }}">
-                        <small class="text-muted">Nhập tên tags mới, phân cách bằng dấu phẩy. Tags mới sẽ được tạo tự động.</small>
-                    </div>
                 </div>
 
                 <div class="mb-3">
@@ -108,7 +47,70 @@
     <div class="col-lg-4">
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-body">
-                <h5 class="fw-bold d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold mb-3">Trạng thái & Cài đặt</h5>
+                <div class="mb-3">
+                        <label class="form-label fw-semibold">Trạng thái</label>
+                        <select name="status" class="form-select">
+                            @foreach(['draft'=>'Bản nháp','pending'=>'Chờ duyệt','published'=>'Xuất bản','archived'=>'Lưu trữ'] as $value => $label)
+                                <option value="{{ $value }}" @selected(old('status', $post->status ?? 'draft') === $value)>{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                <div class="mb-3">
+                        <label class="form-label fw-semibold">Thời gian xuất bản</label>
+                        <input type="datetime-local" name="published_at" class="form-control"
+                               value="{{ old('published_at', isset($post->published_at) ? $post->published_at->format('Y-m-d\TH:i') : '') }}">
+                </div>
+                <div class="mb-3 form-check form-switch">
+                    <input type="hidden" name="is_featured" value="0">
+                    <input class="form-check-input" type="checkbox" name="is_featured" value="1" id="isFeaturedSwitch"
+                           @checked(old('is_featured', $post->is_featured ?? false))>
+                    <label class="form-check-label" for="isFeaturedSwitch">Đặt làm bài viết nổi bật</label>
+                </div>
+            </div>
+                </div>
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="fw-bold mb-3">Tags</h5>
+                            @php
+                                // Lấy tag IDs từ relationship nếu có post, hoặc từ old input
+                                $selectedTagIds = old('tag_ids', []);
+                                if (empty($selectedTagIds) && isset($post) && $post->exists) {
+                                    // Lấy tags từ relationship
+                                    $selectedTagIds = $post->tags()->pluck('id')->toArray();
+                                }
+                                // Nếu vẫn không có, thử lấy từ tag_ids JSON (backward compatibility)
+                                if (empty($selectedTagIds) && isset($post) && !empty($post->tag_ids)) {
+                                    $selectedTagIds = is_array($post->tag_ids) ? $post->tag_ids : [];
+                                }
+                            @endphp
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Chọn từ danh sách có sẵn:</label>
+                    <select name="tag_ids[]" id="tagSelect" class="form-select" multiple>
+                            @foreach($tags as $tag)
+                                <option value="{{ $tag->id }}" @selected(in_array($tag->id, $selectedTagIds))>
+                                    {{ $tag->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                <div class="mb-3">
+                    <label class="form-label small text-muted">Hoặc thêm tags mới:</label>
+                        <input type="text" 
+                               name="tag_names" 
+                               id="tagNamesInput" 
+                               class="form-control" 
+                           placeholder="Fashion, Style, Trend"
+                               value="{{ old('tag_names', '') }}">
+                    <small class="text-muted">Phân cách bằng dấu phẩy</small>
+            </div>
+        </div>
+    </div>
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="fw-bold d-flex justify-content-between align-items-center mb-3">
                     SEO Score
                     <span class="badge rounded-pill bg-primary" id="seo-score-badge">{{ $seoScore['score'] }}</span>
                 </h5>
@@ -195,14 +197,23 @@
 </div>
 
 @push('scripts')
+    @include('admins.partials.media-library-modal')
     <script>
+        console.log('=== POSTS FORM SCRIPTS LOADING ===');
+        console.log('Loading media-library.js...');
+    </script>
+    <script src="{{ asset('admins/js/media-library.js?v=' . time()) }}"></script>
+    <script>
+        console.log('=== POSTS FORM SCRIPTS LOADING ===');
+        console.log('Loading media-library.js...');
+    </script>
+    <script>
+        console.log('media-library.js loaded, checking window.mediaLibrary:', typeof window.mediaLibrary);
+        console.log('window.mediaLibrary:', window.mediaLibrary);
         const autosaveUrl = "{{ $isEdit ? route('admin.posts.autosave', $post) : '' }}";
         const seoAnalyzeUrl = "{{ route('admin.seo.analyze') }}";
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         let autosaveTimer;
-
-        if (window.tinymce && document.getElementById('post-content-editor')) {
-        const mediaImages = window.mediaImages = window.mediaImages || @json($mediaImages);
 
         if (window.tinymce && document.getElementById('post-content-editor')) {
             tinymce.init({
@@ -210,19 +221,29 @@
                 menubar: true,
                 height: 650,
                 plugins: 'code lists link image table media autoresize fullscreen codesample wordcount preview',
-                toolbar: 'undo redo | styles | bold italic underline | alignleft aligncenter alignright | bullist numlist | link image media nobi_gallery | table codesample | fullscreen preview',
+                toolbar: 'undo redo | styles | bold italic underline | alignleft aligncenter alignright | bullist numlist | link image media nobi_media_library | table codesample | fullscreen preview',
                 skin: 'oxide',
                 content_css: 'default',
                 automatic_uploads: true,
                 file_picker_types: 'image media',
                 setup: function (editor) {
-                    editor.ui.registry.addButton('nobi_gallery', {
-                        text: '🖼 Thư viện',
-                        tooltip: 'Chèn ảnh từ thư viện assets',
+                    // Media Library button
+                    editor.ui.registry.addButton('nobi_media_library', {
+                        text: '🖼 Thư viện ảnh',
+                        tooltip: 'Chèn ảnh từ thư viện (WordPress style)',
                         onAction: function () {
-                            openMediaPicker(function (file) {
-                                editor.insertContent(`<img src="${file.url}" alt="${file.name}">`);
-                            });
+                            if (window.mediaLibrary) {
+                                window.mediaLibrary.open({
+                                    context: 'post',
+                                    onInsert: function(image) {
+                                        const alt = image.name.replace(/\.[^/.]+$/, '');
+                                        editor.insertContent(`<img src="${image.url}" alt="${alt}" />`);
+                                    },
+                                    insertMode: 'single'
+                                });
+                            } else {
+                                alert('Media Library chưa được khởi tạo');
+                            }
                         },
                     });
 
@@ -230,7 +251,6 @@
                     editor.on('change', scheduleAutosave);
                 }
             });
-        }
         }
 
         document.querySelectorAll('input[name="title"], textarea[name="excerpt"], input[name="meta_title"], textarea[name="meta_description"]').forEach(el => {
@@ -344,83 +364,25 @@
               .catch(() => alert('Khôi phục thất bại, vui lòng thử lại.'));
         }
 
-        function openMediaPicker(onSelect) {
-            if (!mediaImages.length) {
-                alert('Chưa có ảnh trong thư viện clients/assets/img.');
-                return;
-            }
-
-            const overlay = document.createElement('div');
-            overlay.className = 'media-picker-overlay';
-            overlay.style.position = 'fixed';
-            overlay.style.inset = '0';
-            overlay.style.background = 'rgba(15,23,42,0.55)';
-            overlay.style.zIndex = '9999';
-            overlay.style.display = 'flex';
-            overlay.style.alignItems = 'center';
-            overlay.style.justifyContent = 'center';
-
-            const modal = document.createElement('div');
-            modal.style.background = '#fff';
-            modal.style.borderRadius = '16px';
-            modal.style.padding = '20px';
-            modal.style.width = '580px';
-            modal.style.maxHeight = '80vh';
-            modal.style.overflowY = 'auto';
-            modal.innerHTML = `
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="mb-0">Chọn ảnh từ thư viện</h5>
-                    <button type="button" class="btn btn-link text-danger" data-close>&times;</button>
-                </div>
-                <div class="row g-3 media-picker-grid">
-                    ${mediaImages.map(file => `
-                        <div class="col-4">
-                            <button type="button" class="w-100 border rounded p-0 bg-white" data-url="${file.url}" data-name="${file.name}">
-                                <img src="${file.url}" alt="${file.name}" class="img-fluid" style="height:120px;object-fit:cover;border-top-left-radius:8px;border-top-right-radius:8px;">
-                                <div class="p-2 small text-truncate">${file.name}</div>
-                            </button>
-                        </div>
-                    `).join('')}
-                </div>
-            `;
-
-            const closeModal = () => {
-                overlay.removeEventListener('click', handleClick);
-                document.body.removeChild(overlay);
-            };
-
-            const handleClick = (event) => {
-                if (event.target.dataset.close !== undefined || event.target === overlay) {
-                    closeModal();
-                    return;
-                }
-
-                const button = event.target.closest('button[data-url]');
-                if (button) {
-                    onSelect?.({
-                        url: button.dataset.url,
-                        name: button.dataset.name,
-                    });
-                    closeModal();
-                }
-            };
-
-            overlay.addEventListener('click', handleClick);
-            overlay.appendChild(modal);
-            document.body.appendChild(overlay);
-        }
-
         function openThumbnailPicker() {
-            openMediaPicker(function (file) {
+            if (window.mediaLibrary) {
+                window.mediaLibrary.open({
+                    context: 'post',
+                    onInsert: function(image) {
                 const input = document.getElementById('thumbnail-input');
                 const preview = document.getElementById('thumbnail-preview');
                 if (input) {
-                    input.value = file.url;
+                            input.value = image.path || image.url;
                 }
                 if (preview) {
-                    preview.innerHTML = `<img src="${file.url}" class="img-fluid rounded shadow-sm" alt="${file.name}">`;
+                            preview.innerHTML = `<img src="${image.url}" class="img-fluid rounded shadow-sm" alt="${image.name}">`;
                 }
+                    },
+                    insertMode: 'single'
             });
+            } else {
+                alert('Media Library chưa được khởi tạo');
+            }
         }
     </script>
 @endpush

@@ -29,7 +29,13 @@ class ViewServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Chỉ chạy khi không phải console command
+        if (app()->runningInConsole()) {
+            return;
+        }
+
         // --- SETTINGS ---
+        try {
         if (Schema::hasTable('settings')) {
             $settings = Cache::rememberForever('settings', function () {
                 return Setting::active()
@@ -39,21 +45,45 @@ class ViewServiceProvider extends ServiceProvider
             });
 
             View::share('settings', (object) $settings);
+            }
+        } catch (\Throwable $e) {
+            // Bỏ qua lỗi khi database chưa sẵn sàng
         }
 
         // --- CATEGORIES ---
+        try {
         if (Schema::hasTable('categories')) {
-            $categories = Category::query()->active()
+            // Load categories với children và grandchildren (nested eager loading)
+            $categories = Category::query()
+                ->where('is_active', true)
                 ->whereNull('parent_id')
                 ->orderBy('sort_order')
                 ->orderBy('name')
-                ->with('children.children')   // tự sort theo quan hệ
+                ->with([
+                    'children' => function($query) {
+                        $query->where('is_active', true)
+                            ->orderBy('sort_order')
+                            ->orderBy('name')
+                            ->with([
+                                'children' => function($subQuery) {
+                                    $subQuery->where('is_active', true)
+                                        ->orderBy('sort_order')
+                                        ->orderBy('name');
+                                }
+                            ]);
+                    }
+                ])
                 ->get();
 
             View::share('categories', $categories);
+            }
+        } catch (\Throwable $e) {
+            // Bỏ qua lỗi khi database chưa sẵn sàng
         }
 
         // --- ACCOUNT + CART (Global composer) ---
+        // Chỉ đăng ký View composer khi không chạy trong console
+        if (!app()->runningInConsole()) {
         View::composer('*', function ($view) {
             static $sharedPayload = null;
 
@@ -134,5 +164,6 @@ class ViewServiceProvider extends ServiceProvider
                 $view->with($key, $value);
             }
         });
+        }
     }
 }

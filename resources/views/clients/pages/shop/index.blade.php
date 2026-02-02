@@ -13,9 +13,13 @@
 
     <!-- 🤖 Robots -->
     @php
-        $productCount = $products->count() ?? 0;
+        // Kiểm tra xem có query string không (có dấu ? trong URL)
+        $hasQueryString = !empty(request()->getQueryString());
+        
+        // Nếu có query string hoặc ít sản phẩm thì noindex
+        $shouldNoIndex = $hasQueryString;
     @endphp
-    @if ($productCount < 5)
+    @if ($shouldNoIndex)
         <meta name="robots" content="noindex, follow" />
     @else
         <meta name="robots" content="index, follow, max-snippet:-1, max-video-preview:-1, max-image-preview:large" />
@@ -133,8 +137,9 @@
                                         <a href="/{{ $category->slug }}">
                                             <img width="30px" height="30px"
                                                 class="nobifashion_shop_products_filter_categories_content_category_image_img"
-                                                src="{{ asset('clients/assets/img/categories/' . ($category->image ?? '')) }}"
-                                                alt="{{ $category->name }}">
+                                                src="{{ asset('clients/assets/img/categories/' . ($category->image ?? 'no-image.webp')) }}"
+                                                alt="{{ $category->name }}"
+                                                onerror="this.onerror=null; this.src='{{ asset('clients/assets/img/categories/no-image.webp') }}';">
                                         </a>
                                     </div>
                                     <div class="nobifashion_shop_products_filter_categories_content_category_text">

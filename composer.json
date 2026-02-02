@@ -9,16 +9,14 @@
     ],
     "license": "MIT",
     "require": {
-        "php": "^8.2",
+        "php": "^8.3",
         "barryvdh/laravel-dompdf": "^3.1",
-        "laravel/framework": "12.17.*",
+        "laravel/framework": "12.17.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.10.1",
-        "phpoffice/phpspreadsheet": "^5.2",
-        "symfony/panther": "^2.4"
+        "phpoffice/phpspreadsheet": "^5.2"
     },
     "require-dev": {
-        "barryvdh/laravel-debugbar": "^3.16",
         "dbrekelmans/bdi": "^1.4",
         "fakerphp/faker": "^1.24",
         "laravel/pail": "^1.2.2",
@@ -45,11 +43,9 @@
     },
     "scripts": {
         "post-autoload-dump": [
-            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
-            "@php artisan package:discover --ansi"
+            "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump"
         ],
         "post-update-cmd": [
-            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
         ],
         "post-root-package-install": [
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
@@ -68,11 +64,7 @@
             "@php artisan test"
         ]
     },
-    "extra": {
-        "laravel": {
-            "dont-discover": []
-        }
-    },
+    "extra": {},
     "config": {
         "optimize-autoloader": true,
         "preferred-install": "dist",

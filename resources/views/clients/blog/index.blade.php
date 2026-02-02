@@ -255,10 +255,10 @@
                 @forelse($posts as $post)
                     <div class="col-md-6">
                         <article class="blog-card h-100">
-                            @if($post->thumbnail)
-                            <img src="{{ asset($post->thumbnail) }}" alt="{{ renderMeta($post->thumbnail_alt_text ?? $post->title) }}"
-                                loading="lazy">
-                            @endif
+                            <img src="{{ asset($post->thumbnail ?? 'clients/assets/img/clothes/no-image.webp') }}" 
+                                alt="{{ renderMeta($post->thumbnail_alt_text ?? $post->title) }}"
+                                loading="lazy"
+                                onerror="this.onerror=null; this.src='{{ asset('clients/assets/img/clothes/no-image.webp') }}';">
 
                             <div class="card-body">
                                 <div class="d-flex gap-2 tiny text-muted mb-1">

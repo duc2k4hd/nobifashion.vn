@@ -1,4 +1,4 @@
-<script src="{{ asset('clients/assets/js/main.js') }}"></script>
+<script src="{{ asset('clients/assets/js/main.js?v=' . time()) }}"></script>
 
 @php
     $alerts = [

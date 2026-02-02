@@ -21,6 +21,7 @@ use App\Observers\TagObserver;
 use App\Policies\AccountPolicy;
 use App\Policies\AddressPolicy;
 use App\Policies\TagPolicy;
+use App\Services\SitemapService;
 use Illuminate\Database\Eloquent\Relations\Relation;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Schema;
@@ -33,7 +34,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // Đăng ký SitemapService để các Observer có thể inject
+        $this->app->singleton(SitemapService::class, function ($app) {
+            return new SitemapService();
+        });
     }
 
     /**
@@ -41,12 +45,25 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        try {
         Schema::defaultStringLength(191);
+        } catch (\Throwable $e) {
+            // Bỏ qua lỗi khi database chưa sẵn sàng
+        }
+        
+        try {
         Gate::policy(Account::class, AccountPolicy::class);
         Gate::policy(Address::class, AddressPolicy::class);
         Gate::policy(Tag::class, TagPolicy::class);
+        } catch (\Throwable $e) {
+            // Bỏ qua lỗi khi container chưa sẵn sàng
+        }
         
-        // Register observers
+        // Chỉ đăng ký observers khi không chạy trong console
+        // Vì observers có thể cần truy cập database hoặc services
+        try {
+            $isConsole = $this->app && method_exists($this->app, 'runningInConsole') && $this->app->runningInConsole();
+            if (!$isConsole) {
         Contact::observe(ContactObserver::class);
         Order::observe(OrderObserver::class);
         Post::observe(PostObserver::class);
@@ -54,5 +71,9 @@ class AppServiceProvider extends ServiceProvider
         Category::observe(CategoryObserver::class);
         Tag::observe(TagObserver::class);
         Voucher::observe(VoucherObserver::class);
+            }
+        } catch (\Throwable $e) {
+            // Bỏ qua lỗi khi container chưa sẵn sàng hoặc đang chạy trong console
+        }
     }
 }
