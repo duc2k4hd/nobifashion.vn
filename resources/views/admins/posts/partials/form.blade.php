@@ -215,43 +215,17 @@
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         let autosaveTimer;
 
-        if (window.tinymce && document.getElementById('post-content-editor')) {
-            tinymce.init({
-                selector: '#post-content-editor',
-                menubar: true,
-                height: 650,
-                plugins: 'code lists link image table media autoresize fullscreen codesample wordcount preview',
-                toolbar: 'undo redo | styles | bold italic underline | alignleft aligncenter alignright | bullist numlist | link image media nobi_media_library | table codesample | fullscreen preview',
-                skin: 'oxide',
-                content_css: 'default',
-                automatic_uploads: true,
-                file_picker_types: 'image media',
-                setup: function (editor) {
-                    // Media Library button
-                    editor.ui.registry.addButton('nobi_media_library', {
-                        text: '🖼 Thư viện ảnh',
-                        tooltip: 'Chèn ảnh từ thư viện (WordPress style)',
-                        onAction: function () {
-                            if (window.mediaLibrary) {
-                                window.mediaLibrary.open({
-                                    context: 'post',
-                                    onInsert: function(image) {
-                                        const alt = image.name.replace(/\.[^/.]+$/, '');
-                                        editor.insertContent(`<img src="${image.url}" alt="${alt}" />`);
-                                    },
-                                    insertMode: 'single'
-                                });
-                            } else {
-                                alert('Media Library chưa được khởi tạo');
-                            }
-                        },
-                    });
-
-                    editor.on('input', scheduleAutosave);
-                    editor.on('change', scheduleAutosave);
-                }
-            });
-        }
+        // CKEditor 5 sẽ tự động khởi tạo cho #post-content-editor
+        // Đợi editor khởi tạo xong để setup autosave
+        const waitForEditor = setInterval(() => {
+            const editor = window.CKEditor5API && window.CKEditor5API.get('post-content-editor');
+            if (editor) {
+                clearInterval(waitForEditor);
+                // Autosave đã được setup trong ckeditor-init.js
+                console.log('CKEditor 5 ready for posts');
+            }
+        }, 100);
+        setTimeout(() => clearInterval(waitForEditor), 5000);
 
         document.querySelectorAll('input[name="title"], textarea[name="excerpt"], input[name="meta_title"], textarea[name="meta_description"]').forEach(el => {
             el.addEventListener('input', scheduleAutosave);
@@ -275,7 +249,7 @@
                 body: JSON.stringify({
                     title: document.querySelector('input[name="title"]').value,
                     excerpt: document.querySelector('textarea[name="excerpt"]').value,
-                    content: window.tinymce ? tinymce.get('post-content-editor').getContent() : document.getElementById('post-content-editor').value,
+                    content: window.CKEditor5API ? window.CKEditor5API.getContent('post-content-editor') : document.getElementById('post-content-editor').value,
                     meta_title: document.querySelector('input[name="meta_title"]').value,
                     meta_description: document.querySelector('textarea[name="meta_description"]').value,
                     meta_keywords: document.querySelector('input[name="meta_keywords"]').value,
@@ -299,7 +273,7 @@
                 },
                 body: JSON.stringify({
                     title: document.querySelector('input[name="title"]').value,
-                    content: window.tinymce ? tinymce.get('post-content-editor').getContent() : document.getElementById('post-content-editor').value,
+                    content: window.CKEditor5API ? window.CKEditor5API.getContent('post-content-editor') : document.getElementById('post-content-editor').value,
                     excerpt: document.querySelector('textarea[name="excerpt"]').value,
                     meta_title: document.querySelector('input[name="meta_title"]').value,
                     meta_description: document.querySelector('textarea[name="meta_description"]').value,

@@ -391,7 +391,12 @@
             z-index: 1;
         }
 
-        .tox-tinymce {
+        /* CKEditor 5 Styles */
+        .ck-editor__editable {
+            min-height: 500px;
+        }
+        
+        .ck-editor__editable_inline {
             min-height: 500px;
         }
         
@@ -890,8 +895,104 @@
         });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
-    <script src="https://cdn.tiny.cloud/1/{{ env('APP_KEY_TINYMCE') }}/tinymce/8/tinymce.min.js" referrerpolicy="origin" crossorigin="anonymous"></script>
+    <!-- CKEditor 5 -->
+    <link rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/47.4.0/ckeditor5.css" crossorigin>
+    <script src="https://cdn.ckeditor.com/ckeditor5/47.4.0/ckeditor5.umd.js" crossorigin></script>
+    <script src="https://cdn.ckeditor.com/ckeditor5/47.4.0/translations/vi.umd.js" crossorigin></script>
+    <script src="{{ asset('admins/js/ckeditor-init.js?v=' . time()) }}"></script>
     @stack('scripts')
+    
+    <!-- Back to Top Button -->
+    <button id="back-to-top" class="back-to-top-btn" title="Lên đầu trang" aria-label="Lên đầu trang">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 15l-6-6-6 6"/>
+        </svg>
+    </button>
+    
+    <style>
+        .back-to-top-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        
+        .back-to-top-btn.show {
+            display: flex;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .back-to-top-btn:hover {
+            background: #0056b3;
+            box-shadow: 0 6px 16px rgba(0, 123, 255, 0.4);
+            transform: translateY(-2px);
+        }
+        
+        .back-to-top-btn:active {
+            transform: translateY(0);
+        }
+        
+        .back-to-top-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .back-to-top-btn {
+                bottom: 20px;
+                right: 20px;
+                width: 45px;
+                height: 45px;
+            }
+        }
+    </style>
+    
+    <script>
+        (function() {
+            const backToTopBtn = document.getElementById('back-to-top');
+            
+            if (!backToTopBtn) return;
+            
+            // Hiển thị/ẩn nút khi scroll
+            function toggleBackToTop() {
+                if (window.pageYOffset > 300) {
+                    backToTopBtn.classList.add('show');
+                } else {
+                    backToTopBtn.classList.remove('show');
+                }
+            }
+            
+            // Scroll smooth lên đầu trang
+            backToTopBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+            
+            // Lắng nghe sự kiện scroll
+            window.addEventListener('scroll', toggleBackToTop);
+            
+            // Kiểm tra ngay khi load trang
+            toggleBackToTop();
+        })();
+    </script>
 </body>
 </html>
 

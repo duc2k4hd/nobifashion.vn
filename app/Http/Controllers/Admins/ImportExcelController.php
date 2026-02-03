@@ -375,8 +375,8 @@ class ImportExcelController extends Controller
         foreach ($productMap as $sku => $productId) {
             $this->deleteProductImages($productId);
             $processedProductIds[$productId] = true;
-        }
-        
+                }
+
         $sheet = $spreadsheet->getSheetByName('images');
         if (!$sheet) return; // Sheet tùy chọn
 
@@ -1260,12 +1260,12 @@ class ImportExcelController extends Controller
         
         // 5. Tìm trong folder imports (đường dẫn đầy đủ)
         if (!$sourcePath) {
-            $importsPathFull = public_path('clients/assets/img/imports/' . $localPath);
+                $importsPathFull = public_path('clients/assets/img/imports/' . $localPath);
             $searchPaths[] = $importsPathFull;
-            if (file_exists($importsPathFull)) {
-                $sourcePath = $importsPathFull;
+                if (file_exists($importsPathFull)) {
+                    $sourcePath = $importsPathFull;
+                }
             }
-        }
 
         // Log các đường dẫn đã tìm
         Log::debug('uploadImage: File search', [

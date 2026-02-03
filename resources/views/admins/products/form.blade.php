@@ -200,7 +200,12 @@ $tagNamesInput = old('tag_names', '');
         border: 1px solid #e2e8f0;
     }
 
-    .tox-tinymce {
+    /* CKEditor 5 Styles */
+    .ck-editor__editable {
+        min-height: 500px;
+    }
+    
+    .ck-editor__editable_inline {
         min-height: 500px;
     }
 
@@ -249,50 +254,27 @@ $tagNamesInput = old('tag_names', '');
         const markDirty = () => {
             isDirty = true;
         };
-        const initTinyMCE = () => {
-            if (typeof tinymce === 'undefined') {
-                return;
-            }
-            tinymce.remove('.tinymce-editor');
-            tinymce.init({
-                selector: '.tinymce-editor'
-                , menubar: false
-                , height: 500
-                , language: 'vi'
-                , branding: false
-                , plugins: 'link lists image table code autoresize'
-                , toolbar: 'undo redo | styles | bold italic underline | alignleft aligncenter alignright | bullist numlist | link table nobi_gallery | code'
-                , setup: (editor) => {
-                    editor.ui.registry.addButton('nobi_gallery', {
-                        text: '🖼 Thư viện ảnh'
-                        , tooltip: 'Chèn ảnh từ thư viện (WordPress style)'
-                        , onAction: () => {
-                            if (window.mediaLibrary) {
-                                window.mediaLibrary.open({
-                                    context: 'product'
-                                    , onInsert: function(image) {
-                                        const alt = image.name.replace(/\.[^/.]+$/, '');
-                                        editor.insertContent(`<img src="${image.url}" alt="${alt}" />`);
-                                        markDirty();
-                                    }
-                                    , insertMode: 'single'
+        // CKEditor 5 sẽ tự động khởi tạo cho .tinymce-editor
+        // Đợi editor khởi tạo xong để setup markDirty
+        const initCKEditors = () => {
+            setTimeout(() => {
+                document.querySelectorAll('.tinymce-editor').forEach(textarea => {
+                    const editorId = textarea.id;
+                    if (editorId) {
+                        const checkEditor = setInterval(() => {
+                            const editor = window.CKEditor5API && window.CKEditor5API.get(editorId);
+                            if (editor) {
+                                clearInterval(checkEditor);
+                                // Setup markDirty khi có thay đổi
+                                editor.model.document.on('change:data', () => {
+                                    markDirty();
                                 });
-                            } else {
-                                alert('Media Library chưa được khởi tạo');
                             }
-                        }
-                    , });
-
-                    ['change', 'input', 'keyup', 'undo', 'redo'].forEach(evt => {
-                        editor.on(evt, () => markDirty());
-                    });
-                    editor.on('SetContent', (e) => {
-                        if (!e.load) {
-                            markDirty();
-                        }
-                    });
-                }
-            });
+                        }, 100);
+                        setTimeout(() => clearInterval(checkEditor), 5000);
+                    }
+                });
+            }, 300);
         };
 
 
@@ -314,7 +296,7 @@ $tagNamesInput = old('tag_names', '');
                 if (targetSelector === '#variant-list') {
                     registerVariantAttributes(newBlock);
                 }
-                initTinyMCE();
+                initCKEditors();
                 markDirty();
             });
         });
@@ -382,7 +364,7 @@ $tagNamesInput = old('tag_names', '');
 
         window.mediaImages = {!! json_encode($mediaImages ?? [], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!};
 
-        initTinyMCE();
+        initCKEditors();
 
         const registerVariantAttributes = (variantElement) => {
             const attrContainer = variantElement.querySelector('.variant-attributes');
