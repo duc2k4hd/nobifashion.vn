@@ -2,7 +2,7 @@
 
 namespace App\Console\Commands;
 
-use App\Models\MediaLibraryFile;
+use App\Models\Image;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
@@ -10,10 +10,10 @@ class IndexMediaLibrary extends Command
 {
     protected $signature = 'media:index
                             {context=all : Context cần index: product, post, hoặc all}
-                            {--fresh : Xóa toàn bộ DB trước khi index lại}
+                            {--fresh : Xóa toàn bộ metadata thư viện (không xóa file) trước khi index lại}
                             {--batch=100 : Số record mỗi batch INSERT}';
 
-    protected $description = 'Scan và index toàn bộ ảnh trong thư mục media vào database';
+    protected $description = 'Scan và index toàn bộ ảnh trong thư mục media vào bảng images';
 
     protected array $contextMap = [
         'post'    => 'posts',
@@ -40,11 +40,21 @@ class IndexMediaLibrary extends Command
 
         if ($fresh) {
             if ($contextArg === 'all') {
-                MediaLibraryFile::truncate();
-                $this->info('Đã xóa toàn bộ dữ liệu cũ.');
+                // Cẩn thận: Chỉ xóa path/metadata, không nên truncate bảng images vì có dữ liệu sản phẩm!
+                Image::whereNotNull('path')->update([
+                    'path' => null,
+                    'extension' => null,
+                    'mime_type' => null,
+                    'size' => 0,
+                    'width' => null,
+                    'height' => null,
+                ]);
+                $this->info('Đã reset metadata thư viện trong bảng images.');
             } else {
-                MediaLibraryFile::whereIn('context', $contexts)->delete();
-                $this->info('Đã xóa dữ liệu cũ của context: ' . implode(', ', $contexts));
+                Image::whereIn('context', $contexts)->whereNotNull('path')->update([
+                    'path' => null,
+                ]);
+                $this->info('Đã xóa path của context: ' . implode(', ', $contexts));
             }
         }
 
@@ -94,15 +104,20 @@ class IndexMediaLibrary extends Command
             $absolute = str_replace('\\', '/', $file->getRealPath());
             $relative = ltrim(str_replace(str_replace('\\', '/', $publicPath), '', $absolute), '/');
 
+            $fileName = $file->getFilename();
+            $host = parse_url(config('app.url'), PHP_URL_HOST) ?: 'localhost';
+
             $batch[] = [
-                'name'             => $file->getFilename(),
+                'product_id'       => null,
+                'title'            => $fileName,
+                'alt'              => $fileName,
                 'path'             => $relative,
-                'url'              => 'https://' . request()->getHost() . '/' . $relative,
+                'url'              => config('app.url') . '/' . $relative,
                 'extension'        => $ext,
-                'mime_type'        => null, // bỏ qua mime_content_type() cho tốc độ
+                'mime_type'        => null, 
                 'context'          => $context,
                 'size'             => $file->getSize(),
-                'width'            => null,  // bỏ qua getimagesize() cho tốc độ
+                'width'            => null,  
                 'height'           => null,
                 'file_modified_at' => date('Y-m-d H:i:s', $file->getMTime()),
                 'created_at'       => $now,
@@ -153,7 +168,7 @@ class IndexMediaLibrary extends Command
                 $bindings   = array_merge($bindings, array_values($row));
             }
 
-            $sql = "INSERT IGNORE INTO `media_library_files` ($columnList) VALUES " . implode(', ', $values);
+            $sql = "INSERT IGNORE INTO `images` ($columnList) VALUES " . implode(', ', $values);
             DB::statement($sql, $bindings);
 
         } catch (\Throwable $e) {

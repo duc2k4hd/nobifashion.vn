@@ -389,6 +389,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             // Media Library routes (WordPress-style)
             Route::get('/library', [\App\Http\Controllers\Admins\MediaLibraryController::class, 'index'])->name('library.index');
             Route::post('/library', [\App\Http\Controllers\Admins\MediaLibraryController::class, 'store'])->name('library.store');
+            Route::put('/library/{id}', [\App\Http\Controllers\Admins\MediaLibraryController::class, 'update'])->name('library.update');
             Route::delete('/library/{id}', [\App\Http\Controllers\Admins\MediaLibraryController::class, 'destroy'])->name('library.destroy');
         });
 

@@ -1,5 +1,6 @@
 /**
- * WordPress-style Media Library
+ * WordPress-style Media Library (Synced, Optimized & High Performance)
+ * Version: 3.0
  */
 class MediaLibrary {
     constructor(options = {}) {
@@ -14,48 +15,30 @@ class MediaLibrary {
         this.csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
         this.context = options.context || 'product'; // product hoặc post
         this.currentPage = 1;
-        this.perPage = 100;
+        this.perPage = 60; // Tăng lên 60 để trải nghiệm cuộn tốt hơn
         this.hasMore = false;
         this.isLoading = false;
         this.currentSearch = '';
+        this.cacheValid = false; // Cờ kiểm soát cache
         
+        console.log('MediaLibrary V3.0 Constructor called.');
         this.init();
     }
 
     init() {
-        console.log('MediaLibrary.init() called');
-        console.log('Looking for modal element with id: media-library-modal');
         this.modal = document.getElementById('media-library-modal');
-        
-        if (!this.modal) {
-            console.error('❌ Modal element not found! Make sure media-library-modal is included in the page.');
-            console.log('Available elements with "media" in id:', 
-                Array.from(document.querySelectorAll('[id*="media"]')).map(el => el.id));
-            return;
-        }
+        if (!this.modal) return;
 
-        console.log('✅ Modal element found:', this.modal);
-
-        // 初始化grid view
         const grid = document.getElementById('media-grid');
-        if (grid) {
-            grid.className = `media-library-grid ${this.currentView}-view`;
-            console.log('✅ Grid element found and initialized');
-        } else {
-            console.warn('⚠️ Grid element not found');
-        }
+        if (grid) grid.className = `media-library-grid ${this.currentView}-view`;
 
         this.setupEventListeners();
-        console.log('✅ MediaLibrary initialization complete');
     }
 
     setupEventListeners() {
         // Tab switching
-        document.querySelectorAll('.tab-button').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const tab = e.target.dataset.tab;
-                this.switchTab(tab);
-            });
+        this.modal.querySelectorAll('.tab-button').forEach(btn => {
+            btn.addEventListener('click', (e) => this.switchTab(e.target.dataset.tab));
         });
 
         // Close modal
@@ -63,13 +46,15 @@ class MediaLibrary {
         document.getElementById('cancel-media-library')?.addEventListener('click', () => this.close());
         this.modal.querySelector('.media-library-overlay')?.addEventListener('click', () => this.close());
 
-        // Search
+        // Search với Debounce để giảm query server
+        let searchTimeout;
         document.getElementById('media-search')?.addEventListener('input', (e) => {
-            this.searchMedia(e.target.value);
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => this.searchMedia(e.target.value), 400);
         });
 
         // View toggle
-        document.querySelectorAll('.view-btn').forEach(btn => {
+        this.modal.querySelectorAll('.view-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const view = e.target.closest('.view-btn').dataset.view;
                 this.switchView(view);
@@ -79,91 +64,61 @@ class MediaLibrary {
         // Upload
         const uploadArea = document.getElementById('upload-area');
         const fileInput = document.getElementById('file-input');
-        
         uploadArea?.addEventListener('click', () => fileInput?.click());
-        uploadArea?.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('dragover');
-        });
-        uploadArea?.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('dragover');
-        });
-        uploadArea?.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
-            const files = e.dataTransfer.files;
-            this.handleUpload(Array.from(files));
-        });
-        fileInput?.addEventListener('change', (e) => {
-            this.handleUpload(Array.from(e.target.files));
-        });
+        fileInput?.addEventListener('change', (e) => this.handleUpload(Array.from(e.target.files)));
 
         // Insert button
-        document.getElementById('insert-media')?.addEventListener('click', () => {
-            this.insertSelected();
-        });
+        document.getElementById('insert-media')?.addEventListener('click', () => this.insertSelected());
 
-        // Escape key to close
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this.modal.style.display !== 'none') {
-                this.close();
-            }
-        });
+        // Event Delegation cho Grid - KHÔNG bao giờ bị mất khi render lại innerHTML
+        const grid = document.getElementById('media-grid');
+        if (grid) {
+            grid.addEventListener('click', (e) => {
+                const item = e.target.closest('.media-item');
+                if (!item || e.target.type === 'checkbox') return;
+                this.toggleSelect(item.dataset.id);
+            });
+
+            grid.addEventListener('dblclick', (e) => {
+                const item = e.target.closest('.media-item');
+                if (!item) return;
+                const mediaItem = this.mediaItems.find(m => String(m.id) === String(item.dataset.id));
+                if (mediaItem) this.openDetailPanel(mediaItem);
+            });
+        }
     }
 
     switchTab(tab) {
+        if (this.currentTab === tab) return;
         this.currentTab = tab;
-        
-        // Update tab buttons
-        document.querySelectorAll('.tab-button').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.tab === tab);
-        });
+        this.modal.querySelectorAll('.tab-button').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === tab));
+        this.modal.querySelectorAll('.tab-content').forEach(content => content.classList.toggle('active', content.id === `tab-${tab}`));
 
-        // Update tab content
-        document.querySelectorAll('.tab-content').forEach(content => {
-            content.classList.toggle('active', content.id === `tab-${tab}`);
-        });
-
-        if (tab === 'library') {
-            this.currentPage = 1;
-            this.loadMedia(this.currentSearch, true);
+        if (tab === 'library' && !this.cacheValid) {
+            this.loadMedia('', true);
         }
     }
 
     switchView(view) {
+        if (this.currentView === view) return;
         this.currentView = view;
         const grid = document.getElementById('media-grid');
-        
         if (grid) {
             grid.className = `media-library-grid ${view}-view`;
+            this.renderMedia(); // Cần render lại vì cấu trúc Grid/List khác nhau
         }
-
-        document.querySelectorAll('.view-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.view === view);
-        });
-
-        this.renderMedia();
+        this.modal.querySelectorAll('.view-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.view === view));
     }
 
     async loadMedia(search = '', reset = true) {
         const grid = document.getElementById('media-grid');
-        if (!grid) return;
+        if (!grid || this.isLoading) return;
 
-        if (this.isLoading) return;
         this.isLoading = true;
-
-        // Nếu reset, hiển thị loading spinner và reset page
         if (reset) {
             this.currentPage = 1;
             this.mediaItems = [];
-            grid.innerHTML = '<div class="loading-spinner"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">Đang tải...</span></div></div>';
-        } else {
-            // Nếu load more, hiển thị loading indicator ở cuối
-            const loadMoreBtn = document.getElementById('load-more-media');
-            if (loadMoreBtn) {
-                loadMoreBtn.disabled = true;
-                loadMoreBtn.textContent = 'Đang tải...';
-            }
+            grid.innerHTML = '<div class="loading-spinner"><div class="spinner-border text-primary" role="status"></div></div>';
         }
 
         try {
@@ -171,382 +126,285 @@ class MediaLibrary {
             url.searchParams.set('context', this.context);
             url.searchParams.set('page', this.currentPage);
             url.searchParams.set('per_page', this.perPage);
-            
-            if (search) {
-                url.searchParams.set('search', search);
-                this.currentSearch = search;
-            } else {
-                this.currentSearch = '';
-            }
+            if (search) url.searchParams.set('search', search);
 
             const response = await fetch(url);
             const data = await response.json();
 
-            console.log('=== MEDIA LIBRARY DEBUG ===');
-            console.log('API Response:', data);
-            console.log('URL:', url.toString());
-
             if (data.success) {
+                const newItems = data.data || [];
                 if (reset) {
-                    this.mediaItems = data.data || [];
+                    this.mediaItems = newItems;
+                    this.renderMedia();
                 } else {
-                    // Append new items
-                    this.mediaItems = [...this.mediaItems, ...(data.data || [])];
+                    this.mediaItems = [...this.mediaItems, ...newItems];
+                    this.appendMediaItems(newItems); // Tối ưu: Chỉ vẽ thêm ảnh mới
                 }
                 
-                // 确保正确设置 hasMore
-                this.hasMore = Boolean(data.has_more === true || data.has_more === 1 || data.has_more === 'true' || data.has_more === '1');
-                console.log('Media loaded:', {
-                    total: data.total,
-                    page: data.page,
-                    per_page: data.per_page,
-                    has_more_raw: data.has_more,
-                    has_more_type: typeof data.has_more,
-                    has_more_bool: this.hasMore,
-                    itemsCount: this.mediaItems.length,
-                    debug: data.debug || {}
-                });
-                this.renderMedia();
-                // 延迟一点确保DOM更新完成
-                setTimeout(() => {
-                    this.updateLoadMoreButton();
-                }, 100);
-            } else {
-                if (reset) {
-                    grid.innerHTML = '<div class="text-center text-muted p-4">Không tải được ảnh</div>';
-                }
+                this.hasMore = !!data.has_more;
+                this.cacheValid = true;
+                this.updateLoadMoreButton();
             }
         } catch (error) {
-            console.error('Error loading media:', error);
-            if (reset) {
-                grid.innerHTML = '<div class="text-center text-danger p-4">Lỗi khi tải ảnh</div>';
-            }
+            console.error('Fetch error:', error);
+            if (reset) grid.innerHTML = '<div class="text-danger p-4 text-center">Lỗi tải thư viện</div>';
         } finally {
             this.isLoading = false;
         }
     }
 
+    // Render toàn bộ (chỉ dùng khi reset hoặc đổi View)
     renderMedia() {
         const grid = document.getElementById('media-grid');
         if (!grid) return;
-
         if (this.mediaItems.length === 0) {
-            grid.innerHTML = '<div class="text-center text-muted p-4">Chưa có ảnh nào</div>';
-            this.updateLoadMoreButton();
+            grid.innerHTML = '<div class="text-muted p-4 text-center">Chưa có ảnh nào</div>';
             return;
         }
-
-        const isListView = this.currentView === 'list';
-        const itemsHtml = this.mediaItems.map(item => {
-            const isSelected = this.selectedItems.some(sel => sel.id === item.id);
-            const dimensions = item.dimensions ? `${item.dimensions.width} × ${item.dimensions.height}` : '';
-            const size = this.formatFileSize(item.size);
-
-            if (isListView) {
-                return `
-                    <div class="media-item list-view ${isSelected ? 'selected' : ''}" data-id="${item.id}">
-                        <input type="checkbox" class="media-item-checkbox" ${isSelected ? 'checked' : ''} 
-                               onchange="window.mediaLibrary.toggleSelect('${item.id}')">
-                        <img src="${item.url}" alt="${item.name}" loading="lazy">
-                        <div class="media-item-info">
-                            <div class="media-item-name">${this.escapeHtml(item.name)}</div>
-                            <div class="media-item-meta">${dimensions} • ${size}</div>
-                        </div>
-                    </div>
-                `;
-            } else {
-                return `
-                    <div class="media-item ${isSelected ? 'selected' : ''}" data-id="${item.id}">
-                        <input type="checkbox" class="media-item-checkbox" ${isSelected ? 'checked' : ''} 
-                               onchange="window.mediaLibrary.toggleSelect('${item.id}')">
-                        <img src="${item.url}" alt="${item.name}" loading="lazy">
-                        <div class="media-item-name" style="padding: 8px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            ${this.escapeHtml(item.name)}
-                        </div>
-                    </div>
-                `;
-            }
-        }).join('');
-
-        grid.innerHTML = itemsHtml;
-
-        // Add click handler for media items
-        grid.querySelectorAll('.media-item').forEach(item => {
-            item.addEventListener('click', (e) => {
-                if (e.target.type !== 'checkbox') {
-                    const id = item.dataset.id;
-                    this.toggleSelect(id);
-                }
-            });
-        });
-
+        grid.innerHTML = this.mediaItems.map(item => this.getItemHtml(item)).join('');
         this.updateLoadMoreButton();
     }
 
-    updateLoadMoreButton() {
-        console.log('=== updateLoadMoreButton DEBUG ===');
-        const loadMoreContainer = document.getElementById('load-more-container');
-        if (!loadMoreContainer) {
-            console.error('❌ load-more-container not found in DOM!');
-            console.log('Searching for element...');
-            const allContainers = document.querySelectorAll('[id*="load"]');
-            console.log('Found elements with "load" in id:', allContainers);
-            return;
+    // TỐI ƯU CỰC MẠNH: Chỉ vẽ thêm vào DOM mà không xóa cái cũ
+    appendMediaItems(items) {
+        const grid = document.getElementById('media-grid');
+        if (!grid || !items.length) return;
+        const html = items.map(item => this.getItemHtml(item)).join('');
+        grid.insertAdjacentHTML('beforeend', html);
+    }
+
+    getItemHtml(item) {
+        const isSelected = this.selectedItems.some(sel => String(sel.id) === String(item.id));
+        const dimensions = item.dimensions ? `${item.dimensions.width} × ${item.dimensions.height}` : '';
+        const size = this.formatFileSize(item.size);
+
+        if (this.currentView === 'list') {
+            return `
+                <div class="media-item list-view ${isSelected ? 'selected' : ''}" data-id="${item.id}">
+                    <input type="checkbox" class="media-item-checkbox" ${isSelected ? 'checked' : ''} onchange="window.mediaLibrary.toggleSelect('${item.id}')">
+                    <img src="${item.url}" alt="${item.alt || item.name}" loading="lazy">
+                    <div class="media-item-info">
+                        <div class="media-item-name">${this.escapeHtml(item.title || item.name)}</div>
+                        <div class="media-item-meta">${dimensions} • ${size}</div>
+                    </div>
+                </div>
+            `;
         }
+        return `
+            <div class="media-item ${isSelected ? 'selected' : ''}" data-id="${item.id}">
+                <input type="checkbox" class="media-item-checkbox" ${isSelected ? 'checked' : ''} onchange="window.mediaLibrary.toggleSelect('${item.id}')">
+                <img src="${item.url}" alt="${item.alt || item.name}" loading="lazy">
+                <div class="media-item-name" title="${item.title || item.name}">${this.escapeHtml(item.title || item.name)}</div>
+            </div>
+        `;
+    }
 
-        console.log('✅ load-more-container found:', loadMoreContainer);
-        console.log('Current container style:', {
-            display: loadMoreContainer.style.display,
-            visibility: loadMoreContainer.style.visibility,
-            innerHTML: loadMoreContainer.innerHTML
-        });
-
-        // 只要hasMore为true就显示按钮
-        console.log('Button state check:', {
-            hasMore: this.hasMore,
-            hasMoreType: typeof this.hasMore,
-            hasMoreStrict: this.hasMore === true,
-            mediaItemsLength: this.mediaItems.length,
-            currentPage: this.currentPage,
-            shouldShow: this.hasMore === true && this.mediaItems.length > 0
-        });
+    updateLoadMoreButton() {
+        const container = document.getElementById('load-more-container');
+        if (!container) return;
         
-        // 只在hasMore为true时显示按钮
-        const shouldShow = this.hasMore === true && this.mediaItems.length > 0;
-        
-        console.log('shouldShow calculation:', {
-            hasMore: this.hasMore,
-            hasMoreStrict: this.hasMore === true,
-            itemsLength: this.mediaItems.length,
-            shouldShow: shouldShow
-        });
-        
-        if (shouldShow) {
-            console.log('✅ Showing load more button');
-            // 强制移除所有可能隐藏的样式
-            loadMoreContainer.removeAttribute('style');
-            loadMoreContainer.style.display = 'flex';
-            loadMoreContainer.style.visibility = 'visible';
-            loadMoreContainer.style.opacity = '1';
-            loadMoreContainer.classList.remove('d-none');
-            
-            let loadMoreBtn = document.getElementById('load-more-media');
-            if (!loadMoreBtn) {
-                console.log('Creating new load more button...');
-                loadMoreBtn = document.createElement('button');
-                loadMoreBtn.id = 'load-more-media';
-                loadMoreBtn.className = 'btn btn-outline-primary';
-                loadMoreBtn.textContent = 'Tải thêm ảnh';
-                loadMoreBtn.style.display = 'inline-block';
-                loadMoreBtn.style.visibility = 'visible';
-                loadMoreBtn.style.opacity = '1';
-                loadMoreBtn.addEventListener('click', () => {
-                    console.log('Load more button clicked, page:', this.currentPage + 1);
+        if (this.hasMore) {
+            container.style.display = 'flex';
+            if (!document.getElementById('load-more-media')) {
+                container.innerHTML = '<button id="load-more-media" class="btn btn-outline-primary">Tải thêm ảnh</button>';
+                document.getElementById('load-more-media').addEventListener('click', () => {
                     this.currentPage++;
                     this.loadMedia(this.currentSearch, false);
                 });
-                loadMoreContainer.innerHTML = '';
-                loadMoreContainer.appendChild(loadMoreBtn);
-                console.log('✅ Load more button created and added to container');
-                console.log('Button element:', loadMoreBtn);
-                console.log('Container after append:', loadMoreContainer.innerHTML);
-            } else {
-                console.log('✅ Load more button already exists, updating...');
-                loadMoreBtn.disabled = false;
-                loadMoreBtn.textContent = 'Tải thêm ảnh';
-                loadMoreBtn.style.display = 'inline-block';
-                loadMoreBtn.style.visibility = 'visible';
-                loadMoreBtn.style.opacity = '1';
             }
-            console.log('Final container style:', {
-                display: loadMoreContainer.style.display,
-                visibility: loadMoreContainer.style.visibility,
-                computedDisplay: window.getComputedStyle(loadMoreContainer).display,
-                computedVisibility: window.getComputedStyle(loadMoreContainer).visibility
-            });
         } else {
-            console.log('❌ Hiding load more button');
-            console.log('Reason:', {
-                hasMore: this.hasMore,
-                hasMoreType: typeof this.hasMore,
-                itemsLength: this.mediaItems.length
-            });
-            loadMoreContainer.style.display = 'none';
-            loadMoreContainer.innerHTML = '';
+            container.style.display = 'none';
         }
-        console.log('=== END updateLoadMoreButton DEBUG ===');
     }
 
     toggleSelect(id) {
-        const item = this.mediaItems.find(m => m.id === id);
+        const item = this.mediaItems.find(m => String(m.id) === String(id));
         if (!item) return;
 
-        const index = this.selectedItems.findIndex(sel => sel.id === id);
+        const index = this.selectedItems.findIndex(sel => String(sel.id) === String(id));
         if (index >= 0) {
             this.selectedItems.splice(index, 1);
         } else {
-            if (this.insertMode === 'single') {
-                this.selectedItems = [item];
-            } else {
-                this.selectedItems.push(item);
-            }
+            if (this.insertMode === 'single') this.selectedItems = [item];
+            else this.selectedItems.push(item);
         }
 
-        this.updateSelection();
-        this.renderMedia();
+        this.syncSelectionDOM();
+        this.updateFooter();
     }
 
-    updateSelection() {
-        const count = this.selectedItems.length;
+    // TỐI ƯU: Chỉ cập nhật Class và Checkbox, không Render lại toàn bộ
+    syncSelectionDOM() {
+        const allItems = this.modal.querySelectorAll('.media-item');
+        allItems.forEach(el => {
+            const isSelected = this.selectedItems.some(sel => String(sel.id) === String(el.dataset.id));
+            el.classList.toggle('selected', isSelected);
+            const cb = el.querySelector('.media-item-checkbox');
+            if (cb) cb.checked = isSelected;
+        });
+    }
+
+    updateFooter() {
         const info = document.getElementById('selected-info');
         const countEl = document.getElementById('selected-count');
         const insertBtn = document.getElementById('insert-media');
+        const count = this.selectedItems.length;
 
-        if (count > 0) {
-            info.style.display = 'block';
-            countEl.textContent = count;
-            insertBtn.disabled = false;
-        } else {
-            info.style.display = 'none';
-            insertBtn.disabled = true;
-        }
+        if (info) info.style.display = count > 0 ? 'block' : 'none';
+        if (countEl) countEl.textContent = count;
+        if (insertBtn) insertBtn.disabled = count === 0;
     }
 
     async handleUpload(files) {
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
-        const allowedLabels = 'JPG, PNG, GIF, WEBP, AVIF';
-
         for (const file of files) {
-            if (!allowedTypes.includes(file.type)) {
-                alert(`❌ Định dạng không được hỗ trợ: "${file.name}"\nChỉ chấp nhận: ${allowedLabels}`);
-                continue;
-            }
-
-            if (file.size > 10 * 1024 * 1024) {
-                alert(`❌ File quá lớn: "${file.name}" (${(file.size / 1024 / 1024).toFixed(1)} MB)\nGiới hạn tối đa: 10 MB`);
-                continue;
-            }
-
             const formData = new FormData();
             formData.append('file', file);
             formData.append('context', this.context);
-
             try {
                 const response = await fetch(`${this.apiUrl}`, {
                     method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': this.csrfToken,
-                    },
-                    body: formData,
+                    headers: { 'X-CSRF-TOKEN': this.csrfToken },
+                    body: formData
                 });
-
-                // Đọc body text trước để tránh crash khi server trả HTML thay vì JSON
-                const bodyText = await response.text();
-                let data = null;
-                try {
-                    data = JSON.parse(bodyText);
-                } catch (parseErr) {
-                    // Server trả HTML (lỗi 500 Laravel) – log để debug
-                    console.error(`❌ Server error ${response.status} khi upload "${file.name}":`, bodyText.substring(0, 500));
-                    alert(`❌ Lỗi server (${response.status}) khi upload "${file.name}".\nVui lòng kiểm tra console để xem chi tiết lỗi.`);
-                    continue;
-                }
-
-                if (data && data.success) {
-                    // Reload media để có thứ tự đúng
-                    this.currentPage = 1;
+                const data = await response.json();
+                if (data.success) {
+                    this.cacheValid = false; // Đánh dấu cần tải lại sau khi upload
                     this.loadMedia(this.currentSearch, true);
                     this.switchTab('library');
-                } else {
-                    // Hiển thị lỗi validation rõ ràng nếu có
-                    let msg = '';
-                    if (data && data.errors) {
-                        msg = Object.values(data.errors).flat().join('\n');
-                    } else {
-                        msg = (data && data.message) || `Lỗi HTTP ${response.status}`;
-                    }
-                    alert(`❌ Không thể upload "${file.name}":\n${msg}`);
                 }
-            } catch (error) {
-                console.error('Upload network error:', error);
-                alert(`❌ Lỗi kết nối khi upload "${file.name}".\nVui lòng kiểm tra mạng và thử lại.`);
-            }
+            } catch (err) { console.error('Upload failed', err); }
         }
-
-        // Reset file input
-        document.getElementById('file-input').value = '';
     }
 
     searchMedia(query) {
-        this.currentPage = 1;
+        if (this.currentSearch === query) return;
+        this.currentSearch = query;
+        this.cacheValid = false;
         this.loadMedia(query, true);
     }
 
-    insertSelected() {
-        if (this.selectedItems.length === 0) return;
-
-        if (this.onInsert) {
-            if (this.insertMode === 'single') {
-                this.onInsert(this.selectedItems[0]);
-            } else {
-                this.onInsert(this.selectedItems);
-            }
-        }
-
-        this.close();
-    }
-
     open(options = {}) {
-        if (options.onInsert) {
-            this.onInsert = options.onInsert;
-        }
-        if (options.insertMode) {
-            this.insertMode = options.insertMode;
-        }
-        if (options.context) {
+        if (options.onInsert) this.onInsert = options.onInsert;
+        if (options.insertMode) this.insertMode = options.insertMode;
+        if (options.context && this.context !== options.context) {
             this.context = options.context;
+            this.cacheValid = false; // Context khác thì phải xóa cache
         }
 
-        this.selectedItems = [];
-        this.currentPage = 1;
-        this.currentSearch = '';
-        this.updateSelection();
-        this.switchTab('library');
         this.modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
-        this.loadMedia('', true);
+
+        // TỐI ƯU: Nếu đã có dữ liệu và cache còn hiệu lực, không load lại mạng
+        if (!this.cacheValid || this.mediaItems.length === 0) {
+            this.loadMedia('', true);
+        }
     }
 
     close() {
         this.modal.style.display = 'none';
         document.body.style.overflow = '';
-        this.selectedItems = [];
-        this.updateSelection();
+        this.closeDetailPanel();
     }
 
-    formatFileSize(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    // ===== DETAIL PANEL (CẬP NHẬT TRỰC TIẾP DOM) =====
+    openDetailPanel(item) {
+        this.currentDetailItem = item;
+        const panel = document.getElementById('media-detail-panel');
+        if (!panel) return;
+
+        const img = document.getElementById('detail-preview-img');
+        const meta = document.getElementById('detail-meta');
+        const title = document.getElementById('detail-title');
+        const alt = document.getElementById('detail-alt');
+
+        if (img) img.src = item.url;
+        if (title) title.value = item.title || '';
+        if (alt) alt.value = item.alt || '';
+        if (meta) {
+            const dim = item.dimensions ? `${item.dimensions.width} × ${item.dimensions.height} px` : '';
+            meta.innerHTML = `<strong>${this.escapeHtml(item.name)}</strong>${dim}<br>${this.formatFileSize(item.size)}`;
+        }
+
+        panel.style.display = 'flex';
+
+        if (!panel.dataset.initialized) {
+            document.getElementById('close-detail-panel')?.addEventListener('click', () => this.closeDetailPanel());
+            document.getElementById('save-detail')?.addEventListener('click', () => this.saveDetail());
+            document.getElementById('delete-detail')?.addEventListener('click', () => this.deleteDetail());
+            panel.dataset.initialized = 'true';
+        }
     }
 
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
+    closeDetailPanel() {
+        const panel = document.getElementById('media-detail-panel');
+        if (panel) panel.style.display = 'none';
+        this.currentDetailItem = null;
+    }
+
+    async saveDetail() {
+        if (!this.currentDetailItem) return;
+        const id = this.currentDetailItem.id;
+        const title = document.getElementById('detail-title').value;
+        const alt = document.getElementById('detail-alt').value;
+        const btn = document.getElementById('save-detail');
+
+        btn.disabled = true;
+        try {
+            const res = await fetch(`${this.apiUrl}/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': this.csrfToken },
+                body: JSON.stringify({ title, alt })
+            });
+            if ((await res.json()).success) {
+                // TỐI ƯU: Cập nhật dữ liệu bộ nhớ
+                const item = this.mediaItems.find(m => String(m.id) === String(id));
+                if (item) { item.title = title; item.alt = alt; }
+                
+                // TỐI ƯU: Cập nhật DOM trực tiếp không render lại grid
+                const itemEl = this.modal.querySelector(`.media-item[data-id="${id}"] .media-item-name`);
+                if (itemEl) itemEl.textContent = title || item.name;
+
+                const txt = document.getElementById('save-detail-text');
+                txt.textContent = 'Đã lưu!';
+                setTimeout(() => { txt.textContent = 'Lưu thay đổi'; btn.disabled = false; }, 1500);
+            }
+        } catch (e) { btn.disabled = false; }
+    }
+
+    async deleteDetail() {
+        if (!this.currentDetailItem || !confirm('Xóa vĩnh viễn tệp này?')) return;
+        const id = this.currentDetailItem.id;
+        try {
+            const res = await fetch(`${this.apiUrl}/${id}`, {
+                method: 'DELETE',
+                headers: { 'X-CSRF-TOKEN': this.csrfToken }
+            });
+            if ((await res.json()).success) {
+                this.closeDetailPanel();
+                // TỐI ƯU: Xóa khỏi bộ nhớ
+                this.mediaItems = this.mediaItems.filter(m => String(m.id) !== String(id));
+                this.selectedItems = this.selectedItems.filter(m => String(m.id) !== String(id));
+                // TỐI ƯU: Xóa trực tiếp khỏi DOM
+                this.modal.querySelector(`.media-item[data-id="${id}"]`)?.remove();
+                this.updateFooter();
+            }
+        } catch (e) {}
+    }
+
+    formatFileSize(b) {
+        if (!b) return '0 B';
+        const k = 1024, s = ['B', 'KB', 'MB', 'GB'], i = Math.floor(Math.log(b) / Math.log(k));
+        return parseFloat((b / Math.pow(k, i)).toFixed(1)) + ' ' + s[i];
+    }
+
+    escapeHtml(t) {
+        const d = document.createElement('div');
+        d.textContent = t;
+        return d.innerHTML;
     }
 }
 
-// Initialize global instance
+// Singleton auto-init
 if (typeof window !== 'undefined') {
-    console.log('=== MediaLibrary Script Loading ===');
-    window.MediaLibrary = MediaLibrary;
-    window.mediaLibrary = new MediaLibrary({
-        apiUrl: '/admin/media/library',
-    });
-    console.log('✅ MediaLibrary initialized:', window.mediaLibrary);
-    console.log('Modal element:', window.mediaLibrary.modal);
-    console.log('=== End MediaLibrary Script Loading ===');
+    window.mediaLibrary = new MediaLibrary();
 }

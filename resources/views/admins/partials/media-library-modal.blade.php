@@ -31,10 +31,43 @@
                     </div>
                 </div>
 
-                <div class="media-library-grid" id="media-grid">
-                    <div class="loading-spinner">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Đang tải...</span>
+                <div class="media-library-body">
+                    <div class="media-library-main">
+                        <div class="media-library-grid" id="media-grid">
+                            <div class="loading-spinner">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Đang tải...</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sidebar Chi tiết -->
+                    <div class="media-library-sidebar" id="media-detail-panel" style="display: none;">
+                        <div class="sidebar-header">
+                            <h6>CHI TIẾT TẬP TIN</h6>
+                            <button type="button" id="close-detail-panel" class="close-detail">&times;</button>
+                        </div>
+                        <div class="sidebar-content">
+                            <div class="detail-preview">
+                                <img id="detail-preview-img" src="" alt="">
+                            </div>
+                            <div id="detail-meta" class="detail-meta"></div>
+                            <hr>
+                            <div class="form-group mb-3">
+                                <label class="form-label small fw-bold">Tiêu đề (Title)</label>
+                                <input type="text" id="detail-title" class="form-control form-control-sm">
+                            </div>
+                            <div class="form-group mb-3">
+                                <label class="form-label small fw-bold">Văn bản thay thế (Alt)</label>
+                                <input type="text" id="detail-alt" class="form-control form-control-sm">
+                            </div>
+                            <div class="detail-actions">
+                                <button type="button" id="save-detail" class="btn btn-primary btn-sm w-100 mb-2">
+                                    <span id="save-detail-text">Lưu thay đổi</span>
+                                </button>
+                                <button type="button" id="delete-detail" class="btn btn-outline-danger btn-sm w-100">Xóa vĩnh viễn</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -156,12 +189,108 @@
     flex-direction: column;
 }
 
+.media-library-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    height: 100%;
+}
+
+.media-library-main {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    position: relative;
+}
+
+.media-library-sidebar {
+    width: 320px;
+    background: #f8f9fa;
+    border-left: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    animation: sidebarSlide 0.2s ease-out;
+    position: relative;
+    z-index: 100;
+}
+
+@keyframes sidebarSlide {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+.sidebar-header {
+    padding: 12px 15px;
+    border-bottom: 1px solid #dee2e6;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff;
+    position: sticky;
+    top: 0;
+    z-index: 105;
+}
+
+.sidebar-header h6 {
+    margin: 0;
+    font-size: 13px;
+    color: #495057;
+    text-transform: uppercase;
+    font-weight: 700;
+}
+
+.close-detail {
+    background: none;
+    border: none;
+    font-size: 20px;
+    line-height: 1;
+    color: #adb5bd;
+    cursor: pointer;
+}
+
+.sidebar-content {
+    padding: 15px;
+}
+
+.detail-preview {
+    margin-bottom: 15px;
+    background: #f0f0f0;
+    border-radius: 4px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    border: 1px solid #e9ecef;
+}
+
+.detail-preview img {
+    max-width: 100%;
+    max-height: 250px;
+    object-fit: contain;
+}
+
+.detail-meta {
+    font-size: 11px;
+    color: #6c757d;
+    line-height: 1.6;
+}
+
+.detail-meta strong {
+    display: block;
+    color: #212529;
+    margin-bottom: 4px;
+    word-break: break-all;
+    font-size: 13px;
+}
+
 .tab-content {
     display: none;
     flex: 1;
     overflow: hidden;
     flex-direction: column;
-    padding: 20px;
+    padding: 0;
 }
 
 .tab-content.active {
@@ -172,7 +301,9 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
+    padding: 10px 15px;
+    background: #fff;
+    border-bottom: 1px solid #e5e7eb;
     gap: 12px;
 }
 
@@ -207,16 +338,10 @@
 
 .media-library-grid {
     overflow-y: auto;
-    min-height: 400px;
+    padding: 15px;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 12px;
-}
-
-.media-library-grid.grid-view {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    gap: 12px;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 15px;
 }
 
 .media-library-grid.list-view {
@@ -225,19 +350,22 @@
     gap: 8px;
 }
 
-
 .media-item {
     position: relative;
     border: 2px solid transparent;
-    border-radius: 8px;
+    border-radius: 6px;
     cursor: pointer;
-    transition: all 0.2s;
-    background: #f9fafb;
+    transition: all 0.15s;
+    background: #fff;
+    aspect-ratio: 1;
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .media-item:hover {
     border-color: #2563eb;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
 }
 
 .media-item.selected {
@@ -245,25 +373,81 @@
     background: #eff6ff;
 }
 
+.media-item.selected::after {
+    content: "✓";
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: #2563eb;
+    color: #fff;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    z-index: 5;
+}
+
 .media-item img {
     width: 100%;
-    height: 150px;
+    height: 100%;
     object-fit: cover;
     display: block;
 }
 
+.media-item-name {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 5px 8px;
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    border-top: 1px solid #eee;
+}
+
+/* Tooltip Hint */
+.media-item::before {
+    content: "Click đúp để sửa";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.7);
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 10;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.media-item:hover::before {
+    opacity: 1;
+}
+
 .media-item.list-view {
+    aspect-ratio: auto;
     display: flex;
     align-items: center;
     gap: 12px;
     padding: 8px;
-    max-width: 100%;
 }
 
 .media-item.list-view img {
-    width: 80px;
-    height: 80px;
+    width: 60px;
+    height: 60px;
     flex-shrink: 0;
+    border-radius: 4px;
 }
 
 .media-item-info {
@@ -271,28 +455,11 @@
     min-width: 0;
 }
 
-.media-item-name {
-    font-weight: 500;
-    font-size: 14px;
-    color: #111827;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.media-item-meta {
-    font-size: 12px;
-    color: #6b7280;
-    margin-top: 4px;
-}
-
 .media-item-checkbox {
     position: absolute;
     top: 8px;
     left: 8px;
-    width: 20px;
-    height: 20px;
-    z-index: 10;
+    z-index: 11;
 }
 
 .upload-area {
@@ -302,20 +469,16 @@
     text-align: center;
     cursor: pointer;
     transition: all 0.2s;
-    min-height: 300px;
+    min-height: 400px;
     display: flex;
     align-items: center;
     justify-content: center;
+    margin: 20px;
 }
 
 .upload-area:hover {
     border-color: #2563eb;
     background: #f9fafb;
-}
-
-.upload-area.dragover {
-    border-color: #2563eb;
-    background: #eff6ff;
 }
 
 .upload-placeholder {
@@ -326,42 +489,21 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 20px;
+    padding: 12px 20px;
     border-top: 1px solid #e5e7eb;
-    background: #f9fafb;
-    flex-wrap: wrap;
+    background: #f8f9fa;
     gap: 12px;
 }
 
 .footer-actions {
     display: flex;
-    gap: 8px;
+    gap: 10px;
 }
 
 .load-more-container {
-    flex: 1;
-    display: flex !important;
+    display: flex;
     justify-content: center;
-    align-items: center;
-    min-width: 150px;
-    visibility: visible !important;
-    order: 2;
-    z-index: 10;
-}
-
-.load-more-container[style*="display: none"] {
-    display: none !important;
-}
-
-.load-more-container .btn {
-    min-width: 150px;
-    padding: 10px 24px;
-    font-weight: 500;
-    display: inline-block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    position: relative;
-    z-index: 11;
+    padding: 15px;
 }
 
 .loading-spinner {
@@ -369,6 +511,7 @@
     justify-content: center;
     align-items: center;
     padding: 40px;
+    width: 100%;
 }
 </style>
 @endpush

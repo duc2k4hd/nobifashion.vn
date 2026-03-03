@@ -252,9 +252,12 @@ class ProductService
             $imageId = Arr::get($imageData, 'id');
             $file = Arr::get($imageData, 'file');
             $path = Arr::get($imageData, 'existing_path', Arr::get($imageData, 'path'));
-            $filename = $path ? basename($path) : null;
+            
+            $relativeUrl = $path; // Giữ nguyên path tương đối nếu có
+            
             if ($file instanceof UploadedFile) {
                 $filename = $this->storeImageFile($file);
+                $relativeUrl = 'clients/assets/img/clothes/' . $filename;
             }
 
             $payload = [
@@ -264,12 +267,13 @@ class ProductService
                 'alt' => Arr::get($imageData, 'alt'),
                 'is_primary' => Arr::get($imageData, 'is_primary', false),
                 'order' => Arr::get($imageData, 'order', $order),
+                'path' => $relativeUrl,
+                'url' => $relativeUrl,
             ];
 
-            if ($filename) {
-                $payload['url'] = $filename;
-                $payload['thumbnail_url'] = $filename;
-                $payload['medium_url'] = $filename;
+            if ($relativeUrl) {
+                $payload['thumbnail_url'] = $relativeUrl;
+                $payload['medium_url'] = $relativeUrl;
             }
 
             if ($imageId) {

@@ -539,9 +539,13 @@ $tagNamesInput = old('tag_names', '');
                                     <label>File ảnh</label>
                                     <input type="file" name="images[{{ $index }}][file]" class="form-control image-file-input">
                                     @php
-                                        $storedName = $image['url'] ?? $image['filename'] ?? $image['thumbnail_url'] ?? null;
-                                        $storedUrl = $storedName ? (str_starts_with($storedName, 'http') ? $storedName : asset('clients/assets/img/clothes/' . ltrim($storedName, '/'))) : null;
-                                        $storedValue = $storedName ? basename($storedName) : null;
+                                        $storedUrl = $image['url'] ?? null;
+                                        // Nếu là dữ liệu cũ (chỉ có tên file), accessor của Model sẽ tự xử lý khi load từ DB.
+                                        // Nếu là old input, ta cần check xem nó có phải URL tuyệt đối không.
+                                        if ($storedUrl && !str_starts_with($storedUrl, 'http')) {
+                                            $storedUrl = asset($storedUrl);
+                                        }
+                                        $storedValue = $image['path'] ?? $image['url'] ?? null;
                                     @endphp
                                     <input type="hidden" id="image-path-{{ $index }}" name="images[{{ $index }}][existing_path]" value="{{ $storedValue }}">
                                     <div class="image-preview" id="image-preview-{{ $index }}">

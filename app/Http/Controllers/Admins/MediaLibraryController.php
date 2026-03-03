@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Admins;
 
 use App\Http\Controllers\Controller;
-use App\Models\MediaLibraryFile;
+use App\Models\Image;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
@@ -17,11 +17,11 @@ class MediaLibraryController extends Controller
     public function __construct()
     {
         $this->basePath = public_path('clients/assets/img');
-        $this->middleware(['auth:web', 'admin']);
+        $this->middleware(['admin']);
     }
 
     /**
-     * Lấy danh sách ảnh – query DB thay vì scan filesystem
+     * Lấy danh sách ảnh từ bảng images
      */
     public function index(Request $request)
     {
@@ -30,11 +30,15 @@ class MediaLibraryController extends Controller
         $perPage = min(200, max(1, (int) $request->input('per_page', 100)));
         $search  = trim((string) $request->input('search', ''));
 
-        $query = MediaLibraryFile::forContext($context)
+        // Query từ bảng images
+        $query = Image::forContext($context)
             ->orderByDesc('created_at');
 
         if ($search !== '') {
-            $query->where('name', 'like', '%' . $search . '%');
+            $query->where(function($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                  ->orWhere('title', 'like', '%' . $search . '%');
+            });
         }
 
         $total   = $query->count();
@@ -44,7 +48,9 @@ class MediaLibraryController extends Controller
 
         $data = $files->map(fn ($f) => [
             'id'         => (string) $f->id,
-            'name'       => $f->name,
+            'name'       => $f->name ?? basename($f->path),
+            'title'      => $f->title,
+            'alt'        => $f->alt,
             'url'        => $f->url,
             'path'       => $f->path,
             'size'       => $f->size,
@@ -65,7 +71,7 @@ class MediaLibraryController extends Controller
     }
 
     /**
-     * Upload ảnh mới và lưu metadata vào DB
+     * Upload ảnh mới vào bảng images (product_id = null)
      */
     public function store(Request $request)
     {
@@ -83,7 +89,6 @@ class MediaLibraryController extends Controller
             $extension    = strtolower($file->getClientOriginalExtension());
             $fileName     = Str::slug(pathinfo($originalName, PATHINFO_FILENAME)) . '-' . time() . '.' . $extension;
 
-            // Dùng DIRECTORY_SEPARATOR để tránh mixed-slash trên Windows
             $uploadPath = str_replace('/', DIRECTORY_SEPARATOR, $this->basePath . '/' . $folder);
 
             if (!is_dir($uploadPath)) {
@@ -93,35 +98,33 @@ class MediaLibraryController extends Controller
             $fullPath = $uploadPath . DIRECTORY_SEPARATOR . $fileName;
             $relative = 'clients/assets/img/' . $folder . '/' . $fileName;
 
-            // PHP native: không kiểm tra is_writable() như Symfony, hoạt động tốt trên Windows
             $tmpPath = $file->getRealPath();
             if (!rename($tmpPath, $fullPath)) {
-                // Fallback: copy rồi xóa file tạm
                 if (!copy($tmpPath, $fullPath)) {
                     throw new \RuntimeException("Không thể lưu file vào: $fullPath");
                 }
                 @unlink($tmpPath);
             }
 
-            // Mime type
             try {
                 $mimeType = mime_content_type($fullPath);
             } catch (\Throwable) {
                 $mimeType = 'application/octet-stream';
             }
 
-            // Dimensions (bỏ qua avif vì getimagesize() không hỗ trợ)
             $dimensions = null;
-            if ($extension !== 'avif') {
+            if ($extension !== 'avif' && $extension !== 'svg') {
                 $info = @getimagesize($fullPath);
                 if ($info) {
                     $dimensions = ['width' => $info[0], 'height' => $info[1]];
                 }
             }
 
-            // Lưu vào DB
-            $record = MediaLibraryFile::create([
-                'name'             => $fileName,
+            // Lưu trực tiếp vào bảng images, product_id để null
+            $record = Image::create([
+                'product_id'       => null, 
+                'title'            => $originalName,
+                'alt'              => $originalName,
                 'path'             => $relative,
                 'url'              => asset($relative),
                 'extension'        => $extension,
@@ -137,7 +140,9 @@ class MediaLibraryController extends Controller
                 'success' => true,
                 'data'    => [
                     'id'         => (string) $record->id,
-                    'name'       => $record->name,
+                    'name'       => $fileName,
+                    'title'      => $record->title,
+                    'alt'        => $record->alt,
                     'url'        => $record->url,
                     'path'       => $record->path,
                     'size'       => $record->size,
@@ -170,28 +175,79 @@ class MediaLibraryController extends Controller
 
 
     /**
-     * Xóa ảnh
+     * Xóa ảnh khỏi bảng images và ổ cứng
      */
     public function destroy(Request $request, $id)
     {
-        $path = $request->input('path');
-        if (!$path) {
-            return response()->json(['success' => false, 'message' => 'Path không được để trống'], 400);
+        $image = Image::find($id);
+        
+        if (!$image) {
+            // Fallback tìm theo path nếu không có ID
+            $path = $request->input('path');
+            if ($path) {
+                $image = Image::where('path', $path)->first();
+            }
         }
 
-        $fullPath = public_path($path);
+        if (!$image) {
+            return response()->json(['success' => false, 'message' => 'Không tìm thấy ảnh'], 404);
+        }
+
+        $fullPath = public_path($image->path);
         if (File::exists($fullPath)) {
             File::delete($fullPath);
         }
 
-        // Xóa record trong DB theo path
-        MediaLibraryFile::where('path', $path)->delete();
+        $image->delete();
 
         return response()->json(['success' => true, 'message' => 'Đã xóa ảnh thành công']);
     }
 
+    /**
+     * Cập nhật tiêu đề và văn bản thay thế
+     */
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'title' => 'nullable|string|max:255',
+            'alt'   => 'nullable|string|max:255',
+        ]);
+
+        $image = Image::find($id);
+        if (!$image) {
+            return response()->json(['success' => false, 'message' => 'Không tìm thấy ảnh'], 404);
+        }
+
+        $image->update([
+            'title' => $request->input('title'),
+            'alt'   => $request->input('alt'),
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật thông tin ảnh thành công'
+        ]);
+    }
+
     public function show($id)
     {
-        return response()->json(['success' => false, 'message' => 'Not implemented']);
+        $image = Image::find($id);
+        if (!$image) {
+            return response()->json(['success' => false, 'message' => 'Không tìm thấy ảnh'], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'data'    => [
+                'id'         => (string) $image->id,
+                'title'      => $image->title,
+                'alt'        => $image->alt,
+                'url'        => $image->url,
+                'path'       => $image->path,
+                'size'       => $image->size,
+                'dimensions' => $image->dimensions,
+                'product_id' => $image->product_id,
+            ]
+        ]);
     }
 }
