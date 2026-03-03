@@ -204,6 +204,36 @@ class MediaLibraryController extends Controller
     }
 
     /**
+     * Xóa hàng loạt ảnh khỏi bảng images và ổ cứng
+     */
+    public function bulkDelete(Request $request)
+    {
+        $ids = $request->input('ids', []);
+        
+        if (empty($ids) || !is_array($ids)) {
+            return response()->json(['success' => false, 'message' => 'Danh sách ID không hợp lệ'], 400);
+        }
+
+        $images = Image::whereIn('id', $ids)->get();
+        $count = 0;
+
+        foreach ($images as $image) {
+            $fullPath = public_path($image->path);
+            if (File::exists($fullPath)) {
+                File::delete($fullPath);
+            }
+            $image->delete();
+            $count++;
+        }
+
+        return response()->json([
+            'success' => true, 
+            'message' => "Đã xóa thành công {$count} ảnh",
+            'deleted_count' => $count
+        ]);
+    }
+
+    /**
      * Cập nhật tiêu đề và văn bản thay thế
      */
     public function update(Request $request, $id)

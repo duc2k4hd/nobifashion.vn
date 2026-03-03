@@ -93,9 +93,15 @@
         <div class="media-library-footer">
             <div class="selected-info" id="selected-info" style="display: none;">
                 <span id="selected-count">0</span> ảnh đã chọn
+                <button type="button" class="btn btn-outline-danger btn-sm ml-3" id="delete-bulk-media" style="margin-left: 15px; display: none;" onclick="window.mediaLibrary.deleteBulk()">
+                    <i class="fas fa-trash-alt"></i> Xóa các tệp này
+                </button>
             </div>
             <div id="load-more-container" class="load-more-container" style="display: none;"></div>
             <div class="footer-actions">
+                <button type="button" class="btn btn-outline-secondary btn-sm" onclick="window.mediaLibrary.loadMedia('', true)" style="margin-right: auto;">
+                    <i class="fas fa-sync-alt"></i> Làm mới
+                </button>
                 <button class="btn btn-secondary" id="cancel-media-library">Hủy</button>
                 <button class="btn btn-primary" id="insert-media" disabled>Chèn vào editor</button>
             </div>

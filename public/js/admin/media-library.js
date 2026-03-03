@@ -86,6 +86,19 @@ class MediaLibrary {
                 if (mediaItem) this.openDetailPanel(mediaItem);
             });
         }
+
+        // Shortcut Ctrl + A
+        window.addEventListener('keydown', (e) => {
+            if (this.modal && this.modal.style.display === 'flex') {
+                if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+                    // Chỉ thực hiện nếu đang ở tab library
+                    if (this.currentTab === 'library') {
+                        e.preventDefault();
+                        this.selectAll();
+                    }
+                }
+            }
+        });
     }
 
     switchTab(tab) {
@@ -233,6 +246,21 @@ class MediaLibrary {
         this.updateFooter();
     }
 
+    selectAll() {
+        if (this.mediaItems.length === 0) return;
+        
+        // Nếu đã chọn tất cả rồi thì bỏ chọn tất cả (toggle behavior)
+        if (this.selectedItems.length === this.mediaItems.length) {
+            this.selectedItems = [];
+        } else {
+            this.selectedItems = [...this.mediaItems];
+        }
+        
+        this.syncSelectionDOM();
+        this.updateFooter();
+        console.log(`Selected ${this.selectedItems.length} items`);
+    }
+
     // TỐI ƯU: Chỉ cập nhật Class và Checkbox, không Render lại toàn bộ
     syncSelectionDOM() {
         const allItems = this.modal.querySelectorAll('.media-item');
@@ -248,11 +276,13 @@ class MediaLibrary {
         const info = document.getElementById('selected-info');
         const countEl = document.getElementById('selected-count');
         const insertBtn = document.getElementById('insert-media');
+        const deleteBulkBtn = document.getElementById('delete-bulk-media');
         const count = this.selectedItems.length;
 
-        if (info) info.style.display = count > 0 ? 'block' : 'none';
+        if (info) info.style.display = count > 0 ? 'inline-block' : 'none';
         if (countEl) countEl.textContent = count;
         if (insertBtn) insertBtn.disabled = count === 0;
+        if (deleteBulkBtn) deleteBulkBtn.style.display = count > 0 ? 'inline-block' : 'none';
     }
 
     async handleUpload(files) {
@@ -389,6 +419,51 @@ class MediaLibrary {
                 this.updateFooter();
             }
         } catch (e) {}
+    }
+
+    async deleteBulk() {
+        const count = this.selectedItems.length;
+        if (count === 0 || !confirm(`Bạn có chắc muốn xóa vĩnh viễn ${count} tệp đã chọn?`)) return;
+
+        const ids = this.selectedItems.map(item => item.id);
+        const btn = document.getElementById('delete-bulk-media');
+        if (btn) btn.disabled = true;
+
+        try {
+            const response = await fetch(`${this.apiUrl}/bulk-delete`, {
+                method: 'DELETE',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': this.csrfToken 
+                },
+                body: JSON.stringify({ ids })
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                // Xóa khỏi bộ nhớ
+                const deletedIds = ids.map(id => String(id));
+                this.mediaItems = this.mediaItems.filter(m => !deletedIds.includes(String(m.id)));
+                this.selectedItems = [];
+
+                // Xóa khỏi DOM
+                deletedIds.forEach(id => {
+                    this.modal.querySelector(`.media-item[data-id="${id}"]`)?.remove();
+                });
+
+                this.updateFooter();
+                if (this.mediaItems.length === 0 && this.hasMore) {
+                    this.loadMedia(this.currentSearch, true);
+                }
+            } else {
+                alert(data.message || 'Lỗi khi xóa hàng loạt');
+            }
+        } catch (error) {
+            console.error('Bulk delete error:', error);
+            alert('Lỗi kết nối khi xóa hàng loạt');
+        } finally {
+            if (btn) btn.disabled = false;
+        }
     }
 
     formatFileSize(b) {
