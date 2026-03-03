@@ -15,34 +15,11 @@ use Illuminate\Support\Facades\URL;
 
 class SitemapService
 {
-    protected ?array $excludes = null;
+    protected array $excludes = [];
 
     public function __construct()
     {
-        // Lazy load excludes để tránh lỗi khi chạy artisan command
-        // $this->excludes = $this->loadExcludes();
-    }
-    
-    /**
-     * Lazy load excludes
-     */
-    protected function getExcludes(): array
-    {
-        if ($this->excludes === null) {
-            try {
-                $this->excludes = $this->loadExcludes();
-            } catch (\Throwable $e) {
-                // Nếu database chưa sẵn sàng, trả về mảng rỗng
-                $this->excludes = [
-                    'url' => [],
-                    'pattern' => [],
-                    'post_id' => [],
-                    'product_id' => [],
-                    'category_id' => [],
-                ];
-            }
-        }
-        return $this->excludes;
+        $this->excludes = $this->loadExcludes();
     }
 
     /**
@@ -726,18 +703,16 @@ class SitemapService
 
     protected function isExcludedId(string $type, int $id): bool
     {
-        $excludes = $this->getExcludes();
-        return in_array($id, $excludes[$type] ?? [], true);
+        return in_array($id, $this->excludes[$type] ?? [], true);
     }
 
     protected function isUrlExcluded(string $url): bool
     {
-        $excludes = $this->getExcludes();
-        if (in_array($url, $excludes['url'] ?? [], true)) {
+        if (in_array($url, $this->excludes['url'] ?? [], true)) {
             return true;
         }
 
-        foreach ($excludes['pattern'] ?? [] as $pattern) {
+        foreach ($this->excludes['pattern'] ?? [] as $pattern) {
             if ($this->matchesPattern($pattern, $url)) {
                 return true;
             }

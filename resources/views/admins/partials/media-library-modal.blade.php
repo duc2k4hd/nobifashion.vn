@@ -50,9 +50,9 @@
                             <line x1="12" y1="3" x2="12" y2="15"></line>
                         </svg>
                         <p class="mt-3 mb-0">Kéo thả ảnh vào đây hoặc click để chọn</p>
-                        <small class="text-muted">Hỗ trợ: JPG, PNG, GIF, WEBP (tối đa 10MB)</small>
+                        <small class="text-muted">Hỗ trợ: JPG, PNG, GIF, WEBP, AVIF (tối đa 5MB)</small>
                     </div>
-                    <input type="file" id="file-input" multiple accept="image/*" style="display: none;">
+                    <input type="file" id="file-input" multiple accept="image/jpeg,image/png,image/gif,image/webp,image/avif" style="display: none;">
                 </div>
             </div>
         </div>

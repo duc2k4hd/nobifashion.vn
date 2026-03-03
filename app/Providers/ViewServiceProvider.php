@@ -36,15 +36,15 @@ class ViewServiceProvider extends ServiceProvider
 
         // --- SETTINGS ---
         try {
-        if (Schema::hasTable('settings')) {
-            $settings = Cache::rememberForever('settings', function () {
-                return Setting::active()
-                    ->get() // ❗ quan trọng
-                    ->mapWithKeys(fn($s) => [$s->key => $s->getParsedValue()])
-                    ->toArray();
-            });
+            if (Schema::hasTable('settings')) {
+                $settings = Cache::rememberForever('settings', function () {
+                    return Setting::active()
+                        ->get() // ❗ quan trọng
+                        ->mapWithKeys(fn($s) => [$s->key => $s->getParsedValue()])
+                        ->toArray();
+                });
 
-            View::share('settings', (object) $settings);
+                View::share('settings', (object) $settings);
             }
         } catch (\Throwable $e) {
             // Bỏ qua lỗi khi database chưa sẵn sàng
@@ -52,7 +52,7 @@ class ViewServiceProvider extends ServiceProvider
 
         // --- CATEGORIES ---
         try {
-        if (Schema::hasTable('categories')) {
+            if (Schema::hasTable('categories')) {
             // Load categories với children và grandchildren (nested eager loading)
             $categories = Category::query()
                 ->where('is_active', true)
@@ -75,7 +75,7 @@ class ViewServiceProvider extends ServiceProvider
                 ])
                 ->get();
 
-            View::share('categories', $categories);
+                View::share('categories', $categories);
             }
         } catch (\Throwable $e) {
             // Bỏ qua lỗi khi database chưa sẵn sàng
@@ -84,13 +84,13 @@ class ViewServiceProvider extends ServiceProvider
         // --- ACCOUNT + CART (Global composer) ---
         // Chỉ đăng ký View composer khi không chạy trong console
         if (!app()->runningInConsole()) {
-        View::composer('*', function ($view) {
-            static $sharedPayload = null;
+            View::composer('*', function ($view) {
+                static $sharedPayload = null;
 
-            if ($sharedPayload === null) {
-                try {
-                    $account = auth('web')->user() ?? null;
-                    $sessionId = session()->getId();
+                if ($sharedPayload === null) {
+                    try {
+                        $account = auth('web')->user() ?? null;
+                        $sessionId = session()->getId();
 
                     $cartQuery = Cart::query()->active()->with(['items' => function ($q) {
                         $q->where(function ($q2) {
@@ -160,10 +160,10 @@ class ViewServiceProvider extends ServiceProvider
                 }
             }
 
-            foreach ($sharedPayload as $key => $value) {
-                $view->with($key, $value);
-            }
-        });
+                foreach ($sharedPayload as $key => $value) {
+                    $view->with($key, $value);
+                }
+            });
         }
     }
 }

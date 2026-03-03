@@ -46,15 +46,15 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         try {
-        Schema::defaultStringLength(191);
+            Schema::defaultStringLength(191);
         } catch (\Throwable $e) {
             // Bỏ qua lỗi khi database chưa sẵn sàng
         }
         
         try {
-        Gate::policy(Account::class, AccountPolicy::class);
-        Gate::policy(Address::class, AddressPolicy::class);
-        Gate::policy(Tag::class, TagPolicy::class);
+            Gate::policy(Account::class, AccountPolicy::class);
+            Gate::policy(Address::class, AddressPolicy::class);
+            Gate::policy(Tag::class, TagPolicy::class);
         } catch (\Throwable $e) {
             // Bỏ qua lỗi khi container chưa sẵn sàng
         }
@@ -64,13 +64,13 @@ class AppServiceProvider extends ServiceProvider
         try {
             $isConsole = $this->app && method_exists($this->app, 'runningInConsole') && $this->app->runningInConsole();
             if (!$isConsole) {
-        Contact::observe(ContactObserver::class);
-        Order::observe(OrderObserver::class);
-        Post::observe(PostObserver::class);
-        Product::observe(ProductObserver::class);
-        Category::observe(CategoryObserver::class);
-        Tag::observe(TagObserver::class);
-        Voucher::observe(VoucherObserver::class);
+                Contact::observe(ContactObserver::class);
+                Order::observe(OrderObserver::class);
+                Post::observe(PostObserver::class);
+                Product::observe(ProductObserver::class);
+                Category::observe(CategoryObserver::class);
+                Tag::observe(TagObserver::class);
+                Voucher::observe(VoucherObserver::class);
             }
         } catch (\Throwable $e) {
             // Bỏ qua lỗi khi container chưa sẵn sàng hoặc đang chạy trong console

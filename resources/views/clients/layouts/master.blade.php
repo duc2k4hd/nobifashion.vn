@@ -18,7 +18,7 @@
 </head>
 
 <body>
-    {{-- {!! $settings['google_tag_body'] !!} --}}
+    {!! $settings->google_tag_body !!}
     <div class="nobifashion">
         @include('clients.pages.loading.index')
         @include('clients.templates.header')

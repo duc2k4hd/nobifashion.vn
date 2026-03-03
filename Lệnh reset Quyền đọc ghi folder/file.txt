@@ -1,0 +1,1 @@
+icacls "E:\Project\Laravel\nobifashion.vn\public\clients\assets\img\clothes" /reset /T

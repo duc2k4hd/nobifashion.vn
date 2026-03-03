@@ -366,7 +366,10 @@
                 const form = textarea.closest('form');
                 if (form) {
                     form.addEventListener('submit', () => {
-                        textarea.value = editor.getData();
+                        // Đảm bảo lưu HTML, không phải Markdown
+                        const htmlContent = editor.getData();
+                        textarea.value = htmlContent;
+                        console.log('Saving HTML content:', htmlContent.substring(0, 100));
                     });
                 }
 
@@ -416,7 +419,10 @@
                     const form = textarea.closest('form');
                     if (form) {
                         form.addEventListener('submit', () => {
-                            textarea.value = editor.getData();
+                            // Đảm bảo lưu HTML, không phải Markdown
+                            const htmlContent = editor.getData();
+                            textarea.value = htmlContent;
+                            console.log('Saving HTML content for:', editorId, htmlContent.substring(0, 100));
                         });
                     }
 
@@ -435,7 +441,11 @@
         },
         getContent: function(editorId) {
             const editor = this.get(editorId);
-            return editor ? editor.getData() : '';
+            if (!editor) return '';
+            // Đảm bảo trả về HTML, không phải Markdown
+            const htmlContent = editor.getData();
+            console.log('Getting HTML content for:', editorId, htmlContent.substring(0, 100));
+            return htmlContent;
         },
         setContent: function(editorId, content) {
             const editor = this.get(editorId);

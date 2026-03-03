@@ -413,11 +413,17 @@ class MediaLibrary {
     }
 
     async handleUpload(files) {
-        const uploadArea = document.getElementById('upload-area');
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
+        const allowedLabels = 'JPG, PNG, GIF, WEBP, AVIF';
 
         for (const file of files) {
-            if (!file.type.startsWith('image/')) {
-                alert(`${file.name} không phải là file ảnh`);
+            if (!allowedTypes.includes(file.type)) {
+                alert(`❌ Định dạng không được hỗ trợ: "${file.name}"\nChỉ chấp nhận: ${allowedLabels}`);
+                continue;
+            }
+
+            if (file.size > 10 * 1024 * 1024) {
+                alert(`❌ File quá lớn: "${file.name}" (${(file.size / 1024 / 1024).toFixed(1)} MB)\nGiới hạn tối đa: 10 MB`);
                 continue;
             }
 
@@ -434,18 +440,36 @@ class MediaLibrary {
                     body: formData,
                 });
 
-                const data = await response.json();
-                if (data.success) {
+                // Đọc body text trước để tránh crash khi server trả HTML thay vì JSON
+                const bodyText = await response.text();
+                let data = null;
+                try {
+                    data = JSON.parse(bodyText);
+                } catch (parseErr) {
+                    // Server trả HTML (lỗi 500 Laravel) – log để debug
+                    console.error(`❌ Server error ${response.status} khi upload "${file.name}":`, bodyText.substring(0, 500));
+                    alert(`❌ Lỗi server (${response.status}) khi upload "${file.name}".\nVui lòng kiểm tra console để xem chi tiết lỗi.`);
+                    continue;
+                }
+
+                if (data && data.success) {
                     // Reload media để có thứ tự đúng
                     this.currentPage = 1;
                     this.loadMedia(this.currentSearch, true);
                     this.switchTab('library');
                 } else {
-                    alert(`Lỗi khi upload ${file.name}: ${data.message || 'Unknown error'}`);
+                    // Hiển thị lỗi validation rõ ràng nếu có
+                    let msg = '';
+                    if (data && data.errors) {
+                        msg = Object.values(data.errors).flat().join('\n');
+                    } else {
+                        msg = (data && data.message) || `Lỗi HTTP ${response.status}`;
+                    }
+                    alert(`❌ Không thể upload "${file.name}":\n${msg}`);
                 }
             } catch (error) {
-                console.error('Upload error:', error);
-                alert(`Lỗi khi upload ${file.name}`);
+                console.error('Upload network error:', error);
+                alert(`❌ Lỗi kết nối khi upload "${file.name}".\nVui lòng kiểm tra mạng và thử lại.`);
             }
         }
 

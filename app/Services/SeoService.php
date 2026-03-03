@@ -131,7 +131,8 @@ class SeoService
 
     protected function slugExists(string $slug, ?int $ignoreId = null): bool
     {
-        return Cache::remember("posts:slug-check:{$slug}:{$ignoreId}", 60, function () use ($slug, $ignoreId) {
+        $slugHash = md5($slug);
+        return Cache::remember("posts:slug-check:{$slugHash}:{$ignoreId}", 60, function () use ($slug, $ignoreId) {
             $query = Post::withTrashed()->where('slug', $slug);
 
             if ($ignoreId) {

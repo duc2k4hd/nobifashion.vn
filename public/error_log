@@ -1,0 +1,2 @@
+[31-Jan-2026 11:29:44 Asia/Ho_Chi_Minh] PHP Fatal error:  Cannot declare class App\Providers\AppServiceProvider, because the name is already in use in /home/duljqgdz/nobifashion.vn/app/Providers/ViewServiceProvider.php on line 29
+[31-Jan-2026 11:34:01 Asia/Ho_Chi_Minh] PHP Fatal error:  Cannot declare class App\Providers\AppServiceProvider, because the name is already in use in /home/duljqgdz/nobifashion.vn/app/Providers/ViewServiceProvider.php on line 29

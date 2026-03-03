@@ -33,7 +33,7 @@ class PostController extends Controller
     public function index(Request $request): View
     {
         $query = Post::query()
-            ->with(['author', 'category'])
+            ->with(['author.profile', 'category'])
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))
             ->when($request->filled('category_id'), fn ($q) => $q->where('category_id', $request->integer('category_id')))
             ->when($request->filled('author_id'), fn ($q) => $q->where('created_by', $request->integer('author_id')))
@@ -110,7 +110,7 @@ class PostController extends Controller
     {
         $post->load([
             'revisions' => fn ($q) => $q->latest()->limit(10),
-            'author',
+            'author.profile',
             'category',
         ]);
 

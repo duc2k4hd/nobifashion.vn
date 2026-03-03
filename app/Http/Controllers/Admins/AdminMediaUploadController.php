@@ -42,7 +42,7 @@ class AdminMediaUploadController extends Controller
             'description' => 'nullable|string|max:1000',
             'is_primary' => 'nullable|boolean',
             'files' => 'required|array|min:1',
-            'files.*' => 'file|mimes:jpg,jpeg,png,webp,gif|max:5120',
+            'files.*' => 'file|mimes:jpg,jpeg,png,webp,gif,avif|max:5120',
         ]);
 
         $results = [];

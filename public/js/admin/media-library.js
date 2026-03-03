@@ -23,30 +23,17 @@ class MediaLibrary {
     }
 
     init() {
-        console.log('MediaLibrary.init() called');
-        console.log('Looking for modal element with id: media-library-modal');
         this.modal = document.getElementById('media-library-modal');
-        
         if (!this.modal) {
-            console.error('❌ Modal element not found! Make sure media-library-modal is included in the page.');
-            console.log('Available elements with "media" in id:', 
-                Array.from(document.querySelectorAll('[id*="media"]')).map(el => el.id));
+            console.error('MediaLibrary: modal #media-library-modal not found');
             return;
         }
 
-        console.log('✅ Modal element found:', this.modal);
-
-        // 初始化grid view
         const grid = document.getElementById('media-grid');
-        if (grid) {
-            grid.className = `media-library-grid ${this.currentView}-view`;
-            console.log('✅ Grid element found and initialized');
-        } else {
-            console.warn('⚠️ Grid element not found');
-        }
+        if (grid) grid.className = `media-library-grid ${this.currentView}-view`;
 
         this.setupEventListeners();
-        console.log('✅ MediaLibrary initialization complete');
+        console.log('>>> Media Library Active v2.1 <<<');
     }
 
     setupEventListeners() {
@@ -99,16 +86,33 @@ class MediaLibrary {
         });
 
         // Insert button
-        document.getElementById('insert-media')?.addEventListener('click', () => {
-            this.insertSelected();
-        });
+        document.getElementById('insert-media')?.addEventListener('click', () => this.insertSelected());
 
         // Escape key to close
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this.modal.style.display !== 'none') {
-                this.close();
-            }
+            if (e.key === 'Escape' && this.modal.style.display !== 'none') this.close();
         });
+
+        // ===== Grid event delegation (tồn tại vĩnh viễn dù innerHTML reset) =====
+        const grid = document.getElementById('media-grid');
+        if (grid) {
+            grid.addEventListener('click', (e) => {
+                if (e.target.type === 'checkbox') return;
+                const item = e.target.closest('.media-item');
+                if (item) this.toggleSelect(item.dataset.id);
+            });
+
+            grid.addEventListener('dblclick', (e) => {
+                e.preventDefault();
+                if (e.target.type === 'checkbox') return;
+                const item = e.target.closest('.media-item');
+                if (!item) return;
+                const id   = item.dataset.id;
+                const data = this.mediaItems.find(m => String(m.id) === String(id));
+                console.log('🖱️ dblclick id:', id, '| found:', !!data);
+                if (data) this.openDetailPanel(data);
+            });
+        }
     }
 
     switchTab(tab) {
@@ -182,35 +186,16 @@ class MediaLibrary {
             const response = await fetch(url);
             const data = await response.json();
 
-            console.log('=== MEDIA LIBRARY DEBUG ===');
-            console.log('API Response:', data);
-            console.log('URL:', url.toString());
-
             if (data.success) {
                 if (reset) {
                     this.mediaItems = data.data || [];
                 } else {
-                    // Append new items
                     this.mediaItems = [...this.mediaItems, ...(data.data || [])];
                 }
-                
-                // 确保正确设置 hasMore
-                this.hasMore = Boolean(data.has_more === true || data.has_more === 1 || data.has_more === 'true' || data.has_more === '1');
-                console.log('Media loaded:', {
-                    total: data.total,
-                    page: data.page,
-                    per_page: data.per_page,
-                    has_more_raw: data.has_more,
-                    has_more_type: typeof data.has_more,
-                    has_more_bool: this.hasMore,
-                    itemsCount: this.mediaItems.length,
-                    debug: data.debug || {}
-                });
+
+                this.hasMore = data.has_more === true || data.has_more === 1;
                 this.renderMedia();
-                // 延迟一点确保DOM更新完成
-                setTimeout(() => {
-                    this.updateLoadMoreButton();
-                }, 100);
+                setTimeout(() => this.updateLoadMoreButton(), 100);
             } else {
                 if (reset) {
                     grid.innerHTML = '<div class="text-center text-muted p-4">Không tải được ảnh</div>';
@@ -247,9 +232,9 @@ class MediaLibrary {
                     <div class="media-item list-view ${isSelected ? 'selected' : ''}" data-id="${item.id}">
                         <input type="checkbox" class="media-item-checkbox" ${isSelected ? 'checked' : ''} 
                                onchange="window.mediaLibrary.toggleSelect('${item.id}')">
-                        <img src="${item.url}" alt="${item.name}" loading="lazy">
+                        <img src="${item.url}" alt="${item.alt || item.name}" loading="lazy">
                         <div class="media-item-info">
-                            <div class="media-item-name">${this.escapeHtml(item.name)}</div>
+                            <div class="media-item-name">${this.escapeHtml(item.title || item.name)}</div>
                             <div class="media-item-meta">${dimensions} • ${size}</div>
                         </div>
                     </div>
@@ -259,123 +244,54 @@ class MediaLibrary {
                     <div class="media-item ${isSelected ? 'selected' : ''}" data-id="${item.id}">
                         <input type="checkbox" class="media-item-checkbox" ${isSelected ? 'checked' : ''} 
                                onchange="window.mediaLibrary.toggleSelect('${item.id}')">
-                        <img src="${item.url}" alt="${item.name}" loading="lazy">
+                        <img src="${item.url}" alt="${item.alt || item.name}" loading="lazy">
                         <div class="media-item-name" style="padding: 8px; font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                            ${this.escapeHtml(item.name)}
+                            ${this.escapeHtml(item.title || item.name)}
                         </div>
+                        <div class="media-item-dblclick-hint">Click 2 lần để sửa</div>
                     </div>
                 `;
             }
         }).join('');
 
         grid.innerHTML = itemsHtml;
-
-        // Add click handler for media items
-        grid.querySelectorAll('.media-item').forEach(item => {
-            item.addEventListener('click', (e) => {
-                if (e.target.type !== 'checkbox') {
-                    const id = item.dataset.id;
-                    this.toggleSelect(id);
-                }
-            });
-        });
-
+        // Không cần gắn per-item listeners — click/dblclick dùng event delegation tại setupEventListeners()
         this.updateLoadMoreButton();
     }
 
     updateLoadMoreButton() {
-        console.log('=== updateLoadMoreButton DEBUG ===');
         const loadMoreContainer = document.getElementById('load-more-container');
-        if (!loadMoreContainer) {
-            console.error('❌ load-more-container not found in DOM!');
-            console.log('Searching for element...');
-            const allContainers = document.querySelectorAll('[id*="load"]');
-            console.log('Found elements with "load" in id:', allContainers);
-            return;
-        }
+        if (!loadMoreContainer) return;
 
-        console.log('✅ load-more-container found:', loadMoreContainer);
-        console.log('Current container style:', {
-            display: loadMoreContainer.style.display,
-            visibility: loadMoreContainer.style.visibility,
-            innerHTML: loadMoreContainer.innerHTML
-        });
-
-        // 只要hasMore为true就显示按钮
-        console.log('Button state check:', {
-            hasMore: this.hasMore,
-            hasMoreType: typeof this.hasMore,
-            hasMoreStrict: this.hasMore === true,
-            mediaItemsLength: this.mediaItems.length,
-            currentPage: this.currentPage,
-            shouldShow: this.hasMore === true && this.mediaItems.length > 0
-        });
-        
-        // 只在hasMore为true时显示按钮
         const shouldShow = this.hasMore === true && this.mediaItems.length > 0;
-        
-        console.log('shouldShow calculation:', {
-            hasMore: this.hasMore,
-            hasMoreStrict: this.hasMore === true,
-            itemsLength: this.mediaItems.length,
-            shouldShow: shouldShow
-        });
-        
+
         if (shouldShow) {
-            console.log('✅ Showing load more button');
-            // 强制移除所有可能隐藏的样式
             loadMoreContainer.removeAttribute('style');
             loadMoreContainer.style.display = 'flex';
-            loadMoreContainer.style.visibility = 'visible';
-            loadMoreContainer.style.opacity = '1';
             loadMoreContainer.classList.remove('d-none');
-            
+
             let loadMoreBtn = document.getElementById('load-more-media');
             if (!loadMoreBtn) {
-                console.log('Creating new load more button...');
                 loadMoreBtn = document.createElement('button');
                 loadMoreBtn.id = 'load-more-media';
                 loadMoreBtn.className = 'btn btn-outline-primary';
                 loadMoreBtn.textContent = 'Tải thêm ảnh';
-                loadMoreBtn.style.display = 'inline-block';
-                loadMoreBtn.style.visibility = 'visible';
-                loadMoreBtn.style.opacity = '1';
                 loadMoreBtn.addEventListener('click', () => {
-                    console.log('Load more button clicked, page:', this.currentPage + 1);
                     this.currentPage++;
                     this.loadMedia(this.currentSearch, false);
                 });
                 loadMoreContainer.innerHTML = '';
                 loadMoreContainer.appendChild(loadMoreBtn);
-                console.log('✅ Load more button created and added to container');
-                console.log('Button element:', loadMoreBtn);
-                console.log('Container after append:', loadMoreContainer.innerHTML);
             } else {
-                console.log('✅ Load more button already exists, updating...');
                 loadMoreBtn.disabled = false;
                 loadMoreBtn.textContent = 'Tải thêm ảnh';
-                loadMoreBtn.style.display = 'inline-block';
-                loadMoreBtn.style.visibility = 'visible';
-                loadMoreBtn.style.opacity = '1';
             }
-            console.log('Final container style:', {
-                display: loadMoreContainer.style.display,
-                visibility: loadMoreContainer.style.visibility,
-                computedDisplay: window.getComputedStyle(loadMoreContainer).display,
-                computedVisibility: window.getComputedStyle(loadMoreContainer).visibility
-            });
         } else {
-            console.log('❌ Hiding load more button');
-            console.log('Reason:', {
-                hasMore: this.hasMore,
-                hasMoreType: typeof this.hasMore,
-                itemsLength: this.mediaItems.length
-            });
             loadMoreContainer.style.display = 'none';
             loadMoreContainer.innerHTML = '';
         }
-        console.log('=== END updateLoadMoreButton DEBUG ===');
     }
+
 
     toggleSelect(id) {
         const item = this.mediaItems.find(m => m.id === id);
@@ -393,7 +309,15 @@ class MediaLibrary {
         }
 
         this.updateSelection();
-        this.renderMedia();
+        
+        // Thay vì renderMedia() làm mất event dblclick, ta cập nhật DOM trực tiếp
+        const allItems = this.modal.querySelectorAll('.media-item');
+        allItems.forEach(el => {
+            const isSelected = this.selectedItems.some(sel => String(sel.id) === String(el.dataset.id));
+            el.classList.toggle('selected', isSelected);
+            const cb = el.querySelector('.media-item-checkbox');
+            if (cb) cb.checked = isSelected;
+        });
     }
 
     updateSelection() {
@@ -413,11 +337,17 @@ class MediaLibrary {
     }
 
     async handleUpload(files) {
-        const uploadArea = document.getElementById('upload-area');
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/avif'];
+        const allowedLabels = 'JPG, PNG, GIF, WEBP, AVIF';
 
         for (const file of files) {
-            if (!file.type.startsWith('image/')) {
-                alert(`${file.name} không phải là file ảnh`);
+            if (!allowedTypes.includes(file.type)) {
+                alert(`❌ Định dạng không được hỗ trợ: "${file.name}"\nChỉ chấp nhận: ${allowedLabels}`);
+                continue;
+            }
+
+            if (file.size > 10 * 1024 * 1024) {
+                alert(`❌ File quá lớn: "${file.name}" (${(file.size / 1024 / 1024).toFixed(1)} MB)\nGiới hạn tối đa: 10 MB`);
                 continue;
             }
 
@@ -434,18 +364,36 @@ class MediaLibrary {
                     body: formData,
                 });
 
-                const data = await response.json();
-                if (data.success) {
+                // Đọc body text trước để tránh crash khi server trả HTML thay vì JSON
+                const bodyText = await response.text();
+                let data = null;
+                try {
+                    data = JSON.parse(bodyText);
+                } catch (parseErr) {
+                    // Server trả HTML (lỗi 500 Laravel) – log để debug
+                    console.error(`❌ Server error ${response.status} khi upload "${file.name}":`, bodyText.substring(0, 500));
+                    alert(`❌ Lỗi server (${response.status}) khi upload "${file.name}".\nVui lòng kiểm tra console để xem chi tiết lỗi.`);
+                    continue;
+                }
+
+                if (data && data.success) {
                     // Reload media để có thứ tự đúng
                     this.currentPage = 1;
                     this.loadMedia(this.currentSearch, true);
                     this.switchTab('library');
                 } else {
-                    alert(`Lỗi khi upload ${file.name}: ${data.message || 'Unknown error'}`);
+                    // Hiển thị lỗi validation rõ ràng nếu có
+                    let msg = '';
+                    if (data && data.errors) {
+                        msg = Object.values(data.errors).flat().join('\n');
+                    } else {
+                        msg = (data && data.message) || `Lỗi HTTP ${response.status}`;
+                    }
+                    alert(`❌ Không thể upload "${file.name}":\n${msg}`);
                 }
             } catch (error) {
-                console.error('Upload error:', error);
-                alert(`Lỗi khi upload ${file.name}`);
+                console.error('Upload network error:', error);
+                alert(`❌ Lỗi kết nối khi upload "${file.name}".\nVui lòng kiểm tra mạng và thử lại.`);
             }
         }
 
@@ -513,16 +461,139 @@ class MediaLibrary {
         div.textContent = text;
         return div.innerHTML;
     }
+
+    // ===== Detail Panel Methods =====
+
+    openDetailPanel(item) {
+        this._detailItem = item;
+
+        const panel  = document.getElementById('media-detail-panel');
+        const img    = document.getElementById('detail-preview-img');
+        const meta   = document.getElementById('detail-meta');
+        const title  = document.getElementById('detail-title');
+        const alt    = document.getElementById('detail-alt');
+
+        if (!panel) return;
+
+        img.src     = item.url;
+        img.alt     = item.alt || item.name;
+        title.value = item.title || '';
+        alt.value   = item.alt   || '';
+
+        const dim  = item.dimensions ? `${item.dimensions.width} \u00d7 ${item.dimensions.height} px` : '\u2013';
+        const size = this.formatFileSize(item.size || 0);
+        meta.innerHTML = `<strong>${this.escapeHtml(item.name)}</strong>${dim}<br>${size}`;
+
+        panel.style.display = 'flex';
+
+        // Gắn listener chỉ 1 lần
+        if (!panel._listenersAttached) {
+            panel._listenersAttached = true;
+            document.getElementById('close-detail-panel')
+                ?.addEventListener('click', () => this.closeDetailPanel());
+            document.getElementById('save-detail')
+                ?.addEventListener('click', () => this.saveDetail());
+            document.getElementById('delete-detail')
+                ?.addEventListener('click', () => this.deleteDetail());
+        }
+    }
+
+    closeDetailPanel() {
+        const panel = document.getElementById('media-detail-panel');
+        if (panel) panel.style.display = 'none';
+        this._detailItem = null;
+    }
+
+    async saveDetail() {
+        if (!this._detailItem) return;
+
+        const id    = this._detailItem.id;
+        const title = document.getElementById('detail-title')?.value.trim() || '';
+        const alt   = document.getElementById('detail-alt')?.value.trim()   || '';
+        const btn   = document.getElementById('save-detail');
+        const txt   = document.getElementById('save-detail-text');
+
+        if (btn) btn.disabled = true;
+        if (txt) txt.textContent = '\u0110ang l\u01b0u...';
+
+        try {
+            const res  = await fetch(`${this.apiUrl}/${id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': this.csrfToken,
+                },
+                body: JSON.stringify({ title, alt }),
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                if (txt) txt.textContent = '\u2713 \u0110\u00e3 l\u01b0u';
+                setTimeout(() => { if (txt) txt.textContent = 'L\u01b0u thay \u0111\u1ed5i'; }, 2000);
+
+                // Cập nhật trong mediaItems
+                const idx = this.mediaItems.findIndex(m => m.id === id);
+                if (idx !== -1) {
+                    this.mediaItems[idx].title = title;
+                    this.mediaItems[idx].alt   = alt;
+                }
+                // Cập nhật data-item trên DOM
+                const el = document.querySelector(`.media-item[data-id="${id}"]`);
+                if (el && el.dataset.item) {
+                    try {
+                        const d = JSON.parse(el.dataset.item);
+                        d.title = title; d.alt = alt;
+                        el.dataset.item = JSON.stringify(d);
+                    } catch {}
+                }
+            } else {
+                alert('\u274c L\u01b0u th\u1ea5t b\u1ea1i: ' + (data.message || 'L\u1ed7i kh\u00f4ng x\u00e1c \u0111\u1ecbnh'));
+                if (txt) txt.textContent = 'L\u01b0u thay \u0111\u1ed5i';
+            }
+        } catch (err) {
+            console.error('Save detail error:', err);
+            alert('\u274c L\u1ed7i k\u1ebft n\u1ed1i khi l\u01b0u');
+            if (txt) txt.textContent = 'L\u01b0u thay \u0111\u1ed5i';
+        } finally {
+            if (btn) btn.disabled = false;
+        }
+    }
+
+    async deleteDetail() {
+        if (!this._detailItem) return;
+
+        const item = this._detailItem;
+        if (!confirm(`X\u00f3a \u1ea3nh "${item.name}"?\nH\u00e0nh \u0111\u1ed9ng n\u00e0y kh\u00f4ng th\u1ec3 ho\u00e0n t\u00e1c.`)) return;
+
+        try {
+            const res  = await fetch(`${this.apiUrl}/${item.id}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': this.csrfToken,
+                    'Content-Type': 'application/json',
+                },
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                this.closeDetailPanel();
+                this.mediaItems = this.mediaItems.filter(m => m.id !== item.id);
+                this.renderMedia();
+            } else {
+                alert('\u274c X\u00f3a th\u1ea5t b\u1ea1i: ' + (data.message || 'L\u1ed7i kh\u00f4ng x\u00e1c \u0111\u1ecbnh'));
+            }
+        } catch (err) {
+            console.error('Delete detail error:', err);
+            alert('\u274c L\u1ed7i k\u1ebft n\u1ed1i khi x\u00f3a');
+        }
+    }
 }
+
 
 // Initialize global instance
 if (typeof window !== 'undefined') {
-    console.log('=== MediaLibrary Script Loading ===');
     window.MediaLibrary = MediaLibrary;
     window.mediaLibrary = new MediaLibrary({
         apiUrl: '/admin/media/library',
     });
-    console.log('✅ MediaLibrary initialized:', window.mediaLibrary);
-    console.log('Modal element:', window.mediaLibrary.modal);
-    console.log('=== End MediaLibrary Script Loading ===');
 }

@@ -34,6 +34,7 @@ use App\Http\Controllers\Admins\SettingController;
 use App\Http\Controllers\Admins\BannerController;
 use App\Http\Controllers\Admins\EmailAccountController;
 use App\Http\Controllers\Admins\PostController as AdminPostController;
+use App\Http\Controllers\Admins\PostImportExportController;
 use App\Http\Controllers\Admins\SeoController as AdminSeoController;
 use App\Http\Controllers\Admins\ProductController;
 use App\Http\Controllers\Admins\DashboardController;
@@ -439,7 +440,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('email-accounts', EmailAccountController::class)->names('email-accounts');
         Route::post('email-accounts/{email_account}/set-default', [EmailAccountController::class, 'setDefault'])->name('email-accounts.set-default');
 
-        Route::resource('posts', AdminPostController::class)->names('posts');
+        Route::get('posts/export-data', [PostImportExportController::class, 'getExportData'])->name('posts.export-data');
+        Route::get('posts/import-excel', [PostImportExportController::class, 'importForm'])->name('posts.import-excel');
+        Route::post('posts/import-batch', [PostImportExportController::class, 'importBatch'])->name('posts.import-batch');
+
+        Route::resource('posts', AdminPostController::class)->except(['show'])->names('posts');
         Route::post('posts/{post}/publish', [AdminPostController::class, 'publish'])->name('posts.publish');
         Route::post('posts/{post}/archive', [AdminPostController::class, 'archive'])->name('posts.archive');
         Route::post('posts/{post}/duplicate', [AdminPostController::class, 'duplicate'])->name('posts.duplicate');
@@ -546,17 +551,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/bulk-delete', [\App\Http\Controllers\Admins\CommentController::class, 'bulkDelete'])->name('bulk-delete');
         });
 
-        Route::resource('posts', \App\Http\Controllers\Admins\PostController::class)->names('posts');
-        Route::post('posts/{post}/publish', [\App\Http\Controllers\Admins\PostController::class, 'publish'])->name('posts.publish');
-        Route::post('posts/{post}/archive', [\App\Http\Controllers\Admins\PostController::class, 'archive'])->name('posts.archive');
-        Route::post('posts/{post}/duplicate', [\App\Http\Controllers\Admins\PostController::class, 'duplicate'])->name('posts.duplicate');
-        Route::post('posts/{post}/feature', [\App\Http\Controllers\Admins\PostController::class, 'feature'])->name('posts.feature');
-        Route::post('posts/{post}/unfeature', [\App\Http\Controllers\Admins\PostController::class, 'unfeature'])->name('posts.unfeature');
-        Route::post('posts/{post}/restore', [\App\Http\Controllers\Admins\PostController::class, 'restore'])->name('posts.restore');
-        Route::get('posts/{post}/revisions', [\App\Http\Controllers\Admins\PostController::class, 'revisions'])->name('posts.revisions');
-        Route::post('posts/{post}/autosave', [\App\Http\Controllers\Admins\PostController::class, 'autosave'])->name('posts.autosave');
-        Route::post('posts/{post}/revisions/{revision}/restore', [\App\Http\Controllers\Admins\PostController::class, 'restoreRevision'])->name('posts.revisions.restore');
-        Route::post('seo/analyze', [\App\Http\Controllers\Admins\SeoController::class, 'analyze'])->name('seo.analyze');
 
         Route::prefix('orders')->name('orders.')->group(function () {
             Route::get('/pick-shifts', [\App\Http\Controllers\Admins\OrderController::class, 'getPickShifts'])->name('get-pick-shifts');

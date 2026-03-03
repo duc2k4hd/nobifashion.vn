@@ -156,7 +156,21 @@ class PostService
             'tag_ids',
             'tag_names', // Thêm tag_names vào đây
             'published_at',
+            'created_by', // Thêm created_by để có thể update tác giả
         ]);
+
+        // Global Truncation for VARCHAR(255) columns
+        $stringFields = ['title', 'slug', 'meta_title', 'meta_keywords', 'meta_canonical', 'thumbnail', 'thumbnail_alt_text'];
+        foreach ($stringFields as $field) {
+            if (isset($data[$field]) && is_string($data[$field])) {
+                if ($field === 'slug') {
+                    $val = strip_tags($data[$field]);
+                    $data[$field] = Str::limit(Str::slug($val) ?: $val, 250, '');
+                } else {
+                    $data[$field] = Str::limit($data[$field], 250, '');
+                }
+            }
+        }
 
         if (array_key_exists('is_featured', $payload)) {
             $data['is_featured'] = (bool) $payload['is_featured'];

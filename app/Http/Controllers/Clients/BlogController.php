@@ -86,39 +86,32 @@ class BlogController extends Controller
         // Lấy tags từ polymorphic relationship
         $tags = $post->tags()->active()->get();
 
-        // Lấy related posts dựa trên tags chung
-        $relatedPosts = Cache::remember("blog:related:{$post->id}", 600, function () use ($post, $tags) {
-            $query = Post::published()
+        // Lấy 5 bài trước và 5 bài sau (dựa trên published_at)
+        $relatedPosts = Cache::remember("blog:related:{$post->id}:v2", 3600, function () use ($post) {
+            $before = Post::published()
+                ->where('published_at', '<=', $post->published_at)
                 ->where('id', '!=', $post->id)
-                ->with(['author', 'category']);
+                ->orderByDesc('published_at')
+                ->take(5)
+                ->get();
 
-            if ($tags->isNotEmpty()) {
-                // Lấy các post có chung ít nhất 1 tag
-                $tagIds = $tags->pluck('id')->toArray();
-                $postIds = Tag::whereIn('id', $tagIds)
-                    ->where('entity_type', Post::class)
-                    ->orWhere('entity_type', 'post')
-                    ->pluck('entity_id')
-                    ->unique()
-                    ->filter(fn($id) => $id != $post->id)
-                    ->toArray();
+            $after = Post::published()
+                ->where('published_at', '>=', $post->published_at)
+                ->where('id', '!=', $post->id)
+                ->orderBy('published_at')
+                ->take(5)
+                ->get();
 
-                if (!empty($postIds)) {
-                    $query->whereIn('id', $postIds);
-                } elseif ($post->category_id) {
-                    $query->where('category_id', $post->category_id);
-                }
-            } elseif ($post->category_id) {
-                $query->where('category_id', $post->category_id);
-            }
-
-            return $query->latest('published_at')->take(4)->get();
+            // Gộp lại: 5 bài mới hơn (đảo ngược lại cho đúng thứ tự thời gian) + 5 bài cũ hơn
+            return $after->reverse()->concat($before);
         });
 
-        $internalLinks = Cache::remember('blog:internal-links', 600, function () {
+        // 20 bài random và cache mỗi bài
+        $internalLinks = Cache::remember("blog:recommendations:{$post->id}", 3600, function () use ($post) {
             return Post::published()
-                ->orderByDesc('views')
-                ->take(8)
+                ->where('id', '!=', $post->id)
+                ->inRandomOrder()
+                ->take(20)
                 ->get(['id', 'title', 'slug']);
         });
 

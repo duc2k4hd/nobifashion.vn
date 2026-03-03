@@ -13,8 +13,14 @@
             <p class="text-muted mb-0">Theo dõi, lọc và xuất bản nội dung như một mini CMS</p>
         </div>
         <div class="d-flex gap-2">
+            <button id="btnExportCSV" class="btn btn-outline-success">
+                <i class="fas fa-file-download me-1"></i> Xuất CSV
+            </button>
+            <a href="{{ route('admin.posts.import-excel') }}" class="btn btn-outline-info">
+                <i class="fas fa-file-upload me-1"></i> Nhập CSV/Excel
+            </a>
             <a href="{{ route('admin.posts.create') }}" class="btn btn-primary">
-                ✍️ Viết bài mới
+                <i class="fas fa-plus me-1"></i> Viết bài mới
             </a>
         </div>
     </div>
@@ -130,7 +136,7 @@
                         <tr>
                             <td>#{{ $post->id }}</td>
                             <td>
-                                <div class="fw-semibold">{{ $post->title }}</div>
+                                <div class="fw-semibold">{{ renderMeta($post->title) }}</div>
                                 <div class="text-muted small">{{ $post->slug }}</div>
                                 @php
                                     $tagNames = $post->tag_ids ? $tags->whereIn('id', $post->tag_ids)->pluck('name')->implode(', ') : null;
@@ -151,7 +157,7 @@
                                 @endif
                             </td>
                             <td>{{ number_format($post->views) }}</td>
-                            <td>{{ $post->author?->name ?? $post->author?->email ?? '—' }}</td>
+                            <td>{{ $post->author?->displayName() ?? '—' }}</td>
                             <td>
                                 @if($post->published_at)
                                     {{ $post->published_at->translatedFormat('d/m/Y H:i') }}
@@ -207,4 +213,42 @@
         </div>
     </div>
 @endsection
+ 
+ @push('scripts')
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+ <script>
+ document.getElementById('btnExportCSV').addEventListener('click', async function() {
+     const btn = this;
+     const originalContent = btn.innerHTML;
+     btn.disabled = true;
+     btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Đang xuất CSV...';
+ 
+     try {
+         const response = await fetch("{{ route('admin.posts.export-data') }}");
+         const result = await response.json();
+ 
+         if (result.success) {
+             const worksheet = XLSX.utils.json_to_sheet(result.data);
+             const workbook = XLSX.utils.book_new();
+             XLSX.utils.book_append_sheet(workbook, worksheet, "Posts");
+ 
+             const date = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+             XLSX.writeFile(workbook, `posts_export_${date}.csv`, { bookType: 'csv' });
+             
+             if (window.Toast) {
+                 Toast.fire({ icon: 'success', title: 'Đã xuất CSV thành công' });
+             }
+         } else {
+             alert('Lỗi: ' + (result.message || 'Không thể lấy dữ liệu'));
+         }
+     } catch (err) {
+         console.error(err);
+         alert('Lỗi hệ thống khi xuất CSV: ' + err.message);
+     } finally {
+         btn.disabled = false;
+         btn.innerHTML = originalContent;
+     }
+ });
+ </script>
+ @endpush
 

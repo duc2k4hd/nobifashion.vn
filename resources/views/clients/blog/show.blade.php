@@ -639,18 +639,35 @@
         .internal-links-title {
             font-weight: 700;
             font-size: 16px;
-            margin-bottom: 12px;
+            margin-bottom: 16px;
+        }
+        .internal-links-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        @media (max-width: 600px) {
+            .internal-links-grid {
+                grid-template-columns: 1fr;
+            }
         }
         .internal-link-item {
             display: block;
             padding: 10px 12px;
             background: white;
             border-radius: 8px;
-            margin-bottom: 8px;
             text-decoration: none;
             color: var(--text-primary);
             border: 1px solid var(--border);
-            font-size: 14px;
+            font-size: 13px;
+            line-height: 1.4;
+            height: 100%;
+            transition: all 0.2s;
+        }
+        .internal-link-item:hover {
+            border-color: #3b82f6;
+            color: #3b82f6;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
 
         /* Sidebar */
@@ -1232,9 +1249,10 @@
                             <h5 class="internal-links-title">
                                 💡 Có thể bạn quan tâm
                             </h5>
-                            <div>
+                            <div class="internal-links-grid">
                                 @foreach($internalLinks as $link)
                                     <a href="{{ route('client.blog.show', $link) }}" class="internal-link-item">
+                                        <i class="fas fa-chevron-right me-1 small opacity-50"></i>
                                         {{ renderMeta($link->title) }}
                                     </a>
                                 @endforeach
