@@ -126,7 +126,7 @@ class MediaLibraryController extends Controller
                 'title'            => $originalName,
                 'alt'              => $originalName,
                 'path'             => $relative,
-                'url'              => asset($relative),
+                'url'              => $relative,
                 'extension'        => $extension,
                 'mime_type'        => $mimeType,
                 'context'          => $context,

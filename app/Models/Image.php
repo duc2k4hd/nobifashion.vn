@@ -62,9 +62,24 @@ class Image extends Model
         if (empty($value)) {
             return $this->path ? asset($this->path) : null;
         }
+
+        // Nếu là URL tuyệt đối (bắt đầu bằng http hoặc https)
         if (str_starts_with($value, 'http')) {
+            $host = parse_url($value, PHP_URL_HOST);
+            $currentHost = parse_url(config('app.url'), PHP_URL_HOST);
+            
+            $isLocal = in_array($host, ['localhost', '127.0.0.1']);
+            $isInternal = ($host === $currentHost);
+            
+            // Nếu là domain nội bộ hoặc localhost, trích xuất path và sinh lại URL chuẩn
+            if ($isLocal || $isInternal) {
+                $path = parse_url($value, PHP_URL_PATH);
+                return asset(ltrim($path ?? '', '/'));
+            }
+            // Ảnh từ nguồn bên ngoài khác
             return $value;
         }
+
         return asset($value);
     }
 

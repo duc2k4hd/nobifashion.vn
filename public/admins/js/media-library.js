@@ -253,6 +253,19 @@ class MediaLibrary {
         }
     }
 
+    insertSelected() {
+        if (this.selectedItems.length === 0) return;
+        
+        if (this.onInsert) {
+            // Nếu mode là single, truyền object đơn, nếu multiple truyền array
+            const data = this.insertMode === 'single' ? this.selectedItems[0] : this.selectedItems;
+            this.onInsert(data);
+            this.close();
+        } else {
+            console.warn('MediaLibrary: No onInsert callback defined');
+        }
+    }
+
     toggleSelect(id) {
         const item = this.mediaItems.find(m => String(m.id) === String(id));
         if (!item) return;
