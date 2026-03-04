@@ -482,7 +482,7 @@
     margin: 20px;
 }
 
-.upload-area:hover {
+.upload-area:hover, .upload-area.dragover {
     border-color: #2563eb;
     background: #f9fafb;
 }

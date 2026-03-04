@@ -61,11 +61,34 @@ class MediaLibrary {
             });
         });
 
-        // Upload
         const uploadArea = document.getElementById('upload-area');
         const fileInput = document.getElementById('file-input');
         uploadArea?.addEventListener('click', () => fileInput?.click());
         fileInput?.addEventListener('change', (e) => this.handleUpload(Array.from(e.target.files)));
+
+        // Drag & Drop
+        if (uploadArea) {
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }, false);
+            });
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, () => uploadArea.classList.add('dragover'), false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                uploadArea.addEventListener(eventName, () => uploadArea.classList.remove('dragover'), false);
+            });
+
+            uploadArea.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                this.handleUpload(Array.from(files));
+            }, false);
+        }
 
         // Insert button
         document.getElementById('insert-media')?.addEventListener('click', () => this.insertSelected());
