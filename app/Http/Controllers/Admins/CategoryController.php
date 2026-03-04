@@ -137,6 +137,7 @@ class CategoryController extends Controller
         }
 
         $file->move($destination, $filename);
+        @chmod($destination . DIRECTORY_SEPARATOR . $filename, 0644);
 
         return $filename;
     }

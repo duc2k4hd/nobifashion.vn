@@ -131,6 +131,7 @@ class AccountProfileController extends Controller
         $filename = $account->id . '_' . $type . '_' . Str::random(20) . '.' . $extension;
 
         $file->move($directory, $filename);
+        @chmod($directory . DIRECTORY_SEPARATOR . $filename, 0644);
 
         return $filename;
     }

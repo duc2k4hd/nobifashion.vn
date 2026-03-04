@@ -105,6 +105,9 @@ class MediaLibraryController extends Controller
                 }
                 @unlink($tmpPath);
             }
+            
+            // Đảm bảo tệp có quyền đọc cho web server (tránh lỗi 403)
+            @chmod($fullPath, 0644);
 
             try {
                 $mimeType = mime_content_type($fullPath);

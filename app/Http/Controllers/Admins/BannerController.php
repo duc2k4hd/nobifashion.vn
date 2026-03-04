@@ -114,6 +114,7 @@ class BannerController extends Controller
 
         $filename = 'banner-' . time() . '-' . uniqid() . '.' . $file->getClientOriginalExtension();
         $file->move($directory, $filename);
+        @chmod($directory . DIRECTORY_SEPARATOR . $filename, 0644);
 
         if ($current) {
             $this->deleteImageFile($current);

@@ -1290,6 +1290,7 @@ class ImportExcelController extends Controller
 
         // Copy file từ nguồn sang clothes
         if (copy($sourcePath, $destinationPath)) {
+            @chmod($destinationPath, 0644);
             Log::debug('uploadImage: File copied successfully', [
                 'source' => $sourcePath,
                 'destination' => $destinationPath,

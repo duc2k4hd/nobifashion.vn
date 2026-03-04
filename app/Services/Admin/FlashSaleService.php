@@ -666,6 +666,7 @@ class FlashSaleService
         
         // Di chuyển file vào folder
         $file->move($folderPath, $fileName);
+        @chmod($folderPath . DIRECTORY_SEPARATOR . $fileName, 0644);
         
         // Trả về đường dẫn relative để lưu vào DB
         return 'admins/img/banners/flash-sale/' . $fileName;

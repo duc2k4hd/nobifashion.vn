@@ -30,6 +30,7 @@ class FileHelperService
 
         $this->ensureDirectory(dirname($absolutePath));
         $file->move(dirname($absolutePath), $finalName);
+        @chmod($absolutePath, 0644);
 
         return [
             'relative_path' => $relativePath,

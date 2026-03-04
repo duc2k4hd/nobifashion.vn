@@ -24,6 +24,7 @@ class ContactService
         if ($file && $file->isValid()) {
             $filename = time() . '_' . $file->getClientOriginalName();
             $file->storeAs('contacts', $filename, 'public');
+            @chmod(storage_path('app/public/contacts/' . $filename), 0644);
             $data['attachment'] = $filename;
         }
 

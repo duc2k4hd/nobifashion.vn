@@ -288,6 +288,7 @@ class VoucherController extends Controller
 
         $filename = time() . '_' . Str::random(10) . '.' . $file->getClientOriginalExtension();
         $file->move($directory, $filename);
+        @chmod($directory . DIRECTORY_SEPARATOR . $filename, 0644);
 
         return 'clients/assets/img/vouchers/' . $filename;
     }
