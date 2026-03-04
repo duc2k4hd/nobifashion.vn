@@ -79,6 +79,17 @@
             const editor = this.editor;
             const context = editor.config.get('mediaLibraryContext') || 'product';
 
+            // Mở rộng Schema an toàn: Chỉ mở rộng nếu phần tử tồn tại trong schema
+            if (editor.model.schema.isRegistered('imageBlock')) {
+                editor.model.schema.extend('imageBlock', { allowAttributes: 'title' });
+            }
+            if (editor.model.schema.isRegistered('imageInline')) {
+                editor.model.schema.extend('imageInline', { allowAttributes: 'title' });
+            }
+
+            // Conversion cho thuộc tính title
+            editor.conversion.attributeToAttribute({ model: 'title', view: 'title' });
+
             editor.ui.componentFactory.add('mediaLibrary', locale => {
                 const view = new ButtonView(locale);
 
@@ -94,16 +105,29 @@
                         window.mediaLibrary.open({
                             context: context,
                             onInsert: (image) => {
-                                const alt = image.name.replace(/\.[^/.]+$/, '');
                                 const folder = context === 'post' ? 'posts' : 'clothes';
-                                const imageUrl = `/clients/assets/img/${folder}/${image.url}`;
+                                const imageUrl = `/clients/assets/img/${folder}/${image.url || image.file_name}`;
+                                
+                                // Lấy metadata từ đối tượng image
+                                const alt = image.alt || image.name || image.title || '';
+                                const title = image.title || image.name || '';
+                                const caption = image.description || image.title || '';
                                 
                                 // Chèn ảnh vào editor
                                 editor.model.change(writer => {
+                                    // Tạo imageBlock (tương đương thẻ figure)
                                     const imageElement = writer.createElement('imageBlock', {
                                         src: imageUrl,
-                                        alt: alt
+                                        alt: alt,
+                                        title: title // Gán thuộc tính title cho ảnh
                                     });
+
+                                    // Tạo figcaption nếu có metadata
+                                    if (caption) {
+                                        const captionElement = writer.createElement('caption');
+                                        writer.insertText(caption, captionElement);
+                                        writer.append(captionElement, imageElement);
+                                    }
 
                                     // Chèn vào vị trí hiện tại
                                     const insertAt = editor.model.document.selection.getFirstPosition();

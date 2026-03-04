@@ -35,6 +35,9 @@
             border-right: 1px solid #e9ecef;
             transition: transform 0.3s ease, width 0.3s ease;
         }
+        .ck-content .image>figcaption {
+            min-height: 20px !important;
+        }
         .sidebar.collapsed {
             transform: translateX(-100%);
         }

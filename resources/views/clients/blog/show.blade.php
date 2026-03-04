@@ -514,95 +514,228 @@
             font-size: 13px;
         }
 
-        /* Rich Content */
+        /* =========================================
+           MODERN ARTICLE WRAPPER STYLING
+           ========================================= */
+        .article-wrapper {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+            color: #1a1a1a !important;
+            line-height: 1.8 !important;
+            word-wrap: break-word !important;
+        }
+
+        /* Content Headings */
+        .article-wrapper h1,
+        .article-wrapper h2,
+        .article-wrapper h3,
+        .article-wrapper h4 {
+            color: #111827 !important;
+            font-weight: 700 !important;
+            line-height: 1.3 !important;
+            margin-top: 1.5rem !important;
+            margin-bottom: 0.75rem !important;
+        }
+        
+        .article-wrapper h1 strong,
+        .article-wrapper h2 strong,
+        .article-wrapper h3 strong,
+        .article-wrapper h4 strong {
+            color: #111827 !important;
+            font-weight: 700 !important;
+            line-height: 1.3 !important;
+            margin-top: 1.5rem !important;
+            margin-bottom: 0.75rem !important;
+        }
+
+        .article-wrapper h1 { font-size: 2.5rem !important; border-bottom: 2px solid #f3f4f6 !important; padding-bottom: 0.75rem !important; }
+        .article-wrapper h2 { font-size: 1.85rem !important; border-bottom: 1px solid #f3f4f6 !important; padding-bottom: 0.5rem !important; }
+        .article-wrapper h3 { font-size: 1.5rem !important; }
+        .article-wrapper h4 { font-size: 1.25rem !important; }
+
+        .article-wrapper h1 strong { font-size: 2.5rem !important; border-bottom: 2px solid #f3f4f6 !important; padding-bottom: 0.75rem !important; }
+        .article-wrapper h2 strong { font-size: 1.85rem !important; border-bottom: 1px solid #f3f4f6 !important; padding-bottom: 0.5rem !important; }
+        .article-wrapper h3 strong { font-size: 1.5rem !important; }
+        .article-wrapper h4 strong { font-size: 1.25rem !important; }
+
+        /* Paragraphs & Text */
+        .article-wrapper p {
+            margin-bottom: 1.5rem !important;
+            font-size: 1.1rem !important;
+            color: #374151 !important;
+        }
+
+        .article-wrapper strong:not(h1 > strong, h2 > strong, h3 > strong, h4 > strong), 
+        .article-wrapper b:not(h1 > b, h2 > b, h3 > b, h4 > b) {
+            font-weight: 700 !important;
+            color: #111827 !important;
+        }
+
+        .article-wrapper em, 
+        .article-wrapper i {
+            font-style: italic !important;
+        }
+
+        /* Links */
+        .article-wrapper a {
+            color: #2563eb !important;
+            text-decoration: none !important;
+            border-bottom: 1px solid transparent !important;
+            transition: all 0.2s !important;
+        }
+
+        .article-wrapper a:hover {
+            border-bottom-color: #2563eb !important;
+            color: #1d4ed8 !important;
+        }
+
+        /* Lists */
+        .article-wrapper ul,
+        .article-wrapper ol {
+            padding-left: 1.5rem !important;
+            margin-bottom: 1.5rem !important;
+        }
+
+        .article-wrapper li {
+            margin-bottom: 0.75rem !important;
+            position: relative !important;
+        }
+
+        .article-wrapper ul li::before {
+            content: "•" !important;
+            color: #3b82f6 !important;
+            font-weight: bold !important;
+            display: inline-block !important;
+            width: 1rem !important;
+            margin-left: -1rem !important;
+        }
+
+        /* Blockquote */
+        .article-wrapper blockquote {
+            margin: 2rem 0 !important;
+            padding: 1.5rem 2rem !important;
+            background: #f8fafc !important;
+            border-left: 4px solid #3b82f6 !important;
+            border-radius: 0 8px 8px 0 !important;
+            font-style: italic !important;
+            color: #475569 !important;
+            position: relative !important;
+        }
+
+        .article-wrapper blockquote::before {
+            content: "\201C" !important;
+            font-family: serif !important;
+            font-size: 4rem !important;
+            color: #cbd5e1 !important;
+            position: absolute !important;
+            left: 0.5rem !important;
+            top: -1rem !important;
+            opacity: 0.5 !important;
+        }
+
+        /* Images & Figures */
+        .article-wrapper img {
+            max-width: 100% !important;
+            height: auto !important;
+            display: block !important;
+            margin: 2.5rem auto !important;
+            border-radius: 12px !important;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important;
+            transition: transform 0.3s ease !important;
+        }
+
+        .article-wrapper figure {
+            margin: 2.5rem 0 !important;
+            text-align: center !important;
+        }
+
+        .article-wrapper figure img {
+            margin-bottom: 0 !important;
+            border-bottom-left-radius: 0 !important;
+            border-bottom-right-radius: 0 !important;
+        }
+
+        .article-wrapper figcaption {
+            font-size: 0.95rem !important;
+            color: #6b7280 !important;
+            background-color: #ededed !important;
+            font-style: italic !important;
+            padding: 10px !important;
+            border-bottom-left-radius: 12px !important;
+            border-bottom-right-radius: 12px !important;
+        }
+
+        /* Tables */
+        .article-wrapper table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            margin: 2rem 0 !important;
+            font-size: 0.95rem !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 8px !important;
+            overflow: hidden !important;
+        }
+
+        .article-wrapper thead th {
+            background-color: #f9fafb !important;
+            color: #111827 !important;
+            font-weight: 700 !important;
+            text-align: left !important;
+            padding: 1rem !important;
+            border-bottom: 2px solid #e5e7eb !important;
+        }
+
+        .article-wrapper td {
+            padding: 0.85rem 1rem !important;
+            border-bottom: 1px solid #f3f4f6 !important;
+            color: #4b5563 !important;
+        }
+
+        .article-wrapper tr:last-child td {
+            border-bottom: none !important;
+        }
+
+        .article-wrapper tr:hover td {
+            background-color: #fafafa !important;
+        }
+
+        /* HR */
+        .article-wrapper hr {
+            height: 1px !important;
+            background-color: #e5e7eb !important;
+            border: none !important;
+            margin: 3rem 0 !important;
+        }
+
+        /* Code & Pre */
+        .article-wrapper code {
+            font-family: 'Fira Code', 'Monaco', 'Consolas', monospace !important;
+            background-color: #f1f5f9 !important;
+            color: #ef4444 !important;
+            padding: 0.2rem 0.4rem !important;
+            border-radius: 4px !important;
+            font-size: 0.9rem !important;
+        }
+
+        .article-wrapper pre {
+            background-color: #1e293b !important;
+            color: #f8fafc !important;
+            padding: 1.5rem !important;
+            border-radius: 8px !important;
+            overflow-x: auto !important;
+            margin: 2rem 0 !important;
+            font-size: 0.9rem !important;
+            line-height: 1.6 !important;
+        }
+
+        .article-wrapper pre code {
+            background-color: transparent !important;
+            color: inherit !important;
+            padding: 0 !important;
+        }
+
+        /* Rich content backward compatibility */
         .rich-content {
-            font-size: 16px;
-            line-height: 1.7;
-            color: var(--text-primary);
-        }
-        .rich-content h2 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin: 24px 0 12px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid var(--border);
-        }
-        .rich-content h3 {
-            font-size: 1.25rem;
-            font-weight: 700;
-            margin: 20px 0 10px;
-        }
-        .rich-content h4 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin: 16px 0 8px;
-        }
-        .rich-content p {
-            margin-bottom: 16px;
-        }
-        .rich-content strong {
-            font-weight: 600;
-        }
-        .rich-content a {
-            color: #2563eb;
-            text-decoration: underline;
-        }
-        .rich-content ul,
-        .rich-content ol {
-            margin: 16px 0;
-            padding-left: 24px;
-        }
-        .rich-content li {
-            margin-bottom: 8px;
-        }
-        .rich-content blockquote {
-            border-left: 3px solid var(--border);
-            padding: 12px 16px;
-            margin: 20px 0;
-            background: #f9fafb;
-            border-radius: 0 8px 8px 0;
-        }
-        .rich-content img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
-            margin: 20px 0;
-        }
-        .rich-content table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 20px 0;
-            border: 1px solid var(--border);
-        }
-        .rich-content th,
-        .rich-content td {
-            padding: 10px 12px;
-            border-bottom: 1px solid var(--border);
-        }
-        .rich-content th {
-            background: #f9fafb;
-            font-weight: 600;
-        }
-        .rich-content code {
-            background: #f3f4f6;
-            padding: 2px 6px;
-            border-radius: 4px;
-            font-size: 0.9em;
-            color: red !important;
-        }
-        .rich-content pre {
-            background: #1f2937;
-            color: #f9fafb;
-            padding: 16px;
-            border-radius: 8px;
-            overflow-x: auto;
-            margin: 20px 0;
-        }
-        .rich-content hr {
-            border: 0;
-            height: 1px;
-            background: var(--border);
-            margin: 24px 0;
+            all: inherit !important;
         }
 
         /* Post Footer */

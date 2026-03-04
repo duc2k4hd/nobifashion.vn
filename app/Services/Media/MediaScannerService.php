@@ -158,6 +158,7 @@ class MediaScannerService
                 'created_at' => optional($image->created_at)->toDateTimeString(),
                 'entity_label' => optional($image->product)->name,
                 'entity_id' => optional($image->product)->id,
+                'dimensions' => $image->dimensions,
                 'metadata' => [
                     'is_primary' => $image->is_primary,
                     'order' => $image->order,
