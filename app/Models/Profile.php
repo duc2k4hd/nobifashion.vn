@@ -92,6 +92,7 @@ class Profile extends Model
     // Hàm tiện ích
     // ------------------------------
 
+
     public function displayName(): string
     {
         return $this->nickname ?: $this->full_name;

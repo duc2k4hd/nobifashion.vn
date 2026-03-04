@@ -141,7 +141,7 @@
                     </div>
                     <div id="voucher-image-preview" class="mt-2">
                         @if(!empty($voucher->image))
-                            <img src="{{ strpos($voucher->image, 'http') === 0 ? $voucher->image : asset($voucher->image) }}" 
+                            <img src="{{ str_starts_with($voucher->image, 'http') ? $voucher->image : asset('clients/assets/img/vouchers/' . $voucher->image) }}" 
                                  class="img-fluid rounded shadow-sm" alt="preview" style="max-height: 200px;">
                         @endif
                     </div>

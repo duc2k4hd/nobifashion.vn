@@ -11,12 +11,12 @@
     <meta property="og:title" content="{{ renderMeta($post->meta_title ?? $post->title) }}">
     <meta property="og:description" content="{{ renderMeta($post->meta_description ?? $post->excerpt_text) }}">
     <meta property="og:url" content="{{ route('client.blog.show', $post) }}">
-    <meta property="og:image" content="{{ $post->thumbnail ? asset($post->thumbnail) : asset('clients/assets/no-image.webp') }}">
+    <meta property="og:image" content="{{ $post->thumbnail ? asset('clients/assets/img/posts/' . $post->thumbnail) : asset('clients/assets/no-image.webp') }}">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{{ renderMeta($post->meta_title ?? $post->title) }}">
     <meta name="twitter:description" content="{{ renderMeta($post->meta_description ?? $post->excerpt_text) }}">
-    <meta name="twitter:image" content="{{ $post->thumbnail ? asset($post->thumbnail) : asset('clients/assets/no-image.webp') }}">
-    <link rel="preload" as="image" href="{{ $post->thumbnail ? asset($post->thumbnail) : asset('clients/assets/no-image.webp') }}">
+    <meta name="twitter:image" content="{{ $post->thumbnail ? asset('clients/assets/img/posts/' . $post->thumbnail) : asset('clients/assets/no-image.webp') }}">
+    <link rel="preload" as="image" href="{{ $post->thumbnail ? asset('clients/assets/img/posts/' . $post->thumbnail) : asset('clients/assets/no-image.webp') }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     {{-- Load Fonts: Crimson Pro (Elegant Serif) & Inter (Clean Sans) --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -588,6 +588,7 @@
             padding: 2px 6px;
             border-radius: 4px;
             font-size: 0.9em;
+            color: red !important;
         }
         .rich-content pre {
             background: #1f2937;
@@ -1186,7 +1187,7 @@
             {{-- Featured Image --}}
             <div class="hero-image-container">
                 @if($post->thumbnail)
-                    <img src="{{ asset($post->thumbnail) }}" 
+                    <img src="{{ asset('clients/assets/img/posts/' . $post->thumbnail) }}" 
                          class="hero-image" 
                          alt="{{ renderMeta($post->thumbnail_alt_text ?? $post->title) }}"
                          loading="eager">
@@ -1336,7 +1337,7 @@
                         <div>
                             @foreach($relatedPosts as $related)
                                 <a href="{{ route('client.blog.show', $related) }}" class="related-post-item">
-                                    <img src="{{ $related->thumbnail ? asset($related->thumbnail) : asset('clients/assets/no-image.webp') }}" 
+                                    <img src="{{ $related->thumbnail ? asset('clients/assets/img/posts/' . $related->thumbnail) : asset('clients/assets/img/clothes/no-image.webp') }}" 
                                          alt="{{ renderMeta($related->title) }}" 
                                          class="related-thumb"
                                          loading="lazy">

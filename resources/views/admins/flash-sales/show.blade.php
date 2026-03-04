@@ -137,7 +137,7 @@
             <div class="info-row">
                 <div class="info-label">Banner:</div>
                 <div class="info-value">
-                    <img src="{{ asset($flashSale->banner) }}" alt="Banner" style="max-width:300px;border-radius:8px;">
+                    <img src="{{ asset('admins/img/banners/flash-sale/' . $flashSale->banner) }}" alt="Banner" style="max-width:300px;border-radius:8px;">
                 </div>
             </div>
             @endif

@@ -49,7 +49,7 @@ class AdminMediaUploadController extends Controller
         foreach ($request->file('files', []) as $uploadedFile) {
             $stored = $files->storeUploadedFile($uploadedFile, $this->folders[$validated['folder']]);
             $variants = $optimizer->generateVariants($stored['absolute_path'], $stored['relative_path']);
-            $paths = array_merge(['original' => $stored['relative_path']], $variants);
+            $paths = array_merge(['original' => $stored['filename']], $variants);
             $meta = [
                 'title' => $validated['title'] ?? pathinfo($stored['filename'], PATHINFO_FILENAME),
                 'alt' => $validated['alt'] ?? null,

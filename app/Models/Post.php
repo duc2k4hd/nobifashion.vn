@@ -48,6 +48,7 @@ class Post extends Model
         'excerpt_text',
     ];
 
+
     // Relationships
     public function author(): BelongsTo
     {

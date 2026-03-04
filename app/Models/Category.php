@@ -98,6 +98,7 @@ class Category extends Model
         return $primary->merge($extra)->unique('id');
     }
 
+
     /**
      * Trả về đường dẫn đầy đủ (cha > con).
      */

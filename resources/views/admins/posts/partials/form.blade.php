@@ -150,7 +150,7 @@
                     </div>
                     <div id="thumbnail-preview" class="mt-2">
                         @if(!empty($post->thumbnail))
-                            <img src="{{ asset($post->thumbnail) }}" class="img-fluid rounded shadow-sm" alt="preview">
+                            <img src="{{ str_starts_with($post->thumbnail, 'http') ? $post->thumbnail : asset('clients/assets/img/posts/' . $post->thumbnail) }}" class="img-fluid rounded shadow-sm" alt="preview">
                         @endif
                     </div>
                 </div>
@@ -159,7 +159,7 @@
                     <input type="text" name="thumbnail_alt_text" class="form-control" value="{{ old('thumbnail_alt_text', $post->thumbnail_alt_text ?? '') }}">
                 </div>
                 @if(!empty($post->thumbnail))
-                    <img src="{{ asset($post->thumbnail) }}" class="img-fluid rounded shadow-sm" alt="preview">
+                    <img src="{{ str_starts_with($post->thumbnail, 'http') ? $post->thumbnail : asset('clients/assets/img/posts/' . $post->thumbnail) }}" class="img-fluid rounded shadow-sm" alt="preview">
                 @endif
             </div>
         </div>
@@ -343,17 +343,24 @@
                 window.mediaLibrary.open({
                     context: 'post',
                     onInsert: function(image) {
-                const input = document.getElementById('thumbnail-input');
-                const preview = document.getElementById('thumbnail-preview');
-                if (input) {
-                            input.value = image.path || image.url;
-                }
-                if (preview) {
-                            preview.innerHTML = `<img src="${image.url}" class="img-fluid rounded shadow-sm" alt="${image.name}">`;
-                }
+                        const input = document.getElementById('thumbnail-input');
+                        const preview = document.getElementById('thumbnail-preview');
+                        
+                        // Đảm bảo chỉ lấy tên tệp để lưu vào DB
+                        const filename = image.url ? image.url.split('/').pop() : '';
+                        
+                        if (input) {
+                            input.value = filename;
+                        }
+                        
+                        if (preview) {
+                            // Xây dựng đường dẫn preview đầy đủ cho bài viết
+                            const previewUrl = image.original || `/clients/assets/img/posts/${filename}`;
+                            preview.innerHTML = `<img src="${previewUrl}" class="img-fluid rounded shadow-sm" alt="${image.name || 'preview'}">`;
+                        }
                     },
                     insertMode: 'single'
-            });
+                });
             } else {
                 alert('Media Library chưa được khởi tạo');
             }

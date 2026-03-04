@@ -155,6 +155,7 @@ class FlashSale extends Model
         return $query->where('is_active', true);
     }
 
+
     /**
      * Scope lấy flash sale sắp tới
      */

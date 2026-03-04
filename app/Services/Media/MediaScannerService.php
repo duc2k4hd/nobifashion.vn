@@ -182,12 +182,12 @@ class MediaScannerService
         }
 
         return $query->get()->map(function (Post $post) {
-            $folderKey = $this->detectFolderKey($post->thumbnail);
+            $folderKey = 'posts';
             return [
                 'id' => (string) $post->id,
                 'type' => 'post_thumbnail',
-                'preview' => $this->toAsset($post->thumbnail),
-                'original' => $this->toAsset($post->thumbnail),
+                'preview' => $this->toProjectAsset($post->thumbnail, 'posts'),
+                'original' => $this->toProjectAsset($post->thumbnail, 'posts'),
                 'folder_key' => $folderKey,
                 'folder_label' => $this->directoryLabels[$folderKey] ?? null,
                 'type_label' => $this->typeLabels['post_thumbnail'] ?? 'Ảnh bài viết',
@@ -217,12 +217,12 @@ class MediaScannerService
         }
 
         return $query->get()->map(function (Category $category) {
-            $folderKey = $this->detectFolderKey($category->image);
+            $folderKey = 'categories';
             return [
                 'id' => (string) $category->id,
                 'type' => 'category_image',
-                'preview' => $this->toAsset($category->image),
-                'original' => $this->toAsset($category->image),
+                'preview' => $this->toProjectAsset($category->image, 'categories'),
+                'original' => $this->toProjectAsset($category->image, 'categories'),
                 'folder_key' => $folderKey,
                 'folder_label' => $this->directoryLabels[$folderKey] ?? null,
                 'type_label' => $this->typeLabels['category_image'] ?? 'Ảnh danh mục',
@@ -253,12 +253,12 @@ class MediaScannerService
         return $query->get()->flatMap(function (Banner $banner) use ($onlyType) {
             $items = collect();
             if ($banner->image_desktop && (!$onlyType || $onlyType === 'banner_desktop')) {
-                $folderKey = $this->detectFolderKey($banner->image_desktop);
+                $folderKey = 'banners';
                 $items->push([
                     'id' => (string) $banner->id,
                     'type' => 'banner_desktop',
-                    'preview' => $this->toAsset($banner->image_desktop),
-                    'original' => $this->toAsset($banner->image_desktop),
+                    'preview' => $this->toProjectAsset($banner->image_desktop, 'banners'),
+                    'original' => $this->toProjectAsset($banner->image_desktop, 'banners'),
                     'folder_key' => $folderKey,
                     'folder_label' => $this->directoryLabels[$folderKey] ?? null,
                     'type_label' => $this->typeLabels['banner_desktop'] ?? 'Banner desktop',
@@ -270,12 +270,12 @@ class MediaScannerService
                 ]);
             }
             if ($banner->image_mobile && (!$onlyType || $onlyType === 'banner_mobile')) {
-                $folderKey = $this->detectFolderKey($banner->image_mobile);
+                $folderKey = 'banners';
                 $items->push([
                     'id' => (string) $banner->id,
                     'type' => 'banner_mobile',
-                    'preview' => $this->toAsset($banner->image_mobile),
-                    'original' => $this->toAsset($banner->image_mobile),
+                    'preview' => $this->toProjectAsset($banner->image_mobile, 'banners'),
+                    'original' => $this->toProjectAsset($banner->image_mobile, 'banners'),
                     'folder_key' => $folderKey,
                     'folder_label' => $this->directoryLabels[$folderKey] ?? null,
                     'type_label' => $this->typeLabels['banner_mobile'] ?? 'Banner mobile',
@@ -309,12 +309,12 @@ class MediaScannerService
         return $query->get()->flatMap(function (Profile $profile) use ($onlyType) {
             $items = collect();
             if ($profile->avatar && (!$onlyType || $onlyType === 'profile_avatar')) {
-                $folderKey = $this->detectFolderKey($profile->avatar);
+                $folderKey = 'accounts_avatars';
                 $items->push([
                     'id' => (string) $profile->id,
                     'type' => 'profile_avatar',
-                    'preview' => $this->toAsset($profile->avatar),
-                    'original' => $this->toAsset($profile->avatar),
+                    'preview' => $this->toProjectAsset($profile->avatar, 'accounts_avatars'),
+                    'original' => $this->toProjectAsset($profile->avatar, 'accounts_avatars'),
                     'folder_key' => $folderKey,
                     'folder_label' => $this->directoryLabels[$folderKey] ?? null,
                     'type_label' => $this->typeLabels['profile_avatar'] ?? 'Avatar',
@@ -326,12 +326,12 @@ class MediaScannerService
                 ]);
             }
             if ($profile->sub_avatar && (!$onlyType || $onlyType === 'profile_sub_avatar')) {
-                $folderKey = $this->detectFolderKey($profile->sub_avatar);
+                $folderKey = 'accounts_avatars';
                 $items->push([
                     'id' => (string) $profile->id,
                     'type' => 'profile_sub_avatar',
-                    'preview' => $this->toAsset($profile->sub_avatar),
-                    'original' => $this->toAsset($profile->sub_avatar),
+                    'preview' => $this->toProjectAsset($profile->sub_avatar, 'accounts_avatars'),
+                    'original' => $this->toProjectAsset($profile->sub_avatar, 'accounts_avatars'),
                     'folder_key' => $folderKey,
                     'folder_label' => $this->directoryLabels[$folderKey] ?? null,
                     'type_label' => $this->typeLabels['profile_sub_avatar'] ?? 'Ảnh phụ avatar',
@@ -380,6 +380,27 @@ class MediaScannerService
         return asset($trimmed);
     }
 
+    protected function toProjectAsset(?string $path, string $folderKey): ?string
+    {
+        if (!$path) {
+            return null;
+        }
+
+        if (Str::startsWith($path, ['http://', 'https://'])) {
+            return $path;
+        }
+
+        $directory = $this->directories[$folderKey] ?? $this->directories['other'] ?? '';
+        $directory = rtrim($directory, '/') . '/';
+
+        // Tránh trường hợp $path đã có $directory (backward compatibility)
+        if (Str::startsWith($path, $directory)) {
+            return asset($path);
+        }
+
+        return asset($directory . $path);
+    }
+
     protected function detectFolderKey(?string $path): ?string
     {
         if (!$path) {
@@ -423,30 +444,30 @@ class MediaScannerService
         Post::select('thumbnail')->whereNotNull('thumbnail')
             ->chunk(500, function ($chunk) use (&$bytes) {
                 foreach ($chunk as $post) {
-                    $bytes += $this->safeFilesize($post->thumbnail);
+                    $bytes += $this->safeProjectFilesize($post->thumbnail, 'posts');
                 }
             });
 
         Category::select('image')->whereNotNull('image')
             ->chunk(500, function ($chunk) use (&$bytes) {
                 foreach ($chunk as $category) {
-                    $bytes += $this->safeFilesize($category->image);
+                    $bytes += $this->safeProjectFilesize($category->image, 'categories');
                 }
             });
 
         Banner::select('image_desktop', 'image_mobile')
             ->chunk(500, function ($chunk) use (&$bytes) {
                 foreach ($chunk as $banner) {
-                    $bytes += $this->safeFilesize($banner->image_desktop);
-                    $bytes += $this->safeFilesize($banner->image_mobile);
+                    $bytes += $this->safeProjectFilesize($banner->image_desktop, 'banners');
+                    $bytes += $this->safeProjectFilesize($banner->image_mobile, 'banners');
                 }
             });
 
         Profile::select('avatar', 'sub_avatar')
             ->chunk(500, function ($chunk) use (&$bytes) {
                 foreach ($chunk as $profile) {
-                    $bytes += $this->safeFilesize($profile->avatar);
-                    $bytes += $this->safeFilesize($profile->sub_avatar);
+                    $bytes += $this->safeProjectFilesize($profile->avatar, 'accounts_avatars');
+                    $bytes += $this->safeProjectFilesize($profile->sub_avatar, 'accounts_avatars');
                 }
             });
 
@@ -460,6 +481,22 @@ class MediaScannerService
             return filesize($absolute) ?: 0;
         }
         return 0;
+    }
+
+    protected function safeProjectFilesize(?string $path, string $folderKey): int
+    {
+        if (!$path || Str::startsWith($path, ['http://', 'https://'])) {
+            return 0;
+        }
+
+        $directory = $this->directories[$folderKey] ?? $this->directories['other'] ?? '';
+        $directory = rtrim($directory, '/') . '/';
+
+        if (Str::startsWith($path, $directory)) {
+            return $this->safeFilesize($path);
+        }
+
+        return $this->safeFilesize($directory . $path);
     }
 }
 

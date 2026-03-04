@@ -253,11 +253,11 @@ class ProductService
             $file = Arr::get($imageData, 'file');
             $path = Arr::get($imageData, 'existing_path', Arr::get($imageData, 'path'));
             
-            $relativeUrl = $path; // Giữ nguyên path tương đối nếu có
+            $relativeUrl = $path ? basename($path) : null; // Chỉ lấy tên tệp
             
             if ($file instanceof UploadedFile) {
                 $filename = $this->storeImageFile($file);
-                $relativeUrl = 'clients/assets/img/clothes/' . $filename;
+                $relativeUrl = $filename; // Chỉ lưu tên tệp
             }
 
             $payload = [

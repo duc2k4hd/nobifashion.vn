@@ -27,19 +27,19 @@ class MediaOptimizerService
 
         $variants = [];
 
-        $thumbnailRelative = $dir . '/' . $basename . '-thumb.' . $extension;
-        if ($this->resize($absolutePath, public_path($thumbnailRelative), 320, 320)) {
-            $variants['thumbnail'] = $thumbnailRelative;
+        $thumbnailFilename = $basename . '-thumb.' . $extension;
+        if ($this->resize($absolutePath, public_path($dir . '/' . $thumbnailFilename), 320, 320)) {
+            $variants['thumbnail'] = $thumbnailFilename;
         }
 
-        $mediumRelative = $dir . '/' . $basename . '-medium.' . $extension;
-        if ($this->resize($absolutePath, public_path($mediumRelative), 1024, 1024)) {
-            $variants['medium'] = $mediumRelative;
+        $mediumFilename = $basename . '-medium.' . $extension;
+        if ($this->resize($absolutePath, public_path($dir . '/' . $mediumFilename), 1024, 1024)) {
+            $variants['medium'] = $mediumFilename;
         }
 
-        $webpRelative = $dir . '/' . $basename . '.webp';
-        if ($this->convertToWebp($absolutePath, public_path($webpRelative))) {
-            $variants['webp'] = $webpRelative;
+        $webpFilename = $basename . '.webp';
+        if ($this->convertToWebp($absolutePath, public_path($dir . '/' . $webpFilename))) {
+            $variants['webp'] = $webpFilename;
         }
 
         return $variants;

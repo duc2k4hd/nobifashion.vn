@@ -668,17 +668,17 @@ class FlashSaleService
         $file->move($folderPath, $fileName);
         @chmod($folderPath . DIRECTORY_SEPARATOR . $fileName, 0644);
         
-        // Trả về đường dẫn relative để lưu vào DB
-        return 'admins/img/banners/flash-sale/' . $fileName;
+        // Trả về tên tệp để lưu vào DB
+        return $fileName;
     }
 
     /**
      * Xóa banner
      */
-    private function deleteBanner(string $path): bool
+    private function deleteBanner(string $filename): bool
     {
         // Xóa file từ public folder
-        $filePath = public_path($path);
+        $filePath = public_path('admins/img/banners/flash-sale/' . $filename);
         if (file_exists($filePath)) {
             return unlink($filePath);
         }

@@ -255,7 +255,7 @@
                 @forelse($posts as $post)
                     <div class="col-md-6">
                         <article class="blog-card h-100">
-                            <img src="{{ asset($post->thumbnail ?? 'clients/assets/img/clothes/no-image.webp') }}" 
+                            <img src="{{ $post->thumbnail ? asset('clients/assets/img/posts/' . $post->thumbnail) : asset('clients/assets/img/clothes/no-image.webp') }}" 
                                 alt="{{ renderMeta($post->thumbnail_alt_text ?? $post->title) }}"
                                 loading="lazy"
                                 onerror="this.onerror=null; this.src='{{ asset('clients/assets/img/clothes/no-image.webp') }}';">

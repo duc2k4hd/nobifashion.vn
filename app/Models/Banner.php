@@ -107,6 +107,7 @@ class Banner extends Model
         return $maxOrder + 1;
     }
 
+
     public function scopeImage(string $device = 'desktop'): string
     {
         return $device === 'mobile' ? $this->image_mobile : $this->image_desktop;

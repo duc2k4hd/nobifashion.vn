@@ -64,6 +64,7 @@ class Voucher extends Model
         'value_label',
     ];
 
+
     public function account()
     {
         return $this->belongsTo(Account::class);

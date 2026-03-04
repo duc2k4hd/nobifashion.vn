@@ -213,12 +213,13 @@ class MediaLibrary {
         const isSelected = this.selectedItems.some(sel => String(sel.id) === String(item.id));
         const dimensions = item.dimensions ? `${item.dimensions.width} × ${item.dimensions.height}` : '';
         const size = this.formatFileSize(item.size);
+        const folder = this.context === 'post' ? 'posts' : 'clothes';
 
         if (this.currentView === 'list') {
             return `
                 <div class="media-item list-view ${isSelected ? 'selected' : ''}" data-id="${item.id}">
                     <input type="checkbox" class="media-item-checkbox" ${isSelected ? 'checked' : ''} onchange="window.mediaLibrary.toggleSelect('${item.id}')">
-                    <img src="${item.url}" alt="${item.alt || item.name}" loading="lazy">
+                    <img onerror="this.src='/clients/assets/img/no-image.png'" src="/clients/assets/img/${folder}/${item.url}" alt="${item.alt || item.name}" loading="lazy">
                     <div class="media-item-info">
                         <div class="media-item-name">${this.escapeHtml(item.title || item.name)}</div>
                         <div class="media-item-meta">${dimensions} • ${size}</div>
@@ -229,7 +230,7 @@ class MediaLibrary {
         return `
             <div class="media-item ${isSelected ? 'selected' : ''}" data-id="${item.id}">
                 <input type="checkbox" class="media-item-checkbox" ${isSelected ? 'checked' : ''} onchange="window.mediaLibrary.toggleSelect('${item.id}')">
-                <img src="${item.url}" alt="${item.alt || item.name}" loading="lazy">
+                <img onerror="this.src='/clients/assets/img/no-image.png'" src="/clients/assets/img/${folder}/${item.url}" alt="${item.alt || item.name}" loading="lazy">
                 <div class="media-item-name" title="${item.title || item.name}">${this.escapeHtml(item.title || item.name)}</div>
             </div>
         `;
@@ -383,7 +384,10 @@ class MediaLibrary {
         const title = document.getElementById('detail-title');
         const alt = document.getElementById('detail-alt');
 
-        if (img) img.src = item.url;
+        if (img) {
+            const folder = this.context === 'post' ? 'posts' : 'clothes';
+            img.src = '/clients/assets/img/' + folder + '/' + item.url;
+        }
         if (title) title.value = item.title || '';
         if (alt) alt.value = item.alt || '';
         if (meta) {

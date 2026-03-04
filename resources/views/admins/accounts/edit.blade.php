@@ -621,7 +621,9 @@
                 if (!account) return;
                 const displayName = account.profile?.full_name || account.name || account.email;
                 const avatar = account.profile?.avatar || account.profile?.sub_avatar;
-                const avatarUrl = avatar ? avatar : `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=F3F4F6&color=0F172A&bold=true`;
+                const avatarUrl = avatar 
+                    ? (avatar.startsWith('http') ? avatar : `${accountImageBase}/${avatar}`) 
+                    : `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=F3F4F6&color=0F172A&bold=true`;
                 root.querySelectorAll('[data-bind="avatar"]').forEach(img => img.src = avatarUrl);
                 root.querySelector('[data-bind="displayName"]').textContent = displayName;
                 root.querySelector('[data-bind="email"]').textContent = account.email;

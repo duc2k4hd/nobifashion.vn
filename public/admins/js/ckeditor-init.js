@@ -95,7 +95,8 @@
                             context: context,
                             onInsert: (image) => {
                                 const alt = image.name.replace(/\.[^/.]+$/, '');
-                                const imageUrl = image.url;
+                                const folder = context === 'post' ? 'posts' : 'clothes';
+                                const imageUrl = `/clients/assets/img/${folder}/${image.url}`;
                                 
                                 // Chèn ảnh vào editor
                                 editor.model.change(writer => {

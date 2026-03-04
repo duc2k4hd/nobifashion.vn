@@ -290,7 +290,7 @@ class VoucherController extends Controller
         $file->move($directory, $filename);
         @chmod($directory . DIRECTORY_SEPARATOR . $filename, 0644);
 
-        return 'clients/assets/img/vouchers/' . $filename;
+        return $filename;
     }
 
     public function uploadImage(Request $request): JsonResponse
