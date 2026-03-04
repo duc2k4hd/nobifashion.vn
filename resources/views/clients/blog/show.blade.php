@@ -547,20 +547,20 @@
             margin-bottom: 0.75rem !important;
         }
 
-        .article-wrapper h1 { font-size: 2.5rem !important; border-bottom: 2px solid #f3f4f6 !important; padding-bottom: 0.75rem !important; }
-        .article-wrapper h2 { font-size: 1.85rem !important; border-bottom: 1px solid #f3f4f6 !important; padding-bottom: 0.5rem !important; }
-        .article-wrapper h3 { font-size: 1.5rem !important; }
-        .article-wrapper h4 { font-size: 1.25rem !important; }
+        .article-wrapper h1 { font-size: 1.6rem !important; border-bottom: 2px solid #f3f4f6 !important; padding-bottom: 0.75rem !important; }
+        .article-wrapper h2 { font-size: 1.35rem !important; border-bottom: 1px solid #f3f4f6 !important; padding-bottom: 0.5rem !important; }
+        .article-wrapper h3 { font-size: 1.2rem !important; }
+        .article-wrapper h4 { font-size: 1.1rem !important; }
 
-        .article-wrapper h1 strong { font-size: 2.5rem !important; border-bottom: 2px solid #f3f4f6 !important; padding-bottom: 0.75rem !important; }
-        .article-wrapper h2 strong { font-size: 1.85rem !important; border-bottom: 1px solid #f3f4f6 !important; padding-bottom: 0.5rem !important; }
-        .article-wrapper h3 strong { font-size: 1.5rem !important; }
-        .article-wrapper h4 strong { font-size: 1.25rem !important; }
+        .article-wrapper h1 strong { font-size: 1.6rem !important; border-bottom: 2px solid #f3f4f6 !important; padding-bottom: 0.75rem !important; }
+        .article-wrapper h2 strong { font-size: 1.35rem !important; border-bottom: 1px solid #f3f4f6 !important; padding-bottom: 0.5rem !important; }
+        .article-wrapper h3 strong { font-size: 1.2rem !important; }
+        .article-wrapper h4 strong { font-size: 1.1rem !important; }
 
         /* Paragraphs & Text */
         .article-wrapper p {
             margin-bottom: 1.5rem !important;
-            font-size: 1.1rem !important;
+            font-size: 1rem !important;
             color: #374151 !important;
         }
 
@@ -644,8 +644,9 @@
         }
 
         .article-wrapper figure {
-            margin: 2.5rem 0 !important;
+            margin: 2.5rem auto !important;
             text-align: center !important;
+            width: fit-content !important;
         }
 
         .article-wrapper figure img {
@@ -954,7 +955,8 @@
                 padding: 0 12px;
             }
             .article-wrapper {
-                padding: 16px;
+                padding: 5px !important;
+                border: none !important;
             }
         }
     </style>
@@ -1281,7 +1283,7 @@
             <div class="hero-meta">
                 <div class="hero-meta-item">
                     <i class="fas fa-user-circle"></i>
-                    <span>{{ $post->author?->name ?? 'Editorial Team' }}</span>
+                    <span>{{ $post->author?->name ?? 'Team Nobi Fashion' }}</span>
                 </div>
                 <div class="hero-meta-item">
                     <i class="far fa-calendar-alt"></i>
