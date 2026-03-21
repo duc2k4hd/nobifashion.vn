@@ -27,13 +27,13 @@ class BannerRequest extends FormRequest
             'image_desktop' => [
                 $bannerId ? 'nullable' : 'required',
                 'image',
-                'mimes:jpg,jpeg,png,webp',
+                'extensions:jpg,jpeg,png,webp,avif',
                 'max:4096',
             ],
             'image_mobile' => [
                 $bannerId ? 'nullable' : 'required',
                 'image',
-                'mimes:jpg,jpeg,png,webp',
+                'extensions:jpg,jpeg,png,webp,avif',
                 'max:4096',
             ],
 

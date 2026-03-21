@@ -263,7 +263,7 @@ Route::post('/product/phone-request', [ContactController::class, 'sendPhoneReque
 
 Route::prefix('blog')->name('client.blog.')->group(function () {
     Route::get('/', [BlogController::class, 'index'])->name('index');
-    Route::get('/{post:slug}', [BlogController::class, 'show'])->name('show');
+    Route::get('/{slug}', [BlogController::class, 'show'])->name('show');
 });
 
 Route::post('/comments', [\App\Http\Controllers\Api\V1\CommentController::class, 'store'])->name('client.comments.store');

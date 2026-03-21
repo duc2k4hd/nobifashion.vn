@@ -28,8 +28,8 @@ class AccountAvatarUploadRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'avatar' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,avif', 'max:4096'],
-            'sub_avatar' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp,avif', 'max:4096'],
+            'avatar' => ['nullable', 'image', 'extensions:jpeg,png,jpg,webp,avif', 'max:4096'],
+            'sub_avatar' => ['nullable', 'image', 'extensions:jpeg,png,jpg,webp,avif', 'max:4096'],
             'remove_avatar' => ['nullable', 'boolean'],
             'remove_sub_avatar' => ['nullable', 'boolean'],
             'history_restore' => ['nullable', 'in:avatar,sub_avatar'],

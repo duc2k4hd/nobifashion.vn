@@ -110,7 +110,6 @@ class ProductService
             'meta_title' => Arr::get($data, 'meta_title'),
             'meta_description' => Arr::get($data, 'meta_description'),
             'meta_keywords' => Arr::get($data, 'meta_keywords'),
-            'meta_canonical' => Arr::get($data, 'meta_canonical') ?? $domain_name . '/san-pham/' . $slug,
             'primary_category_id' => Arr::get($data, 'primary_category_id'),
             'is_featured' => Arr::get($data, 'is_featured', false),
             'has_variants' => false,

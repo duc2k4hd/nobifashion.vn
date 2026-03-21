@@ -38,6 +38,17 @@ class Post extends Model
         'created_by',
     ];
 
+    protected static function booted()
+    {
+        static::saving(function ($post) {
+            // Luôn cập nhật Canonical URL để đảm bảo độ chính xác
+            if ($post->slug) {
+                // Sử dụng url helper để lấy chuẩn domain và scheme
+                $post->meta_canonical = url('/blog/'.$post->slug);
+            }
+        });
+    }
+
     protected $casts = [
         'tag_ids' => 'array',
         'is_featured' => 'boolean',
@@ -47,7 +58,6 @@ class Post extends Model
     protected $appends = [
         'excerpt_text',
     ];
-
 
     // Relationships
     public function author(): BelongsTo
@@ -146,13 +156,13 @@ class Post extends Model
     public function getTagIdsAttribute(): array
     {
         // Nếu có tag_ids trong database (backward compatibility), dùng nó
-        if (!empty($this->attributes['tag_ids'])) {
+        if (! empty($this->attributes['tag_ids'])) {
             $decoded = json_decode($this->attributes['tag_ids'], true);
             if (is_array($decoded)) {
                 return $decoded;
             }
         }
-        
+
         // Nếu không, lấy từ relationship
         return $this->tags()->pluck('id')->toArray();
     }

@@ -17,6 +17,21 @@ class Product extends Model
 
     protected $fillable = ['sku', 'name', 'slug', 'description', 'short_description', 'price', 'sale_price', 'cost_price', 'stock_quantity', 'meta_title', 'meta_description', 'meta_keywords', 'meta_canonical', 'primary_category_id', 'category_ids', 'tag_ids', 'is_featured', 'locked_by', 'locked_at', 'has_variants', 'created_by', 'is_active'];
 
+    protected static function booted()
+    {
+        static::saving(function ($product) {
+            // Luôn cập nhật Canonical URL để đảm bảo độ chính xác
+            if ($product->slug) {
+                $siteUrl = \App\Models\Setting::where('key', 'site_url')->value('value');
+                if ($siteUrl) {
+                    $product->meta_canonical = rtrim($siteUrl, '/') . '/san-pham/' . $product->slug;
+                } else {
+                    $product->meta_canonical = url('/san-pham/' . $product->slug);
+                }
+            }
+        });
+    }
+
     protected $casts = [
         'category_ids' => 'array',
         'tag_ids' => 'array',

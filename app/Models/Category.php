@@ -25,6 +25,21 @@ class Category extends Model
         'sort_order',
     ];
 
+    protected static function booted()
+    {
+        static::saving(function ($category) {
+            // Luôn cập nhật Canonical URL để đảm bảo độ chính xác
+            if ($category->slug) {
+                $siteUrl = \App\Models\Setting::where('key', 'site_url')->value('value');
+                if ($siteUrl) {
+                    $category->meta_canonical = rtrim($siteUrl, '/') . '/' . $category->slug;
+                } else {
+                    $category->meta_canonical = url('/' . $category->slug);
+                }
+            }
+        });
+    }
+
     protected $casts = [
         'is_active' => 'boolean',
         'sort_order' => 'integer',

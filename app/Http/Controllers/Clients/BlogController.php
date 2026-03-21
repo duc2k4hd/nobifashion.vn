@@ -74,9 +74,11 @@ class BlogController extends Controller
         ]);
     }
 
-    public function show(Request $request, Post $post): View
+    public function show(Request $request, string $slug): View
     {
-        if(!$post->isPublished()) {
+        $post = Post::where('slug', $slug)->first();
+
+        if (!$post || !$post->isPublished()) {
             return view('clients.pages.errors.404');
         }
 

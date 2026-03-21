@@ -296,7 +296,7 @@ class VoucherController extends Controller
     public function uploadImage(Request $request): JsonResponse
     {
         $request->validate([
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'image' => 'required|image|extensions:jpeg,png,jpg,gif,webp,avif|max:2048',
         ]);
 
         $imagePath = $this->uploadVoucherImage($request->file('image'));

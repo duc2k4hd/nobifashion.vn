@@ -18,8 +18,7 @@ class PostService
     public function __construct(
         protected SeoService $seoService,
         protected PostStatusService $statusService,
-    ) {
-    }
+    ) {}
 
     public function create(array $payload, Account $author): Post
     {
@@ -46,11 +45,11 @@ class PostService
     {
         return DB::transaction(function () use ($post, $payload, $editor) {
             $data = $this->preparePayload($payload, $post);
-            
+
             $tagIds = $data['tag_ids'] ?? [];
             $tagNames = $data['tag_names'] ?? null;
             unset($data['tag_ids'], $data['tag_names']); // Không lưu vào cột tag_ids nữa
-            
+
             $post->fill($data);
             $post->account_id = $payload['account_id'] ?? $post->account_id ?? $editor->id;
             $post->save();
@@ -128,10 +127,10 @@ class PostService
         $cacheKey = sprintf(
             'post:view:%s:%s',
             $post->id,
-            sha1($request->ip() . '|' . $request->userAgent())
+            sha1($request->ip().'|'.$request->userAgent())
         );
 
-        if (!Cache::has($cacheKey)) {
+        if (! Cache::has($cacheKey)) {
             $post->increment('views');
             Cache::put($cacheKey, true, now()->addMinutes($cooldownMinutes));
         }
@@ -180,7 +179,7 @@ class PostService
 
         // Xử lý tags: có thể từ tag_ids (dropdown) hoặc tag_names (input mới)
         $tagIds = [];
-        
+
         // Lấy tag IDs từ dropdown
         if (array_key_exists('tag_ids', $payload)) {
             $tagIds = array_filter(array_map('intval', Arr::wrap($payload['tag_ids'])));
@@ -188,19 +187,19 @@ class PostService
             // Lấy tag IDs từ relationship nếu có post
             $tagIds = $post ? $post->tags()->pluck('id')->toArray() : [];
         }
-        
+
         // Lưu tag_names để xử lý sau trong syncTags
         $data['tag_names'] = $payload['tag_names'] ?? null;
-        
+
         $data['tag_ids'] = array_values(array_unique($tagIds));
 
-        if (!empty($data['slug'])) {
+        if (! empty($data['slug'])) {
             $data['slug'] = $this->seoService->generateSlug($data['slug'], $post?->id);
-        } elseif (!empty($data['title'])) {
+        } elseif (! empty($data['title'])) {
             $data['slug'] = $this->seoService->generateSlug($data['title'], $post?->id);
         }
 
-        if (empty($data['excerpt']) && !empty($data['content'])) {
+        if (empty($data['excerpt']) && ! empty($data['content'])) {
             $data['excerpt'] = $this->seoService->generateExcerpt($data['content']);
         }
 
@@ -246,10 +245,9 @@ class PostService
     /**
      * Sync tags cho post vào tags table với entity_type = 'App\Models\Post'
      * Mỗi tag sẽ được tạo với entity_id = post->id và entity_type = Post::class
-     * 
-     * @param Post $post
-     * @param array $tagIds Tag IDs từ dropdown
-     * @param string|null $tagNames Tag names từ input (phân cách bằng dấu phẩy)
+     *
+     * @param  array  $tagIds  Tag IDs từ dropdown
+     * @param  string|null  $tagNames  Tag names từ input (phân cách bằng dấu phẩy)
      */
     protected function syncTags(Post $post, array $tagIds, ?string $tagNames = null): void
     {
@@ -260,7 +258,7 @@ class PostService
 
         // Xử lý tag names từ input (tags mới)
         $allTagNames = [];
-        if (!empty($tagNames)) {
+        if (! empty($tagNames)) {
             $newTagNames = $this->parseTagNames($tagNames);
             $allTagNames = array_merge($allTagNames, $newTagNames);
         }
@@ -269,20 +267,21 @@ class PostService
         if (empty($tagIds) && empty($allTagNames)) {
             $post->tag_ids = [];
             $post->saveQuietly();
+
             return;
         }
 
         // Lấy thông tin tags từ posts (entity_type = Post::class)
         // Chỉ lấy tags của posts, không lấy tags của products
         $existingTags = [];
-        if (!empty($tagIds)) {
+        if (! empty($tagIds)) {
             $existingTags = Tag::whereIn('id', $tagIds)
                 ->where('entity_type', Post::class) // Chỉ lấy tags của posts
                 ->select('id', 'name', 'slug', 'description', 'is_active')
                 ->get()
                 ->unique('name') // Lấy unique theo name để tránh duplicate
                 ->keyBy('id');
-            
+
             // Lấy thêm tag names từ existing tags
             foreach ($existingTags as $tag) {
                 $allTagNames[] = $tag->name;
@@ -292,37 +291,38 @@ class PostService
         // Loại bỏ duplicate và tạo tags
         $allTagNames = array_unique(array_map('trim', $allTagNames));
         $createdTagIds = [];
-        
+
         foreach ($allTagNames as $tagName) {
             if (empty($tagName)) {
                 continue;
             }
-            
+
             // Kiểm tra xem tag đã có với entity_id = post->id chưa
             $existingPostTag = Tag::where('entity_type', Post::class)
                 ->where('entity_id', $post->id)
                 ->where('name', $tagName)
                 ->first();
-            
+
             if ($existingPostTag) {
                 // Nếu đã tồn tại, dùng tag đó
                 $createdTagIds[] = $existingPostTag->id;
+
                 continue;
             }
-            
+
             // Tìm tag template (có thể từ posts khác hoặc mới tạo)
             $templateTag = Tag::where('entity_type', Post::class)
                 ->where('name', $tagName)
                 ->first();
-            
+
             // Tạo tag mới với entity_type và entity_id cho post này
             $baseSlug = Str::slug($tagName);
-            $uniqueSlug = $baseSlug . '-post-' . $post->id;
-            
+            $uniqueSlug = $baseSlug.'-post-'.$post->id;
+
             // Đảm bảo slug unique
             $counter = 1;
             while (Tag::where('slug', $uniqueSlug)->exists()) {
-                $uniqueSlug = $baseSlug . '-post-' . $post->id . '-' . $counter;
+                $uniqueSlug = $baseSlug.'-post-'.$post->id.'-'.$counter;
                 $counter++;
             }
 
@@ -351,9 +351,7 @@ class PostService
     {
         return array_filter(
             array_map('trim', explode(',', $tagNames)),
-            fn($name) => !empty($name)
+            fn ($name) => ! empty($name)
         );
     }
 }
-
-

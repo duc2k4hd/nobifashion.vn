@@ -77,7 +77,7 @@ class MediaLibraryController extends Controller
     {
         try {
             $request->validate([
-                'file'    => 'required|mimes:jpg,jpeg,png,gif,webp,avif|max:10240',
+                'file'    => 'required|extensions:jpg,jpeg,png,gif,webp,avif|max:10240',
                 'context' => 'nullable|string|in:product,post',
             ]);
 
@@ -116,7 +116,7 @@ class MediaLibraryController extends Controller
             }
 
             $dimensions = null;
-            if ($extension !== 'avif' && $extension !== 'svg') {
+            if ($extension !== 'svg') {
                 $info = @getimagesize($fullPath);
                 if ($info) {
                     $dimensions = ['width' => $info[0], 'height' => $info[1]];

@@ -23,7 +23,7 @@ class VoucherUpdateRequest extends FormRequest
             'name' => ['required', 'string', 'max:150'],
             'description' => ['nullable', 'string'],
             'image' => ['nullable', 'string', 'max:255'],
-            'image_file' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:2048'],
+            'image_file' => ['nullable', 'image', 'extensions:jpeg,png,jpg,gif,webp,avif', 'max:2048'],
             'type' => ['required', Rule::in([
                 Voucher::TYPE_PERCENTAGE,
                 Voucher::TYPE_FIXED_AMOUNT,

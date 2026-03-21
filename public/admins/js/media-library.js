@@ -114,6 +114,11 @@ class MediaLibrary {
         window.addEventListener('keydown', (e) => {
             if (this.modal && this.modal.style.display === 'flex') {
                 if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'a') {
+                    // Nếu đang focus vào input hoặc textarea, để trình duyệt xử lý mặc định (chọn văn bản)
+                    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) {
+                        return;
+                    }
+                    
                     // Chỉ thực hiện nếu đang ở tab library
                     if (this.currentTab === 'library') {
                         e.preventDefault();

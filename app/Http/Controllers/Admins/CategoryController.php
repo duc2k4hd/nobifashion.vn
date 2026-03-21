@@ -55,6 +55,7 @@ class CategoryController extends Controller
             $data['slug'] = Str::slug($data['name']);
         }
 
+
         if ($request->hasFile('image')) {
             $data['image'] = $this->uploadImage($request->file('image'));
         }
@@ -83,6 +84,7 @@ class CategoryController extends Controller
         if (empty($data['slug'])) {
             $data['slug'] = Str::slug($data['name']);
         }
+
 
         if ($request->hasFile('image')) {
             $this->deleteImageFile($category->image);
