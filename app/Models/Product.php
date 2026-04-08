@@ -8,14 +8,15 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Product extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'products';
 
-    protected $fillable = ['sku', 'name', 'slug', 'description', 'short_description', 'price', 'sale_price', 'cost_price', 'stock_quantity', 'meta_title', 'meta_description', 'meta_keywords', 'meta_canonical', 'primary_category_id', 'category_ids', 'tag_ids', 'is_featured', 'locked_by', 'locked_at', 'has_variants', 'created_by', 'is_active'];
+    protected $fillable = ['sku', 'name', 'slug', 'description', 'short_description', 'price', 'sale_price', 'cost_price', 'stock_quantity', 'meta_title', 'meta_description', 'meta_keywords', 'meta_canonical', 'brand_id', 'primary_category_id', 'category_ids', 'tag_ids', 'is_featured', 'locked_by', 'locked_at', 'has_variants', 'created_by', 'is_active'];
 
     protected static function booted()
     {
@@ -35,6 +36,7 @@ class Product extends Model
     protected $casts = [
         'category_ids' => 'array',
         'tag_ids' => 'array',
+        'brand_id' => 'integer',
         'is_featured' => 'boolean',
         'has_variants' => 'boolean',
         'price' => 'decimal:2',
@@ -55,6 +57,11 @@ class Product extends Model
     public function primaryCategory()
     {
         return $this->belongsTo(Category::class, 'primary_category_id');
+    }
+
+    public function brand(): BelongsTo
+    {
+        return $this->belongsTo(Brand::class, 'brand_id');
     }
 
     public function cartItems($cart_id) {

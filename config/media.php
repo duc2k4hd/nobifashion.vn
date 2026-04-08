@@ -3,6 +3,7 @@
 return [
     'directories' => [
         'banners' => 'clients/assets/img/banners',
+        'brands' => 'clients/assets/img/brands',
         'business' => 'clients/assets/img/business',
         'categories' => 'clients/assets/img/categories',
         'clothes' => 'clients/assets/img/clothes',

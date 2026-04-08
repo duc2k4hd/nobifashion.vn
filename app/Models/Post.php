@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
+use App\Services\Media\ImageRegistryService;
 
 class Post extends Model
 {
@@ -45,6 +46,37 @@ class Post extends Model
             if ($post->slug) {
                 // Sử dụng url helper để lấy chuẩn domain và scheme
                 $post->meta_canonical = url('/blog/'.$post->slug);
+            }
+        });
+
+        static::saved(function ($post) {
+            try {
+                app(ImageRegistryService::class)->syncEntityImage(
+                    entityType: 'post',
+                    entityId: (int) $post->id,
+                    role: 'thumbnail',
+                    storedPath: $post->thumbnail,
+                    meta: [
+                        'title' => $post->title,
+                        'alt' => $post->thumbnail_alt_text,
+                        'context' => 'post',
+                    ]
+                );
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
+        });
+
+        static::deleted(function ($post) {
+            try {
+                app(ImageRegistryService::class)->syncEntityImage(
+                    entityType: 'post',
+                    entityId: (int) $post->id,
+                    role: 'thumbnail',
+                    storedPath: null
+                );
+            } catch (\Throwable $exception) {
+                report($exception);
             }
         });
     }

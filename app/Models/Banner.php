@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use PDO;
+use App\Services\Media\ImageRegistryService;
 
 class Banner extends Model
 {
@@ -35,6 +36,51 @@ class Banner extends Model
         'end_at'   => 'datetime',
         'order' => 'integer',
     ];
+
+    protected static function booted()
+    {
+        static::saved(function ($banner) {
+            try {
+                $registry = app(ImageRegistryService::class);
+                $registry->syncEntityImage(
+                    entityType: 'banner',
+                    entityId: (int) $banner->id,
+                    role: 'desktop',
+                    storedPath: $banner->image_desktop,
+                    meta: [
+                        'title' => $banner->title,
+                        'alt' => $banner->title,
+                        'description' => $banner->description,
+                        'context' => 'banner',
+                    ]
+                );
+                $registry->syncEntityImage(
+                    entityType: 'banner',
+                    entityId: (int) $banner->id,
+                    role: 'mobile',
+                    storedPath: $banner->image_mobile,
+                    meta: [
+                        'title' => $banner->title,
+                        'alt' => $banner->title,
+                        'description' => $banner->description,
+                        'context' => 'banner',
+                    ]
+                );
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
+        });
+
+        static::deleted(function ($banner) {
+            try {
+                $registry = app(ImageRegistryService::class);
+                $registry->syncEntityImage('banner', (int) $banner->id, 'desktop', null);
+                $registry->syncEntityImage('banner', (int) $banner->id, 'mobile', null);
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
+        });
+    }
 
     // ------------------------------
     // Scope

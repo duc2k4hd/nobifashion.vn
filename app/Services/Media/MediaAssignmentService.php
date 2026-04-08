@@ -6,24 +6,19 @@ use App\Models\Banner;
 use App\Models\Category;
 use App\Models\Image;
 use App\Models\Post;
+use App\Models\Product;
 use App\Models\Profile;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Str;
 
 class MediaAssignmentService
 {
-    protected FileHelperService $files;
-
-    public function __construct(FileHelperService $files)
-    {
-        $this->files = $files;
+    public function __construct(
+        protected FileHelperService $files,
+        protected ImageRegistryService $registry
+    ) {
     }
 
-    /**
-     * Gán ảnh mới upload vào entity tương ứng.
-     *
-     * @param  array{original:string, thumbnail?:string, medium?:string, webp?:string}  $paths
-     * @param  array{title?:string, alt?:string, caption?:string, description?:string, is_primary?:bool}  $meta
-     */
     public function assignUploadedFile(string $targetType, int $targetId, array $paths, array $meta = []): array
     {
         return match ($targetType) {
@@ -38,9 +33,6 @@ class MediaAssignmentService
         };
     }
 
-    /**
-     * Cập nhật metadata cho media.
-     */
     public function updateMeta(string $source, string $id, array $data): bool
     {
         return match ($source) {
@@ -49,30 +41,26 @@ class MediaAssignmentService
             'category_image' => $this->updateCategoryMeta((int) $id, $data),
             'banner_desktop', 'banner_mobile' => $this->updateBannerMeta($source, (int) $id, $data),
             'profile_avatar', 'profile_sub_avatar' => $this->updateProfileMeta($source, (int) $id, $data),
+            'library_image' => $this->updateLibraryImageMeta((int) $id, $data),
             default => false,
         };
     }
 
-    /**
-     * Xóa media khỏi entity tương ứng.
-     */
-    public function delete(string $source, string $id): bool
+    public function delete(string $source, string $id, bool $deletePhysical = true): bool
     {
         return match ($source) {
-            'product_image' => $this->deleteProductImage((int) $id),
-            'post_thumbnail' => $this->clearPostThumbnail((int) $id),
-            'category_image' => $this->clearCategoryImage((int) $id),
-            'banner_desktop' => $this->clearBannerImage((int) $id, 'desktop'),
-            'banner_mobile' => $this->clearBannerImage((int) $id, 'mobile'),
-            'profile_avatar' => $this->clearProfileImage((int) $id, 'avatar'),
-            'profile_sub_avatar' => $this->clearProfileImage((int) $id, 'sub_avatar'),
+            'product_image' => $this->deleteProductImage((int) $id, $deletePhysical),
+            'post_thumbnail' => $this->clearPostThumbnail((int) $id, $deletePhysical),
+            'category_image' => $this->clearCategoryImage((int) $id, $deletePhysical),
+            'banner_desktop' => $this->clearBannerImage((int) $id, 'desktop', $deletePhysical),
+            'banner_mobile' => $this->clearBannerImage((int) $id, 'mobile', $deletePhysical),
+            'profile_avatar' => $this->clearProfileImage((int) $id, 'avatar', $deletePhysical),
+            'profile_sub_avatar' => $this->clearProfileImage((int) $id, 'sub_avatar', $deletePhysical),
+            'library_image' => $this->deleteLibraryImage((int) $id, $deletePhysical),
             default => false,
         };
     }
 
-    /**
-     * Chọn ảnh hiện có làm ảnh chính / thumbnail mới.
-     */
     public function assignExisting(string $targetType, int $targetId, array $paths, array $meta = []): array
     {
         $original = $paths['original'] ?? null;
@@ -89,26 +77,79 @@ class MediaAssignmentService
         return $this->assignUploadedFile($targetType, $targetId, $paths, $meta);
     }
 
+    public function attachLibraryImage(int $imageId, string $targetType, int $targetId): array
+    {
+        $image = $this->registry->rebindLibraryImage($imageId, $targetType, $targetId);
+
+        if ($targetType === 'product') {
+            $nextOrder = (int) Image::where('product_id', $targetId)
+                ->where('id', '!=', $image->id)
+                ->max('order');
+
+            $image->product_id = $targetId;
+            $image->entity_type = 'product';
+            $image->entity_id = $targetId;
+            $image->role = $image->is_primary ? 'primary' : 'gallery';
+            $image->path = $this->prepareLegacyValueForFolder($image->path ?: $image->url, 'clothes');
+            $image->url = $this->prepareLegacyValueForFolder($image->url ?: $image->path, 'clothes');
+            $image->thumbnail_url = $this->prepareLegacyValueForFolder($image->thumbnail_url, 'clothes');
+            $image->medium_url = $this->prepareLegacyValueForFolder($image->medium_url, 'clothes');
+            $image->order = $nextOrder + 1;
+            $image->context = 'product';
+            $image->save();
+
+            return [
+                'id' => $image->id,
+                'type' => 'product_image',
+                'path' => $image->url,
+            ];
+        }
+
+        return $this->assignUploadedFile($targetType, $targetId, [
+            'original' => $image->path ?: $image->url,
+            'thumbnail' => $image->thumbnail_url,
+            'medium' => $image->medium_url,
+        ], [
+            'title' => $image->title,
+            'alt' => $image->alt,
+            'description' => $image->notes,
+        ]);
+    }
+
     protected function assignProductImage(int $productId, array $paths, array $meta): array
     {
+        $product = Product::findOrFail($productId);
         $currentOrder = (int) Image::where('product_id', $productId)->max('order');
+        $original = $this->registry->normalizeStoredPath($paths['original'] ?? null, 'clothes');
+        $storedOriginal = $this->prepareLegacyValueForFolder($original, 'clothes');
+        $storedThumbnail = $this->prepareLegacyValueForFolder($paths['thumbnail'] ?? null, 'clothes');
+        $storedMedium = $this->prepareLegacyValueForFolder($paths['medium'] ?? null, 'clothes');
 
         $image = Image::create([
             'product_id' => $productId,
-            'title' => $meta['title'] ?? null,
+            'entity_type' => 'product',
+            'entity_id' => $productId,
+            'role' => (bool) ($meta['is_primary'] ?? false) ? 'primary' : 'gallery',
+            'name' => basename((string) ($storedOriginal ?: $original)),
+            'title' => $meta['title'] ?? $product->name,
             'notes' => $meta['description'] ?? null,
             'alt' => $meta['alt'] ?? null,
-            'url' => $paths['original'],
-            'thumbnail_url' => $paths['thumbnail'] ?? null,
-            'medium_url' => $paths['medium'] ?? null,
+            'url' => $storedOriginal ?: $original,
+            'path' => $storedOriginal ?: $original,
+            'thumbnail_url' => $storedThumbnail,
+            'medium_url' => $storedMedium,
+            'context' => 'product',
             'is_primary' => (bool) ($meta['is_primary'] ?? false),
             'order' => $currentOrder + 1,
         ]);
 
+        $this->syncFileMetadata($image);
+        $image->save();
+
         if ($image->is_primary) {
             Image::where('product_id', $productId)
                 ->where('id', '!=', $image->id)
-                ->update(['is_primary' => false]);
+                ->update(['is_primary' => false, 'role' => 'gallery']);
         }
 
         return [
@@ -121,7 +162,7 @@ class MediaAssignmentService
     protected function assignPostThumbnail(int $postId, array $paths, array $meta): array
     {
         $post = Post::findOrFail($postId);
-        $post->thumbnail = $paths['original'];
+        $post->thumbnail = $this->prepareLegacyValueForFolder($paths['original'], 'posts');
         if (isset($meta['alt'])) {
             $post->thumbnail_alt_text = $meta['alt'];
         }
@@ -137,7 +178,7 @@ class MediaAssignmentService
     protected function assignCategoryImage(int $categoryId, array $paths): array
     {
         $category = Category::findOrFail($categoryId);
-        $category->image = $paths['original'];
+        $category->image = $this->prepareLegacyValueForFolder($paths['original'], 'categories');
         $category->save();
 
         return [
@@ -151,9 +192,9 @@ class MediaAssignmentService
     {
         $banner = Banner::findOrFail($bannerId);
         if ($mode === 'desktop') {
-            $banner->image_desktop = $paths['original'];
+            $banner->image_desktop = $this->prepareLegacyValueForFolder($paths['original'], 'banners');
         } else {
-            $banner->image_mobile = $paths['original'];
+            $banner->image_mobile = $this->prepareLegacyValueForFolder($paths['original'], 'banners');
         }
         $banner->save();
 
@@ -167,7 +208,7 @@ class MediaAssignmentService
     protected function assignProfileImage(int $profileId, array $paths, string $column): array
     {
         $profile = Profile::findOrFail($profileId);
-        $profile->{$column} = $paths['original'];
+        $profile->{$column} = $this->prepareLegacyValueForFolder($paths['original'], 'accounts_avatars');
         $profile->save();
 
         return [
@@ -188,10 +229,12 @@ class MediaAssignmentService
 
         if (array_key_exists('is_primary', $data)) {
             $image->is_primary = (bool) $data['is_primary'];
+            $image->role = $image->is_primary ? 'primary' : 'gallery';
+
             if ($image->is_primary) {
                 Image::where('product_id', $image->product_id)
                     ->where('id', '!=', $image->id)
-                    ->update(['is_primary' => false]);
+                    ->update(['is_primary' => false, 'role' => 'gallery']);
             }
         }
 
@@ -201,6 +244,17 @@ class MediaAssignmentService
     protected function updatePostThumbnailMeta(int $postId, array $data): bool
     {
         $post = Post::findOrFail($postId);
+        $image = $this->registry->findByEntity('post', $postId, 'thumbnail');
+
+        if ($image) {
+            $image->fill([
+                'title' => $data['title'] ?? $image->title,
+                'notes' => $data['description'] ?? $image->notes,
+                'alt' => $data['alt'] ?? $image->alt,
+            ]);
+            $image->save();
+        }
+
         if (isset($data['alt'])) {
             $post->thumbnail_alt_text = $data['alt'];
         }
@@ -211,82 +265,232 @@ class MediaAssignmentService
     protected function updateCategoryMeta(int $categoryId, array $data): bool
     {
         $category = Category::findOrFail($categoryId);
+        $image = $this->registry->findByEntity('category', $categoryId, 'image');
+
+        if ($image) {
+            $image->fill([
+                'title' => $data['title'] ?? $image->title,
+                'notes' => $data['description'] ?? $image->notes,
+                'alt' => $data['alt'] ?? $image->alt,
+            ]);
+            $image->save();
+        }
+
         if (isset($data['description'])) {
             $category->description = $data['description'];
         }
+
         return $category->save();
     }
 
     protected function updateBannerMeta(string $source, int $bannerId, array $data): bool
     {
         $banner = Banner::findOrFail($bannerId);
+        $role = $source === 'banner_mobile' ? 'mobile' : 'desktop';
+        $image = $this->registry->findByEntity('banner', $bannerId, $role);
+
+        if ($image) {
+            $image->fill([
+                'title' => $data['title'] ?? $image->title,
+                'notes' => $data['description'] ?? $image->notes,
+                'alt' => $data['alt'] ?? $image->alt,
+            ]);
+            $image->save();
+        }
+
         if (isset($data['title'])) {
             $banner->title = $data['title'];
         }
         if (isset($data['description'])) {
             $banner->description = $data['description'];
         }
+
         return $banner->save();
     }
 
     protected function updateProfileMeta(string $source, int $profileId, array $data): bool
     {
         $profile = Profile::findOrFail($profileId);
+        $role = $source === 'profile_sub_avatar' ? 'sub_avatar' : 'avatar';
+        $image = $this->registry->findByEntity('profile', $profileId, $role);
+
+        if ($image) {
+            $image->fill([
+                'title' => $data['title'] ?? $image->title,
+                'notes' => $data['description'] ?? $image->notes,
+                'alt' => $data['alt'] ?? $image->alt,
+            ]);
+            $image->save();
+        }
+
         if (isset($data['title'])) {
             $profile->nickname = $data['title'];
         }
         if (isset($data['description'])) {
             $profile->bio = $data['description'];
         }
+
         return $profile->save();
     }
 
-    protected function deleteProductImage(int $imageId): bool
+    protected function updateLibraryImageMeta(int $imageId, array $data): bool
     {
         $image = Image::findOrFail($imageId);
-        $this->files->deleteFile($image->url);
-        $this->files->deleteFile($image->thumbnail_url);
-        $this->files->deleteFile($image->medium_url);
+        $image->fill([
+            'title' => $data['title'] ?? $image->title,
+            'notes' => $data['description'] ?? $image->notes,
+            'alt' => $data['alt'] ?? $image->alt,
+        ]);
+
+        return $image->save();
+    }
+
+    protected function deleteProductImage(int $imageId, bool $deletePhysical = true): bool
+    {
+        $image = Image::findOrFail($imageId);
+        if ($deletePhysical) {
+            $this->deleteManagedPath($image->path ?: $image->url, 'clothes');
+            $this->deleteManagedPath($image->thumbnail_url, 'clothes');
+            $this->deleteManagedPath($image->medium_url, 'clothes');
+        }
+
         return (bool) $image->delete();
     }
 
-    protected function clearPostThumbnail(int $postId): bool
+    protected function clearPostThumbnail(int $postId, bool $deletePhysical = true): bool
     {
         $post = Post::findOrFail($postId);
-        $this->files->deleteFile($post->thumbnail);
+        if ($deletePhysical) {
+            $this->deleteManagedPath($post->thumbnail, 'posts');
+        }
+
         $post->thumbnail = null;
         $post->thumbnail_alt_text = null;
+
         return $post->save();
     }
 
-    protected function clearCategoryImage(int $categoryId): bool
+    protected function clearCategoryImage(int $categoryId, bool $deletePhysical = true): bool
     {
         $category = Category::findOrFail($categoryId);
-        $this->files->deleteFile($category->image);
+        if ($deletePhysical) {
+            $this->deleteManagedPath($category->image, 'categories');
+        }
+
         $category->image = null;
         return $category->save();
     }
 
-    protected function clearBannerImage(int $bannerId, string $mode): bool
+    protected function clearBannerImage(int $bannerId, string $mode, bool $deletePhysical = true): bool
     {
         $banner = Banner::findOrFail($bannerId);
-        if ($mode === 'desktop') {
-            $this->files->deleteFile($banner->image_desktop);
-            $banner->image_desktop = null;
-        } else {
-            $this->files->deleteFile($banner->image_mobile);
-            $banner->image_mobile = null;
-        }
-        return $banner->save();
+        $label = $mode === 'desktop' ? 'desktop' : 'mobile';
+
+        throw new \DomainException("Banner bắt buộc phải có ảnh {$label}. Hãy gán ảnh mới thay vì xóa trắng.");
     }
 
-    protected function clearProfileImage(int $profileId, string $column): bool
+    protected function clearProfileImage(int $profileId, string $column, bool $deletePhysical = true): bool
     {
         $profile = Profile::findOrFail($profileId);
-        $this->files->deleteFile($profile->{$column});
+        if ($deletePhysical) {
+            $this->deleteManagedPath($profile->{$column}, 'accounts_avatars');
+        }
+
         $profile->{$column} = null;
         return $profile->save();
     }
+
+    protected function deleteLibraryImage(int $imageId, bool $deletePhysical = true): bool
+    {
+        $image = Image::findOrFail($imageId);
+        if ($deletePhysical) {
+            $this->deleteManagedPath($image->path ?: $image->url);
+        }
+
+        return (bool) $image->delete();
+    }
+
+    protected function syncFileMetadata(Image $image): void
+    {
+        $path = $image->path ?: $image->url;
+        if (!$path) {
+            return;
+        }
+
+        $absolute = $this->files->toAbsolutePath($path);
+        if ((!$absolute || !is_file($absolute)) && $image->context === 'product') {
+            $normalized = $this->registry->normalizeStoredPath($path, 'clothes');
+            $absolute = $normalized ? $this->files->toAbsolutePath($normalized) : $absolute;
+        }
+        if (!$absolute || !is_file($absolute)) {
+            return;
+        }
+
+        $image->extension = strtolower(pathinfo($absolute, PATHINFO_EXTENSION));
+        $image->mime_type = @mime_content_type($absolute) ?: $image->mime_type;
+        $image->size = filesize($absolute) ?: $image->size;
+        $image->file_modified_at = date('Y-m-d H:i:s', filemtime($absolute) ?: time());
+
+        $dimensions = @getimagesize($absolute);
+        if ($dimensions) {
+            $image->width = $dimensions[0] ?? $image->width;
+            $image->height = $dimensions[1] ?? $image->height;
+        }
+    }
+
+    protected function prepareLegacyValueForFolder(?string $path, string $folderKey): ?string
+    {
+        $normalized = $this->files->normalizeRelativePath($path);
+        if (!$normalized) {
+            return null;
+        }
+
+        if (Str::startsWith($normalized, ['http://', 'https://'])) {
+            return $normalized;
+        }
+
+        $directories = config('media.directories', []);
+        $targetDirectory = trim((string) ($directories[$folderKey] ?? ''), '/');
+        if ($targetDirectory === '') {
+            return basename($normalized);
+        }
+
+        if ($this->files->isManagedMediaPath($normalized, $directories) && Str::startsWith($normalized, $targetDirectory . '/')) {
+            return basename($normalized);
+        }
+
+        $sourceAbsolute = $this->files->toAbsolutePath($normalized);
+        if ($sourceAbsolute && is_file($sourceAbsolute)) {
+            $targetFilename = basename($normalized);
+            $targetRelative = $targetDirectory . '/' . $targetFilename;
+            $targetAbsolute = public_path($targetRelative);
+
+            $this->files->ensureDirectory(dirname($targetAbsolute));
+            if (is_file($targetAbsolute) && realpath($targetAbsolute) !== realpath($sourceAbsolute) && md5_file($targetAbsolute) !== md5_file($sourceAbsolute)) {
+                $info = pathinfo($targetFilename);
+                $targetFilename = ($info['filename'] ?? 'media') . '-' . now()->format('YmdHis') . '-' . Str::random(4) . '.' . ($info['extension'] ?? 'jpg');
+                $targetRelative = $targetDirectory . '/' . $targetFilename;
+                $targetAbsolute = public_path($targetRelative);
+            }
+
+            if (!is_file($targetAbsolute)) {
+                copy($sourceAbsolute, $targetAbsolute);
+                @chmod($targetAbsolute, 0644);
+            }
+
+            return $targetFilename;
+        }
+
+        return basename($normalized);
+    }
+
+    protected function deleteManagedPath(?string $path, ?string $fallbackFolderKey = null): void
+    {
+        $normalized = $this->registry->normalizeStoredPath($path, $fallbackFolderKey);
+        if ($normalized && Str::startsWith($normalized, ['http://', 'https://'])) {
+            return;
+        }
+
+        $this->files->deleteFile($normalized ?: $path);
+    }
 }
-
-

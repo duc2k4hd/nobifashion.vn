@@ -467,6 +467,10 @@
                 <span class="menu-item-icon">🏷️</span>
                 Danh Mục
             </a>
+            <a href="{{ route('admin.brands.index') }}" class="menu-item {{ request()->routeIs('admin.brands.*') ? 'active' : '' }}">
+                <span class="menu-item-icon">🏷️</span>
+                Hãng
+            </a>
             <a href="{{ route('admin.flash-sales.index') }}" class="menu-item {{ request()->routeIs('admin.flash-sales.*') ? 'active' : '' }}">
                 <span class="menu-item-icon">⚡</span>
                 Flash Sale
@@ -600,6 +604,9 @@
                     </a>
                     <a href="{{ route('admin.coolmate-crawler.index') }}" class="menu-item {{ request()->routeIs('admin.coolmate-crawler.*') ? 'active' : '' }}">
                         coolmate.me
+                    </a>
+                    <a href="{{ route('admin.yody-crawler.index') }}" class="menu-item {{ request()->routeIs('admin.yody-crawler.*') ? 'active' : '' }}">
+                        yody.vn
                     </a>
                 </div>
             </div>

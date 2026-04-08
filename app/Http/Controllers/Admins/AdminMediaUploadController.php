@@ -4,23 +4,13 @@ namespace App\Http\Controllers\Admins;
 
 use App\Http\Controllers\Controller;
 use App\Services\Media\FileHelperService;
-use App\Services\Media\MediaAssignmentService;
-use App\Services\Media\MediaOptimizerService;
+use App\Services\Media\ImageRegistryService;
 use Illuminate\Http\Request;
+use Throwable;
 
 class AdminMediaUploadController extends Controller
 {
     protected array $folders = [];
-
-    protected array $targets = [
-        'product',
-        'post',
-        'category',
-        'banner_desktop',
-        'banner_mobile',
-        'profile_avatar',
-        'profile_sub_avatar',
-    ];
 
     public function __construct()
     {
@@ -30,47 +20,116 @@ class AdminMediaUploadController extends Controller
     public function store(
         Request $request,
         FileHelperService $files,
-        MediaOptimizerService $optimizer,
-        MediaAssignmentService $assignment
+        ImageRegistryService $registry
     ) {
         $validated = $request->validate([
             'folder' => 'required|in:' . implode(',', array_keys($this->folders)),
-            'target_type' => 'required|in:' . implode(',', $this->targets),
-            'target_id' => 'required|integer|min:1',
-            'title' => 'nullable|string|max:255',
-            'alt' => 'nullable|string|max:255',
-            'description' => 'nullable|string|max:1000',
-            'is_primary' => 'nullable|boolean',
             'files' => 'required|array|min:1',
             'files.*' => 'file|extensions:jpg,jpeg,png,webp,gif,avif|max:5120',
         ]);
 
+        $uploadedCount = 0;
+        $failedCount = 0;
+        $failedFiles = [];
         $results = [];
-        foreach ($request->file('files', []) as $uploadedFile) {
-            $stored = $files->storeUploadedFile($uploadedFile, $this->folders[$validated['folder']]);
-            $variants = $optimizer->generateVariants($stored['absolute_path'], $stored['relative_path']);
-            $paths = array_merge(['original' => $stored['filename']], $variants);
-            $meta = [
-                'title' => $validated['title'] ?? pathinfo($stored['filename'], PATHINFO_FILENAME),
-                'alt' => $validated['alt'] ?? null,
-                'description' => $validated['description'] ?? null,
-                'is_primary' => (bool) ($validated['is_primary'] ?? false),
-            ];
 
-            $results[] = $assignment->assignUploadedFile(
-                $validated['target_type'],
-                (int) $validated['target_id'],
-                $paths,
-                $meta
-            );
+        $uploadedFiles = $request->file('files', []);
+        $folder = $this->folders[$validated['folder']];
+
+        \Log::info('Media upload started', [
+            'folder' => $validated['folder'],
+            'file_count' => count($uploadedFiles),
+        ]);
+
+        foreach ($uploadedFiles as $uploadedFile) {
+            $filename = $uploadedFile->getClientOriginalName();
+
+            try {
+                // Kiểm tra file hợp lệ
+                if (!$uploadedFile->isValid()) {
+                    throw new \Exception("File '{$filename}' không hợp lệ: " . $uploadedFile->getErrorMessage());
+                }
+
+                // Store file
+                $stored = $files->storeUploadedFile($uploadedFile, $folder);
+
+                // Register image trong database
+                $image = $registry->registerLooseImage(
+                    $stored['relative_path'],
+                    [
+                        'title' => pathinfo($filename, PATHINFO_FILENAME),
+                        'alt' => pathinfo($filename, PATHINFO_FILENAME),
+                    ],
+                    $validated['folder']
+                );
+
+                $results[] = [
+                    'id' => $image->id,
+                    'path' => $image->path,
+                    'type' => 'library_image',
+                ];
+
+                $uploadedCount++;
+
+                \Log::debug('Media file uploaded', [
+                    'filename' => $filename,
+                    'path' => $stored['relative_path'],
+                    'size' => $uploadedFile->getSize(),
+                    'image_id' => $image->id,
+                ]);
+            } catch (Throwable $exception) {
+                $failedCount++;
+                $failedFiles[] = [
+                    'name' => $filename,
+                    'error' => $exception->getMessage(),
+                ];
+
+                \Log::warning('Media file upload failed', [
+                    'filename' => $filename,
+                    'error' => $exception->getMessage(),
+                    'exception' => get_class($exception),
+                ]);
+
+                report($exception);
+            }
         }
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Đã upload và gán ' . count($results) . ' ảnh.',
-            'items' => $results,
+        \Log::info('Media upload completed', [
+            'uploaded' => $uploadedCount,
+            'failed' => $failedCount,
+            'total' => count($uploadedFiles),
         ]);
+
+        // Nếu có ít nhất 1 file upload thành công, trả 200
+        // Nếu toàn bộ fail hoặc không có file nào, trả 422
+        $statusCode = $uploadedCount > 0 ? 200 : 422;
+
+        return response()->json([
+            'success' => $failedCount === 0 && $uploadedCount > 0,
+            'message' => $this->buildUploadMessage($uploadedCount, $failedCount, count($uploadedFiles)),
+            'uploaded_count' => $uploadedCount,
+            'failed_count' => $failedCount,
+            'failed_files' => $failedFiles,
+            'items' => $results,
+        ], $statusCode);
+    }
+
+    protected function buildUploadMessage(int $uploaded, int $failed, int $total): string
+    {
+        $parts = [];
+
+        if ($uploaded > 0) {
+            $parts[] = "Đã upload thành công {$uploaded} ảnh.";
+        }
+
+        if ($failed > 0) {
+            $parts[] = "{$failed} ảnh upload thất bại.";
+        }
+
+        if (empty($parts)) {
+            return "Không có file nào được upload.";
+        }
+
+        return implode(' ', $parts);
     }
 }
-
-

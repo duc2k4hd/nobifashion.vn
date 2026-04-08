@@ -19,6 +19,7 @@ use App\Http\Controllers\Clients\FavoriteController;
 use App\Http\Controllers\Clients\NewsletterController;
 use App\Http\Controllers\Clients\VoucherController;
 use App\Http\Controllers\Admins\ImportExcelController;
+use App\Http\Controllers\Admins\BrandController;
 use App\Http\Controllers\Admins\CategoryController;
 use App\Http\Controllers\Admins\AccountController;
 use App\Http\Controllers\Admins\AccountApiController;
@@ -308,7 +309,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/', [ProductController::class, 'store'])->name('store');
             Route::get('/{product}/edit', [ProductController::class, 'edit'])->name('edit');
             Route::put('/{product}', [ProductController::class, 'update'])->name('update');
-            Route::patch('/{product}/restore', [ProductController::class, 'restore'])->name('restore');
+            Route::patch('/{id}/restore', [ProductController::class, 'restore'])->name('restore');
+            Route::delete('/{id}/force-delete', [ProductController::class, 'forceDelete'])->name('force-delete');
             Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');
             Route::post('/{product}/release-lock', [ProductController::class, 'releaseLock'])->name('release-lock');
             Route::post('/bulk-action', [ProductController::class, 'bulkAction'])->name('bulk-action');
@@ -322,13 +324,34 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
 
         Route::prefix('categories')->name('categories.')->group(function () {
+            // API routes FIRST (specific, before parameters)
+            Route::get('/api/parents', [CategoryController::class, 'getParents'])->name('api.parents');
+            
+            // Standard CRUD routes
             Route::get('/', [CategoryController::class, 'index'])->name('index');
             Route::get('/create', [CategoryController::class, 'create'])->name('create');
             Route::post('/', [CategoryController::class, 'store'])->name('store');
+            Route::post('/bulk-action', [CategoryController::class, 'bulkAction'])->name('bulk-action');
+            Route::post('/update-sort', [CategoryController::class, 'updateSort'])->name('update-sort');
+            
+            // Parameterized routes LAST (generic)
             Route::get('/{category}/edit', [CategoryController::class, 'edit'])->name('edit');
             Route::put('/{category}', [CategoryController::class, 'update'])->name('update');
+            Route::delete('/{category}', [CategoryController::class, 'destroy'])->name('destroy');
             Route::patch('/{category}/toggle', [CategoryController::class, 'toggleStatus'])->name('toggle');
-            Route::post('/bulk-action', [CategoryController::class, 'bulkAction'])->name('bulk-action');
+            Route::patch('/{category}/quick-toggle', [CategoryController::class, 'quickToggleStatus'])->name('quick-toggle');
+            Route::patch('/{category}/quick-update', [CategoryController::class, 'quickUpdate'])->name('quick-update');
+        });
+
+        Route::prefix('brands')->name('brands.')->group(function () {
+            Route::get('/', [BrandController::class, 'index'])->name('index');
+            Route::get('/create', [BrandController::class, 'create'])->name('create');
+            Route::post('/', [BrandController::class, 'store'])->name('store');
+            Route::get('/{brand}/edit', [BrandController::class, 'edit'])->name('edit');
+            Route::put('/{brand}', [BrandController::class, 'update'])->name('update');
+            Route::delete('/{brand}', [BrandController::class, 'destroy'])->name('destroy');
+            Route::patch('/{brand}/toggle', [BrandController::class, 'toggleStatus'])->name('toggle');
+            Route::post('/bulk-action', [BrandController::class, 'bulkAction'])->name('bulk-action');
         });
 
         Route::prefix('accounts')->name('accounts.')->group(function () {
@@ -384,6 +407,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/upload', [AdminMediaUploadController::class, 'store'])->name('upload');
             Route::post('/update/{id}', [AdminMediaController::class, 'update'])->name('update');
             Route::post('/delete/{id}', AdminMediaDeleteController::class)->name('delete');
+            Route::post('/bulk-delete', [AdminMediaController::class, 'bulkDelete'])->name('bulk-delete');
             Route::post('/assign-to-model', AdminMediaAssignController::class)->name('assign');
             
             // Media Library routes (WordPress-style)
@@ -614,6 +638,22 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::prefix('coolmate-crawler')->name('coolmate-crawler.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admins\CoolmateCrawlerController::class, 'index'])->name('index');
             Route::post('/crawl', [\App\Http\Controllers\Admins\CoolmateCrawlerController::class, 'crawl'])->name('crawl');
+        });
+
+        // Yody Crawler Tool
+        Route::prefix('yody-crawler')->name('yody-crawler.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admins\YodyCrawlerController::class, 'index'])->name('index');
+            Route::post('/crawl', [\App\Http\Controllers\Admins\YodyCrawlerController::class, 'crawl'])->name('crawl');
+            Route::post('/delete-product/{sku}', [\App\Http\Controllers\Admins\YodyCrawlerController::class, 'deleteProduct'])
+                ->name('delete-product');
+            Route::post('/clear-temp', [\App\Http\Controllers\Admins\YodyCrawlerController::class, 'clearTemp'])
+                ->name('clear-temp');
+            Route::get('/download/{filename}', [\App\Http\Controllers\Admins\YodyCrawlerController::class, 'download'])
+                ->where('filename', '.*')
+                ->name('download');
+            Route::get('/preview-image/{path}', [\App\Http\Controllers\Admins\YodyCrawlerController::class, 'previewImage'])
+                ->where('path', '.*')
+                ->name('preview-image');
         });
     });
 });

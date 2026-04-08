@@ -504,7 +504,7 @@
     }
 })();
 
-// Tabs mô tả
+// Tabs mĂ´ táº£
 const tabButtons = document.querySelectorAll(
     ".nobifashion_single_desc_button button"
 );
@@ -540,57 +540,125 @@ function tabSizeGuide() {
     }
 }
 
-// Click ảnh con => ảnh chính
+// Click áº£nh con => áº£nh chĂ­nh
 const galleryImages = document.querySelectorAll(
     ".nobifashion_single_info_images_gallery_image"
 );
 const mainIMG = document.querySelector(".nobifashion_single_info_images_main_image");
+const galleryArrow = document.querySelector(".nobifashion_single_info_gallery_arrow");
+const galleryThumbsContainer = document.querySelector(".nobifashion_single_info_gallery_thumbs");
+
+function scrollGalleryThumbIntoView(activeThumb, options = {}) {
+    if (!activeThumb || !galleryThumbsContainer) {
+        return;
+    }
+
+    const behavior = options.behavior || "smooth";
+    const align = options.align || "center";
+
+    if (window.matchMedia("(max-width: 767px)").matches) {
+        activeThumb.scrollIntoView({
+            behavior,
+            block: "nearest",
+            inline: align === "start" ? "start" : "center",
+        });
+        return;
+    }
+
+    let targetTop = activeThumb.offsetTop - 10;
+
+    if (align !== "start") {
+        targetTop = activeThumb.offsetTop - (galleryThumbsContainer.clientHeight - activeThumb.offsetHeight) / 2;
+    }
+
+    galleryThumbsContainer.scrollTo({
+        top: Math.max(0, targetTop),
+        behavior,
+    });
+}
+
+function setActiveGalleryImage(activeThumb, options = {}) {
+    if (!activeThumb) {
+        return;
+    }
+
+    const newSrc = activeThumb.dataset.src || activeThumb.src;
+    if (newSrc && mainIMG) {
+        mainIMG.setAttribute("src", newSrc);
+        mainIMG.setAttribute("alt", activeThumb.getAttribute("alt") || mainIMG.getAttribute("alt") || "");
+        mainIMG.setAttribute("title", activeThumb.getAttribute("title") || mainIMG.getAttribute("title") || "");
+    }
+
+    galleryImages.forEach((img) =>
+        img.classList.remove("nobifashion_single_info_images_gallery_image_active")
+    );
+
+    activeThumb.classList.add("nobifashion_single_info_images_gallery_image_active");
+    scrollGalleryThumbIntoView(activeThumb, options);
+}
 
 galleryImages.forEach((img) => {
     img.addEventListener("click", () => {
-        const newSrc = img.dataset.src || img.src;
-        if (newSrc && mainIMG) {
-            mainIMG.setAttribute("src", newSrc);
-            galleryImages.forEach((i) =>
-                i.classList.remove(
-                    "nobifashion_single_info_images_gallery_image_active"
-                )
-            );
-            img.classList.add(
-                "nobifashion_single_info_images_gallery_image_active"
-            );
-        }
+        setActiveGalleryImage(img, { behavior: "smooth", align: "center" });
     });
 });
 
+if (galleryArrow && galleryImages.length > 1) {
+    galleryArrow.addEventListener("click", () => {
+        const items = Array.from(galleryImages);
+        const currentIndex = items.findIndex((img) =>
+            img.classList.contains("nobifashion_single_info_images_gallery_image_active")
+        );
+        const nextIndex = currentIndex >= 0
+            ? (currentIndex + 1) % items.length
+            : 0;
+
+        setActiveGalleryImage(items[nextIndex], { behavior: "smooth", align: "start" });
+    });
+}
+
+const initialActiveGalleryImage = Array.from(galleryImages).find((img) =>
+    img.classList.contains("nobifashion_single_info_images_gallery_image_active")
+);
+
+if (initialActiveGalleryImage) {
+    scrollGalleryThumbIntoView(initialActiveGalleryImage, { behavior: "auto", align: "start" });
+}
+
 document
-    .querySelectorAll(".nobifashion_single_info_voucher_code_item")
+    .querySelectorAll(".nobifashion_single_info_voucher_code_item, .nobifashion_single_info_voucher_tag[data-code]")
     ?.forEach((item) => {
         item.addEventListener("click", () => {
+            const voucherCode = item.dataset.code || item.textContent.trim();
+
             navigator.clipboard
-                .writeText(item.textContent.trim())
+                .writeText(voucherCode)
                 .then(() =>
                     showCustomToast(
-                        "Mã voucher đã được sao chép vào clipboard!",
+                        "M\u00e3 voucher \u0111\u00e3 \u0111\u01b0\u1ee3c sao ch\u00e9p v\u00e0o clipboard!",
                         "info"
                     )
                 )
                 .catch((error) => {
                     console.error("Error:", error);
                     showCustomToast(
-                        "Có lỗi xảy ra khi sao chép mã voucher.",
+                        "C\u00f3 l\u1ed7i x\u1ea3y ra khi sao ch\u00e9p m\u00e3 voucher.",
                         "error"
                     );
                 });
         });
     });
 
-let maxStock = Math.max(...variants.map(v => parseInt(v.stock))) || 20;
+const requiredAttrKeys = Array.from(
+    new Set((variants || []).flatMap((variant) => Object.keys(variant.attrs || {})))
+);
+let maxStock = variants.length > 0
+    ? Math.max(...variants.map((variant) => parseInt(variant.stock, 10) || 0))
+    : 0;
 
 function increaseQty() {
-    // ❌ Nếu chưa chọn biến thể hợp lệ thì không cho tăng
     if (!hasSelection() || !findVariant()) {
-        showCustomToast("Vui lòng chọn đủ biến thể trước khi chọn số lượng.", "warning");
+        showCustomToast("Vui l\u00f2ng ch\u1ecdn \u0111\u1ee7 bi\u1ebfn th\u1ec3 tr\u01b0\u1edbc khi ch\u1ecdn s\u1ed1 l\u01b0\u1ee3ng.", "warning");
         return;
     }
     const valueEl = document.querySelector(".nobifashion_single_info_specifications_actions_value");
@@ -601,14 +669,13 @@ function increaseQty() {
         valueEl.textContent = current;
         document.querySelector("input[name='quantity']").value = current;
     } else {
-        showCustomToast(`Số lượng tối đa trong kho là ${maxStock}`, "warning");
+        showCustomToast(`S\u1ed1 l\u01b0\u1ee3ng t\u1ed1i \u0111a trong kho l\u00e0 ${maxStock}`, "warning");
     }
 }
 
 function decreaseQty() {
-    // ❌ Nếu chưa chọn biến thể hợp lệ thì không cho giảm
     if (!hasSelection() || !findVariant()) {
-        showCustomToast("Vui lòng chọn đủ biến thể trước khi chọn số lượng.", "warning");
+        showCustomToast("Vui l\u00f2ng ch\u1ecdn \u0111\u1ee7 bi\u1ebfn th\u1ec3 tr\u01b0\u1edbc khi ch\u1ecdn s\u1ed1 l\u01b0\u1ee3ng.", "warning");
         return;
     }
     const valueEl = document.querySelector(".nobifashion_single_info_specifications_actions_value");
@@ -621,7 +688,7 @@ function decreaseQty() {
         const input = document.querySelector("input[name='quantity']");
         if (input) input.value = current;
     } else {
-        showCustomToast("Số lượng tối thiểu là 1", "warning");
+        showCustomToast("S\u1ed1 l\u01b0\u1ee3ng t\u1ed1i thi\u1ec3u l\u00e0 1", "warning");
     }
 }
 
@@ -647,7 +714,7 @@ function countDownFlashSale(endTimestamp) {
         const distance = endTime.getTime() - now.getTime();
 
         if (distance <= 0) {
-            // Hết hạn → reload 1 lần
+            // Háº¿t háº¡n â†’ reload 1 láº§n
             location.reload();
             return;
         }
@@ -677,16 +744,16 @@ function countDownFlashSale(endTimestamp) {
         }
     }
 
-    // ✅ chạy ngay khi load
+    // âœ… cháº¡y ngay khi load
     updateCountdown();
 
-    // Sau đó lặp lại mỗi giây
+    // Sau Ä‘Ă³ láº·p láº¡i má»—i giĂ¢y
     setInterval(updateCountdown, 1000);
 }
 
 
 if(typeof endTime  !== "undefined") {
-    // Truyền timestamp ms
+    // Truyá»n timestamp ms
     countDownFlashSale(endTime);
 }
 
@@ -701,46 +768,40 @@ function showPopupVoucher() {
         ".nobifashion_main_show_popup_voucher_code"
     );
 
-    // // Hiện popup sau 10 giây
-    // setTimeout(() => {
+    if (!popup || !closeBtn || codeEl.length === 0) return;
 
-    // }, 10000);
     popup.style.display = "flex";
 
-    // Đóng popup
     closeBtn.addEventListener("click", () => {
         popup.style.display = "none";
     });
 
-    // Click ra ngoài để đóng
     popup.addEventListener("click", (e) => {
         if (e.target === popup) {
             popup.style.display = "none";
         }
     });
 
-    // Copy voucher code khi click
     codeEl.forEach((el) => {
         el.addEventListener("click", () => {
-            if (el.dataset.copied === "true") return; // nếu voucher này đã copy rồi thì bỏ qua
+            if (el.dataset.copied === "true") return;
 
             const originalText = el.textContent.trim();
 
             navigator.clipboard
                 .writeText(originalText)
                 .then(() => {
-                    showCustomToast("Mã voucher đã được sao chép!", "info");
-                    el.textContent = "Đã sao chép!";
-                    el.dataset.copied = "true"; // đánh dấu riêng cho voucher này
+                    showCustomToast("M\u00e3 voucher \u0111\u00e3 \u0111\u01b0\u1ee3c sao ch\u00e9p!", "info");
+                    el.textContent = "\u0110\u00e3 sao ch\u00e9p!";
+                    el.dataset.copied = "true";
 
-                    // Reset lại sau 2 giây
                     setTimeout(() => {
                         el.textContent = originalText;
                         el.dataset.copied = "false";
                     }, 5000);
                 })
                 .catch((err) => {
-                    console.error("Copy thất bại: ", err);
+                    console.error("Copy th?t b?i:", err);
                 });
         });
     });
@@ -756,12 +817,15 @@ let selectedAttrs = {};
 let hasInteracted = false;
 
 function hasSelection() {
-    return Object.keys(selectedAttrs).length > 0;
+    return requiredAttrKeys.length > 0
+        && requiredAttrKeys.every((key) => !!selectedAttrs[key]);
 }
 
 function findVariant() {
-    return variants.find(v =>
-        Object.entries(selectedAttrs).every(([k, vval]) => v.attrs[k] === vval)
+    if (!hasSelection()) return null;
+
+    return variants.find((variant) =>
+        requiredAttrKeys.every((key) => variant.attrs?.[key] === selectedAttrs[key])
     );
 }
 
@@ -784,7 +848,7 @@ function refreshButtons() {
 function toggleActionButtons() {
     const cartBtn = document.querySelector(".nobifashion_single_info_specifications_actions_cart");
     const buyBtn  = document.querySelector(".nobifashion_single_info_specifications_actions_buy");
-    const form    = document.querySelector(".nobifashion_single_info_specifications_actions"); // form thật
+    const form    = document.querySelector(".nobifashion_single_info_specifications_actions"); // form tháº­t
 
     if (!cartBtn || !buyBtn || !form) return;
 
@@ -836,80 +900,165 @@ function getMinPriceVariant() {
     );
 }
 
+function formatCurrency(value) {
+    const numericValue = Number(value) || 0;
+    return new Intl.NumberFormat("vi-VN").format(numericValue);
+}
+
+const CURRENCY_SUFFIX = "\u0111";
+
+function updatePriceDisplay(currentPrice, originalPrice = 0) {
+    const priceEl = document.querySelector(".nobifashion_single_info_specifications_price");
+    if (!priceEl) return;
+
+    const currentEl = priceEl.querySelector(".nobifashion_single_info_price_current");
+    const originalEl = priceEl.querySelector(".nobifashion_single_info_price_original");
+    const badgeEl = priceEl.querySelector(".nobifashion_single_info_price_badge");
+    const savingEl = priceEl.querySelector(".nobifashion_single_info_saving");
+    const savingAmountEl = priceEl.querySelector(".save-amount");
+    const hasDiscount = originalPrice > currentPrice && currentPrice > 0;
+    const savedAmount = hasDiscount ? originalPrice - currentPrice : 0;
+
+    if (currentEl) {
+        currentEl.textContent = currentPrice > 0 ? `${formatCurrency(currentPrice)}${CURRENCY_SUFFIX}` : "-";
+    }
+
+    if (originalEl) {
+        originalEl.textContent = hasDiscount ? `${formatCurrency(originalPrice)}${CURRENCY_SUFFIX}` : "";
+        originalEl.classList.toggle("is-hidden", !hasDiscount);
+    }
+
+    if (badgeEl) {
+        badgeEl.textContent = hasDiscount
+            ? `-${Math.round(((originalPrice - currentPrice) / originalPrice) * 100)}%`
+            : "";
+        badgeEl.classList.toggle("is-hidden", !hasDiscount);
+    }
+
+    if (savingAmountEl) {
+        savingAmountEl.textContent = `${formatCurrency(savedAmount)}${CURRENCY_SUFFIX}`;
+    }
+
+    if (savingEl) {
+        savingEl.classList.toggle("is-hidden", !hasDiscount);
+    }
+}
+
+function updateStockDisplay({ text, note, percent }) {
+    const stockEl = document.querySelector("#product-stock");
+    const noteEl = document.querySelector("#product-stock-note");
+    const progressEl = document.querySelector("#product-stock-progress");
+
+    if (stockEl && typeof text === "string") {
+        stockEl.innerHTML = text;
+    }
+
+    if (noteEl && typeof note === "string") {
+        noteEl.textContent = note;
+    }
+
+    if (progressEl) {
+        const fallbackWidth = parseInt(progressEl.dataset.baseWidth || "0", 10);
+        const nextWidth = Number.isFinite(percent) ? percent : fallbackWidth;
+        progressEl.style.width = `${Math.max(0, Math.min(nextWidth, 100))}%`;
+    }
+}
+
+function resetSelectedLabels() {
+    document.querySelectorAll("[id^='selected-']").forEach((element) => {
+        const key = element.id.replace("selected-", "");
+        element.textContent = selectedAttrs[key] || "-";
+    });
+}
+
 
 function updateInfo() {
     const variant = findVariant();
     const minPriceVariant = getMinPriceVariant();
-    let valueEl = document.querySelector(
+    const valueEl = document.querySelector(
         ".nobifashion_single_info_specifications_actions_value"
     );
+    const priceEl = document.querySelector(".nobifashion_single_info_specifications_price");
+    const form = document.querySelector(".nobifashion_single_info_specifications_actions");
+    const baseCurrentPrice = parseInt(priceEl?.dataset.baseCurrentPrice || "0", 10);
+    const baseOriginalPrice = parseInt(priceEl?.dataset.baseOriginalPrice || "0", 10);
+    const stockNoteEl = document.querySelector("#product-stock-note");
+    const baseStockNote = stockNoteEl?.dataset.defaultNote || "";
+    const progressEl = document.querySelector("#product-stock-progress");
+    const baseStockWidth = parseInt(progressEl?.dataset.baseWidth || "0", 10);
+    const highestStock = variants.length > 0
+        ? Math.max(...variants.map((item) => parseInt(item.stock, 10) || 0))
+        : 0;
 
-    // cập nhật label text của từng thuộc tính
-    for (const key of Object.keys(selectedAttrs)) {
-        const el = document.querySelector(`#selected-${key}`);
-        if (el) {
-            el.textContent = selectedAttrs[key] || "-";
-        }
-    }
-
-    let priceEl = document.querySelector(".nobifashion_single_info_specifications_price");
-    let stockEl = document.querySelector("#product-stock");
+    resetSelectedLabels();
 
     if (hasSelection() && variant) {
-        let form = document.querySelector('.nobifashion_single_info_specifications_actions');
-        
-        // hiển thị giá của variant (ưu tiên giá variant, fallback minPriceVariant)
-        let displayPrice = parseInt(variant.price) ?? parseInt(minPriceVariant?.price);
-        priceEl.textContent = 
-            typeof displayPrice === "number"
-                ? new Intl.NumberFormat("vi-VN").format(displayPrice) + "đ"
-                : "-";
+        const displayPrice = parseInt(variant.price, 10) || parseInt(minPriceVariant?.price, 10) || 0;
+        const referenceOriginalPrice = baseOriginalPrice > displayPrice ? baseOriginalPrice : 0;
+        const stockCount = parseInt(variant.stock, 10) || 0;
 
-        // hiển thị tồn kho
-        stockEl.innerHTML =
-            variant.stock > 0
-                ? `Còn <span style="color: green;">${variant.stock}</span> sản phẩm`
-                : `<span style="color:red;">Hết hàng</span>`;
-        maxStock = variant.stock;
+        updatePriceDisplay(displayPrice, referenceOriginalPrice);
+        maxStock = stockCount;
+        updateStockDisplay({
+            text: stockCount > 0
+                ? `C\u00f2n <span style="color: green;">${stockCount}</span> s\u1ea3n ph\u1ea9m`
+                : "<span style='color:red;'>H\u1ebft h\u00e0ng</span>",
+            note: stockCount > 0
+                ? (stockCount < 5 ? "S\u1ed1 l\u01b0\u1ee3ng c\u00f2n r\u1ea5t \u00edt, n\u00ean ch\u1ed1t \u0111\u01a1n s\u1edbm." : "S\u1ea3n ph\u1ea9m \u0111ang s\u1eb5n h\u00e0ng, c\u00f3 th\u1ec3 \u0111\u1eb7t mua ngay.")
+                : "Bi\u1ebfn th\u1ec3 n\u00e0y hi\u1ec7n \u0111ang t\u1ea1m h\u1ebft h\u00e0ng.",
+            percent: stockCount > 0 && highestStock > 0
+                ? Math.max(8, Math.round((stockCount / highestStock) * 100))
+                : 0,
+        });
 
         const mainImage = document.querySelector('.nobifashion_single_info_images_main_image');
         if (mainImage && variant.image_url) {
-            // variant.image_url đã là tên file (ví dụ: image.jpg)
-            // Cần thêm đường dẫn đầy đủ
             const imagePath = `/clients/assets/img/clothes/${variant.image_url}`;
-            mainImage.src = imagePath;
-            
-            
-            // Cập nhật data-src cho gallery images nếu cần
-            const galleryImages = document.querySelectorAll('.nobifashion_single_info_images_gallery_image');
-            galleryImages.forEach(img => {
-                if (img.src.includes(variant.image_url) || img.dataset.src?.includes(variant.image_url)) {
-                    img.classList.add('nobifashion_single_info_images_gallery_image_active');
-                } else {
-                    img.classList.remove('nobifashion_single_info_images_gallery_image_active');
-                }
-            });
+            const matchingThumb = Array.from(galleryImages).find((img) =>
+                img.src.includes(variant.image_url) || img.dataset.src?.includes(variant.image_url)
+            );
+
+            if (matchingThumb) {
+                setActiveGalleryImage(matchingThumb, { behavior: "smooth", align: "start" });
+            } else {
+                mainImage.src = imagePath;
+            }
         } else if (mainImage && !variant.image_url) {
-            // Nếu variant không có ảnh, giữ nguyên ảnh product hoặc dùng ảnh mặc định
             const defaultImage = mainImage.dataset.defaultSrc || '/clients/assets/img/clothes/no-image.webp';
             mainImage.src = defaultImage;
         }
 
-        // xử lý input quantity
-        let qtyInput = form.querySelector('input[name="quantity"]');
-        let currentQty = parseInt(qtyInput?.value || 1, 10);
+        let qtyInput = form?.querySelector('input[name="quantity"]');
+        let currentQty = parseInt(qtyInput?.value || valueEl?.textContent || 1, 10);
+        currentQty = Math.min(Math.max(currentQty, 1), Math.max(stockCount, 1));
 
-        if (!qtyInput) {
+        if (valueEl) {
+            valueEl.textContent = currentQty;
+        }
+
+        if (form && !qtyInput) {
             qtyInput = document.createElement('input');
-            qtyInput.type = "hidden";
-            qtyInput.name = "quantity";
+            qtyInput.type = 'hidden';
+            qtyInput.name = 'quantity';
             form.appendChild(qtyInput);
         }
-        qtyInput.value = currentQty;
+
+        if (qtyInput) {
+            qtyInput.value = currentQty;
+        }
     } else {
-        // chưa chọn hoặc chọn sai biến thể
-        priceEl.textContent = "-";
-        stockEl.innerHTML = "<span style='color:red;'>Chưa chọn đủ biến thể</span>";
+        updatePriceDisplay(baseCurrentPrice, baseOriginalPrice);
+        updateStockDisplay({
+            text: requiredAttrKeys.length > 0
+                ? 'Ch\u1ecdn bi\u1ebfn th\u1ec3 \u0111\u1ec3 xem t\u1ed3n kho'
+                : (maxStock > 0 ? `C\u00f2n ${maxStock} s\u1ea3n ph\u1ea9m` : 'T\u1ea1m h\u1ebft h\u00e0ng'),
+            note: baseStockNote,
+            percent: baseStockWidth,
+        });
+
+        if (valueEl) {
+            valueEl.textContent = '1';
+        }
     }
 
     refreshButtons();
@@ -917,7 +1066,7 @@ function updateInfo() {
 }
 
 
-// Click chọn attribute
+// Click ch?n attribute
 document.querySelectorAll("[data-attr-key]").forEach(btn => {
     btn.addEventListener("click", () => {
         if (btn.classList.contains("disabled")) return;
@@ -950,20 +1099,19 @@ document.querySelectorAll("[data-attr-key]").forEach(btn => {
 
         if (!hasSelection() || !variant) {
             e.preventDefault();
-            showCustomToast("Vui lòng chọn đầy đủ các thuộc tính sản phẩm.", "warning");
+            showCustomToast("Vui l\u00f2ng ch\u1ecdn \u0111\u1ea7y \u0111\u1ee7 c\u00e1c thu\u1ed9c t\u00ednh s\u1ea3n ph\u1ea9m.", "warning");
             return;
         }
 
         if (variant.stock <= 0) {
             e.preventDefault();
-            showCustomToast("❌ Biến thể này đã hết hàng.", "error");
+            showCustomToast("Bi\u1ebfn th\u1ec3 n\u00e0y \u0111\u00e3 h\u1ebft h\u00e0ng.", "error");
             return;
         }
 
-        // ✅ Gửi request hợp lệ
-        showCustomToast("Đang gửi request...", "success");
+        showCustomToast("\u0110ang g\u1eedi request...", "success");
     });
 });
 
 // init
-refreshButtons();
+updateInfo();

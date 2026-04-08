@@ -356,26 +356,65 @@
 
         <hr>
 
-        <!-- Ảnh khuyến mãi -->
-        {{-- <section>
-            <div class="nobifashion_main_promotion">
-                @foreach ($vouchers->limit(3)->get() as $coupon)
-                    <div class="nobifashion_main_promotion_item">
-                        <img draggable="false" loading="lazy" class="nobifashion_main_promotion_item_img"
-                            src="{{ asset('clients/assets/img/banners/' . ($coupon->image ?? 'banner.webp')) }}"
-                            alt="{{ $coupon->name ?? 'Khuyến mãi thời trang NOBI FASHION' }}">
-                        <div class="nobifashion_main_promotion_item_info">
-                            <h4 class="nobifashion_main_promotion_item_info_title">
-                                {{ $coupon->name ?? 'Khuyến mãi hấp dẫn' }}</h4>
-                            <p class="nobifashion_main_promotion_item_info_desc">
-                                {{ $coupon->description ?? 'Ưu đãi giới hạn: freeship, giảm % và quà tặng cho đơn hàng thời trang.' }}
-                            </p>
-                            <button class="nobifashion_main_promotion_item_info_btn">Khám phá ngay</button>
+        {{-- Section: Men, Women, Household Collections --}}
+        <section class="nobifashion_collections">
+            {{-- Men's Collection --}}
+            <div class="nobifashion_collection_section">
+                <div class="nobifashion_collection_header">
+                    <h2 class="nobifashion_collection_title">THỜI TRANG NAM</h2>
+                    <a href="/thoi-trang-nam" class="nobifashion_collection_link">Xem tất cả</a>
+                </div>
+                <div class="nobifashion_collection_grid">
+                    @foreach($menProducts as $product)
+                        <div class="nobifashion_collection_item">
+                            <a href="/san-pham/{{ $product->slug }}">
+                                <img src="{{ asset('clients/assets/img/clothes/' . ($product->primaryImage->url ?? 'no-image.webp')) }}" alt="{{ $product->name }}">
+                                <h3>{{ $product->name }}</h3>
+                                <p>{{ number_format($product->sale_price ?? $product->price, 0, ',', '.') }}đ</p>
+                            </a>
                         </div>
-                    </div>
-                @endforeach
+                    @endforeach
+                </div>
             </div>
-        </section> --}}
+
+            {{-- Women's Collection --}}
+            <div class="nobifashion_collection_section">
+                <div class="nobifashion_collection_header">
+                    <h2 class="nobifashion_collection_title">THỜI TRANG NỮ</h2>
+                    <a href="/thoi-trang-nu" class="nobifashion_collection_link">Xem tất cả</a>
+                </div>
+                <div class="nobifashion_collection_grid">
+                    @foreach($womenProducts as $product)
+                        <div class="nobifashion_collection_item">
+                            <a href="/san-pham/{{ $product->slug }}">
+                                <img src="{{ asset('clients/assets/img/clothes/' . ($product->primaryImage->url ?? 'no-image.webp')) }}" alt="{{ $product->name }}">
+                                <h3>{{ $product->name }}</h3>
+                                <p>{{ number_format($product->sale_price ?? $product->price, 0, ',', '.') }}đ</p>
+                            </a>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+
+            {{-- Household Collection --}}
+            <div class="nobifashion_collection_section">
+                <div class="nobifashion_collection_header">
+                    <h2 class="nobifashion_collection_title">ĐỒ GIA DỤNG</h2>
+                    <a href="/do-gia-dung" class="nobifashion_collection_link">Xem tất cả</a>
+                </div>
+                <div class="nobifashion_collection_grid">
+                    @foreach($sportProducts as $product)
+                        <div class="nobifashion_collection_item">
+                            <a href="/san-pham/{{ $product->slug }}">
+                                <img src="{{ asset('clients/assets/img/clothes/' . ($product->primaryImage->url ?? 'no-image.webp')) }}" alt="{{ $product->name }}">
+                                <h3>{{ $product->name }}</h3>
+                                <p>{{ number_format($product->sale_price ?? $product->price, 0, ',', '.') }}đ</p>
+                            </a>
+                        </div>
+                    @endforeach
+                </div>
+            </div>
+        </section>
 
         <hr>
 

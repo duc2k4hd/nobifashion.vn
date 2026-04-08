@@ -12,7 +12,11 @@ class Image extends Model
     protected $table = 'images';
 
     protected $fillable = [
+        'name',
         'product_id',
+        'entity_type',
+        'entity_id',
+        'role',
         'title',
         'notes',
         'alt',
@@ -32,6 +36,8 @@ class Image extends Model
     ];
 
     protected $casts = [
+        'product_id' => 'integer',
+        'entity_id' => 'integer',
         'is_primary' => 'boolean',
         'size' => 'integer',
         'width' => 'integer',
@@ -43,6 +49,12 @@ class Image extends Model
     public function scopeForContext($query, string $context)
     {
         return $query->where('context', $context);
+    }
+
+    public function scopeForEntity($query, string $entityType, int $entityId)
+    {
+        return $query->where('entity_type', $entityType)
+            ->where('entity_id', $entityId);
     }
 
     /** Trả về mảng dimensions hoặc null */
@@ -64,6 +76,16 @@ class Image extends Model
         }
 
         return $value;
+    }
+
+    public function getNameAttribute($value): ?string
+    {
+        if ($value) {
+            return $value;
+        }
+
+        $path = $this->attributes['path'] ?? $this->attributes['url'] ?? null;
+        return $path ? basename((string) $path) : null;
     }
 
     /**

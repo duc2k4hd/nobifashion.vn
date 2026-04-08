@@ -12,11 +12,13 @@ class AdminMediaSearchController extends Controller
     {
         $validated = $request->validate([
             'type' => 'nullable|string',
+            'folder' => 'nullable|string',
+            'status' => 'nullable|string',
             'q' => 'nullable|string|max:255',
-            'sort' => 'nullable|in:created_at,file_name,entity_id',
+            'sort' => 'nullable|in:created_at,file_name,entity_id,size',
             'direction' => 'nullable|in:asc,desc',
             'page' => 'nullable|integer|min:1',
-            'per_page' => 'nullable|integer|min:1|max:100',
+            'per_page' => 'nullable|integer|min:12|max:2000',
         ]);
 
         $results = $scanner->search($validated);
@@ -28,9 +30,10 @@ class AdminMediaSearchController extends Controller
                 'per_page' => $results->perPage(),
                 'current_page' => $results->currentPage(),
                 'last_page' => $results->lastPage(),
+                'from' => $results->firstItem(),
+                'to' => $results->lastItem(),
             ],
+            'stats' => $scanner->getDashboardStats(),
         ]);
     }
 }
-
-

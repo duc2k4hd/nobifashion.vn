@@ -4,44 +4,108 @@ namespace App\Http\Controllers\Admins;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\ProductRequest;
+use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Product;
 use App\Models\ProductVariant;
-use App\Models\Setting;
 use App\Models\Tag;
+use App\Services\Admin\ProgressiveSearchService;
 use App\Services\Admin\ProductService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\File;
 
 class ProductController extends Controller
 {
-    public function __construct(protected ProductService $productService)
+    public function __construct(
+        protected ProductService $productService,
+        protected ProgressiveSearchService $progressiveSearchService
+    )
     {
     }
 
     public function index(Request $request)
     {
-        $products = Product::query()
-            ->with('primaryCategory')
-            ->when($request->filled('keyword'), function ($query) use ($request) {
-                $keyword = $request->keyword;
-                $query->where(function ($q) use ($keyword) {
-                    $q->where('name', 'like', "%{$keyword}%")
-                        ->orWhere('sku', 'like', "%{$keyword}%");
-                });
+        $perPageOptions = [50, 100, 200, 500, 2000];
+        $perPage = (int) $request->input('per_page', 50);
+        if (!in_array($perPage, $perPageOptions, true)) {
+            $perPage = 50;
+        }
+
+        $brandId = $request->filled('brand_id') ? (int) $request->input('brand_id') : null;
+        $sortBy = (string) $request->input('sort_by', 'latest');
+
+        $query = Product::query();
+
+        // Xử lý lọc theo trạng thái (bao gồm Thùng rác)
+        if ($request->status === 'trash') {
+            $query->onlyTrashed();
+        } else {
+            $query->withTrashed(); // Để có thể thấy SP inactive (is_active=false)
+            if ($request->status === 'active') {
+                $query->where('is_active', true)->whereNull('deleted_at');
+            } elseif ($request->status === 'inactive') {
+                $query->where('is_active', false)->whereNull('deleted_at');
+            } else {
+                $query->whereNull('deleted_at');
+            }
+        }
+
+        $query->with(['primaryCategory', 'brand'])
+            ->when($brandId, function ($query) use ($brandId) {
+                $query->where('brand_id', $brandId);
             })
-            ->when($request->filled('status'), function ($query) use ($request) {
-                if ($request->status === 'active') {
-                    $query->where('is_active', true);
-                } elseif ($request->status === 'inactive') {
-                    $query->where('is_active', false);
+            ->when($request->filled('category_id'), function ($query) use ($request) {
+                $query->inCategory($request->integer('category_id'));
+            })
+            ->when($request->filled('stock_status'), function ($query) use ($request) {
+                if ($request->stock_status === 'in_stock') {
+                    $query->where('stock_quantity', '>', 0);
+                } elseif ($request->stock_status === 'out_of_stock') {
+                    $query->where('stock_quantity', '<=', 0);
                 }
             })
-            ->orderByDesc('id')
-            ->paginate(20)
+            ->when($request->filled('is_featured'), function ($query) use ($request) {
+                $query->where('is_featured', $request->boolean('is_featured'));
+            })
+            ->when($request->filled('has_variants'), function ($query) use ($request) {
+                $query->where('has_variants', $request->boolean('has_variants'));
+            })
+            ->when($request->filled('flash_sale_status'), function ($query) use ($request) {
+                if ($request->input('flash_sale_status') === '1') {
+                    $query->whereHas('currentFlashSaleItem');
+                } elseif ($request->input('flash_sale_status') === '0') {
+                    $query->whereDoesntHave('currentFlashSaleItem');
+                }
+            });
+
+        $searchMeta = $this->progressiveSearchService->apply(
+            $query,
+            $request->input('keyword'),
+            ['products.name'],
+            ['products.sku', 'products.slug']
+        );
+
+        match ($sortBy) {
+            'oldest' => $query->orderBy('products.id'),
+            'name_asc' => $query->orderBy('products.name'),
+            'name_desc' => $query->orderByDesc('products.name'),
+            'price_asc' => $query->orderByRaw('COALESCE(products.sale_price, products.price) ASC'),
+            'price_desc' => $query->orderByRaw('COALESCE(products.sale_price, products.price) DESC'),
+            'stock_asc' => $query->orderBy('products.stock_quantity'),
+            'stock_desc' => $query->orderByDesc('products.stock_quantity'),
+            default => $query->orderByDesc('products.id'),
+        };
+
+        $products = $query
+            ->paginate($perPage)
             ->appends($request->query());
 
-        return view('admins.products.index', compact('products'));
+        $categories = Category::orderBy('name')->get();
+        $brands = Brand::query()
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
+        return view('admins.products.index', compact('products', 'categories', 'brands', 'perPageOptions', 'perPage', 'searchMeta'));
     }
 
     public function create()
@@ -57,10 +121,9 @@ class ProductController extends Controller
 
         return view('admins.products.form', [
             'product' => new Product(),
+            'brands' => Brand::orderBy('sort_order')->orderBy('name')->get(),
             'categories' => Category::orderBy('name')->get(),
             'tags' => $productTags,
-            'mediaImages' => $this->getMediaImages(),
-            'siteUrl' => $this->getSiteUrl(),
         ]);
     }
 
@@ -99,10 +162,9 @@ class ProductController extends Controller
 
         return view('admins.products.form', [
             'product' => $product,
+            'brands' => Brand::orderBy('sort_order')->orderBy('name')->get(),
             'categories' => Category::orderBy('name')->get(),
             'tags' => $productTags,
-            'mediaImages' => $this->getMediaImages(),
-            'siteUrl' => $this->getSiteUrl(),
         ]);
     }
 
@@ -138,27 +200,17 @@ class ProductController extends Controller
 
         return redirect()
             ->route('admin.products.index')
-            ->with('success', 'Đã chuyển sản phẩm sang trạng thái tạm ẩn');
+            ->with('success', 'Đã xóa mềm sản phẩm thành công.');
     }
 
-    public function restore(ProductRequest $request, Product $product)
+    public function restore(int $id)
     {
         try {
-            $payload = $request->validated();
-            if (empty($payload['sku']) || empty($payload['name'])) {
-                $payload = array_merge($product->toArray(), [
-                    'sku' => $product->sku,
-                    'name' => $product->name,
-                    'price' => $product->price,
-                    'stock_quantity' => $product->stock_quantity,
-                ]);
-            }
-            $this->productService->update($product, $payload);
-            $product->update(['is_active' => true]);
+            $this->productService->restore($id);
 
             return redirect()
-                ->route('admin.products.index', ['status' => 'inactive'])
-                ->with('success', 'Đã khôi phục sản phẩm (đang ở trạng thái tạm ẩn, cần bật Đang bán nếu muốn hiển thị).');
+                ->route('admin.products.index', ['status' => 'trash'])
+                ->with('success', 'Đã khôi phục sản phẩm thành công.');
         } catch (\Throwable $e) {
             report($e);
             return back()
@@ -166,44 +218,19 @@ class ProductController extends Controller
         }
     }
 
-    private function getMediaImages(): array
+    public function forceDelete(int $id)
     {
-        $directories = [
-            public_path('clients/assets/img/clothes'),
-            public_path('clients/assets/img/other'),
-        ];
+        try {
+            $this->productService->forceDelete($id);
 
-        $baseUrl = $this->getSiteUrl();
-
-        $files = [];
-        foreach ($directories as $dir) {
-            if (!is_dir($dir)) {
-                continue;
-            }
-            foreach (File::files($dir) as $file) {
-                $relative = str_replace(public_path(), '', $file->getRealPath());
-                $relative = str_replace('\\', '/', $relative);
-                $relative = ltrim($relative, '/');
-                $fullUrl = rtrim($baseUrl, '/') . '/' . $relative;
-                $files[] = [
-                    'name' => $file->getFilename(),
-                    'url' => $fullUrl,
-                    'path' => $relative,
-                ];
-            }
+            return redirect()
+                ->route('admin.products.index', ['status' => 'trash'])
+                ->with('success', 'Đã xóa vĩnh viễn sản phẩm thành công.');
+        } catch (\Throwable $e) {
+            report($e);
+            return back()
+                ->with('error', 'Không thể xóa vĩnh viễn: ' . $e->getMessage());
         }
-
-        return $files;
-    }
-
-    private function getSiteUrl(): string
-    {
-        $siteUrl = Setting::getValue('site_url', config('app.url'));
-        if (!$siteUrl) {
-            $siteUrl = config('app.url');
-        }
-
-        return rtrim($siteUrl, '/');
     }
 
     protected function handleEditingLock(Product $product, bool $acquireLock = true)
@@ -287,8 +314,7 @@ class ProductController extends Controller
     {
         $request->validate([
             'selected' => ['required', 'array'],
-            'selected.*' => ['integer', 'exists:products,id'],
-            'bulk_action' => ['required', 'in:hide,delete'],
+            'bulk_action' => ['required', 'in:hide,show,delete,restore,force_delete'],
         ]);
 
         $productIds = $request->input('selected', []);
@@ -296,14 +322,33 @@ class ProductController extends Controller
 
         if ($action === 'hide') {
             Product::whereIn('id', $productIds)->update(['is_active' => false]);
-            return back()->with('success', 'Đã chuyển ' . count($productIds) . ' sản phẩm sang trạng thái tạm ẩn.');
+            return back()->with('success', 'Đã tạm ẩn ' . count($productIds) . ' sản phẩm.');
+        }
+
+        if ($action === 'show') {
+            Product::whereIn('id', $productIds)->update(['is_active' => true]);
+            return back()->with('success', 'Đã hiển thị (Active) ' . count($productIds) . ' sản phẩm.');
         }
 
         if ($action === 'delete') {
-            foreach (Product::whereIn('id', $productIds)->get() as $product) {
+            $products = Product::whereIn('id', $productIds)->get();
+            foreach ($products as $product) {
                 $this->productService->delete($product);
             }
             return back()->with('success', 'Đã xóa mềm ' . count($productIds) . ' sản phẩm.');
+        }
+
+        if ($action === 'restore') {
+            Product::onlyTrashed()->whereIn('id', $productIds)->restore();
+            return back()->with('success', 'Đã khôi phục ' . count($productIds) . ' sản phẩm.');
+        }
+
+        if ($action === 'force_delete') {
+            $products = Product::onlyTrashed()->whereIn('id', $productIds)->get();
+            foreach ($products as $product) {
+                $this->productService->forceDelete($product->id);
+            }
+            return back()->with('success', 'Đã xóa vĩnh viễn ' . count($productIds) . ' sản phẩm.');
         }
 
         return back()->with('error', 'Hành động không hợp lệ.');
@@ -344,4 +389,3 @@ class ProductController extends Controller
         ]);
     }
 }
-

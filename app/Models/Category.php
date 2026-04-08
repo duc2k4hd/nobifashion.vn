@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Services\Media\ImageRegistryService;
 
 class Category extends Model
 {
@@ -36,6 +37,38 @@ class Category extends Model
                 } else {
                     $category->meta_canonical = url('/' . $category->slug);
                 }
+            }
+        });
+
+        static::saved(function ($category) {
+            try {
+                app(ImageRegistryService::class)->syncEntityImage(
+                    entityType: 'category',
+                    entityId: (int) $category->id,
+                    role: 'image',
+                    storedPath: $category->image,
+                    meta: [
+                        'title' => $category->name,
+                        'alt' => $category->name,
+                        'description' => $category->description,
+                        'context' => 'category',
+                    ]
+                );
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
+        });
+
+        static::deleted(function ($category) {
+            try {
+                app(ImageRegistryService::class)->syncEntityImage(
+                    entityType: 'category',
+                    entityId: (int) $category->id,
+                    role: 'image',
+                    storedPath: null
+                );
+            } catch (\Throwable $exception) {
+                report($exception);
             }
         });
     }

@@ -2,63 +2,128 @@
 
 namespace Database\Seeders;
 
+use App\Models\Category;
+use App\Models\Image;
+use App\Models\Product;
+use App\Models\ProductVariant;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
-use Faker\Factory as Faker;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 
 class ProductSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
-    public function run(): void
+    public function run()
     {
-        DB::table('products')->truncate(); // Xóa dữ liệu cũ
+        // 1. Xóa dữ liệu cũ (Dùng DB::statement để tránh lỗi khóa ngoại nếu có)
+        DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        DB::table('product_variants')->truncate();
+        DB::table('images')->where('product_id', '!=', null)->delete();
+        DB::table('products')->truncate();
+        DB::statement('SET FOREIGN_KEY_CHECKS=1;');
 
-        $faker = Faker::create('vi_VN');
-        
-        // Giả sử có 10 user và 30 danh mục
-        $accountIds = range(1, 10); 
-        $categoryIds = range(1, 30); 
+        // 2. Lấy danh sách ảnh từ thư mục public/clients/assets/img/clothes
+        $imagePath = public_path('clients/assets/img/clothes');
+        $allImages = [];
+        if (File::exists($imagePath)) {
+            $files = File::files($imagePath);
+            foreach ($files as $file) {
+                if (in_array(strtolower($file->getExtension()), ['jpg', 'jpeg', 'png', 'webp'])) {
+                    $allImages[] = $file->getFilename();
+                }
+            }
+        }
 
-        // Tạo 100 sản phẩm mẫu
-        for ($i = 0; $i < 100; $i++) {
-            $name = $faker->unique()->words(3, true) . ' ' . $faker->colorName;
-            $price = $faker->randomFloat(2, 50000, 1000000);
-            $salePrice = $faker->boolean(70) ? $price * $faker->randomFloat(2, 0.5, 0.9) : null;
+        if (empty($allImages)) {
+            $allImages = ['no-image.webp'];
+        }
 
-            // Lấy ngẫu nhiên một danh mục chính và một vài danh mục phụ
-            $primaryCategoryId = $faker->randomElement($categoryIds);
-            $additionalCategoryIds = $faker->randomElements($categoryIds, $faker->numberBetween(0, 3));
-            $allCategoryIds = array_unique(array_merge([$primaryCategoryId], $additionalCategoryIds));
+        // 3. Lấy một tài khoản hợp lệ để gán cho created_by
+        $adminAccount = \App\Models\Account::where('account_status', \App\Models\Account::STATUS_ACTIVE)->first() ?? \App\Models\Account::first();
+        if (!$adminAccount) {
+            $this->command->info('Không tìm thấy tài khoản nào trong hệ thống.');
+            return;
+        }
 
-            DB::table('products')->insert([
-                'sku' => 'SKU' . str_pad($i + 1, 5, '0', STR_PAD_LEFT),
-                'name' => 'Áo Thun ' . $name,
-                'slug' => Str::slug('ao-thun-' . $name),
-                'description' => $faker->paragraphs(3, true),
-                'short_description' => $faker->sentence(10),
-                'price' => $price,
-                'sale_price' => $salePrice,
-                'cost_price' => $price * $faker->randomFloat(2, 0.4, 0.7),
-                'stock_quantity' => $faker->numberBetween(0, 200),
-                'meta_title' => 'Mua ' . $name . ' chính hãng tại Nobifashion',
-                'meta_description' => 'Sản phẩm ' . $name . ' với chất lượng tốt nhất và giá cả phải chăng.',
-                'meta_keywords' => implode(',', $faker->words(5)),
-                'meta_canonical' => 'https://yourstore.com/products/' . Str::slug('ao-thun-' . $name),
-                'primary_category_id' => $primaryCategoryId,
-                'category_ids' => json_encode($allCategoryIds),
-                'tag_ids' => json_encode($faker->randomElements(range(1, 20), $faker->numberBetween(1, 5))),
-                'is_featured' => $faker->boolean(20),
-                'has_variants' => $faker->boolean(50),
-                'locked_by' => null,
-                'locked_at' => null,
-                'created_by' => $faker->randomElement($accountIds),
-                'is_active' => $faker->boolean(95),
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+        // 4. Lấy tất cả danh mục lá (không có con)
+        $leafCategories = Category::whereDoesntHave('children')->get();
+
+        if ($leafCategories->isEmpty()) {
+            $this->command->info('Không tìm thấy danh mục lá nào. Vui lòng chạy CategorySeeder trước.');
+            return;
+        }
+
+        $colors = ['Đen', 'Trắng', 'Xám', 'Xanh Navy', 'Be', 'Rêu', 'Đỏ Đô'];
+        $sizes = ['S', 'M', 'L', 'XL', '2XL'];
+
+        foreach ($leafCategories as $category) {
+            $count = rand(5, 8); // Tạo 5-8 sản phẩm mỗi danh mục
+            
+            for ($i = 1; $i <= $count; $i++) {
+                $productName = $category->name . ' ' . Str::random(3) . ' ' . str_pad($i, 2, '0', STR_PAD_LEFT);
+                $skuBase = strtoupper(Str::slug($category->name, ''));
+                $sku = $skuBase . '-' . strtoupper(Str::random(4)) . '-' . str_pad($i, 3, '0', STR_PAD_LEFT);
+                $price = rand(250, 850) * 1000;
+                $salePrice = rand(0, 10) > 6 ? $price * 0.85 : null; // 40% cơ hội giảm giá
+
+                // Tạo Product
+                $product = Product::create([
+                    'sku' => $sku,
+                    'name' => $productName,
+                    'slug' => Str::slug($productName) . '-' . Str::random(5),
+                    'short_description' => 'Mô tả ngắn cho sản phẩm ' . $productName . '. Chất liệu cao cấp, form dáng chuẩn đẹp, phù hợp mặc đi làm, đi chơi.',
+                    'description' => '<h3>Thông tin chi tiết</h3><p>Sản phẩm ' . $productName . ' là một trong những thiết kế mới nhất nằm trong bộ sưu tập thời trang của Nobi Fashion. Với tiêu chí mang lại sự thoải mái và tự tin cho người mặc, chúng tôi sử dụng chất liệu vải tuyển chọn, đường may tỉ mỉ.</p><ul><li>Chất liệu: Cotton/Linen cao cấp</li><li>Đặc tính: Co giãn tốt, thấm hút mồ hôi, bền màu</li><li>Phong cách: Hiện đại, trẻ trung</li></ul>',
+                    'price' => $price,
+                    'sale_price' => $salePrice,
+                    'cost_price' => $price * 0.6,
+                    'stock_quantity' => rand(50, 200),
+                    'primary_category_id' => $category->id,
+                    'category_ids' => [$category->id],
+                    'is_featured' => rand(0, 10) > 8,
+                    'has_variants' => true,
+                    'created_by' => $adminAccount->id,
+                    'is_active' => true,
+                    'meta_title' => $productName . ' - Nobi Fashion',
+                    'meta_description' => 'Mua ngay ' . $productName . ' tại Nobi Fashion. Cam kết hàng chính hãng, giao hàng toàn quốc, đổi trả miễn phí.',
+                    'meta_keywords' => [$category->name, 'thời trang cao cấp', 'nobi fashion'],
+                ]);
+
+                // Tạo Ảnh (3-5 ảnh mỗi SP)
+                $numPhotos = rand(3, 5);
+                $productPhotos = collect($allImages)->random(min($numPhotos, count($allImages)));
+                
+                foreach ($productPhotos as $idx => $photoName) {
+                    Image::create([
+                        'product_id' => $product->id,
+                        'url' => $photoName, // Chỉ lưu tên file theo logic frontend
+                        'is_primary' => $idx === 0,
+                        'order' => $idx,
+                        'context' => 'product'
+                    ]);
+                }
+
+                // Tạo Biến thể (Variants)
+                $selectedColors = collect($colors)->random(rand(1, 3));
+                foreach ($selectedColors as $color) {
+                    foreach ($sizes as $size) {
+                        ProductVariant::create([
+                            'product_id' => $product->id,
+                            'sku' => $sku . '-' . strtoupper(Str::slug($color, '')) . '-' . $size,
+                            'name' => $productName . ' (' . $color . ' / ' . $size . ')',
+                            'price' => $price,
+                            'sale_price' => $salePrice,
+                            'stock_quantity' => rand(10, 50),
+                            'attributes' => [
+                                'color' => $color,
+                                'size' => $size,
+                            ],
+                            'is_active' => true,
+                        ]);
+                    }
+                }
+            }
+            
+            $this->command->info("Đã tạo " . $count . " sản phẩm cho danh mục: " . $category->name);
         }
     }
 }

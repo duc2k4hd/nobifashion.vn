@@ -37,6 +37,7 @@ class ProductRequest extends FormRequest
             'meta_description' => ['nullable', 'string'],
             'meta_keywords' => ['nullable'],
             'meta_canonical' => ['nullable', 'string', 'max:255'],
+            'brand_id' => ['nullable', 'integer', 'exists:brands,id'],
             'price' => ['required', 'numeric', 'min:0'],
             'sale_price' => ['nullable', 'numeric', 'min:0', 'lt:price'],
             'cost_price' => ['nullable', 'numeric', 'min:0'],
@@ -62,6 +63,7 @@ class ProductRequest extends FormRequest
             'images.*.order' => ['nullable', 'integer', 'min:0'],
             'images.*.file' => ['nullable', 'file', 'image', 'max:5120'],
             'images.*.path' => ['nullable', 'string'],
+            'images.*.existing_path' => ['nullable', 'string'],
 
             'variants' => ['nullable', 'array'],
             'variants.*.price' => ['nullable', 'numeric', 'min:0'],
@@ -129,4 +131,3 @@ class ProductRequest extends FormRequest
         return $data;
     }
 }
-

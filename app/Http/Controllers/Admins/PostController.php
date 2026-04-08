@@ -11,6 +11,7 @@ use App\Models\Category;
 use App\Models\Post;
 use App\Models\PostRevision;
 use App\Models\Tag;
+use App\Services\Admin\ProgressiveSearchService;
 use App\Services\PostService;
 use App\Services\SeoService;
 use Carbon\Carbon;
@@ -26,6 +27,7 @@ class PostController extends Controller
     public function __construct(
         protected PostService $postService,
         protected SeoService $seoService,
+        protected ProgressiveSearchService $progressiveSearchService,
     ) {
         $this->middleware(['auth:web', 'admin']);
     }
@@ -47,21 +49,23 @@ class PostController extends Controller
             ->when($request->filled('is_featured'), fn ($q) => $q->where('is_featured', $request->boolean('is_featured')))
             ->when($request->filled('without_thumbnail'), fn ($q) => $q->whereNull('thumbnail'))
             ->when($request->filled('date_from'), fn ($q) => $q->whereDate('published_at', '>=', $request->date('date_from')))
-            ->when($request->filled('date_to'), fn ($q) => $q->whereDate('published_at', '<=', $request->date('date_to')))
-            ->when($request->filled('search'), function ($q) use ($request) {
-                $keyword = $request->input('search');
-                $q->where(function ($sub) use ($keyword) {
-                    $sub->where('title', 'like', "%{$keyword}%")
-                        ->orWhere('slug', 'like', "%{$keyword}%");
-                });
-            })
-            ->orderByDesc(DB::raw('COALESCE(published_at, created_at)'));
+            ->when($request->filled('date_to'), fn ($q) => $q->whereDate('published_at', '<=', $request->date('date_to')));
+
+        $searchMeta = $this->progressiveSearchService->apply(
+            $query,
+            $request->input('search'),
+            ['posts.title'],
+            ['posts.slug']
+        );
+
+        $query->orderByDesc(DB::raw('COALESCE(published_at, created_at)'));
 
         $posts = $query->paginate(20)->withQueryString();
 
         return view('admins.posts.index', [
             'posts' => $posts,
             'filters' => $request->all(),
+            'searchMeta' => $searchMeta,
             'categories' => Category::orderBy('name')->get(),
             'tags' => Tag::where('entity_type', Post::class)->select('id', 'name')->distinct('name')->orderBy('name')->get()->unique('name')->values(),
             'authors' => Account::orderBy('name')->get(['id', 'name', 'email']),

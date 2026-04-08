@@ -29,12 +29,24 @@
             color: var(--text-color);
         }
 
+        .nobifashion_header {
+            position: relative;
+            background-color: transparent !important;
+            z-index: 15;
+        }
+
+        .nobifashion_footer {
+            position: relative;
+            z-index: 15;
+        }
+
         .container {
+            position: relative;
             text-align: center;
             padding: 40px 20px;
             z-index: 10;
             width: 100%;
-            background: rgba(255, 255, 255, 0.95); /* Nền trắng gần như tuyệt đối */
+            background: transparent; /* Nền trắng gần như tuyệt đối */
             border-radius: 15px;
             box-shadow: 0 5px 25px rgba(0, 0, 0, 0.1);
             border: 1px solid var(--accent-color);
@@ -216,7 +228,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 1;
+            z-index: 5;
         }
 
         .background-animation span {

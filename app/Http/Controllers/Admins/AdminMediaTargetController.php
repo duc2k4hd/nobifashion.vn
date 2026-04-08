@@ -40,8 +40,8 @@ class AdminMediaTargetController extends Controller
     {
         $builder = Product::query()->select('id', 'name', 'sku')->latest('id');
         if ($term !== '') {
-            $builder->where(function ($q) use ($term) {
-                $q->where('name', 'like', "%{$term}%")
+            $builder->where(function ($query) use ($term) {
+                $query->where('name', 'like', "%{$term}%")
                     ->orWhere('sku', 'like', "%{$term}%")
                     ->orWhere('slug', 'like', "%{$term}%");
             });
@@ -60,8 +60,8 @@ class AdminMediaTargetController extends Controller
     {
         $builder = Post::query()->select('id', 'title', 'slug')->latest('id');
         if ($term !== '') {
-            $builder->where(function ($q) use ($term) {
-                $q->where('title', 'like', "%{$term}%")
+            $builder->where(function ($query) use ($term) {
+                $query->where('title', 'like', "%{$term}%")
                     ->orWhere('slug', 'like', "%{$term}%");
             });
         }
@@ -79,8 +79,8 @@ class AdminMediaTargetController extends Controller
     {
         $builder = Category::query()->select('id', 'name', 'slug')->latest('id');
         if ($term !== '') {
-            $builder->where(function ($q) use ($term) {
-                $q->where('name', 'like', "%{$term}%")
+            $builder->where(function ($query) use ($term) {
+                $query->where('name', 'like', "%{$term}%")
                     ->orWhere('slug', 'like', "%{$term}%");
             });
         }
@@ -98,8 +98,8 @@ class AdminMediaTargetController extends Controller
     {
         $builder = Banner::query()->select('id', 'title', 'position')->latest('id');
         if ($term !== '') {
-            $builder->where(function ($q) use ($term) {
-                $q->where('title', 'like', "%{$term}%")
+            $builder->where(function ($query) use ($term) {
+                $query->where('title', 'like', "%{$term}%")
                     ->orWhere('description', 'like', "%{$term}%");
             });
         }
@@ -117,8 +117,8 @@ class AdminMediaTargetController extends Controller
     {
         $builder = Profile::query()->select('id', 'full_name', 'nickname')->latest('id');
         if ($term !== '') {
-            $builder->where(function ($q) use ($term) {
-                $q->where('full_name', 'like', "%{$term}%")
+            $builder->where(function ($query) use ($term) {
+                $query->where('full_name', 'like', "%{$term}%")
                     ->orWhere('nickname', 'like', "%{$term}%");
             });
         }
@@ -132,5 +132,3 @@ class AdminMediaTargetController extends Controller
         });
     }
 }
-
-

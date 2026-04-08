@@ -23,6 +23,51 @@ $selectedTagNames = $selectedTags->pluck('name')->toArray();
 
 // Xử lý tag_names từ old input (nếu có)
 $tagNamesInput = old('tag_names', '');
+$mediaScanner = app(\App\Services\Media\MediaScannerService::class);
+$productMediaFolders = collect(config('media.directories', []))
+    ->map(function ($path, $key) {
+        $label = \Illuminate\Support\Str::headline(str_replace('_', ' ', $key));
+        $scope = str_starts_with($path, 'clients/') ? 'Frontend' : 'Admin';
+
+        return [
+            'key' => $key,
+            'path' => $path,
+            'label' => $label,
+            'scope' => $scope,
+        ];
+    })
+    ->values();
+$productMediaTypeFilters = ['all' => 'Táº¥t cáº£ loáº¡i'] + $mediaScanner->getTypeLabels();
+$productMediaStatusFilters = $mediaScanner->getStatusLabels();
+$productMediaUploadTargets = [
+    'product' => 'Sáº£n pháº©m',
+    'post' => 'BĂ i viáº¿t',
+    'category' => 'Danh má»¥c',
+    'banner_desktop' => 'Banner desktop',
+    'banner_mobile' => 'Banner mobile',
+    'profile_avatar' => 'Avatar ngÆ°á»i dĂ¹ng',
+    'profile_sub_avatar' => 'áº¢nh phá»¥ ngÆ°á»i dĂ¹ng',
+];
+$productMediaInitialStats = [
+    'library_items' => 0,
+    'tracked_records' => 0,
+    'physical_files' => 0,
+    'orphan_files' => 0,
+    'missing_files' => 0,
+    'unassigned_records' => 0,
+    'estimated_size' => '0 B',
+    'status_counts' => collect(array_keys($productMediaStatusFilters))
+        ->mapWithKeys(fn ($key) => [$key => 0])
+        ->all(),
+];
+$productMediaInitialPagination = [
+    'total' => 0,
+    'per_page' => 50,
+    'current_page' => 1,
+    'last_page' => 1,
+    'from' => 0,
+    'to' => 0,
+];
 @endphp
 
 @section('title', $pageTitle)
@@ -36,6 +81,7 @@ $tagNamesInput = old('tag_names', '');
 @endif
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css">
+<link rel="stylesheet" href="{{ asset('admins/css/media-manager.css?v=' . filemtime(public_path('admins/css/media-manager.css'))) }}">
 @endpush
 
 @push('styles')
@@ -163,31 +209,6 @@ $tagNamesInput = old('tag_names', '');
         cursor: pointer;
     }
 
-    .image-library {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-top: 10px;
-        max-height: 200px;
-        overflow-y: auto;
-    }
-
-    .image-library button {
-        border: 1px solid #cbd5f5;
-        border-radius: 8px;
-        padding: 0;
-        background: #fff;
-        cursor: pointer;
-    }
-
-    .image-library img {
-        width: 62px;
-        height: 62px;
-        object-fit: cover;
-        border-radius: 6px;
-        display: block;
-    }
-
     .image-preview {
         margin-top: 10px;
     }
@@ -198,6 +219,31 @@ $tagNamesInput = old('tag_names', '');
         object-fit: cover;
         border-radius: 8px;
         border: 1px solid #e2e8f0;
+    }
+
+    .product-image-picker-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+    }
+
+    .product-image-picker-status {
+        margin-top: 10px;
+        padding: 8px 10px;
+        border-radius: 8px;
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1e3a8a;
+        font-size: 12px;
+        line-height: 1.5;
+        word-break: break-word;
+    }
+
+    .product-image-picker-status.is-empty {
+        background: #f8fafc;
+        border-color: #e2e8f0;
+        color: #64748b;
     }
 
     /* CKEditor 5 Styles */
@@ -238,21 +284,72 @@ $tagNamesInput = old('tag_names', '');
 
 @push('scripts')
 @include('admins.partials.media-library-modal')
+<script src="{{ asset('admins/js/media-library.js?v=' . filemtime(public_path('admins/js/media-library.js'))) }}"></script>
 <script>
-    console.log('=== PRODUCTS FORM SCRIPTS LOADING ===');
-    console.log('Loading media-library.js...');
+    window.mediaManagerConfig = {
+        csrfToken: @json(csrf_token()),
+        fallbackImage: @json(asset('clients/assets/no-image.webp')),
+        routes: {
+            search: @json(route('admin.media.search')),
+            upload: @json(route('admin.media.upload')),
+            updateBase: @json(url('/admin/media/update')),
+            assign: @json(route('admin.media.assign')),
+            bulkDelete: @json(route('admin.media.bulk-delete')),
+            targets: @json(route('admin.media.targets')),
+        },
+        initialState: {
+            items: [],
+            meta: @json($productMediaInitialPagination),
+            stats: @json($productMediaInitialStats),
+        },
+    };
 
+    window.productMediaPickerConfig = {
+        defaultFolder: 'clothes',
+        modalTitleBase: 'Chọn ảnh cho gallery sản phẩm',
+    };
 </script>
-<script src="{{ asset('admins/js/media-library.js?v=' . time()) }}"></script>
+<script src="{{ asset('admins/js/media-manager.js?v=' . filemtime(public_path('admins/js/media-manager.js'))) }}"></script>
+<script src="{{ asset('admins/js/product-media-picker.js?v=' . filemtime(public_path('admins/js/product-media-picker.js'))) }}"></script>
 <script>
-    console.log('media-library.js loaded, checking window.mediaLibrary:', typeof window.mediaLibrary);
-    console.log('window.mediaLibrary:', window.mediaLibrary);
     document.addEventListener('DOMContentLoaded', () => {
         const counters = {};
         const attributeCounters = {};
         let isDirty = false;
         const markDirty = () => {
             isDirty = true;
+        };
+        const normalizeLegacyImageRows = () => {
+            document.querySelectorAll('#image-list .repeater-item').forEach((row) => {
+                const primaryCheckbox = row.querySelector('input[name$="[is_primary]"]');
+                if (primaryCheckbox) {
+                    const label = primaryCheckbox.closest('label');
+                    if (label) {
+                        label.lastChild && label.lastChild.nodeType === Node.TEXT_NODE
+                            ? label.lastChild.textContent = ' Ảnh chính'
+                            : label.appendChild(document.createTextNode(' Ảnh chính'));
+                    }
+                    return;
+                }
+
+                const nextBlock = row.nextElementSibling;
+                const legacyCheckbox = nextBlock?.querySelector?.('input[name$="[is_primary]"]');
+                if (!legacyCheckbox) {
+                    return;
+                }
+
+                const wrapper = document.createElement('div');
+                wrapper.style.marginTop = '10px';
+                wrapper.innerHTML = `
+                    <label>
+                        <input type="checkbox" name="${legacyCheckbox.name}" value="1" ${legacyCheckbox.checked ? 'checked' : ''}>
+                        Ảnh chính
+                    </label>
+                `;
+
+                row.appendChild(wrapper);
+                nextBlock.remove();
+            });
         };
         // CKEditor 5 sẽ tự động khởi tạo cho .tinymce-editor
         // Đợi editor khởi tạo xong để setup markDirty
@@ -293,6 +390,9 @@ $tagNamesInput = old('tag_names', '');
                 wrapper.innerHTML = html.trim();
                 const newBlock = wrapper.firstElementChild;
                 target.appendChild(newBlock);
+                if (targetSelector === '#image-list') {
+                    window.productMediaPicker?.enhanceRow(newBlock);
+                }
                 if (targetSelector === '#variant-list') {
                     registerVariantAttributes(newBlock);
                 }
@@ -307,17 +407,6 @@ $tagNamesInput = old('tag_names', '');
                 markDirty();
             }
 
-            if (e.target.matches('[data-select-image]')) {
-                const path = e.target.dataset.path;
-                const target = document.querySelector(e.target.dataset.target);
-                const preview = document.querySelector(e.target.dataset.preview);
-                if (target) {
-                    target.value = path;
-                }
-                if (preview) {
-                    preview.innerHTML = `<img src="${e.target.dataset.url}" alt="">`;
-                }
-            }
             if (e.target.matches('[data-remove-attribute]')) {
                 e.target.closest('.attribute-row')?.remove();
                 markDirty();
@@ -333,11 +422,44 @@ $tagNamesInput = old('tag_names', '');
                     preview.innerHTML = `<img src="${ev.target.result}" alt="">`;
                 };
                 reader.readAsDataURL(e.target.files[0]);
+                window.productMediaPicker?.syncRowState(e.target.closest('.repeater-item'));
             }
         });
 
+        normalizeLegacyImageRows();
+
         if (document.querySelector('#primary-category')) {
+            const primaryCategorySelect = document.querySelector('#primary-category');
+            const primaryCategoryLabel = primaryCategorySelect.previousElementSibling;
+            const primaryCategoryEmptyOption = primaryCategorySelect.querySelector('option[value=""]');
+
+            if (primaryCategoryLabel) {
+                primaryCategoryLabel.textContent = 'Danh mục chính';
+            }
+
+            if (primaryCategoryEmptyOption) {
+                primaryCategoryEmptyOption.textContent = '-- Chọn danh mục --';
+            }
+
             new TomSelect('#primary-category', {
+                create: false
+                , allowEmptyOption: true
+            });
+        }
+        if (document.querySelector('#brand-select')) {
+            const brandSelect = document.querySelector('#brand-select');
+            const brandLabel = brandSelect.previousElementSibling;
+            const brandEmptyOption = brandSelect.querySelector('option[value=""]');
+
+            if (brandLabel) {
+                brandLabel.textContent = 'Hãng';
+            }
+
+            if (brandEmptyOption) {
+                brandEmptyOption.textContent = '-- Chọn hãng --';
+            }
+
+            new TomSelect('#brand-select', {
                 create: false
                 , allowEmptyOption: true
             });
@@ -361,8 +483,6 @@ $tagNamesInput = old('tag_names', '');
                 }
             });
         }
-
-        window.mediaImages = {!! json_encode($mediaImages ?? [], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) !!};
 
         initCKEditors();
 
@@ -509,6 +629,9 @@ $tagNamesInput = old('tag_names', '');
                         <h5 class="fw-bold mb-0">Gallery ảnh</h5>
                         <button type="button" class="btn btn-sm btn-outline-primary" data-add="#image-list" data-template="#image-template">+ Thêm ảnh</button>
                     </div>
+                    <p class="text-muted small mb-3">
+                        Mỗi dòng ảnh có thể mở media picker đầy đủ tính năng để tìm kiếm, upload, chỉnh metadata, xóa hoặc chọn lại ảnh cho gallery.
+                    </p>
                     <div class="repeater-list" id="image-list">
                         @foreach(old('images', $product->images->toArray() ?? []) as $index => $image)
                             <div class="repeater-item">
@@ -539,13 +662,14 @@ $tagNamesInput = old('tag_names', '');
                                     <label>File ảnh</label>
                                     <input type="file" name="images[{{ $index }}][file]" class="form-control image-file-input">
                                     @php
-                                        $storedUrl = $image['url'] ?? null;
-                                        // Nếu là dữ liệu cũ (chỉ có tên file), accessor của Model sẽ tự xử lý khi load từ DB.
-                                        // Nếu là old input, ta cần check xem nó có phải URL tuyệt đối không.
-                                        if ($storedUrl && !str_starts_with($storedUrl, 'http')) {
-                                            $storedUrl = asset($storedUrl);
-                                        }
                                         $storedValue = $image['path'] ?? $image['url'] ?? null;
+                                        $storedUrl = $storedValue
+                                            ? (str_starts_with($storedValue, 'http')
+                                                ? $storedValue
+                                                : (str_contains($storedValue, '/')
+                                                    ? asset($storedValue)
+                                                    : asset('clients/assets/img/clothes/' . $storedValue)))
+                                            : null;
                                     @endphp
                                     <input type="hidden" id="image-path-{{ $index }}" name="images[{{ $index }}][existing_path]" value="{{ $storedValue }}">
                                     <div class="image-preview" id="image-preview-{{ $index }}">
@@ -553,17 +677,12 @@ $tagNamesInput = old('tag_names', '');
                                         <img src="{{ $storedUrl }}" alt="">
                                         @endif
                                     </div>
-                                    <div class="image-library">
-                                        @foreach($mediaImages as $media)
-                                            <button type="button"
-                                                    data-select-image
-                                                    data-path="{{ basename($media['path']) }}"
-                                        data-url="{{ $media['url'] }}"
-                                        data-target="#image-path-{{ $index }}"
-                                        data-preview="#image-preview-{{ $index }}">
-                                        <img src="{{ $media['url'] }}" alt="{{ $media['name'] }}">
-                                        </button>
-                                        @endforeach
+                                    <div class="product-image-picker-actions">
+                                        <button type="button" class="btn btn-outline-primary btn-sm" data-product-media-open>Mở media picker</button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm" data-product-media-clear>Bỏ ảnh đã chọn</button>
+                                    </div>
+                                    <div class="product-image-picker-status {{ $storedValue ? '' : 'is-empty' }}" data-product-media-status>
+                                        {{ $storedValue ? 'Đang chọn: ' . $storedValue : 'Chưa chọn ảnh từ media. Bạn có thể upload file mới hoặc mở media picker.' }}
                                     </div>
                                 </div>
                             </div>
@@ -760,6 +879,17 @@ $tagNamesInput = old('tag_names', '');
                     <h5 class="fw-bold mb-3">Danh mục & Tags</h5>
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Danh mục chính</label>
+                        <select class="form-select" id="brand-select" name="brand_id">
+                            <option value="">-- Chọn hãng --</option>
+                            @foreach(($brands ?? []) as $brand)
+                                <option value="{{ $brand->id }}" {{ (string) old('brand_id', $product->brand_id) === (string) $brand->id ? 'selected' : '' }}>
+                                    {{ $brand->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Hãng</label>
                         <select class="form-select" id="primary-category" name="primary_category_id">
                             <option value="">-- Chọn danh mục --</option>
                             @foreach($categories as $category)
@@ -853,11 +983,9 @@ $tagNamesInput = old('tag_names', '');
             </div>
         </div>
     </div>
-    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;margin-bottom:20px;">
-        <a href="{{ route('admin.products.index') }}" class="btn btn-secondary">↩️ Quay lại danh sách</a>
-        <button type="submit" class="btn btn-primary">💾 Lưu sản phẩm</button>
-    </div>
 </form>
+
+@include('admins.products.partials.media-picker-modal')
 
 <template id="image-template">
     <div class="repeater-item">
@@ -875,19 +1003,30 @@ $tagNamesInput = old('tag_names', '');
                 <label>Ghi chú</label>
                 <input type="text" class="form-control" name="images[__INDEX__][notes]">
             </div>
+            <div>
+                <label>Alt</label>
+                <input type="text" class="form-control" name="images[__INDEX__][alt]">
+            </div>
+            <div>
+                <label>Thá»© tá»±</label>
+                <input type="number" class="form-control" name="images[__INDEX__][order]" value="__INDEX__">
+            </div>
         </div>
         <div style="margin-top:10px;">
             <label>File ảnh</label>
             <input type="file" name="images[__INDEX__][file]" class="form-control image-file-input">
             <input type="hidden" id="image-path-__INDEX__" name="images[__INDEX__][existing_path]">
             <div class="image-preview" id="image-preview-__INDEX__"></div>
-            <div class="image-library">
-                @foreach($mediaImages as $media)
-                <button type="button" data-select-image data-path="{{ basename($media['path']) }}" data-url="{{ $media['url'] }}" data-target="#image-path-__INDEX__" data-preview="#image-preview-__INDEX__">
-                    <img src="{{ $media['url'] }}" alt="{{ $media['name'] }}">
-                </button>
-                @endforeach
+            <div class="product-image-picker-actions">
+                <button type="button" class="btn btn-outline-primary btn-sm" data-product-media-open>Mở media picker</button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-product-media-clear>Bỏ ảnh đã chọn</button>
             </div>
+            <div class="product-image-picker-status is-empty" data-product-media-status>
+                Chưa chọn ảnh từ media. Bạn có thể upload file mới hoặc mở media picker.
+            </div>
+        </div>
+        <div style="margin-top:10px;">
+            <label><input type="checkbox" name="images[__INDEX__][is_primary]" value="1"> Ảnh chính</label>
         </div>
     </div>
 </template>
@@ -973,3 +1112,5 @@ $tagNamesInput = old('tag_names', '');
     </div>
 </template>
 @endsection
+
+

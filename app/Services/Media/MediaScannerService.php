@@ -10,15 +10,36 @@ use App\Models\Product;
 use App\Models\Profile;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 
 class MediaScannerService
 {
-    protected FileHelperService $files;
-    protected array $directories;
-    protected array $directoryLabels;
-    protected array $typeLabels;
-    protected array $allowedFilters = [
+    protected array $typeLabels = [
+        'product_image' => 'Ảnh sản phẩm',
+        'post_thumbnail' => 'Ảnh bài viết',
+        'category_image' => 'Ảnh danh mục',
+        'banner_desktop' => 'Banner desktop',
+        'banner_mobile' => 'Banner mobile',
+        'profile_avatar' => 'Avatar',
+        'profile_sub_avatar' => 'Ảnh phụ avatar',
+        'library_image' => 'Ảnh thư viện',
+        'filesystem_file' => 'File trên ổ đĩa',
+    ];
+
+    protected array $statusLabels = [
+        'all' => 'Tất cả trạng thái',
+        'in_use' => 'Đang dùng',
+        'orphan_file' => 'File mồ côi',
+        'missing_file' => 'Thiếu file',
+        'unassigned_record' => 'Chưa gắn đối tượng',
+        'external' => 'URL ngoài',
+        'shared_file' => 'Dùng chung nhiều nơi',
+    ];
+
+    protected array $allowedTypeFilters = [
         'all',
         'product_image',
         'post_thumbnail',
@@ -27,396 +48,139 @@ class MediaScannerService
         'banner_mobile',
         'profile_avatar',
         'profile_sub_avatar',
+        'library_image',
+        'filesystem_file',
     ];
 
-    public function __construct(FileHelperService $files)
-    {
-        $this->files = $files;
+    protected array $allowedStatusFilters = [
+        'all',
+        'in_use',
+        'orphan_file',
+        'missing_file',
+        'unassigned_record',
+        'external',
+        'shared_file',
+    ];
+
+    protected array $allowedImageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'avif', 'svg'];
+
+    protected ?Collection $allItems = null;
+    protected ?array $filesystemInventory = null;
+    protected ?array $dashboardStats = null;
+
+    public function __construct(
+        protected FileHelperService $files
+    ) {
         $this->directories = config('media.directories', []);
-        $this->directoryLabels = collect($this->directories)->map(function ($path, $key) {
+        $this->directoryLabels = collect($this->directories)->mapWithKeys(function ($path, $key) {
             $label = Str::headline(str_replace('_', ' ', $key));
-            return $label . ' (' . $path . ')';
+
+            return [$key => $label . ' (' . $path . ')'];
         })->toArray();
-        $this->typeLabels = [
-            'product_image' => 'Ảnh sản phẩm',
-            'post_thumbnail' => 'Ảnh bài viết',
-            'category_image' => 'Ảnh danh mục',
-            'banner_desktop' => 'Banner desktop',
-            'banner_mobile' => 'Banner mobile',
-            'profile_avatar' => 'Avatar',
-            'profile_sub_avatar' => 'Ảnh phụ avatar',
-        ];
     }
+
+    protected array $directories;
+    protected array $directoryLabels;
 
     public function getDashboardStats(): array
     {
-        $productImages = Image::count();
-        $postThumbnails = Post::whereNotNull('thumbnail')->count();
-        $categoryImages = Category::whereNotNull('image')->count();
-        $bannerDesktop = Banner::whereNotNull('image_desktop')->count();
-        $bannerMobile = Banner::whereNotNull('image_mobile')->count();
-        $profileAvatar = Profile::whereNotNull('avatar')->count();
-        $profileSub = Profile::whereNotNull('sub_avatar')->count();
+        if ($this->dashboardStats !== null) {
+            return $this->dashboardStats;
+        }
 
-        $estimatedBytes = $this->calculateEstimatedDiskUsage();
+        $items = $this->getAllItems();
+        $inventory = $this->getFilesystemInventory();
 
-        return [
-            'product_images' => $productImages,
-            'post_thumbnails' => $postThumbnails,
-            'category_images' => $categoryImages,
-            'banner_images' => $bannerDesktop + $bannerMobile,
-            'profile_avatars' => $profileAvatar + $profileSub,
-            'total_images' => $productImages + $postThumbnails + $categoryImages + $bannerDesktop + $bannerMobile + $profileAvatar + $profileSub,
-            'estimated_size' => $this->files->formatBytes($estimatedBytes),
+        $this->dashboardStats = [
+            'library_items' => $items->count(),
+            'tracked_records' => $items->where('source_kind', 'record')->count(),
+            'physical_files' => count($inventory),
+            'in_use' => $items->filter(fn (array $item) => in_array('in_use', $item['status_flags'], true))->count(),
+            'orphan_files' => $items->filter(fn (array $item) => in_array('orphan_file', $item['status_flags'], true))->count(),
+            'missing_files' => $items->filter(fn (array $item) => in_array('missing_file', $item['status_flags'], true))->count(),
+            'unassigned_records' => $items->filter(fn (array $item) => in_array('unassigned_record', $item['status_flags'], true))->count(),
+            'external_files' => $items->filter(fn (array $item) => in_array('external', $item['status_flags'], true))->count(),
+            'estimated_size' => $this->files->formatBytes((int) array_sum(array_column($inventory, 'size'))),
+            'status_counts' => [
+                'all' => $items->count(),
+                'in_use' => $items->filter(fn (array $item) => in_array('in_use', $item['status_flags'], true))->count(),
+                'orphan_file' => $items->filter(fn (array $item) => in_array('orphan_file', $item['status_flags'], true))->count(),
+                'missing_file' => $items->filter(fn (array $item) => in_array('missing_file', $item['status_flags'], true))->count(),
+                'unassigned_record' => $items->filter(fn (array $item) => in_array('unassigned_record', $item['status_flags'], true))->count(),
+                'external' => $items->filter(fn (array $item) => in_array('external', $item['status_flags'], true))->count(),
+                'shared_file' => $items->filter(fn (array $item) => in_array('shared_file', $item['status_flags'], true))->count(),
+            ],
         ];
+
+        return $this->dashboardStats;
     }
 
-    /**
-     * Tìm kiếm media.
-     *
-     * @param  array{type?:string,q?:string,sort?:string,direction?:string,per_page?:int,page?:int}  $filters
-     */
     public function search(array $filters = []): LengthAwarePaginator
     {
-        $type = $filters['type'] ?? 'all';
-        if (!in_array($type, $this->allowedFilters, true)) {
-            $type = 'all';
-        }
-
-        $term = trim($filters['q'] ?? '');
+        $type = in_array(($filters['type'] ?? 'all'), $this->allowedTypeFilters, true) ? ($filters['type'] ?? 'all') : 'all';
+        $folder = array_key_exists(($filters['folder'] ?? 'all'), $this->directories) || ($filters['folder'] ?? 'all') === 'all'
+            ? ($filters['folder'] ?? 'all')
+            : 'all';
+        $status = in_array(($filters['status'] ?? 'all'), $this->allowedStatusFilters, true) ? ($filters['status'] ?? 'all') : 'all';
+        $term = trim((string) ($filters['q'] ?? ''));
         $sort = $filters['sort'] ?? 'created_at';
         $direction = strtolower($filters['direction'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
-        $perPage = (int) ($filters['per_page'] ?? 30);
+        $perPage = min(max((int) ($filters['per_page'] ?? 50), 12), 2000);
         $page = max((int) ($filters['page'] ?? 1), 1);
 
-        $items = collect();
+        $items = $this->getAllItems();
 
-        if ($this->shouldInclude('product_image', $type)) {
-            $items = $items->merge($this->mapProductImages($term));
+        if ($type !== 'all') {
+            $items = $items->where('type', $type)->values();
         }
-        if ($this->shouldInclude('post_thumbnail', $type)) {
-            $items = $items->merge($this->mapPosts($term));
+        if ($folder !== 'all') {
+            $items = $items->where('folder_key', $folder)->values();
         }
-        if ($this->shouldInclude('category_image', $type)) {
-            $items = $items->merge($this->mapCategories($term));
+        if ($status !== 'all') {
+            $items = $items->filter(fn (array $item) => in_array($status, $item['status_flags'], true))->values();
         }
+        if ($term !== '') {
+            $needle = Str::lower($term);
+            $items = $items->filter(function (array $item) use ($needle) {
+                foreach ([
+                    $item['file_name'] ?? '',
+                    $item['title'] ?? '',
+                    $item['alt'] ?? '',
+                    $item['description'] ?? '',
+                    $item['relative_path'] ?? '',
+                    $item['entity_label'] ?? '',
+                    $item['type_label'] ?? '',
+                    $item['folder_label'] ?? '',
+                ] as $haystack) {
+                    if ($haystack !== '' && Str::contains(Str::lower($haystack), $needle)) {
+                        return true;
+                    }
+                }
 
-        if ($type === 'banner_desktop' || $type === 'banner_mobile') {
-            $items = $items->merge($this->mapBanners($term, $type));
-        } elseif ($type === 'all') {
-            $items = $items->merge($this->mapBanners($term));
-        }
-
-        if ($type === 'profile_avatar' || $type === 'profile_sub_avatar') {
-            $items = $items->merge($this->mapProfiles($term, $type));
-        } elseif ($type === 'all') {
-            $items = $items->merge($this->mapProfiles($term));
+                return false;
+            })->values();
         }
 
         $items = $this->sortItems($items, $sort, $direction);
-
         $total = $items->count();
         $slice = $items->forPage($page, $perPage)->values();
 
         return new LengthAwarePaginator($slice, $total, $perPage, $page);
     }
 
-    protected function shouldInclude(string $target, string $filter): bool
+    public function findItem(string $source, ?string $id = null, ?string $path = null): ?array
     {
-        return $filter === 'all' || $filter === $target;
-    }
-
-    protected function mapProductImages(string $term): Collection
-    {
-        $query = Image::query()
-            ->with('product:id,name,slug')
-            ->latest('created_at')
-            ->limit(800);
-
-        if ($term !== '') {
-            $query->where(function ($q) use ($term) {
-                $q->where('title', 'like', '%' . $term . '%')
-                    ->orWhere('alt', 'like', '%' . $term . '%')
-                    ->orWhere('url', 'like', '%' . $term . '%');
-            });
-        }
-
-        return $query->get()->map(function (Image $image) {
-            $folderKey = $this->detectFolderKey($image->url);
-            return [
-                'id' => (string) $image->id,
-                'type' => 'product_image',
-                'preview' => $this->toAsset($image->thumbnail_url ?: $image->url),
-                'original' => $this->toAsset($image->url),
-                'folder_key' => $folderKey,
-                'folder_label' => $this->directoryLabels[$folderKey] ?? null,
-                'type_label' => $this->typeLabels['product_image'] ?? 'Ảnh sản phẩm',
-                'file_name' => basename($image->url),
-                'alt' => $image->alt,
-                'title' => $image->title,
-                'description' => $image->notes,
-                'created_at' => optional($image->created_at)->toDateTimeString(),
-                'entity_label' => optional($image->product)->name,
-                'entity_id' => optional($image->product)->id,
-                'dimensions' => $image->dimensions,
-                'metadata' => [
-                    'is_primary' => $image->is_primary,
-                    'order' => $image->order,
-                ],
-            ];
-        });
-    }
-
-    protected function mapPosts(string $term): Collection
-    {
-        $query = Post::query()
-            ->select('id', 'title', 'thumbnail', 'thumbnail_alt_text', 'created_at')
-            ->whereNotNull('thumbnail')
-            ->latest('created_at')
-            ->limit(400);
-
-        if ($term !== '') {
-            $query->where(function ($q) use ($term) {
-                $q->where('title', 'like', '%' . $term . '%')
-                    ->orWhere('thumbnail', 'like', '%' . $term . '%');
-            });
-        }
-
-        return $query->get()->map(function (Post $post) {
-            $folderKey = 'posts';
-            return [
-                'id' => (string) $post->id,
-                'type' => 'post_thumbnail',
-                'preview' => $this->toProjectAsset($post->thumbnail, 'posts'),
-                'original' => $this->toProjectAsset($post->thumbnail, 'posts'),
-                'folder_key' => $folderKey,
-                'folder_label' => $this->directoryLabels[$folderKey] ?? null,
-                'type_label' => $this->typeLabels['post_thumbnail'] ?? 'Ảnh bài viết',
-                'file_name' => basename($post->thumbnail),
-                'alt' => $post->thumbnail_alt_text,
-                'title' => $post->title,
-                'created_at' => optional($post->created_at)->toDateTimeString(),
-                'entity_label' => $post->title,
-                'entity_id' => $post->id,
-            ];
-        });
-    }
-
-    protected function mapCategories(string $term): Collection
-    {
-        $query = Category::query()
-            ->select('id', 'name', 'image', 'created_at')
-            ->whereNotNull('image')
-            ->latest('created_at')
-            ->limit(300);
-
-        if ($term !== '') {
-            $query->where(function ($q) use ($term) {
-                $q->where('name', 'like', '%' . $term . '%')
-                    ->orWhere('image', 'like', '%' . $term . '%');
-            });
-        }
-
-        return $query->get()->map(function (Category $category) {
-            $folderKey = 'categories';
-            return [
-                'id' => (string) $category->id,
-                'type' => 'category_image',
-                'preview' => $this->toProjectAsset($category->image, 'categories'),
-                'original' => $this->toProjectAsset($category->image, 'categories'),
-                'folder_key' => $folderKey,
-                'folder_label' => $this->directoryLabels[$folderKey] ?? null,
-                'type_label' => $this->typeLabels['category_image'] ?? 'Ảnh danh mục',
-                'file_name' => basename($category->image),
-                'title' => $category->name,
-                'created_at' => optional($category->created_at)->toDateTimeString(),
-                'entity_label' => $category->name,
-                'entity_id' => $category->id,
-            ];
-        });
-    }
-
-    protected function mapBanners(string $term, ?string $onlyType = null): Collection
-    {
-        $query = Banner::query()
-            ->select('id', 'title', 'image_desktop', 'image_mobile', 'created_at')
-            ->latest('created_at')
-            ->limit(300);
-
-        if ($term !== '') {
-            $query->where(function ($q) use ($term) {
-                $q->where('title', 'like', '%' . $term . '%')
-                    ->orWhere('image_desktop', 'like', '%' . $term . '%')
-                    ->orWhere('image_mobile', 'like', '%' . $term . '%');
-            });
-        }
-
-        return $query->get()->flatMap(function (Banner $banner) use ($onlyType) {
-            $items = collect();
-            if ($banner->image_desktop && (!$onlyType || $onlyType === 'banner_desktop')) {
-                $folderKey = 'banners';
-                $items->push([
-                    'id' => (string) $banner->id,
-                    'type' => 'banner_desktop',
-                    'preview' => $this->toProjectAsset($banner->image_desktop, 'banners'),
-                    'original' => $this->toProjectAsset($banner->image_desktop, 'banners'),
-                    'folder_key' => $folderKey,
-                    'folder_label' => $this->directoryLabels[$folderKey] ?? null,
-                    'type_label' => $this->typeLabels['banner_desktop'] ?? 'Banner desktop',
-                    'file_name' => basename($banner->image_desktop),
-                    'title' => $banner->title . ' (Desktop)',
-                    'created_at' => optional($banner->created_at)->toDateTimeString(),
-                    'entity_label' => $banner->title,
-                    'entity_id' => $banner->id,
-                ]);
-            }
-            if ($banner->image_mobile && (!$onlyType || $onlyType === 'banner_mobile')) {
-                $folderKey = 'banners';
-                $items->push([
-                    'id' => (string) $banner->id,
-                    'type' => 'banner_mobile',
-                    'preview' => $this->toProjectAsset($banner->image_mobile, 'banners'),
-                    'original' => $this->toProjectAsset($banner->image_mobile, 'banners'),
-                    'folder_key' => $folderKey,
-                    'folder_label' => $this->directoryLabels[$folderKey] ?? null,
-                    'type_label' => $this->typeLabels['banner_mobile'] ?? 'Banner mobile',
-                    'file_name' => basename($banner->image_mobile),
-                    'title' => $banner->title . ' (Mobile)',
-                    'created_at' => optional($banner->created_at)->toDateTimeString(),
-                    'entity_label' => $banner->title,
-                    'entity_id' => $banner->id,
-                ]);
+        return $this->getAllItems()->first(function (array $item) use ($source, $id, $path) {
+            if ($item['delete_source'] !== $source) {
+                return false;
             }
 
-            return $items;
+            if ($source === 'filesystem_file') {
+                return $item['relative_path'] === $this->files->normalizeRelativePath($path);
+            }
+
+            return (string) $item['delete_id'] === (string) $id;
         });
-    }
-
-    protected function mapProfiles(string $term, ?string $onlyType = null): Collection
-    {
-        $query = Profile::query()
-            ->select('id', 'full_name', 'avatar', 'sub_avatar', 'created_at')
-            ->latest('created_at')
-            ->limit(400);
-
-        if ($term !== '') {
-            $query->where(function ($q) use ($term) {
-                $q->where('full_name', 'like', '%' . $term . '%')
-                    ->orWhere('avatar', 'like', '%' . $term . '%')
-                    ->orWhere('sub_avatar', 'like', '%' . $term . '%');
-            });
-        }
-
-        return $query->get()->flatMap(function (Profile $profile) use ($onlyType) {
-            $items = collect();
-            if ($profile->avatar && (!$onlyType || $onlyType === 'profile_avatar')) {
-                $folderKey = 'accounts_avatars';
-                $items->push([
-                    'id' => (string) $profile->id,
-                    'type' => 'profile_avatar',
-                    'preview' => $this->toProjectAsset($profile->avatar, 'accounts_avatars'),
-                    'original' => $this->toProjectAsset($profile->avatar, 'accounts_avatars'),
-                    'folder_key' => $folderKey,
-                    'folder_label' => $this->directoryLabels[$folderKey] ?? null,
-                    'type_label' => $this->typeLabels['profile_avatar'] ?? 'Avatar',
-                    'file_name' => basename($profile->avatar),
-                    'title' => $profile->full_name . ' (Avatar)',
-                    'created_at' => optional($profile->created_at)->toDateTimeString(),
-                    'entity_label' => $profile->full_name,
-                    'entity_id' => $profile->id,
-                ]);
-            }
-            if ($profile->sub_avatar && (!$onlyType || $onlyType === 'profile_sub_avatar')) {
-                $folderKey = 'accounts_avatars';
-                $items->push([
-                    'id' => (string) $profile->id,
-                    'type' => 'profile_sub_avatar',
-                    'preview' => $this->toProjectAsset($profile->sub_avatar, 'accounts_avatars'),
-                    'original' => $this->toProjectAsset($profile->sub_avatar, 'accounts_avatars'),
-                    'folder_key' => $folderKey,
-                    'folder_label' => $this->directoryLabels[$folderKey] ?? null,
-                    'type_label' => $this->typeLabels['profile_sub_avatar'] ?? 'Ảnh phụ avatar',
-                    'file_name' => basename($profile->sub_avatar),
-                    'title' => $profile->full_name . ' (Ảnh phụ)',
-                    'created_at' => optional($profile->created_at)->toDateTimeString(),
-                    'entity_label' => $profile->full_name,
-                    'entity_id' => $profile->id,
-                ]);
-            }
-
-            return $items;
-        });
-    }
-
-    protected function sortItems(Collection $items, string $sort, string $direction): Collection
-    {
-        $direction = strtolower($direction) === 'asc' ? 'asc' : 'desc';
-
-        $sorted = match ($sort) {
-            'file_name' => $items->sortBy('file_name', SORT_NATURAL | SORT_FLAG_CASE, $direction === 'desc'),
-            'entity_id' => $items->sortBy('entity_id', SORT_REGULAR, $direction === 'desc'),
-            default => $items->sortBy('created_at', SORT_REGULAR, $direction === 'desc'),
-        };
-
-        return $sorted->values();
-    }
-
-    protected function toAsset(?string $path): ?string
-    {
-        if (!$path) {
-            return null;
-        }
-
-        $normalized = trim($path);
-
-        if (Str::startsWith($normalized, ['http://', 'https://'])) {
-            return $normalized;
-        }
-
-        $trimmed = ltrim($normalized, '/');
-        if (Str::startsWith($trimmed, 'public/')) {
-            $trimmed = substr($trimmed, 7);
-        }
-
-        return asset($trimmed);
-    }
-
-    protected function toProjectAsset(?string $path, string $folderKey): ?string
-    {
-        if (!$path) {
-            return null;
-        }
-
-        if (Str::startsWith($path, ['http://', 'https://'])) {
-            return $path;
-        }
-
-        $directory = $this->directories[$folderKey] ?? $this->directories['other'] ?? '';
-        $directory = rtrim($directory, '/') . '/';
-
-        // Tránh trường hợp $path đã có $directory (backward compatibility)
-        if (Str::startsWith($path, $directory)) {
-            return asset($path);
-        }
-
-        return asset($directory . $path);
-    }
-
-    protected function detectFolderKey(?string $path): ?string
-    {
-        if (!$path) {
-            return null;
-        }
-
-        $normalized = ltrim(str_replace('public/', '', trim($path)), '/');
-        foreach ($this->directories as $key => $relative) {
-            $relative = ltrim($relative, '/');
-            if (Str::startsWith($normalized, $relative)) {
-                return $key;
-            }
-        }
-
-        return null;
     }
 
     public function getTypeLabels(): array
@@ -429,76 +193,441 @@ class MediaScannerService
         return $this->directoryLabels;
     }
 
-    protected function calculateEstimatedDiskUsage(): int
+    public function getStatusLabels(): array
     {
-        $bytes = 0;
-
-        Image::select('url', 'thumbnail_url', 'medium_url')
-            ->chunk(500, function ($chunk) use (&$bytes) {
-                foreach ($chunk as $image) {
-                    $bytes += $this->safeFilesize($image->url);
-                    $bytes += $this->safeFilesize($image->thumbnail_url);
-                    $bytes += $this->safeFilesize($image->medium_url);
-                }
-            });
-
-        Post::select('thumbnail')->whereNotNull('thumbnail')
-            ->chunk(500, function ($chunk) use (&$bytes) {
-                foreach ($chunk as $post) {
-                    $bytes += $this->safeProjectFilesize($post->thumbnail, 'posts');
-                }
-            });
-
-        Category::select('image')->whereNotNull('image')
-            ->chunk(500, function ($chunk) use (&$bytes) {
-                foreach ($chunk as $category) {
-                    $bytes += $this->safeProjectFilesize($category->image, 'categories');
-                }
-            });
-
-        Banner::select('image_desktop', 'image_mobile')
-            ->chunk(500, function ($chunk) use (&$bytes) {
-                foreach ($chunk as $banner) {
-                    $bytes += $this->safeProjectFilesize($banner->image_desktop, 'banners');
-                    $bytes += $this->safeProjectFilesize($banner->image_mobile, 'banners');
-                }
-            });
-
-        Profile::select('avatar', 'sub_avatar')
-            ->chunk(500, function ($chunk) use (&$bytes) {
-                foreach ($chunk as $profile) {
-                    $bytes += $this->safeProjectFilesize($profile->avatar, 'accounts_avatars');
-                    $bytes += $this->safeProjectFilesize($profile->sub_avatar, 'accounts_avatars');
-                }
-            });
-
-        return $bytes;
+        return $this->statusLabels;
     }
 
-    protected function safeFilesize(?string $relativePath): int
+    protected function getAllItems(): Collection
     {
-        $absolute = $this->files->toAbsolutePath($relativePath);
-        if ($absolute && is_file($absolute)) {
-            return filesize($absolute) ?: 0;
+        if ($this->allItems !== null) {
+            return $this->allItems;
         }
-        return 0;
+
+        $inventory = $this->getFilesystemInventory();
+        $trackedItems = $this->collectTrackedItems($inventory);
+
+        $trackedPaths = $trackedItems->flatMap(fn (array $item) => $item['_managed_paths'] ?? [])->filter()->unique()->values()->all();
+        $hiddenPaths = $trackedItems->flatMap(fn (array $item) => $item['_hidden_paths'] ?? [])->filter()->unique()->values()->all();
+        $usageCounts = $trackedItems
+            ->filter(fn (array $item) => ($item['is_local'] ?? false) && !empty($item['relative_path']))
+            ->countBy('relative_path');
+
+        $trackedItems = $trackedItems
+            ->map(fn (array $item) => $this->finalizeTrackedItem($item, (int) ($usageCounts[$item['relative_path']] ?? 0)))
+            ->values();
+
+        $filesystemItems = $this->collectFilesystemItems($inventory, $trackedPaths, $hiddenPaths);
+
+        $this->allItems = $trackedItems->concat($filesystemItems)->values();
+
+        return $this->allItems;
     }
 
-    protected function safeProjectFilesize(?string $path, string $folderKey): int
+    protected function collectTrackedItems(array $inventory): Collection
     {
-        if (!$path || Str::startsWith($path, ['http://', 'https://'])) {
-            return 0;
+        $ownerMaps = [
+            'product' => Product::query()->select('id', 'name')->get()->keyBy('id'),
+            'post' => Post::query()->select('id', 'title', 'slug')->get()->keyBy('id'),
+            'category' => Category::query()->select('id', 'name', 'slug')->get()->keyBy('id'),
+            'banner' => Banner::query()->select('id', 'title')->get()->keyBy('id'),
+            'profile' => Profile::query()->select('id', 'full_name', 'nickname')->get()->keyBy('id'),
+        ];
+
+        return Image::query()
+            ->latest('created_at')
+            ->get()
+            ->map(fn (Image $image) => $this->mapImageRecord($image, $inventory, $ownerMaps));
+    }
+
+    protected function mapImageRecord(Image $image, array $inventory, array $ownerMaps): array
+    {
+        $entityType = $image->entity_type ?: ($image->product_id ? 'product' : null);
+        $entityId = $image->entity_id ?: $image->product_id;
+        $sourceInfo = $this->resolveSourceInfo($image, $entityType, $entityId);
+
+        $fallbackFolderKey = $this->defaultFolderKeyFor($entityType, $image->context);
+        $relativePath = $this->normalizeStoredPath($image->path ?: $image->url, $fallbackFolderKey);
+        $fileMeta = $relativePath ? ($inventory[$relativePath] ?? $this->inspectSinglePath($relativePath)) : null;
+        $folderKey = $this->detectFolderKey($relativePath) ?? $fallbackFolderKey ?? 'other';
+        $previewPath = $this->normalizeStoredPath($image->thumbnail_url ?: ($image->path ?: $image->url), $folderKey) ?: $relativePath;
+        $mediumPath = $this->normalizeStoredPath($image->medium_url, $folderKey);
+
+        return [
+            'key' => $sourceInfo['type'] . ':' . $image->id,
+            'id' => (string) $image->id,
+            'type' => $sourceInfo['type'],
+            'type_label' => $this->typeLabels[$sourceInfo['type']] ?? $sourceInfo['type'],
+            'source_kind' => 'record',
+            'folder_key' => $folderKey,
+            'folder_label' => $this->directoryLabels[$folderKey] ?? null,
+            'file_name' => $image->name ?: ($relativePath ? basename($relativePath) : basename((string) ($image->url ?: $image->path))),
+            'title' => $image->title,
+            'alt' => $image->alt,
+            'description' => $image->notes,
+            'relative_path' => $relativePath,
+            'original' => $this->buildAssetUrl($relativePath ?: ($image->url ?: $image->path)),
+            'preview' => $this->buildAssetUrl($previewPath ?: ($image->url ?: $image->path)),
+            'size' => $fileMeta['size'] ?? $image->size,
+            'size_human' => isset($fileMeta['size']) ? $this->files->formatBytes((int) $fileMeta['size']) : ($image->size ? $this->files->formatBytes((int) $image->size) : null),
+            'dimensions' => $fileMeta['dimensions'] ?? $image->dimensions,
+            'mime_type' => $fileMeta['mime_type'] ?? $image->mime_type,
+            'extension' => $fileMeta['extension'] ?? $image->extension,
+            'created_at' => optional($image->created_at)->toDateTimeString(),
+            'updated_at' => optional($image->updated_at)->toDateTimeString(),
+            'entity_label' => $this->resolveEntityLabel($entityType, $entityId, $ownerMaps, $image),
+            'entity_type' => $entityType,
+            'entity_id' => $entityId,
+            'entity_edit_url' => $this->resolveEntityEditUrl($entityType, $entityId),
+            'delete_source' => $sourceInfo['source'],
+            'delete_id' => $sourceInfo['id'],
+            'can_edit_meta' => true,
+            'can_assign' => $relativePath !== null || Str::startsWith((string) ($image->url ?: $image->path), ['http://', 'https://']),
+            'is_local' => $relativePath !== null,
+            'has_entity' => $entityId !== null,
+            'is_external' => $relativePath === null && Str::startsWith((string) ($image->url ?: $image->path), ['http://', 'https://']),
+            'is_primary' => (bool) $image->is_primary,
+            'metadata' => [
+                'role' => $image->role,
+                'is_primary' => (bool) $image->is_primary,
+                'order' => $image->order,
+            ],
+            '_managed_paths' => array_values(array_filter([$relativePath, $previewPath, $mediumPath])),
+            '_hidden_paths' => array_values(array_filter(array_unique([
+                $previewPath !== $relativePath ? $previewPath : null,
+                $mediumPath,
+                $this->guessWebpVariant($relativePath),
+            ]))),
+            '_sort_created_at' => optional($image->created_at)->timestamp ?? 0,
+        ];
+    }
+
+    protected function resolveSourceInfo(Image $image, ?string $entityType, ?int $entityId): array
+    {
+        return match (true) {
+            $entityType === 'product' => ['type' => 'product_image', 'source' => 'product_image', 'id' => (string) $image->id],
+            $entityType === 'post' => ['type' => 'post_thumbnail', 'source' => 'post_thumbnail', 'id' => (string) $entityId],
+            $entityType === 'category' => ['type' => 'category_image', 'source' => 'category_image', 'id' => (string) $entityId],
+            $entityType === 'banner' && $image->role === 'mobile' => ['type' => 'banner_mobile', 'source' => 'banner_mobile', 'id' => (string) $entityId],
+            $entityType === 'banner' => ['type' => 'banner_desktop', 'source' => 'banner_desktop', 'id' => (string) $entityId],
+            $entityType === 'profile' && $image->role === 'sub_avatar' => ['type' => 'profile_sub_avatar', 'source' => 'profile_sub_avatar', 'id' => (string) $entityId],
+            $entityType === 'profile' => ['type' => 'profile_avatar', 'source' => 'profile_avatar', 'id' => (string) $entityId],
+            default => ['type' => 'library_image', 'source' => 'library_image', 'id' => (string) $image->id],
+        };
+    }
+
+    protected function resolveEntityLabel(?string $entityType, ?int $entityId, array $ownerMaps, Image $image): ?string
+    {
+        if (!$entityType || !$entityId) {
+            return null;
         }
 
-        $directory = $this->directories[$folderKey] ?? $this->directories['other'] ?? '';
-        $directory = rtrim($directory, '/') . '/';
+        return match ($entityType) {
+            'product' => $ownerMaps['product'][$entityId]->name ?? ($image->title ?: "Sản phẩm #{$entityId}"),
+            'post' => $ownerMaps['post'][$entityId]->title ?? "Bài viết #{$entityId}",
+            'category' => $ownerMaps['category'][$entityId]->name ?? "Danh mục #{$entityId}",
+            'banner' => $ownerMaps['banner'][$entityId]->title ?? "Banner #{$entityId}",
+            'profile' => $ownerMaps['profile'][$entityId]->full_name
+                ?? $ownerMaps['profile'][$entityId]->nickname
+                ?? "Profile #{$entityId}",
+            default => null,
+        };
+    }
 
-        if (Str::startsWith($path, $directory)) {
-            return $this->safeFilesize($path);
+    protected function resolveEntityEditUrl(?string $entityType, ?int $entityId): ?string
+    {
+        if (!$entityType || !$entityId) {
+            return null;
         }
 
-        return $this->safeFilesize($directory . $path);
+        return match ($entityType) {
+            'product' => Route::has('admin.products.edit') ? route('admin.products.edit', $entityId) : null,
+            'post' => Route::has('admin.posts.edit') ? route('admin.posts.edit', $entityId) : null,
+            'category' => Route::has('admin.categories.edit') ? route('admin.categories.edit', $entityId) : null,
+            'banner' => Route::has('admin.banners.edit') ? route('admin.banners.edit', $entityId) : null,
+            default => null,
+        };
+    }
+
+    protected function finalizeTrackedItem(array $item, int $usageCount): array
+    {
+        $statusFlags = $this->resolveStatusFlags($item, $usageCount);
+        $item['usage_count'] = max($usageCount, ($item['relative_path'] || $item['is_external']) ? 1 : 0);
+        $item['is_shared'] = in_array('shared_file', $statusFlags, true);
+        $item['status_flags'] = $statusFlags;
+        $item['primary_status'] = $this->resolvePrimaryStatus($statusFlags);
+        $item['status_labels'] = array_values(array_map(fn (string $status) => $this->statusLabels[$status] ?? $status, $statusFlags));
+        unset($item['_managed_paths'], $item['_hidden_paths']);
+
+        return $item;
+    }
+
+    protected function collectFilesystemItems(array $inventory, array $trackedPaths, array $hiddenPaths): Collection
+    {
+        $trackedLookup = array_fill_keys($trackedPaths, true);
+        $hiddenLookup = array_fill_keys($hiddenPaths, true);
+
+        return collect($inventory)
+            ->reject(fn (array $meta, string $relativePath) => isset($trackedLookup[$relativePath]) || isset($hiddenLookup[$relativePath]))
+            ->map(function (array $meta, string $relativePath) {
+                $folderKey = $this->detectFolderKey($relativePath) ?? 'other';
+                $fileName = basename($relativePath);
+
+                return [
+                    'key' => 'filesystem_file:' . md5($relativePath),
+                    'id' => md5($relativePath),
+                    'type' => 'filesystem_file',
+                    'type_label' => $this->typeLabels['filesystem_file'],
+                    'source_kind' => 'filesystem',
+                    'folder_key' => $folderKey,
+                    'folder_label' => $this->directoryLabels[$folderKey] ?? null,
+                    'file_name' => $fileName,
+                    'title' => pathinfo($fileName, PATHINFO_FILENAME),
+                    'alt' => null,
+                    'description' => 'File đang có trên ổ đĩa nhưng chưa gắn vào bản ghi nào.',
+                    'relative_path' => $relativePath,
+                    'original' => $this->buildAssetUrl($relativePath),
+                    'preview' => $this->buildAssetUrl($relativePath),
+                    'size' => $meta['size'] ?? null,
+                    'size_human' => isset($meta['size']) ? $this->files->formatBytes((int) $meta['size']) : null,
+                    'dimensions' => $meta['dimensions'] ?? null,
+                    'mime_type' => $meta['mime_type'] ?? null,
+                    'extension' => $meta['extension'] ?? null,
+                    'created_at' => $meta['created_at'] ?? null,
+                    'updated_at' => $meta['updated_at'] ?? null,
+                    'entity_label' => null,
+                    'entity_type' => null,
+                    'entity_id' => null,
+                    'entity_edit_url' => null,
+                    'delete_source' => 'filesystem_file',
+                    'delete_id' => $relativePath,
+                    'can_edit_meta' => false,
+                    'can_assign' => true,
+                    'is_local' => true,
+                    'has_entity' => false,
+                    'is_external' => false,
+                    'is_primary' => false,
+                    'usage_count' => 0,
+                    'is_shared' => false,
+                    'status_flags' => ['orphan_file'],
+                    'primary_status' => 'orphan_file',
+                    'status_labels' => [$this->statusLabels['orphan_file']],
+                    'metadata' => [],
+                    '_sort_created_at' => $meta['timestamp'] ?? 0,
+                ];
+            })->values();
+    }
+
+    protected function sortItems(Collection $items, string $sort, string $direction): Collection
+    {
+        $descending = $direction === 'desc';
+
+        $sorted = match ($sort) {
+            'file_name' => $items->sortBy('file_name', SORT_NATURAL | SORT_FLAG_CASE, $descending),
+            'entity_id' => $items->sortBy(fn (array $item) => (int) ($item['entity_id'] ?? 0), SORT_NUMERIC, $descending),
+            'size' => $items->sortBy(fn (array $item) => (int) ($item['size'] ?? 0), SORT_NUMERIC, $descending),
+            default => $items->sortBy(fn (array $item) => (int) ($item['_sort_created_at'] ?? 0), SORT_NUMERIC, $descending),
+        };
+
+        return $sorted->map(function (array $item) {
+            unset($item['_sort_created_at']);
+            return $item;
+        })->values();
+    }
+
+    protected function getFilesystemInventory(): array
+    {
+        if ($this->filesystemInventory !== null) {
+            return $this->filesystemInventory;
+        }
+
+        $inventory = [];
+
+        foreach ($this->directories as $relativeDirectory) {
+            $absoluteDirectory = public_path(trim($relativeDirectory, '/'));
+            if (!is_dir($absoluteDirectory)) {
+                continue;
+            }
+
+            $iterator = new RecursiveIteratorIterator(
+                new RecursiveDirectoryIterator($absoluteDirectory, RecursiveDirectoryIterator::SKIP_DOTS)
+            );
+
+            foreach ($iterator as $fileInfo) {
+                if (!$fileInfo->isFile()) {
+                    continue;
+                }
+
+                $extension = strtolower($fileInfo->getExtension());
+                if (!in_array($extension, $this->allowedImageExtensions, true)) {
+                    continue;
+                }
+
+                $relativePath = $this->files->absoluteToRelativePath($fileInfo->getPathname());
+                if (!$relativePath) {
+                    continue;
+                }
+
+                $inventory[$relativePath] = [
+                    'size' => $fileInfo->getSize(),
+                    'mime_type' => @mime_content_type($fileInfo->getPathname()) ?: null,
+                    'extension' => $extension,
+                    'dimensions' => $this->readImageDimensions($fileInfo->getPathname()),
+                    'timestamp' => $fileInfo->getMTime(),
+                    'created_at' => date('Y-m-d H:i:s', $fileInfo->getMTime()),
+                    'updated_at' => date('Y-m-d H:i:s', $fileInfo->getMTime()),
+                ];
+            }
+        }
+
+        $this->filesystemInventory = $inventory;
+        return $this->filesystemInventory;
+    }
+
+    protected function inspectSinglePath(?string $relativePath): ?array
+    {
+        if (!$relativePath || Str::startsWith($relativePath, ['http://', 'https://'])) {
+            return null;
+        }
+
+        $absolutePath = $this->files->toAbsolutePath($relativePath);
+        if (!$absolutePath || !is_file($absolutePath)) {
+            return null;
+        }
+
+        return [
+            'size' => filesize($absolutePath) ?: null,
+            'mime_type' => @mime_content_type($absolutePath) ?: null,
+            'extension' => strtolower(pathinfo($absolutePath, PATHINFO_EXTENSION)),
+            'dimensions' => $this->readImageDimensions($absolutePath),
+            'timestamp' => filemtime($absolutePath) ?: 0,
+            'created_at' => date('Y-m-d H:i:s', filemtime($absolutePath) ?: time()),
+            'updated_at' => date('Y-m-d H:i:s', filemtime($absolutePath) ?: time()),
+        ];
+    }
+
+    protected function readImageDimensions(string $absolutePath): ?array
+    {
+        if (strtolower(pathinfo($absolutePath, PATHINFO_EXTENSION)) === 'svg') {
+            return null;
+        }
+
+        $info = @getimagesize($absolutePath);
+        return $info ? ['width' => $info[0] ?? null, 'height' => $info[1] ?? null] : null;
+    }
+
+    protected function normalizeStoredPath(?string $path, ?string $fallbackFolderKey = null): ?string
+    {
+        $normalized = $this->files->normalizeRelativePath($path);
+        if (!$normalized) {
+            return null;
+        }
+        if (Str::startsWith($normalized, ['http://', 'https://'])) {
+            return null;
+        }
+        if ($this->detectFolderKey($normalized)) {
+            return $normalized;
+        }
+        if ($fallbackFolderKey && isset($this->directories[$fallbackFolderKey])) {
+            return trim($this->directories[$fallbackFolderKey], '/') . '/' . ltrim($normalized, '/');
+        }
+
+        return $normalized;
+    }
+
+    protected function buildAssetUrl(?string $path): ?string
+    {
+        if (!$path) {
+            return null;
+        }
+        if (Str::startsWith($path, ['http://', 'https://'])) {
+            return $path;
+        }
+
+        return asset(ltrim($path, '/'));
+    }
+
+    protected function detectFolderKey(?string $relativePath): ?string
+    {
+        if (!$relativePath || Str::startsWith($relativePath, ['http://', 'https://'])) {
+            return null;
+        }
+
+        $normalized = trim($relativePath, '/');
+        foreach ($this->directories as $key => $directory) {
+            $prefix = trim(str_replace('\\', '/', $directory), '/');
+            if ($normalized === $prefix || Str::startsWith($normalized, $prefix . '/')) {
+                return $key;
+            }
+        }
+
+        return null;
+    }
+
+    protected function defaultFolderKeyFor(?string $entityType, ?string $context): ?string
+    {
+        return match ($entityType ?: $context) {
+            'product' => 'clothes',
+            'post' => 'posts',
+            'category' => 'categories',
+            'banner' => 'banners',
+            'profile' => 'accounts_avatars',
+            default => null,
+        };
+    }
+
+    protected function guessWebpVariant(?string $relativePath): ?string
+    {
+        if (!$relativePath || Str::endsWith($relativePath, ['.webp', '.avif', '.svg'])) {
+            return null;
+        }
+
+        $info = pathinfo($relativePath);
+        if (empty($info['dirname']) || empty($info['filename'])) {
+            return null;
+        }
+
+        return trim($info['dirname'], '/') . '/' . $info['filename'] . '.webp';
+    }
+
+    protected function resolveStatusFlags(array $item, int $usageCount): array
+    {
+        $flags = [];
+
+        if ($item['is_external'] ?? false) {
+            $flags[] = 'external';
+        } elseif (!empty($item['relative_path'])) {
+            $absolutePath = $this->files->toAbsolutePath($item['relative_path']);
+            if (!$absolutePath || !is_file($absolutePath)) {
+                $flags[] = 'missing_file';
+            }
+        } else {
+            $flags[] = 'missing_file';
+        }
+
+        if (($item['has_entity'] ?? false) === false && !in_array('missing_file', $flags, true)) {
+            $flags[] = 'unassigned_record';
+        }
+
+        if (!$flags) {
+            $flags[] = 'in_use';
+        }
+
+        if ($usageCount > 1 && !in_array('external', $flags, true)) {
+            $flags[] = 'shared_file';
+        }
+
+        return array_values(array_unique($flags));
+    }
+
+    protected function resolvePrimaryStatus(array $flags): string
+    {
+        foreach (['missing_file', 'orphan_file', 'unassigned_record', 'external', 'in_use', 'shared_file'] as $candidate) {
+            if (in_array($candidate, $flags, true)) {
+                return $candidate;
+            }
+        }
+
+        return 'in_use';
     }
 }
-
-

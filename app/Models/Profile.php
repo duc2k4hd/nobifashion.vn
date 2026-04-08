@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Services\Media\ImageRegistryService;
 
 class Profile extends Model
 {
@@ -69,6 +70,52 @@ class Profile extends Model
         'show_order_history' => 'boolean',
         'show_favorites' => 'boolean',
     ];
+
+    protected static function booted()
+    {
+        static::saved(function ($profile) {
+            try {
+                $label = $profile->full_name ?: $profile->nickname ?: ('Profile #' . $profile->id);
+                $registry = app(ImageRegistryService::class);
+                $registry->syncEntityImage(
+                    entityType: 'profile',
+                    entityId: (int) $profile->id,
+                    role: 'avatar',
+                    storedPath: $profile->avatar,
+                    meta: [
+                        'title' => $label,
+                        'alt' => $label,
+                        'description' => $profile->bio,
+                        'context' => 'profile',
+                    ]
+                );
+                $registry->syncEntityImage(
+                    entityType: 'profile',
+                    entityId: (int) $profile->id,
+                    role: 'sub_avatar',
+                    storedPath: $profile->sub_avatar,
+                    meta: [
+                        'title' => $label,
+                        'alt' => $label,
+                        'description' => $profile->bio,
+                        'context' => 'profile',
+                    ]
+                );
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
+        });
+
+        static::deleted(function ($profile) {
+            try {
+                $registry = app(ImageRegistryService::class);
+                $registry->syncEntityImage('profile', (int) $profile->id, 'avatar', null);
+                $registry->syncEntityImage('profile', (int) $profile->id, 'sub_avatar', null);
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
+        });
+    }
 
     // ------------------------------
     // Quan hệ

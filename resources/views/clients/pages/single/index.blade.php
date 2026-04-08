@@ -65,7 +65,7 @@
 @endsection
 
 @section('foot')
-    <script src="{{ asset('clients/assets/js/single.js') }}"></script>
+    <script src="{{ asset('clients/assets/js/single.js?v=' . filemtime(public_path('clients/assets/js/single.js'))) }}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('phone-request-form');
@@ -178,581 +178,646 @@
 
         <!-- Thông tin sản phẩm -->
         <section>
-            <div class="nobifashion_single_info">
-                <div class="nobifashion_single_info_images">
-                    <div class="nobifashion_single_info_images_main">
-                        <img loading="eager" fetchpriority="high" width="500" height="500" decoding="async"
-                            src="{{ asset('clients/assets/img/clothes/' . ($product?->primaryImage?->url ?? 'no-image.webp')) }}"
-                            alt="{{ $product->primaryImage->alt ?? null ?: renderMeta($product->name) ?? 'NOBI FASHION' }}"
-                            title="{{ $product->primaryImage->title ?? null ?: renderMeta($product->name) ?? 'NOBI FASHION' }}"
-                            class="nobifashion_single_info_images_main_image nobifashion_single_image_clickable"
-                            data-default-src="{{ asset('clients/assets/img/clothes/' . ($product?->primaryImage?->url ?? 'no-image.webp')) }}"
-                            style="cursor: pointer;">
-                    </div>
-                    <div class="nobifashion_single_info_images_gallery">
-                        @foreach ($product->images as $image)
-                            <img data-src="{{ asset('clients/assets/img/clothes/' . ($image->url ?? 'no-image.webp')) }}"
-                                width="80px" height="80px"
-                                decoding="async"
-                                src="{{ asset('clients/assets/img/clothes/' . ($image->url ?? 'no-image.webp')) }}"
-                                alt="{{ $image->alt ?? (renderMeta($product->name) ?? 'NOBI FASHION') }}"
-                                title="{{ $image->title ?? (renderMeta($product->name) ?? 'NOBI FASHION') }}"
-                                class="nobifashion_single_info_images_gallery_image {{ $image->is_primary ? 'nobifashion_single_info_images_gallery_image_active' : '' }}">
-                        @endforeach
-                    </div>
-                    <div class="nobifashion_single_info_images_support">
-                        <form class="nobifashion_single_info_images_support_form" id="phone-request-form" method="POST">
-                            @csrf
-                            <div class="nobifashion_single_info_images_support_form_group">
-                                <input type="hidden" name="product_id" value="{{ $product->id }}">
-                                <input type="text" 
-                                    placeholder="Nhập số điện thoại để được tư vấn (NOBI FASHION)."
-                                    name="phone" 
-                                    id="phone-input"
-                                    class="nobifashion_single_info_images_support_form_group_input"
-                                    required
-                                    pattern="[0-9]{10,11}"
-                                    maxlength="11">
-                                <button type="submit" class="nobifashion_single_info_images_support_form_group_btn" id="phone-submit-btn">
-                                    <span class="btn-text">Gửi yêu cầu</span>
-                                    <span class="btn-loading" style="display: none;">Đang gửi...</span>
-                                </button>
-                            </div>
-                            <div class="nobifashion_single_info_images_support_form_notice">
-                                <p class="nobifashion_single_info_images_support_form_notice_text">Để lại số điện thoại,
-                                    NOBI FASHION sẽ tư vấn cho bạn.</p>
-                                <div id="phone-request-message" style="display: none; margin-top: 10px; padding: 8px; border-radius: 4px; font-size: 13px;"></div>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-
-                @php
-                    $item = $product->isInFlashSale() ? $product->currentFlashSaleItem()->first() : $product;
-
-                    $original = $item->original_price ?? ($item->price ?? 0);
-                    $sale = $item->sale_price ?? 0;
-                    // dd($product->currentFlashSale()->first())
-                @endphp
-
-                <div class="nobifashion_single_info_specifications">
-                    @if ($product->isInFlashSale())
-                        <script>
-                            const endTime = new Date("{{ optional($product->currentFlashSale()->first())->end_time }}").getTime();
-                        </script>
-                        <div class="nobifashion_single_info_specifications_deal">
-                            <div class="nobifashion_single_info_specifications_label">
-                                ⚡ SĂN DEAL
-                            </div>
-                            @php
-                                $stock = (int) ($item->stock ?? 0);
-                                $sold = (int) ($item->sold ?? 0);
-                                $percentage = $stock > 0 ? min(100, round(($sold / $stock) * 100)) : 0;
-                            @endphp
-
-                            <div class="nobifashion_single_info_specifications_progress">
-                                <div class="nobifashion_single_info_specifications_progress_bar"
-                                    style="width: {{ $percentage }}%;"></div>
-                            </div>
-                            <div class="nobifashion_single_info_specifications_time">
-                                <span class="nobifashion_single_info_specifications_end_time">Kết thúc trong</span>
-                                <div class="nobifashion_single_info_specifications_countdown">
-                                    <div
-                                        class="nobifashion_single_info_specifications_box nobifashion_single_info_specifications_box_days">
-                                        00</div>
-                                    <span>:</span>
-                                    <div
-                                        class="nobifashion_single_info_specifications_box nobifashion_single_info_specifications_box_house">
-                                        00</div>
-                                    <span>:</span>
-                                    <div
-                                        class="nobifashion_single_info_specifications_box nobifashion_single_info_specifications_box_minute">
-                                        00</div>
-                                    <span>:</span>
-                                    <div
-                                        class="nobifashion_single_info_specifications_box nobifashion_single_info_specifications_box_second">
-                                        00</div>
-                                </div>
-                            </div>
-                        </div>
-                    @endif
-
-                    <h1 class="nobifashion_single_info_specifications_title">
-                        {{ renderMeta($product->name) ?? 'Sản phẩm thời trang chính hãng - NOBI FASHION' }}</h1>
-
-                    <div class="nobifashion_single_info_specifications_brand">
-                        <!-- Thương hiệu + Mã sản phẩm -->
-                        <div class="nobifashion_single_info_specifications_brand_left">
-                            <span>Mã tìm kiếm:
-                                <strong
-                                    class="nobifashion_single_info_specifications_brand_code">{{ $product->sku }}</strong>
-                            </span>
-                        </div>
-
-                        <!-- Đánh giá -->
-                        <div class="nobifashion_single_info_specifications_brand_right">
-                            <span class="nobifashion_single_info_specifications_brand_stars">
-                                @php
-                                    $star = rand(4, 5);
-                                    for ($i = 1; $i <= $star; $i++) {
-                                        if ($star == 4) {
-                                            echo '<svg xmlns="http://www.w3.org/2000/svg" height="10" width="10" viewBox="0 0 640 640"><!--!Font Awesome Free v7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#FFD43B" d="M341.5 45.1C337.4 37.1 329.1 32 320.1 32C311.1 32 302.8 37.1 298.7 45.1L225.1 189.3L65.2 214.7C56.3 216.1 48.9 222.4 46.1 231C43.3 239.6 45.6 249 51.9 255.4L166.3 369.9L141.1 529.8C139.7 538.7 143.4 547.7 150.7 553C158 558.3 167.6 559.1 175.7 555L320.1 481.6L464.4 555C472.4 559.1 482.1 558.3 489.4 553C496.7 547.7 500.4 538.8 499 529.8L473.7 369.9L588.1 255.4C594.5 249 596.7 239.6 593.9 231C591.1 222.4 583.8 216.1 574.8 214.7L415 189.3L341.5 45.1z"/></svg>';
-
-                                            if ($i == 4) {
-                                                echo '<svg xmlns="http://www.w3.org/2000/svg" height="10" width="10" viewBox="0 0 640 640"><!--!Font Awesome Free v7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#FFD43B" d="M320.1 417.6C330.1 417.6 340 419.9 349.1 424.6L423.5 462.5L410.5 380C407.3 359.8 414 339.3 428.4 324.8L487.4 265.7L404.9 252.6C384.7 249.4 367.2 236.7 357.9 218.5L319.9 144.1L319.9 417.7zM489.4 553C482.1 558.3 472.4 559.1 464.4 555L320.1 481.6L175.8 555C167.8 559.1 158.1 558.3 150.8 553C143.5 547.7 139.8 538.8 141.2 529.8L166.4 369.9L52 255.4C45.6 249 43.4 239.6 46.2 231C49 222.4 56.3 216.1 65.3 214.7L225.2 189.3L298.8 45.1C302.9 37.1 311.2 32 320.2 32C329.2 32 337.5 37.1 341.6 45.1L415 189.3L574.9 214.7C583.8 216.1 591.2 222.4 594 231C596.8 239.6 594.5 249 588.2 255.4L473.7 369.9L499 529.8C500.4 538.7 496.7 547.7 489.4 553z"/></svg>';
-                                                break;
-                                            }
-                                        }
-                                        if ($star == 5) {
-                                            echo '<svg xmlns="http://www.w3.org/2000/svg" height="10" width="10" viewBox="0 0 640 640"><!--!Font Awesome Free v7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#FFD43B" d="M341.5 45.1C337.4 37.1 329.1 32 320.1 32C311.1 32 302.8 37.1 298.7 45.1L225.1 189.3L65.2 214.7C56.3 216.1 48.9 222.4 46.1 231C43.3 239.6 45.6 249 51.9 255.4L166.3 369.9L141.1 529.8C139.7 538.7 143.4 547.7 150.7 553C158 558.3 167.6 559.1 175.7 555L320.1 481.6L464.4 555C472.4 559.1 482.1 558.3 489.4 553C496.7 547.7 500.4 538.8 499 529.8L473.7 369.9L588.1 255.4C594.5 249 596.7 239.6 593.9 231C591.1 222.4 583.8 216.1 574.8 214.7L415 189.3L341.5 45.1z"/></svg>';
-                                        }
-                                    }
-                                @endphp
-                            </span>
-                            <span onclick="tabReview()" class="nobifashion_single_info_specifications_brand_reviews">(<a href="#nobifashion_review">{{ rand(10, 1000) }} đánh giá</a>)</span>
-                        </div>
-                    </div>
-
-                    {{-- Giá sản phẩm --}}
-
-                    <p class="nobifashion_single_info_specifications_price">
-                        @if ($original > 0)
-                            @if ($sale > 0 && $sale < $original)
-                                {{-- Có giá khuyến mãi hợp lệ --}}
-                                <meta content="VND">
-                                <span class="nobifashion_single_info_specifications_new_price">
-                                    {{ number_format($sale, 0, ',', '.') }}₫
-                                </span>
-
-                                <meta content="2025-12-31" />
-                                <span class="nobifashion_single_info_specifications_old_price"
-                                    style="text-decoration:line-through;">
-                                    {{ number_format($original, 0, ',', '.') }}₫
-                                </span>
-
-                                {{-- Tính % giảm --}}
-                                <span class="nobifashion_single_info_specifications_sale">
-                                    -{{ round((($original - $sale) / $original) * 100) }}%
-                                </span>
-                            @else
-                                {{-- Không có sale, chỉ hiển thị giá gốc --}}
-                                <meta content="2025-12-31" />
-                                <span class="nobifashion_single_info_specifications_new_price">
-                                    {{ number_format($original, 0, ',', '.') }}₫
-                                </span>
-                                <span class="nobifashion_single_info_specifications_sale">
-                                    <svg style="width: 35px; height: 35px;" xmlns="http://www.w3.org/2000/svg"
-                                        viewBox="0 0 640 640">
-                                        <path fill="#fff"
-                                            d="M434.8 54.1C446.7 62.7 451.1 78.3 445.7 91.9L367.3 288L512 288C525.5 288 537.5 296.4 542.1 309.1C546.7 321.8 542.8 336 532.5 344.6L244.5 584.6C233.2 594 217.1 594.5 205.2 585.9C193.3 577.3 188.9 561.7 194.3 548.1L272.7 352L128 352C114.5 352 102.5 343.6 97.9 330.9C93.3 318.2 97.2 304 107.5 295.4L395.5 55.4C406.8 46 422.9 45.5 434.8 54.1z" />
-                                    </svg>
-                                </span>
-                            @endif
-                        @endif
-                        <a onclick="tabSizeGuide()" href="#nobifashion_main_tab_size_guide" class="nobifashion_main_size_guide">
-                        📏 Hướng dẫn chọn size
-                        </a>
-                    </p>
-
-                    @php
-                        $variants = $product->variants ?? collect();
-                        // Lấy tất cả keys trong attributes
-                        $attributeKeys = collect($product->variants)
-                            ->pluck('attributes')
-                            ->map(fn($a) => is_string($a) ? json_decode($a, true) : $a)
-                            ->flatMap(fn($a) => array_keys($a))
-                            ->unique()
-                            ->values();
-
-                        // Gom value theo key
-                        $attributesGrouped = [];
-                        foreach ($attributeKeys as $key) {
-                            $attributesGrouped[$key] = collect($product->variants)
-                                ->pluck('attributes')
-                                ->map(fn($a) => is_string($a) ? json_decode($a, true) : $a)
-                                ->pluck($key)
-                                ->unique()
-                                ->filter()
-                                ->values();
+            @php
+                $currentFlashSale = $product->isInFlashSale() ? $product->currentFlashSale()->first() : null;
+                $item = $product->isInFlashSale() ? $product->currentFlashSaleItem()->first() : $product;
+                $original = (float) ($item->original_price ?? ($item->price ?? 0));
+                $sale = (float) ($item->sale_price ?? 0);
+                $displayCurrentPrice = $original > 0 && $sale > 0 && $sale < $original ? $sale : $original;
+                $displayOriginalPrice = $sale > 0 && $sale < $original ? $original : null;
+                $discountPercent = $displayOriginalPrice
+                    ? (int) round((($displayOriginalPrice - $displayCurrentPrice) / $displayOriginalPrice) * 100)
+                    : null;
+                $savedAmount = $displayOriginalPrice ? max(0, $displayOriginalPrice - $displayCurrentPrice) : 0;
+                $galleryImages = $product->images->isNotEmpty() ? $product->images : collect([$product->primaryImage])->filter();
+                $voucherItems = collect($vouchers ?? []);
+                $variants = $product->variants ?? collect();
+                $attributeLabels = [
+                    'size' => 'Kích thước',
+                    'color' => 'Màu sắc',
+                    'weight' => 'Cân nặng',
+                    'material' => 'Chất liệu',
+                    'materials' => 'Chất liệu',
+                    'type' => 'Kiểu dáng',
+                    'types' => 'Kiểu dáng',
+                ];
+                $colorHexMap = [
+                    'trang' => '#f5f5f4',
+                    'white' => '#f5f5f4',
+                    'den' => '#111827',
+                    'black' => '#111827',
+                    'xam' => '#9ca3af',
+                    'grey' => '#9ca3af',
+                    'gray' => '#9ca3af',
+                    'xanh' => '#2563eb',
+                    'blue' => '#2563eb',
+                    'navy' => '#1e3a8a',
+                    'do' => '#dc2626',
+                    'red' => '#dc2626',
+                    'hong' => '#ec4899',
+                    'pink' => '#ec4899',
+                    'vang' => '#f59e0b',
+                    'yellow' => '#f59e0b',
+                    'be' => '#d6b58a',
+                    'kem' => '#f3e8d0',
+                    'nau' => '#8b5e3c',
+                    'brown' => '#8b5e3c',
+                    'xanh la' => '#15803d',
+                    'green' => '#15803d',
+                    'olive' => '#556b2f',
+                    'cam' => '#f97316',
+                    'orange' => '#f97316',
+                    'tim' => '#7c3aed',
+                    'purple' => '#7c3aed',
+                ];
+                $resolveSwatchColor = function (?string $value) use ($colorHexMap) {
+                    $normalized = mb_strtolower(\Illuminate\Support\Str::ascii(trim((string) $value)));
+                    foreach ($colorHexMap as $keyword => $hex) {
+                        if (str_contains($normalized, $keyword)) {
+                            return $hex;
                         }
-                        $variantsJson = $product->variants
-                            ->map(function ($item) {
-                                $attrs = is_string($item->attributes)
-                                    ? json_decode($item->attributes, true)
-                                    : $item->attributes;
-                                
-                                // Lấy ảnh từ variant: ưu tiên url, nếu không có thì dùng thumbnail_url
-                                $variantImage = optional($item->primaryVariantImage);
+                    }
 
-                                $imageUrl = $variantImage->url ?? $variantImage->thumbnail_url ?? null;
-                                
-                                return [
-                                    'id' => $item->id,
-                                    'stock' => $item->stock_quantity,
-                                    'price' => $item->price,
-                                    'attrs' => $attrs,
-                                    'image_url' => $imageUrl, // Chỉ lưu tên file, không có đường dẫn
-                                ];
-                            })
-                            ->toJson();
-                    @endphp
+                    return 'linear-gradient(135deg, #e5e7eb 0%, #9ca3af 100%)';
+                };
+                $attributeKeys = collect($product->variants)
+                    ->pluck('attributes')
+                    ->map(fn($attr) => is_string($attr) ? json_decode($attr, true) : $attr)
+                    ->flatMap(fn($attr) => array_keys($attr ?? []))
+                    ->unique()
+                    ->values();
+                $attributesGrouped = [];
+                foreach ($attributeKeys as $key) {
+                    $attributesGrouped[$key] = collect($product->variants)
+                        ->pluck('attributes')
+                        ->map(fn($attr) => is_string($attr) ? json_decode($attr, true) : $attr)
+                        ->pluck($key)
+                        ->unique()
+                        ->filter()
+                        ->values();
+                }
+                $variantsJson = $product->variants
+                    ->map(function ($variantItem) {
+                        $attrs = is_string($variantItem->attributes)
+                            ? json_decode($variantItem->attributes, true)
+                            : $variantItem->attributes;
+                        $variantImage = optional($variantItem->primaryVariantImage);
 
-                    <script>
-                        const variants = {!! $variantsJson !!};
-                    </script>
+                        return [
+                            'id' => $variantItem->id,
+                            'stock' => (int) $variantItem->stock_quantity,
+                            'price' => (float) ($variantItem->price ?? 0),
+                            'attrs' => $attrs,
+                            'image_url' => $variantImage->url ?? $variantImage->thumbnail_url ?? null,
+                        ];
+                    })
+                    ->toJson();
+                $bestVoucherPrice = null;
+                foreach ($voucherItems as $voucher) {
+                    $minOrder = (float) ($voucher->min_order_amount ?? 0);
+                    if ($minOrder > 0 && $displayCurrentPrice < $minOrder) {
+                        continue;
+                    }
 
-                    @if ($variants->isNotEmpty())
-                        @foreach ($attributesGrouped as $key => $values)
-                            <div class="nobifashion_single_info_specifications_{{ strtolower($key) }}">
-                                <label>
-                                    @if ($key == 'size')
-                                        {{ 'Kích thước' }}
-                                    @endif @if ($key == 'color')
-                                        {{ 'Màu sắc' }}
-                                    @endif @if ($key == 'weight')
-                                        {{ 'Cân nặng' }}
-                                    @endif:
-                                    <span id="selected-{{ $key }}">-</span>
-                                </label>
-                                <div class="{{ strtolower($key) }}-list">
-                                    @foreach ($values as $index => $val)
-                                        @php
-                                            $stock = $variants
-                                                ->filter(function ($variant) use ($key, $val) {
-                                                    $attrs = is_string($variant->attributes)
-                                                        ? json_decode($variant->attributes, true)
-                                                        : $variant->attributes;
+                    $discount = 0;
+                    if (($voucher->type ?? '') === 'percentage') {
+                        $discount = $displayCurrentPrice * ((float) ($voucher->value ?? 0) / 100);
+                        $maxDiscount = (float) ($voucher->max_discount_amount ?? 0);
+                        if ($maxDiscount > 0) {
+                            $discount = min($discount, $maxDiscount);
+                        }
+                    } elseif (($voucher->type ?? '') === 'fixed_amount') {
+                        $discount = (float) ($voucher->value ?? 0);
+                    }
 
-                                                    return isset($attrs[$key]) && $attrs[$key] === $val;
-                                                })
-                                                ->sum('stock_quantity');
-                                            $isDisabled = $stock <= 0;
-                                        @endphp
-                                        <button class="{{ strtolower($key) }}-option"
-                                            data-attr-key="{{ $key }}" data-attr-value="{{ $val }}"
-                                            {{ $isDisabled ? 'disabled' : '' }}>
-                                            {{ $val }}
-                                        </button>
-                                        @php
-                                            // gán mặc định attr đầu tiên
-                                            if (!isset($selectedAttrs[$key]) && $index === 0) {
-                                                $selectedAttrs[$key] = $val;
-                                            }
-                                        @endphp
-                                    @endforeach
+                    if ($discount > 0) {
+                        $candidate = max(0, $displayCurrentPrice - $discount);
+                        $bestVoucherPrice = $bestVoucherPrice === null ? $candidate : min($bestVoucherPrice, $candidate);
+                    }
+                }
+                $voucherCards = $voucherItems->take(5)->map(function ($voucher) {
+                    $type = $voucher->type ?? '';
+                    $value = (float) ($voucher->value ?? 0);
+
+                    return [
+                        'code' => $voucher->code ?? '',
+                        'icon' => $type === 'free_ship' ? '🚚' : '%',
+                        'accent' => $type === 'free_ship' ? '#1a73e8' : '#e5252a',
+                        'label' => match ($type) {
+                            'free_ship' => 'FreeShip',
+                            'percentage' => 'Giảm ' . number_format($value, 0, ',', '.') . '%',
+                            'fixed_amount' => 'Giảm ' . number_format($value, 0, ',', '.') . 'đ',
+                            default => $voucher->code ?? 'Ưu đãi',
+                        },
+                    ];
+                });
+                $defaultStockValue = $variants->isNotEmpty()
+                    ? (int) ($variants->max('stock_quantity') ?? 0)
+                    : (int) ($product->stock_quantity ?? 0);
+                $defaultStockBase = max(1, $defaultStockValue);
+                $defaultStockPercent = min(100, max(8, (int) round(($defaultStockValue / $defaultStockBase) * 100)));
+                $defaultStockNote = $variants->isNotEmpty()
+                    ? 'Chọn đủ thuộc tính để xem tồn kho chính xác.'
+                    : ($defaultStockValue > 0 ? 'Sản phẩm đang sẵn hàng, có thể đặt mua ngay.' : 'Sản phẩm đang tạm hết hàng.');
+            @endphp
+
+            <script>
+                const variants = {!! $variantsJson !!};
+            </script>
+
+            @if ($product->isInFlashSale() && $currentFlashSale)
+                @php
+                    $flashSaleStock = max(1, (int) ($item->stock ?? 0));
+                    $flashSaleSold = max(0, (int) ($item->sold ?? 0));
+                    $flashSalePercent = min(100, (int) round(($flashSaleSold / $flashSaleStock) * 100));
+                @endphp
+                <script>
+                    const endTime = new Date("{{ $currentFlashSale->end_time }}").getTime();
+                </script>
+            @endif
+
+            <div class="nobifashion_single_info">
+                <div class="nobifashion_single_info_wrapper">
+                    <div class="nobifashion_single_info_gallery">
+                        <div class="nobifashion_single_info_gallery_stage">
+                            <div class="nobifashion_single_info_gallery_thumbs">
+                                @forelse ($galleryImages as $image)
+                                    <img
+                                        data-src="{{ asset('clients/assets/img/clothes/' . ($image->url ?? 'no-image.webp')) }}"
+                                        src="{{ asset('clients/assets/img/clothes/' . ($image->url ?? 'no-image.webp')) }}"
+                                        alt="{{ $image->alt ?? (renderMeta($product->name) ?? 'NOBI FASHION') }}"
+                                        title="{{ $image->title ?? (renderMeta($product->name) ?? 'NOBI FASHION') }}"
+                                        width="64"
+                                        height="64"
+                                        decoding="async"
+                                        class="nobifashion_single_info_gallery_thumb nobifashion_single_info_images_gallery_image {{ $image->is_primary || $loop->first ? 'nobifashion_single_info_images_gallery_image_active' : '' }}">
+                                @empty
+                                    <img
+                                        data-src="{{ asset('clients/assets/img/clothes/no-image.webp') }}"
+                                        src="{{ asset('clients/assets/img/clothes/no-image.webp') }}"
+                                        alt="{{ renderMeta($product->name) ?? 'NOBI FASHION' }}"
+                                        title="{{ renderMeta($product->name) ?? 'NOBI FASHION' }}"
+                                        width="64"
+                                        height="64"
+                                        decoding="async"
+                                        class="nobifashion_single_info_gallery_thumb nobifashion_single_info_images_gallery_image nobifashion_single_info_images_gallery_image_active">
+                                @endforelse
+                            </div>
+
+                            <div class="nobifashion_single_info_gallery_main nobifashion_single_info_images_main">
+                                <img
+                                    loading="eager"
+                                    fetchpriority="high"
+                                    width="500"
+                                    height="500"
+                                    decoding="async"
+                                    src="{{ asset('clients/assets/img/clothes/' . ($product?->primaryImage?->url ?? optional($galleryImages->first())->url ?? 'no-image.webp')) }}"
+                                    alt="{{ $product?->primaryImage?->alt ?? renderMeta($product->name) ?? 'NOBI FASHION' }}"
+                                    title="{{ $product?->primaryImage?->title ?? renderMeta($product->name) ?? 'NOBI FASHION' }}"
+                                    class="nobifashion_single_info_images_main_image nobifashion_single_image_clickable"
+                                    data-default-src="{{ asset('clients/assets/img/clothes/' . ($product?->primaryImage?->url ?? optional($galleryImages->first())->url ?? 'no-image.webp')) }}">
+
+                                @if ($galleryImages->count() > 1)
+                                    <button type="button" class="nobifashion_single_info_gallery_arrow" aria-label="Ảnh tiếp theo">
+                                        &#10095;
+                                    </button>
+                                @endif
+                            </div>
+                        </div>
+
+                        <div class="nobifashion_single_info_gallery_social">
+                            <span>Chia sẻ</span>
+                            <a
+                                class="fb-icon"
+                                href="https://www.facebook.com/sharer/sharer.php?u={{ rawurlencode(url()->current()) }}"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label="Chia sẻ Facebook">
+                                f
+                            </a>
+                        </div>
+
+                        {{-- <div class="nobifashion_single_info_gallery_banner">
+                            <div class="banner-badge">
+                                {{ $product->isInFlashSale() ? 'Hot' : 'NOBI' }}<br>
+                                <span>{{ $discountPercent ? '-' . $discountPercent . '%' : 'NEW' }}</span>
+                            </div>
+                            <div>
+                                <div class="banner-text">{{ $product->isInFlashSale() ? 'FLASH SALE' : 'ƯU ĐÃI HÔM NAY' }}</div>
+                                <div class="banner-discount">{{ $discountPercent ? '-' . $discountPercent . '%' : 'MỚI' }}</div>
+                                <div class="banner-btn">{{ $voucherItems->isNotEmpty() ? 'Sao chép voucher ngay' : 'Chọn size và mua ngay' }}</div>
+                            </div>
+                        </div> --}}
+                    </div>
+
+                    <div class="nobifashion_single_info_detail nobifashion_single_info_specifications">
+                        @if ($product->isInFlashSale() && $currentFlashSale)
+                            <div class="nobifashion_single_info_flashsale nobifashion_single_info_specifications_deal">
+                                <div class="nobifashion_single_info_specifications_label">
+                                    ⚡ Săn deal
+                                </div>
+                                <div class="nobifashion_single_info_specifications_progress">
+                                    <div class="nobifashion_single_info_specifications_progress_bar" style="width: {{ $flashSalePercent }}%;"></div>
+                                </div>
+                                <div class="nobifashion_single_info_specifications_time">
+                                    <span class="nobifashion_single_info_specifications_end_time">Kết thúc trong</span>
+                                    <div class="nobifashion_single_info_specifications_countdown">
+                                        <div class="nobifashion_single_info_specifications_box nobifashion_single_info_specifications_box_days">00</div>
+                                        <span>:</span>
+                                        <div class="nobifashion_single_info_specifications_box nobifashion_single_info_specifications_box_house">00</div>
+                                        <span>:</span>
+                                        <div class="nobifashion_single_info_specifications_box nobifashion_single_info_specifications_box_minute">00</div>
+                                        <span>:</span>
+                                        <div class="nobifashion_single_info_specifications_box nobifashion_single_info_specifications_box_second">00</div>
+                                    </div>
                                 </div>
                             </div>
-                        @endforeach
-                        <p>Tồn kho: <span id="product-stock"><span style="color: red;">Vui lòng chọn biến
-                                    thể!</span></span></p>
-                        <style>
-                            /* ========== VARIANTS (dynamic) ========== */
-                            [class^="nobifashion_single_info_specifications_"] label {
-                                display: block;
-                                font-weight: 600;
-                                margin: 12px 0 8px;
-                                color: #333;
-                            }
+                        @endif
 
-                            [class^="nobifashion_single_info_specifications_size"],
-                            [class^="nobifashion_single_info_specifications_color"],
-                            [class^="nobifashion_single_info_specifications_materials"],
-                            [class^="nobifashion_single_info_specifications_weight"],
-                            [class^="nobifashion_single_info_specifications_types"] {
-                                display: flex;
-                                gap: 8px;
-                                flex-wrap: wrap;
-                            }
+                        <h1 class="nobifashion_single_info_title">
+                            {{ renderMeta($product->name) ?? 'Sản phẩm thời trang chính hãng - NOBI FASHION' }}
+                        </h1>
 
-                            [class^="nobifashion_single_info_specifications_"] .size-list,
-                            [class^="nobifashion_single_info_specifications_"] .color-list,
-                            [class^="nobifashion_single_info_specifications_"] .materials-list,
-                            [class^="nobifashion_single_info_specifications_"] .weight-list,
-                            [class^="nobifashion_single_info_specifications_"] .types-list {
-                                display: flex;
-                                gap: 8px;
-                                flex-wrap: wrap;
-                                margin-left: 20px;
-                            }
-
-                            [class^="nobifashion_single_info_specifications_"] .size-option,
-                            [class^="nobifashion_single_info_specifications_"] .color-option,
-                            [class^="nobifashion_single_info_specifications_"] .material-option,
-                            [class^="nobifashion_single_info_specifications_"] .weight-option,
-                            [class^="nobifashion_single_info_specifications_"] .type-option {
-                                padding: 8px 14px;
-                                border: 1px solid #ccc;
-                                border-radius: 6px;
-                                background: #fff;
-                                cursor: pointer;
-                                font-size: 14px;
-                                transition: all 0.25s ease;
-                            }
-
-                            [class^="nobifashion_single_info_specifications_"] .size-option:hover,
-                            [class^="nobifashion_single_info_specifications_"] .color-option:hover,
-                            [class^="nobifashion_single_info_specifications_"] .material-option:hover,
-                            [class^="nobifashion_single_info_specifications_"] .weight-option:hover,
-                            [class^="nobifashion_single_info_specifications_"] .type-option:hover {
-                                border-color: var(--primary-color);
-                                color: var(--primary-color);
-                            }
-
-                            [class^="nobifashion_single_info_specifications_"] .size-option.active,
-                            [class^="nobifashion_single_info_specifications_"] .color-option.active,
-                            [class^="nobifashion_single_info_specifications_"] .material-option.active,
-                            [class^="nobifashion_single_info_specifications_"] .weight-option.active,
-                            [class^="nobifashion_single_info_specifications_"] .type-option.active {
-                                background: var(--primary-color);
-                                border-color: var(--primary-color);
-                                color: #fff;
-                            }
-                        </style>
-                    @else
-                        <p class="nobifashion_single_info_specifications_no_variants">
-                            Sản phẩm này không có lựa chọn biến thể (<span style="color: red !important;">Tạm hết!</span>).
-                        </p>
-                    @endif
-
-                    <!-- Product Actions Form -->
-                    <form class="nobifashion_single_info_specifications_actions" action="{{ route('client.cart.add') }}"
-                        method="POST">
-                        @csrf
-                        <!-- Quantity Box -->
-                        <div class="nobifashion_single_info_specifications_actions_qty">
-                            <button type="button" class="nobifashion_single_info_specifications_actions_btn"
-                                onclick="decreaseQty()">−</button>
-                            <span class="nobifashion_single_info_specifications_actions_value">1</span>
-                            <button type="button" class="nobifashion_single_info_specifications_actions_btn"
-                                onclick="increaseQty()">+</button>
-                        </div>
-
-                        <!-- Add to Cart -->
-                        <button disabled type="submit" name="action" value="add_to_cart"
-                            class="nobifashion_single_info_specifications_actions_cart disabled">
-                            THÊM VÀO GIỎ
-                        </button>
-
-                        <!-- Buy Now (same behavior as Add to Cart) -->
-                        <button disabled type="submit" name="action" value="add_to_cart"
-                            class="nobifashion_single_info_specifications_actions_buy disabled">
-                            MUA NGAY
-                        </button>
-                        
-                        <!-- Favorite button -->
-                        <button type="button" data-product-id="{{ $product->id }}" class="nobifashion_fav_btn {{ in_array($product->id, $favoriteProductIds ?? []) ? 'active' : '' }}" aria-label="Yêu thích" style="">
-                            @if(in_array($product->id, $favoriteProductIds ?? []))
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path fill="#ff0000" d="M305 151.1L320 171.8L335 151.1C360 116.5 400.2 96 442.9 96C516.4 96 576 155.6 576 229.1L576 231.7C576 343.9 436.1 474.2 363.1 529.9C350.7 539.3 335.5 544 320 544C304.5 544 289.2 539.4 276.9 529.9C203.9 474.2 64 343.9 64 231.7L64 229.1C64 155.6 123.6 96 197.1 96C239.8 96 280 116.5 305 151.1z"/></svg>
-                            @else
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path fill="#ff0000" d="M442.9 144C415.6 144 389.9 157.1 373.9 179.2L339.5 226.8C335 233 327.8 236.7 320.1 236.7C312.4 236.7 305.2 233 300.7 226.8L266.3 179.2C250.3 157.1 224.6 144 197.3 144C150.3 144 112.2 182.1 112.2 229.1C112.2 279 144.2 327.5 180.3 371.4C221.4 421.4 271.7 465.4 306.2 491.7C309.4 494.1 314.1 495.9 320.2 495.9C326.3 495.9 331 494.1 334.2 491.7C368.7 465.4 419 421.3 460.1 371.4C496.3 327.5 528.2 279 528.2 229.1C528.2 182.1 490.1 144 443.1 144zM335 151.1C360 116.5 400.2 96 442.9 96C516.4 96 576 155.6 576 229.1C576 297.7 533.1 358 496.9 401.9C452.8 455.5 399.6 502 363.1 529.8C350.8 539.2 335.6 543.9 320 543.9C304.4 543.9 289.2 539.2 276.9 529.8C240.4 502 187.2 455.5 143.1 402C106.9 358.1 64 297.7 64 229.1C64 155.6 123.6 96 197.1 96C239.8 96 280 116.5 305 151.1L320 171.8L335 151.1z"/></svg>
+                        <div class="nobifashion_single_info_meta">
+                            <div class="nobifashion_single_info_sku">
+                                Mã sản phẩm:
+                                <span class="nobifashion_single_info_specifications_brand_code">{{ $product->sku }}</span>
+                            </div>
+                            @if($product->brand)
+                                <div class="nobifashion_single_info_sku">
+                                    Hãng:
+                                    <span class="nobifashion_single_info_specifications_brand_code">{{ $product->brand->name }}</span>
+                                </div>
                             @endif
-                        </button>
-                    </form>
-
-                    <div class="nobifashion_single_info_specifications_desc" data-nospinet>
-                        <h3 class="nobifashion_single_info_specifications_desc_title">
-                            🎁 Khuyến mãi hấp dẫn tại NOBI FASHION
-                        </h3>
-                        <ul class="nobifashion_single_info_specifications_desc_list">
-                            <li class="nobifashion_single_info_specifications_desc_item">
-                                <span class="nobifashion_single_info_specifications_desc_number">1</span>
-                                Tặng <strong>Bảo hành VIP 3 tháng</strong> cho mọi sản phẩm thời trang từ 500,000đ.
-                                <a href="#">Xem chi tiết</a>
-                            </li>
-                            <li class="nobifashion_single_info_specifications_desc_item">
-                                <span class="nobifashion_single_info_specifications_desc_number">2</span>
-                                Nhận <strong>voucher 200,000đ</strong> khi mua trọn bộ Outfit (áo + quần + phụ kiện).
-                                <a href="#">Xem chi tiết</a>
-                            </li>
-                            <li class="nobifashion_single_info_specifications_desc_item">
-                                <span class="nobifashion_single_info_specifications_desc_number">3</span>
-                                Giảm <strong>10%</strong> cho sinh viên khi xuất trình thẻ SV tại quầy thanh toán.
-                                <a href="#">Xem chi tiết</a>
-                            </li>
-                            <li class="nobifashion_single_info_specifications_desc_item">
-                                <span class="nobifashion_single_info_specifications_desc_number">4</span>
-                                <strong>Miễn phí vận chuyển</strong> cho đơn hàng từ 700,000đ trở lên.
-                                <a href="#">Xem chi tiết</a>
-                            </li>
-                        </ul>
-
-                        {{-- @if ($product->isInFlashSale())
-                            <div class="nobifashion_single_info_specifications_desc_flashsale">
-                                <strong>⚡ Flash Sale: {{ $product->currentFlashSale()->first()->title }}</strong><br>
-                                Diễn ra từ
-                                <span class="time">
-                                    {{ \Carbon\Carbon::parse($product->currentFlashSale()->first()->start_time)->format('H:i') }}
-                                    –
-                                    {{ \Carbon\Carbon::parse($product->currentFlashSale()->first()->end_time)->format('H:i') }}
+                            <div class="nobifashion_single_info_meta_rating">
+                                <span class="nobifashion_single_info_meta_stars">★★★★★</span>
+                                <span class="nobifashion_single_info_meta_reviews" onclick="tabReview()">
+                                    (<a href="#nobifashion_review">{{ rand(10, 1000) }} đánh giá</a>)
                                 </span>
-                                ngày
-                                <span class="date">
-                                    {{ \Carbon\Carbon::parse($product->currentFlashSale()->first()->start_time)->format('d/m') }}
-                                </span>.
-                                <br>
-                                👕 Số lượng có hạn, ưu tiên thanh toán online.<br>
-                                ⚠️ Mỗi khách hàng chỉ mua tối đa 1 sản phẩm cùng loại.<br>
-                                🕒 Đơn hàng giữ trong 24h, không áp dụng kèm chương trình khuyến mãi khác.
                             </div>
-                        @endif --}}
-                    </div>
-
-
-                </div>
-
-                <div class="nobifashion_single_info_policy">
-                    <h3 class="nobifashion_single_info_policy_title">CHÍNH SÁCH BÁN HÀNG</h3>
-                    <p class="nobifashion_single_info_policy_subtitle">Áp dụng cho từng ngành hàng</p>
-
-                    <!-- MIỄN PHÍ VẬN CHUYỂN -->
-                    <div class="nobifashion_single_info_policy_item">
-                        <div class="nobifashion_single_info_policy_icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="#444"
-                                xmlns="http://www.w3.org/2000/svg">
-                                <path
-                                    d="M20 8h-3V4H3v13h2a3 3 0 1 0 6 0h4a3 3 0 1 0 6 0h1v-5l-4-4zM5 15V6h10v9H5zm13 1a1 1 0 1 1-2 0 1 1 0 0 1 2 0zm-10 1a1 1 0 1 1 0-2 1 1 0 0 1 0 2zm10-4V9.4l2.6 2.6H18z" />
-                            </svg>
                         </div>
-                        <div class="nobifashion_single_info_policy_content">
-                            <strong>MIỄN PHÍ VẬN CHUYỂN</strong>
-                        </div>
-                    </div>
 
-                    <!-- ĐỔI TRẢ MIỄN PHÍ -->
-                    <div class="nobifashion_single_info_policy_item">
-                        <div class="nobifashion_single_info_policy_icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="#444"
-                                xmlns="http://www.w3.org/2000/svg">
-                                <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6a6 6 0 1 1-12 0H4a8 8 0 1 0 8-8z" />
-                            </svg>
-                        </div>
-                        <div class="nobifashion_single_info_policy_content">
-                            <strong>ĐỔI TRẢ MIỄN PHÍ</strong>
-                        </div>
-                    </div>
+                        <div
+                            class="nobifashion_single_info_price_block nobifashion_single_info_specifications_price"
+                            data-base-current-price="{{ (int) $displayCurrentPrice }}"
+                            data-base-original-price="{{ (int) ($displayOriginalPrice ?? 0) }}"
+                            data-base-discount="{{ (int) ($discountPercent ?? 0) }}"
+                            data-base-saved="{{ (int) $savedAmount }}">
+                            <div class="nobifashion_single_info_price_row">
+                                <span class="nobifashion_single_info_price_current nobifashion_single_info_specifications_new_price">
+                                    {{ number_format($displayCurrentPrice, 0, ',', '.') }}đ
+                                </span>
+                                <span class="nobifashion_single_info_price_original nobifashion_single_info_specifications_old_price {{ $displayOriginalPrice ? '' : 'is-hidden' }}">
+                                    {{ $displayOriginalPrice ? number_format($displayOriginalPrice, 0, ',', '.') . 'đ' : '' }}
+                                </span>
+                                <span class="nobifashion_single_info_price_badge {{ $discountPercent ? '' : 'is-hidden' }}">
+                                    {{ $discountPercent ? '-' . $discountPercent . '%' : '' }}
+                                </span>
+                            </div>
 
-                    <!-- THANH TOÁN -->
-                    <div class="nobifashion_single_info_policy_item">
-                        <div class="nobifashion_single_info_policy_icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="#444"
-                                xmlns="http://www.w3.org/2000/svg">
-                                <path
-                                    d="M20 4H4c-1.1 0-2 .9-2 2v3h20V6c0-1.1-.9-2-2-2zm0 5H2v9c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V9zm-6 6H6v-2h8v2z" />
-                            </svg>
+                            <div class="nobifashion_single_info_saving {{ $savedAmount > 0 ? '' : 'is-hidden' }}">
+                                <span>(Tiết kiệm:</span>
+                                <span class="save-amount">{{ number_format($savedAmount, 0, ',', '.') }}đ</span>
+                                <span class="voucher-link" @if ($voucherItems->isNotEmpty()) onclick="showPopupVoucher()" @endif>
+                                    {{ $voucherItems->isNotEmpty() ? 'Giá sau voucher' : 'Ưu đãi hôm nay' }}
+                                </span>
+                                <span>)</span>
+                            </div>
                         </div>
-                        <div class="nobifashion_single_info_policy_content">
-                            <strong>THANH TOÁN</strong>
-                        </div>
-                    </div>
 
-                    <!-- HỖ TRỢ MUA NHANH -->
-                    <div class="nobifashion_single_info_policy_item">
-                        <div class="nobifashion_single_info_policy_icon">
-                            <svg width="28" height="28" viewBox="0 0 24 24" fill="#444"
-                                xmlns="http://www.w3.org/2000/svg">
-                                <path
-                                    d="M6.62 10.79a15.055 15.055 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.01-.24 11.36 11.36 0 0 0 3.58.57 1 1 0 0 1 1 1v3.5a1 1 0 0 1-1 1C9.27 21 3 14.73 3 7.5a1 1 0 0 1 1-1H7.5a1 1 0 0 1 1 1c0 1.25.2 2.47.57 3.58a1 1 0 0 1-.24 1.01l-2.2 2.2z" />
-                            </svg>
-                        </div>
-                        <div class="nobifashion_single_info_policy_content">
-                            <strong>HỖ TRỢ MUA NHANH</strong>
-                            <p><span class="nobifashion_single_info_policy_hotline">Call:
-                                    {{ preg_replace('/(\d{4})(\d{3})(\d{3})/', '$1.$2.$3', $settings->contact_phone ?? '0382941465') }}
-                                    - Zalo:
-                                    {{ preg_replace('/(\d{4})(\d{3})(\d{3})/', '$1.$2.$3', $settings->contact_zalo ?? '0382941465') }}</span><br>từ
-                                8:30 - 22:30 mỗi ngày.</p>
-                        </div>
-                    </div>
-
-                    <div style="display: flex; align-items: center; justify-content: center; margin: 1rem 0;">
-                        <hr style="flex: 1; height: 2px; background-color: #e6525e; border: none; margin: 0;">
-                        <span style="padding: 0 12px; color: #f74a4a; font-weight: bold;">Khuyễn mãi & Ưu đãi</span>
-                        <hr style="flex: 1; height: 2px; background-color: #e6525e; border: none; margin: 0;">
-                    </div>
-
-                    <div class="nobifashion_single_info_voucher"
-                        style="font-family: Arial, sans-serif; font-size: 14px; line-height: 1.8; width: fit-content; max-width: 100%; margin: auto; text-align: start;">
-                        @foreach ($vouchers as $voucher)
-                            @php
-                                $type = $voucher->type ?? '';
-                                $code = $voucher->code ?? '';
-                                $value = $voucher->value ?? '';
-                                $min = $voucher->min_order_amount ?? '';
-                                $max = $voucher->max_discount_amount ?? '';
-                            @endphp
-
-                            @if ($type === 'free_ship')
-                                <p style="margin:4px 0;font-size:14px;">
-                                    🎫 Nhập mã <strong>{{ $code }}</strong> MIỄN PHÍ SHIP
-                                    @if ($value)
-                                        TỐI ĐA <span style="color:red">{{ number_format($value, 0, ',', '.') }}đ</span>
-                                    @endif
-                                    @if ($min)
-                                        CHO ĐƠN TỪ <span style="color:red">{{ number_format($min, 0, ',', '.') }}đ</span>
-                                    @endif
-                                </p>
-                            @elseif ($type === 'percentage')
-                                <p style="margin:4px 0;font-size:14px;">
-                                    🎫 Nhập mã <strong>{{ $code }}</strong> GIẢM <span
-                                        style="color:red">{{ number_format($value, 0, ',', '.') }}%</span>
-                                    @if ($max)
-                                        TỐI ĐA <span style="color:red">{{ number_format($max, 0, ',', '.') }}đ</span>
-                                    @endif
-                                    @if ($min)
-                                        CHO ĐƠN TỪ <span style="color:red">{{ number_format($min, 0, ',', '.') }}đ</span>
-                                    @endif
-                                </p>
-                            @elseif ($type === 'fixed_amount')
-                                <p style="margin:4px 0;font-size:14px;">
-                                    🎫 Nhập mã <strong>{{ $code }}</strong> GIẢM <span
-                                        style="color:red">{{ number_format($value, 0, ',', '.') }}</span>
-                                    @if ($min)
-                                        CHO ĐƠN TỪ <span style="color:red">{{ number_format($min, 0, ',', '.') }}đ</span>
-                                    @endif
-                                </p>
+                        <div class="nobifashion_single_info_badges">
+                            @if ($bestVoucherPrice !== null)
+                                <span class="nobifashion_single_info_best_price">
+                                    Giá tốt nhất: {{ number_format($bestVoucherPrice, 0, ',', '.') }}đ
+                                </span>
                             @endif
-                        @endforeach
 
-                        <p style="margin: 4px 0; font-size: 14px;"><span>🚚</span> <strong
-                                style="font-size: 14px;">FREESHIP 100%</strong> đơn từ 1000K</p>
+                            @if (optional($product->created_at)->gte(now()->subDays(45)))
+                                <span class="nobifashion_single_info_new_arrival">New Arrival</span>
+                            @elseif ($product->is_featured ?? false)
+                                <span class="nobifashion_single_info_new_arrival">Nổi bật</span>
+                            @endif
+                        </div>
 
-                        <div class="nobifashion_single_info_voucher_code" style="margin-top: 16px;">
-                            <p style="margin-bottom: 8px;">Mã giảm giá bạn có thể sử dụng:</p>
-                            <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;">
-                                @foreach ($vouchers as $voucher)
-                                    <div class="nobifashion_single_info_voucher_code_item"
-                                        style="background: #000; color: #00ffff; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 13px; font-family: monospace; clip-path: polygon(10% 0%, 90% 0%, 90% 35%, 100% 50%, 90% 65%, 90% 100%, 10% 100%, 10% 65%, 0% 50%, 10% 35%); cursor: pointer;">
-                                        {{ $voucher->code ?? 'NOBI2025' }}
-                                    </div>
+                        @if ($voucherCards->isNotEmpty())
+                            <div class="nobifashion_single_info_voucher_label">Mã giảm giá:</div>
+                            <div class="nobifashion_single_info_voucher_list">
+                                @foreach ($voucherCards as $voucherCard)
+                                    <button
+                                        type="button"
+                                        class="nobifashion_single_info_voucher_tag"
+                                        data-code="{{ $voucherCard['code'] }}"
+                                        style="--voucher-accent: {{ $voucherCard['accent'] }}">
+                                        <span class="tag-icon">{{ $voucherCard['icon'] }}</span>
+                                        {{ $voucherCard['label'] }}
+                                        <span class="voucher-code">{{ $voucherCard['code'] }}</span>
+                                    </button>
                                 @endforeach
+
+                                @if ($voucherItems->count() > 5)
+                                    <button type="button" class="nobifashion_single_info_voucher_more" onclick="showPopupVoucher()">
+                                        &#8250;
+                                    </button>
+                                @endif
                             </div>
+                        @endif
+
+                        <div class="nobifashion_single_info_promo_box">
+                            <div class="nobifashion_single_info_promo_title">
+                                <span class="gift-icon">🎁</span>
+                                {{ $currentFlashSale?->title ?? 'Ưu đãi dành riêng cho sản phẩm này' }}
+                            </div>
+                            <ul class="nobifashion_single_info_promo_list">
+                                @forelse ($voucherItems->take(4) as $voucher)
+                                    <li>
+                                        @if (($voucher->type ?? '') === 'percentage')
+                                            Mã <span class="highlight">{{ $voucher->code }}</span> giảm
+                                            <span class="highlight">{{ number_format($voucher->value ?? 0, 0, ',', '.') }}%</span>
+                                            @if (($voucher->min_order_amount ?? 0) > 0)
+                                                cho đơn từ <span class="highlight">{{ number_format($voucher->min_order_amount, 0, ',', '.') }}đ</span>
+                                            @endif
+                                        @elseif (($voucher->type ?? '') === 'fixed_amount')
+                                            Mã <span class="highlight">{{ $voucher->code }}</span> giảm trực tiếp
+                                            <span class="highlight">{{ number_format($voucher->value ?? 0, 0, ',', '.') }}đ</span>
+                                            @if (($voucher->min_order_amount ?? 0) > 0)
+                                                cho đơn từ <span class="highlight">{{ number_format($voucher->min_order_amount, 0, ',', '.') }}đ</span>
+                                            @endif
+                                        @elseif (($voucher->type ?? '') === 'free_ship')
+                                            Mã <span class="highlight">{{ $voucher->code }}</span> miễn phí giao hàng
+                                            @if (($voucher->value ?? 0) > 0)
+                                                tối đa <span class="highlight">{{ number_format($voucher->value, 0, ',', '.') }}đ</span>
+                                            @endif
+                                        @else
+                                            Sao chép mã <span class="highlight">{{ $voucher->code }}</span> để nhận ưu đãi tốt hơn.
+                                        @endif
+                                    </li>
+                                @empty
+                                    <li>Miễn phí giao hàng toàn quốc cho đơn từ <span class="highlight">399.000đ</span>.</li>
+                                    <li>Đổi size thuận tiện trong vòng <span class="highlight">30 ngày</span>.</li>
+                                    <li>Ưu tiên hỗ trợ nhanh qua hotline <span class="highlight">{{ $settings->contact_phone ?? '1800 9203' }}</span>.</li>
+                                    <li>Thanh toán linh hoạt và theo dõi đơn hàng dễ dàng ngay sau khi đặt.</li>
+                                @endforelse
+                            </ul>
+                        </div>
+
+                        @if ($variants->isNotEmpty())
+                            @foreach ($attributesGrouped as $key => $values)
+                                @php
+                                    $normalizedKey = \Illuminate\Support\Str::lower($key);
+                                    $label = $attributeLabels[$normalizedKey] ?? ucfirst($key);
+                                    $optionClass = match ($normalizedKey) {
+                                        'size' => 'size-option',
+                                        'color' => 'color-option',
+                                        'material', 'materials' => 'material-option',
+                                        'weight' => 'weight-option',
+                                        default => 'type-option',
+                                    };
+                                @endphp
+
+                                @if ($normalizedKey === 'color')
+                                    <div class="nobifashion_single_info_specifications_{{ $normalizedKey }} nobifashion_single_info_variant_group">
+                                        <div class="nobifashion_single_info_color_label">
+                                            {{ $label }}:
+                                            <span id="selected-{{ $key }}">-</span>
+                                        </div>
+                                        <div class="nobifashion_single_info_color_list color-list">
+                                            @foreach ($values as $val)
+                                                @php
+                                                    $stock = $variants
+                                                        ->filter(function ($variantItem) use ($key, $val) {
+                                                            $attrs = is_string($variantItem->attributes)
+                                                                ? json_decode($variantItem->attributes, true)
+                                                                : $variantItem->attributes;
+
+                                                            return isset($attrs[$key]) && $attrs[$key] === $val;
+                                                        })
+                                                        ->sum('stock_quantity');
+                                                    $isDisabled = $stock <= 0;
+                                                @endphp
+                                                <button
+                                                    type="button"
+                                                    class="nobifashion_single_info_color_swatch {{ $optionClass }}"
+                                                    data-attr-key="{{ $key }}"
+                                                    data-attr-value="{{ $val }}"
+                                                    title="{{ $val }}"
+                                                    aria-label="{{ $val }}"
+                                                    style="background: {{ $resolveSwatchColor($val) }}"
+                                                    {{ $isDisabled ? 'disabled' : '' }}>
+                                                    <span class="nobifashion_single_info_color_swatch_text">{{ mb_substr($val, 0, 1) }}</span>
+                                                </button>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @elseif ($normalizedKey === 'size')
+                                    <div class="nobifashion_single_info_specifications_{{ $normalizedKey }} nobifashion_single_info_variant_group">
+                                        <div class="nobifashion_single_info_size_row">
+                                            <span class="nobifashion_single_info_size_label">
+                                                {{ $label }}:
+                                                <span id="selected-{{ $key }}">-</span>
+                                            </span>
+                                            <a onclick="tabSizeGuide()" href="#nobifashion_main_tab_size_guide" class="nobifashion_single_info_size_guide">
+                                                Tư vấn chọn size
+                                            </a>
+                                        </div>
+                                        <div class="nobifashion_single_info_size_list size-list">
+                                            @foreach ($values as $val)
+                                                @php
+                                                    $stock = $variants
+                                                        ->filter(function ($variantItem) use ($key, $val) {
+                                                            $attrs = is_string($variantItem->attributes)
+                                                                ? json_decode($variantItem->attributes, true)
+                                                                : $variantItem->attributes;
+
+                                                            return isset($attrs[$key]) && $attrs[$key] === $val;
+                                                        })
+                                                        ->sum('stock_quantity');
+                                                    $isDisabled = $stock <= 0;
+                                                @endphp
+                                                <button
+                                                    type="button"
+                                                    class="nobifashion_single_info_size_btn {{ $optionClass }}"
+                                                    data-attr-key="{{ $key }}"
+                                                    data-attr-value="{{ $val }}"
+                                                    {{ $isDisabled ? 'disabled' : '' }}>
+                                                    {{ $val }}
+                                                </button>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @else
+                                    <div class="nobifashion_single_info_specifications_{{ $normalizedKey }} nobifashion_single_info_variant_group">
+                                        <div class="nobifashion_single_info_option_label">
+                                            {{ $label }}:
+                                            <span id="selected-{{ $key }}">-</span>
+                                        </div>
+                                        <div class="nobifashion_single_info_option_list {{ $normalizedKey }}-list">
+                                            @foreach ($values as $val)
+                                                @php
+                                                    $stock = $variants
+                                                        ->filter(function ($variantItem) use ($key, $val) {
+                                                            $attrs = is_string($variantItem->attributes)
+                                                                ? json_decode($variantItem->attributes, true)
+                                                                : $variantItem->attributes;
+
+                                                            return isset($attrs[$key]) && $attrs[$key] === $val;
+                                                        })
+                                                        ->sum('stock_quantity');
+                                                    $isDisabled = $stock <= 0;
+                                                @endphp
+                                                <button
+                                                    type="button"
+                                                    class="nobifashion_single_info_option_btn {{ $optionClass }}"
+                                                    data-attr-key="{{ $key }}"
+                                                    data-attr-value="{{ $val }}"
+                                                    {{ $isDisabled ? 'disabled' : '' }}>
+                                                    {{ $val }}
+                                                </button>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
+                            @endforeach
+                        @else
+                            <p class="nobifashion_single_info_specifications_no_variants">
+                                Sản phẩm này hiện chưa có biến thể khả dụng.
+                            </p>
+                        @endif
+
+                        <form class="nobifashion_single_info_specifications_actions" action="{{ route('client.cart.add') }}" method="POST">
+                            @csrf
+
+                            <div class="nobifashion_single_info_cart_row">
+                                <div class="nobifashion_single_info_qty nobifashion_single_info_specifications_actions_qty">
+                                    <button type="button" class="nobifashion_single_info_specifications_actions_btn" onclick="decreaseQty()">&#8722;</button>
+                                    <span class="nobifashion_single_info_qty_value nobifashion_single_info_specifications_actions_value">1</span>
+                                    <button type="button" class="nobifashion_single_info_specifications_actions_btn" onclick="increaseQty()">+</button>
+                                </div>
+
+                                <div class="nobifashion_single_info_action_primary">
+                                    <button
+                                        disabled
+                                        type="submit"
+                                        name="action"
+                                        value="add_to_cart"
+                                        class="nobifashion_single_info_add_cart nobifashion_single_info_specifications_actions_cart disabled">
+                                        THÊM NGAY VÀO GIỎ
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        data-product-id="{{ $product->id }}"
+                                        class="nobifashion_fav_btn nobifashion_single_info_favorite_btn {{ in_array($product->id, $favoriteProductIds ?? []) ? 'active' : '' }}"
+                                        aria-label="Yêu thích">
+                                        @if (in_array($product->id, $favoriteProductIds ?? []))
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path fill="#ff0000" d="M305 151.1L320 171.8L335 151.1C360 116.5 400.2 96 442.9 96C516.4 96 576 155.6 576 229.1L576 231.7C576 343.9 436.1 474.2 363.1 529.9C350.7 539.3 335.5 544 320 544C304.5 544 289.2 539.4 276.9 529.9C203.9 474.2 64 343.9 64 231.7L64 229.1C64 155.6 123.6 96 197.1 96C239.8 96 280 116.5 305 151.1z"/></svg>
+                                        @else
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path fill="#ff0000" d="M442.9 144C415.6 144 389.9 157.1 373.9 179.2L339.5 226.8C335 233 327.8 236.7 320.1 236.7C312.4 236.7 305.2 233 300.7 226.8L266.3 179.2C250.3 157.1 224.6 144 197.3 144C150.3 144 112.2 182.1 112.2 229.1C112.2 279 144.2 327.5 180.3 371.4C221.4 421.4 271.7 465.4 306.2 491.7C309.4 494.1 314.1 495.9 320.2 495.9C326.3 495.9 331 494.1 334.2 491.7C368.7 465.4 419 421.3 460.1 371.4C496.3 327.5 528.2 279 528.2 229.1C528.2 182.1 490.1 144 443.1 144zM335 151.1C360 116.5 400.2 96 442.9 96C516.4 96 576 155.6 576 229.1C576 297.7 533.1 358 496.9 401.9C452.8 455.5 399.6 502 363.1 529.8C350.8 539.2 335.6 543.9 320 543.9C304.4 543.9 289.2 539.2 276.9 529.8C240.4 502 187.2 455.5 143.1 402C106.9 358.1 64 297.7 64 229.1C64 155.6 123.6 96 197.1 96C239.8 96 280 116.5 305 151.1L320 171.8L335 151.1z"/></svg>
+                                        @endif
+                                    </button>
+                                </div>
+                            </div>
+
+                            <button
+                                disabled
+                                type="submit"
+                                name="action"
+                                value="buy_now"
+                                class="nobifashion_single_info_buy_now nobifashion_single_info_specifications_actions_buy disabled">
+                                MUA NGAY
+                            </button>
+                        </form>
+
+                        <div class="nobifashion_single_info_stock">
+                            <div class="nobifashion_single_info_stock_bar_wrap">
+                                <div
+                                    id="product-stock-progress"
+                                    class="nobifashion_single_info_stock_bar"
+                                    data-base-width="{{ $defaultStockPercent }}"
+                                    style="width: {{ $defaultStockPercent }}%;">
+                                </div>
+                                <span class="nobifashion_single_info_stock_bar_text" id="product-stock">
+                                    @if ($variants->isNotEmpty())
+                                        Chọn biến thể để xem tồn kho
+                                    @else
+                                        {{ $defaultStockValue > 0 ? 'Còn ' . $defaultStockValue . ' sản phẩm' : 'Tạm hết hàng' }}
+                                    @endif
+                                </span>
+                            </div>
+                            <div class="nobifashion_single_info_stock_note" id="product-stock-note" data-default-note="{{ $defaultStockNote }}">
+                                {{ $defaultStockNote }}
+                            </div>
+                        </div>
+
+                        <div class="nobifashion_single_info_services">
+                            <div class="nobifashion_single_info_service_item">
+                                <span class="svc-icon">📞</span>
+                                <span>Tổng đài hỗ trợ nhanh {{ $settings->contact_phone ?? '1800 9203' }}</span>
+                            </div>
+                            <div class="nobifashion_single_info_service_item">
+                                <span class="svc-icon">🔄</span>
+                                <span>Đổi hàng nhanh chóng thuận tiện trong vòng 30 ngày.</span>
+                            </div>
+                            <div class="nobifashion_single_info_service_item">
+                                <span class="svc-icon">🚚</span>
+                                <span>Miễn phí giao hàng toàn quốc cho đơn từ 399.000đ.</span>
+                            </div>
+                            <div class="nobifashion_single_info_service_item">
+                                <span class="svc-icon">✅</span>
+                                <span>Thanh toán an toàn, xác nhận đơn và theo dõi trạng thái dễ dàng.</span>
+                            </div>
+                        </div>
+
+                        <div class="nobifashion_single_info_support">
+                            <div class="nobifashion_single_info_support_title">Cần tư vấn nhanh?</div>
+                            <form class="nobifashion_single_info_images_support_form" id="phone-request-form" method="POST">
+                                @csrf
+                                <input type="hidden" name="product_id" value="{{ $product->id }}">
+                                <div class="nobifashion_single_info_images_support_form_group">
+                                    <input
+                                        type="text"
+                                        placeholder="Nhập số điện thoại để được tư vấn nhanh"
+                                        name="phone"
+                                        id="phone-input"
+                                        class="nobifashion_single_info_images_support_form_group_input"
+                                        required
+                                        pattern="[0-9]{10,11}"
+                                        maxlength="11">
+                                    <button type="submit" class="nobifashion_single_info_images_support_form_group_btn" id="phone-submit-btn">
+                                        <span class="btn-text">Gửi yêu cầu</span>
+                                        <span class="btn-loading" style="display: none;">Đang gửi...</span>
+                                    </button>
+                                </div>
+                                <div class="nobifashion_single_info_images_support_form_notice">
+                                    <p class="nobifashion_single_info_images_support_form_notice_text">
+                                        Để lại số điện thoại, NOBI FASHION sẽ liên hệ và tư vấn cho bạn.
+                                    </p>
+                                    <div id="phone-request-message" style="display: none; margin-top: 10px; padding: 8px; border-radius: 4px; font-size: 13px;"></div>
+                                </div>
+                            </form>
                         </div>
                     </div>
-                    <!-- Popup overlay -->
-                    @if($vouchers->isNotEmpty())
-                        <div id="voucherPopup" class="nobifashion_main_show_popup_voucher_overlay">
-                            <div class="nobifashion_main_show_popup_voucher_box">
-                                <button class="nobifashion_main_show_popup_voucher_close">&times;</button>
-                                <h2>🎉 Chúc mừng bạn!</h2>
-                                <img width="100" src="{{ asset('clients/assets/img/other/party.gif') }}"
-                                    alt="Voucher NOBI FASHION">
-                                <p>Bạn đã nhận được voucher đặc biệt từ shop:</p>
-                                @foreach ($vouchers as $voucher)
-                                    <div class="nobifashion_main_show_popup_voucher_code">{{ $voucher->code }}</div>
-                                @endforeach
-                                <p>Dùng ngay để được ưu đãi hấp dẫn 💖</p>
-                            </div>
-                        </div>
-                    @else
-                        <div id="voucherPopup" class="nobifashion_main_show_popup_voucher_overlay">
-                            <div class="nobifashion_main_show_popup_voucher_box">
-                                <button class="nobifashion_main_show_popup_voucher_close">&times;</button>
-                                {{-- <h2>🎉 Chúc mừng bạn!</h2> --}}
-                            </div>
-                        </div>
-                    @endif
-
                 </div>
+
+                @if ($voucherItems->isNotEmpty())
+                    <div id="voucherPopup" class="nobifashion_main_show_popup_voucher_overlay">
+                        <div class="nobifashion_main_show_popup_voucher_box">
+                            <button class="nobifashion_main_show_popup_voucher_close">&times;</button>
+                            <h2>🎉 Mã ưu đãi dành cho bạn</h2>
+                            <img width="100" src="{{ asset('clients/assets/img/other/party.gif') }}" alt="Voucher NOBI FASHION">
+                            <p>Sao chép nhanh một trong các mã sau để dùng ngay khi thanh toán:</p>
+                            @foreach ($voucherItems as $voucher)
+                                <div class="nobifashion_main_show_popup_voucher_code">{{ $voucher->code }}</div>
+                            @endforeach
+                            <p>Ưu đãi sẽ được áp dụng theo điều kiện từng mã.</p>
+                        </div>
+                    </div>
+                @else
+                    <div id="voucherPopup" class="nobifashion_main_show_popup_voucher_overlay">
+                        <div class="nobifashion_main_show_popup_voucher_box">
+                            <button class="nobifashion_main_show_popup_voucher_close">&times;</button>
+                        </div>
+                    </div>
+                @endif
             </div>
             <div id="nobifashion_main_tab_size_guide" style="display: flex; align-items: center; justify-content: center; margin: 1rem 0;">
                 <hr style="flex: 1; height: 2px; background-color: #e6525e; border: none; margin: 0;">
