@@ -55,7 +55,7 @@ return new class extends Migration
             $table->index('created_by');
             $table->foreign('locked_by')->references('id')->on('accounts')->nullOnDelete();
             $table->foreign('created_by')->references('id')->on('accounts')->cascadeOnDelete();
-            $table->foreign('primary_category_id')->references('id')->on('categories')->nullOnDelete();
+            // categories được tạo sau migration này nên không gắn FK ở đây.
         });
     }
 

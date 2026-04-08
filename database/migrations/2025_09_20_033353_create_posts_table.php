@@ -46,7 +46,7 @@ return new class extends Migration
 
             // Thời gian
             $table->timestamp('published_at')->nullable();
-            $table->foreignId('created_by')->constrained('accounts')->nullOnDelete();
+            $table->foreignId('created_by')->nullable()->constrained('accounts')->nullOnDelete();
             $table->timestamps();
         });
 

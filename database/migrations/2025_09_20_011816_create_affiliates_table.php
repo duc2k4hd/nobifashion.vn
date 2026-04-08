@@ -14,7 +14,8 @@ return new class extends Migration
         Schema::create('affiliates', function (Blueprint $table) {
             $table->id();
             $table->foreignId('account_id')->constrained('accounts')->onUpdate('cascade');
-            $table->foreignId('product_id')->constrained('products')->onUpdate('cascade');
+            // Không gắn foreign key ở bước này vì migration products chạy sau file này.
+            $table->unsignedBigInteger('product_id')->index();
             $table->string('ref_code');
             $table->integer('clicks')->unique();
             $table->integer('conversions')->nullable();

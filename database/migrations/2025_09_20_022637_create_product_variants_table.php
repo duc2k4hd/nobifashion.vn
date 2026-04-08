@@ -17,7 +17,8 @@ return new class extends Migration
             $table->decimal('price', 10, 0)->nullable();
             $table->integer('stock_quantity')->default(0);
             $table->json('attributes')->nullable(); // { "size": "M", "color": "Black" }
-            $table->foreignId('image_id')->constrained('image')->nullOnDelete();
+            // Ảnh được tạo ở migration sau và runtime hiện tại cũng không dùng FK thật cho bảng này.
+            $table->unsignedBigInteger('image_id')->nullable()->index();
             $table->enum('status', ['active', 'inactive', 'archived'])->default('active');
             $table->timestamps();
         });
