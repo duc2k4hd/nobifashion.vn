@@ -3,9 +3,10 @@
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Contracts\Console\Kernel as ConsoleKernelContract;
 use Illuminate\Http\Request;
 
-return Application::configure(basePath: dirname(__DIR__))
+return tap(Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
         api: __DIR__.'/../routes/api.php',
@@ -22,4 +23,6 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //
-    })->create();
+    })->create(), function (Application $app): void {
+        $app->singleton(ConsoleKernelContract::class, \App\Console\Kernel::class);
+    });
