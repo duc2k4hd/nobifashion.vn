@@ -21,6 +21,7 @@
             </div>
             <div class="media-page-actions">
                 <button type="button" class="media-btn media-btn-secondary" id="mediaRefreshBtn">Quét lại dữ liệu</button>
+                <button type="button" class="media-btn media-btn-secondary" id="mediaCleanupBtn">Dọn file lỗi</button>
                 <button type="button" class="media-btn media-btn-primary" id="mediaToggleUploadBtn">Tải ảnh mới</button>
             </div>
         </section>
@@ -136,6 +137,9 @@
                     <h3>Nguyên tắc an toàn</h3>
                     <p>
                         Nếu một file đang được nhiều bản ghi cùng dùng, hệ thống chỉ xóa record và giữ lại file vật lý để tránh làm gãy ảnh ở nơi khác.
+                    </p>
+                    <p>
+                        Tool dọn file lỗi sẽ xem trước và xử lý record DB bị mất file, record chưa gắn đối tượng và file vật lý không còn bản ghi tham chiếu.
                     </p>
                 </div>
             </aside>
@@ -334,16 +338,31 @@
 
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+    @php
+        $mediaRequestLimits = [
+            'upload' => [
+                'maxFilesPerRequest' => max(1, (int) ini_get('max_file_uploads')),
+                'maxBatchBytes' => ini_get('post_max_size') ?: '8M',
+                'appMaxSingleFileKb' => max(1, (int) config('media.request_limits.upload_file_max_kb', 5120)),
+                'batchSafetyRatio' => (float) config('media.request_limits.upload_batch_safety_ratio', 0.9),
+            ],
+            'delete' => [
+                'maxItemsPerRequest' => max(1, (int) config('media.request_limits.delete_items_per_request', 200)),
+            ],
+        ];
+    @endphp
     <script>
         window.mediaManagerConfig = {
             csrfToken: @json(csrf_token()),
             fallbackImage: @json(asset('clients/assets/no-image.webp')),
+            limits: @json($mediaRequestLimits),
             routes: {
                 search: @json(route('admin.media.search')),
                 upload: @json(route('admin.media.upload')),
                 updateBase: @json(url('/admin/media/update')),
                 assign: @json(route('admin.media.assign')),
                 bulkDelete: @json(route('admin.media.bulk-delete')),
+                cleanup: @json(route('admin.media.cleanup')),
                 targets: @json(route('admin.media.targets')),
             },
             initialState: {

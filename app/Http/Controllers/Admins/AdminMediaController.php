@@ -3,8 +3,8 @@
 namespace App\Http\Controllers\Admins;
 
 use App\Http\Controllers\Controller;
-use App\Services\Media\FileHelperService;
 use App\Services\Media\MediaAssignmentService;
+use App\Services\Media\MediaCleanupService;
 use App\Services\Media\MediaScannerService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -108,11 +108,12 @@ class AdminMediaController extends Controller
     public function bulkDelete(
         Request $request,
         MediaScannerService $scanner,
-        MediaAssignmentService $assignment,
-        FileHelperService $files
+        MediaAssignmentService $assignment
     ) {
+        $maxDeleteItems = max(1, (int) config('media.request_limits.delete_items_per_request', 200));
+
         $validated = $request->validate([
-            'items' => 'required|array|min:1|max:200',
+            'items' => 'required|array|min:1|max:' . $maxDeleteItems,
             'items.*.source' => 'required|string',
             'items.*.id' => 'nullable|string',
             'items.*.path' => 'nullable|string',
@@ -142,10 +143,16 @@ class AdminMediaController extends Controller
             }
 
             if ($source === 'filesystem_file') {
-                $success = $files->deleteManagedFile(
-                    $item['relative_path'] ?? null,
-                    config('media.directories', [])
-                );
+                try {
+                    $result = $assignment->deleteByManagedPath($item['relative_path'] ?? '');
+                    $success = (bool) ($result['success'] ?? false);
+                } catch (\DomainException $exception) {
+                    $success = false;
+                    $failureMessages[] = $exception->getMessage();
+                } catch (\RuntimeException $exception) {
+                    $success = false;
+                    $failureMessages[] = $exception->getMessage();
+                }
             } else {
                 $deletePhysical = !($item['is_shared'] ?? false);
                 try {
@@ -189,5 +196,18 @@ class AdminMediaController extends Controller
             'preserved_files_count' => $preservedFilesCount,
             'failed_count' => count($failed),
         ], $deletedCount > 0 ? 200 : 400);
+    }
+
+    public function cleanup(Request $request, MediaCleanupService $cleanup)
+    {
+        $validated = $request->validate([
+            'dry_run' => 'nullable|boolean',
+        ]);
+
+        $summary = ! empty($validated['dry_run'])
+            ? $cleanup->preview()
+            : $cleanup->cleanup();
+
+        return response()->json($summary);
     }
 }

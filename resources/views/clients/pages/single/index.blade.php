@@ -11,7 +11,7 @@
     ($settings->site_name ?? 'NOBI FASHION'))
 
 @section('head')
-    <link rel="stylesheet" href="{{ asset('clients/assets/css/single.css?v=' . time()) }}">
+    <link rel="stylesheet" href="{{ asset('clients/assets/css/single.css?v=' . filemtime(public_path('clients/assets/css/single.css'))) }}">
     @if ($product?->primaryImage?->url)
         <link rel="preload" as="image"
             href="{{ asset('clients/assets/img/clothes/' . ($product?->primaryImage?->url ?? 'no-image.webp')) }}"
@@ -149,18 +149,6 @@
     <main class="nobifashion_single">
         <!-- Breadcrumb -->
         <section>
-            @php
-                // Lấy danh mục đầu tiên của sản phẩm
-                $categoryBreadcrumb = $product?->primaryCategory?->first();
-
-                // Truy ngược lên cha để tạo breadcrumb path
-                $breadcrumbPath = collect();
-                while ($categoryBreadcrumb) {
-                    $breadcrumbPath->prepend($categoryBreadcrumb); // đưa vào đầu mảng
-                    $categoryBreadcrumb = $categoryBreadcrumb->parent;
-                }
-            @endphp
-
             <div class="nobifashion_single_breadcrumb">
                 <a href="{{ url('/') }}">Trang chủ</a>
                 <span class="separator">>></span>
@@ -178,159 +166,11 @@
 
         <!-- Thông tin sản phẩm -->
         <section>
-            @php
-                $currentFlashSale = $product->isInFlashSale() ? $product->currentFlashSale()->first() : null;
-                $item = $product->isInFlashSale() ? $product->currentFlashSaleItem()->first() : $product;
-                $original = (float) ($item->original_price ?? ($item->price ?? 0));
-                $sale = (float) ($item->sale_price ?? 0);
-                $displayCurrentPrice = $original > 0 && $sale > 0 && $sale < $original ? $sale : $original;
-                $displayOriginalPrice = $sale > 0 && $sale < $original ? $original : null;
-                $discountPercent = $displayOriginalPrice
-                    ? (int) round((($displayOriginalPrice - $displayCurrentPrice) / $displayOriginalPrice) * 100)
-                    : null;
-                $savedAmount = $displayOriginalPrice ? max(0, $displayOriginalPrice - $displayCurrentPrice) : 0;
-                $galleryImages = $product->images->isNotEmpty() ? $product->images : collect([$product->primaryImage])->filter();
-                $voucherItems = collect($vouchers ?? []);
-                $variants = $product->variants ?? collect();
-                $attributeLabels = [
-                    'size' => 'Kích thước',
-                    'color' => 'Màu sắc',
-                    'weight' => 'Cân nặng',
-                    'material' => 'Chất liệu',
-                    'materials' => 'Chất liệu',
-                    'type' => 'Kiểu dáng',
-                    'types' => 'Kiểu dáng',
-                ];
-                $colorHexMap = [
-                    'trang' => '#f5f5f4',
-                    'white' => '#f5f5f4',
-                    'den' => '#111827',
-                    'black' => '#111827',
-                    'xam' => '#9ca3af',
-                    'grey' => '#9ca3af',
-                    'gray' => '#9ca3af',
-                    'xanh' => '#2563eb',
-                    'blue' => '#2563eb',
-                    'navy' => '#1e3a8a',
-                    'do' => '#dc2626',
-                    'red' => '#dc2626',
-                    'hong' => '#ec4899',
-                    'pink' => '#ec4899',
-                    'vang' => '#f59e0b',
-                    'yellow' => '#f59e0b',
-                    'be' => '#d6b58a',
-                    'kem' => '#f3e8d0',
-                    'nau' => '#8b5e3c',
-                    'brown' => '#8b5e3c',
-                    'xanh la' => '#15803d',
-                    'green' => '#15803d',
-                    'olive' => '#556b2f',
-                    'cam' => '#f97316',
-                    'orange' => '#f97316',
-                    'tim' => '#7c3aed',
-                    'purple' => '#7c3aed',
-                ];
-                $resolveSwatchColor = function (?string $value) use ($colorHexMap) {
-                    $normalized = mb_strtolower(\Illuminate\Support\Str::ascii(trim((string) $value)));
-                    foreach ($colorHexMap as $keyword => $hex) {
-                        if (str_contains($normalized, $keyword)) {
-                            return $hex;
-                        }
-                    }
-
-                    return 'linear-gradient(135deg, #e5e7eb 0%, #9ca3af 100%)';
-                };
-                $attributeKeys = collect($product->variants)
-                    ->pluck('attributes')
-                    ->map(fn($attr) => is_string($attr) ? json_decode($attr, true) : $attr)
-                    ->flatMap(fn($attr) => array_keys($attr ?? []))
-                    ->unique()
-                    ->values();
-                $attributesGrouped = [];
-                foreach ($attributeKeys as $key) {
-                    $attributesGrouped[$key] = collect($product->variants)
-                        ->pluck('attributes')
-                        ->map(fn($attr) => is_string($attr) ? json_decode($attr, true) : $attr)
-                        ->pluck($key)
-                        ->unique()
-                        ->filter()
-                        ->values();
-                }
-                $variantsJson = $product->variants
-                    ->map(function ($variantItem) {
-                        $attrs = is_string($variantItem->attributes)
-                            ? json_decode($variantItem->attributes, true)
-                            : $variantItem->attributes;
-                        $variantImage = optional($variantItem->primaryVariantImage);
-
-                        return [
-                            'id' => $variantItem->id,
-                            'stock' => (int) $variantItem->stock_quantity,
-                            'price' => (float) ($variantItem->price ?? 0),
-                            'attrs' => $attrs,
-                            'image_url' => $variantImage->url ?? $variantImage->thumbnail_url ?? null,
-                        ];
-                    })
-                    ->toJson();
-                $bestVoucherPrice = null;
-                foreach ($voucherItems as $voucher) {
-                    $minOrder = (float) ($voucher->min_order_amount ?? 0);
-                    if ($minOrder > 0 && $displayCurrentPrice < $minOrder) {
-                        continue;
-                    }
-
-                    $discount = 0;
-                    if (($voucher->type ?? '') === 'percentage') {
-                        $discount = $displayCurrentPrice * ((float) ($voucher->value ?? 0) / 100);
-                        $maxDiscount = (float) ($voucher->max_discount_amount ?? 0);
-                        if ($maxDiscount > 0) {
-                            $discount = min($discount, $maxDiscount);
-                        }
-                    } elseif (($voucher->type ?? '') === 'fixed_amount') {
-                        $discount = (float) ($voucher->value ?? 0);
-                    }
-
-                    if ($discount > 0) {
-                        $candidate = max(0, $displayCurrentPrice - $discount);
-                        $bestVoucherPrice = $bestVoucherPrice === null ? $candidate : min($bestVoucherPrice, $candidate);
-                    }
-                }
-                $voucherCards = $voucherItems->take(5)->map(function ($voucher) {
-                    $type = $voucher->type ?? '';
-                    $value = (float) ($voucher->value ?? 0);
-
-                    return [
-                        'code' => $voucher->code ?? '',
-                        'icon' => $type === 'free_ship' ? '🚚' : '%',
-                        'accent' => $type === 'free_ship' ? '#1a73e8' : '#e5252a',
-                        'label' => match ($type) {
-                            'free_ship' => 'FreeShip',
-                            'percentage' => 'Giảm ' . number_format($value, 0, ',', '.') . '%',
-                            'fixed_amount' => 'Giảm ' . number_format($value, 0, ',', '.') . 'đ',
-                            default => $voucher->code ?? 'Ưu đãi',
-                        },
-                    ];
-                });
-                $defaultStockValue = $variants->isNotEmpty()
-                    ? (int) ($variants->max('stock_quantity') ?? 0)
-                    : (int) ($product->stock_quantity ?? 0);
-                $defaultStockBase = max(1, $defaultStockValue);
-                $defaultStockPercent = min(100, max(8, (int) round(($defaultStockValue / $defaultStockBase) * 100)));
-                $defaultStockNote = $variants->isNotEmpty()
-                    ? 'Chọn đủ thuộc tính để xem tồn kho chính xác.'
-                    : ($defaultStockValue > 0 ? 'Sản phẩm đang sẵn hàng, có thể đặt mua ngay.' : 'Sản phẩm đang tạm hết hàng.');
-            @endphp
-
             <script>
                 const variants = {!! $variantsJson !!};
             </script>
 
-            @if ($product->isInFlashSale() && $currentFlashSale)
-                @php
-                    $flashSaleStock = max(1, (int) ($item->stock ?? 0));
-                    $flashSaleSold = max(0, (int) ($item->sold ?? 0));
-                    $flashSalePercent = min(100, (int) round(($flashSaleSold / $flashSaleStock) * 100));
-                @endphp
+            @if ($hasFlashSale && $currentFlashSale)
                 <script>
                     const endTime = new Date("{{ $currentFlashSale->end_time }}").getTime();
                 </script>
@@ -411,7 +251,7 @@
                     </div>
 
                     <div class="nobifashion_single_info_detail nobifashion_single_info_specifications">
-                        @if ($product->isInFlashSale() && $currentFlashSale)
+                        @if ($hasFlashSale && $currentFlashSale)
                             <div class="nobifashion_single_info_flashsale nobifashion_single_info_specifications_deal">
                                 <div class="nobifashion_single_info_specifications_label">
                                     ⚡ Săn deal
@@ -561,116 +401,69 @@
                         </div>
 
                         @if ($variants->isNotEmpty())
-                            @foreach ($attributesGrouped as $key => $values)
-                                @php
-                                    $normalizedKey = \Illuminate\Support\Str::lower($key);
-                                    $label = $attributeLabels[$normalizedKey] ?? ucfirst($key);
-                                    $optionClass = match ($normalizedKey) {
-                                        'size' => 'size-option',
-                                        'color' => 'color-option',
-                                        'material', 'materials' => 'material-option',
-                                        'weight' => 'weight-option',
-                                        default => 'type-option',
-                                    };
-                                @endphp
+                            @foreach ($variantGroups as $group)
 
-                                @if ($normalizedKey === 'color')
-                                    <div class="nobifashion_single_info_specifications_{{ $normalizedKey }} nobifashion_single_info_variant_group">
+                                @if ($group['type'] === 'color')
+                                    <div class="nobifashion_single_info_specifications_{{ $group['normalized_key'] }} nobifashion_single_info_variant_group">
                                         <div class="nobifashion_single_info_color_label">
-                                            {{ $label }}:
-                                            <span id="selected-{{ $key }}">-</span>
+                                            {{ $group['label'] }}:
+                                            <span id="selected-{{ $group['key'] }}">-</span>
                                         </div>
                                         <div class="nobifashion_single_info_color_list color-list">
-                                            @foreach ($values as $val)
-                                                @php
-                                                    $stock = $variants
-                                                        ->filter(function ($variantItem) use ($key, $val) {
-                                                            $attrs = is_string($variantItem->attributes)
-                                                                ? json_decode($variantItem->attributes, true)
-                                                                : $variantItem->attributes;
-
-                                                            return isset($attrs[$key]) && $attrs[$key] === $val;
-                                                        })
-                                                        ->sum('stock_quantity');
-                                                    $isDisabled = $stock <= 0;
-                                                @endphp
+                                            @foreach ($group['values'] as $option)
                                                 <button
                                                     type="button"
-                                                    class="nobifashion_single_info_color_swatch {{ $optionClass }}"
-                                                    data-attr-key="{{ $key }}"
-                                                    data-attr-value="{{ $val }}"
-                                                    title="{{ $val }}"
-                                                    aria-label="{{ $val }}"
-                                                    style="background: {{ $resolveSwatchColor($val) }}"
-                                                    {{ $isDisabled ? 'disabled' : '' }}>
-                                                    <span class="nobifashion_single_info_color_swatch_text">{{ mb_substr($val, 0, 1) }}</span>
+                                                    class="nobifashion_single_info_color_swatch {{ $group['option_class'] }}"
+                                                    data-attr-key="{{ $group['key'] }}"
+                                                    data-attr-value="{{ $option['value'] }}"
+                                                    title="{{ $option['value'] }}"
+                                                    aria-label="{{ $option['value'] }}"
+                                                    style="background: {{ $option['swatch'] }}"
+                                                    {{ $option['disabled'] ? 'disabled' : '' }}>
+                                                    <span class="nobifashion_single_info_color_swatch_text">{{ mb_substr($option['value'], 0, 1) }}</span>
                                                 </button>
                                             @endforeach
                                         </div>
                                     </div>
-                                @elseif ($normalizedKey === 'size')
-                                    <div class="nobifashion_single_info_specifications_{{ $normalizedKey }} nobifashion_single_info_variant_group">
+                                @elseif ($group['type'] === 'size')
+                                    <div class="nobifashion_single_info_specifications_{{ $group['normalized_key'] }} nobifashion_single_info_variant_group">
                                         <div class="nobifashion_single_info_size_row">
                                             <span class="nobifashion_single_info_size_label">
-                                                {{ $label }}:
-                                                <span id="selected-{{ $key }}">-</span>
+                                                {{ $group['label'] }}:
+                                                <span id="selected-{{ $group['key'] }}">-</span>
                                             </span>
                                             <a onclick="tabSizeGuide()" href="#nobifashion_main_tab_size_guide" class="nobifashion_single_info_size_guide">
                                                 Tư vấn chọn size
                                             </a>
                                         </div>
                                         <div class="nobifashion_single_info_size_list size-list">
-                                            @foreach ($values as $val)
-                                                @php
-                                                    $stock = $variants
-                                                        ->filter(function ($variantItem) use ($key, $val) {
-                                                            $attrs = is_string($variantItem->attributes)
-                                                                ? json_decode($variantItem->attributes, true)
-                                                                : $variantItem->attributes;
-
-                                                            return isset($attrs[$key]) && $attrs[$key] === $val;
-                                                        })
-                                                        ->sum('stock_quantity');
-                                                    $isDisabled = $stock <= 0;
-                                                @endphp
+                                            @foreach ($group['values'] as $option)
                                                 <button
                                                     type="button"
-                                                    class="nobifashion_single_info_size_btn {{ $optionClass }}"
-                                                    data-attr-key="{{ $key }}"
-                                                    data-attr-value="{{ $val }}"
-                                                    {{ $isDisabled ? 'disabled' : '' }}>
-                                                    {{ $val }}
+                                                    class="nobifashion_single_info_size_btn {{ $group['option_class'] }}"
+                                                    data-attr-key="{{ $group['key'] }}"
+                                                    data-attr-value="{{ $option['value'] }}"
+                                                    {{ $option['disabled'] ? 'disabled' : '' }}>
+                                                    {{ $option['value'] }}
                                                 </button>
                                             @endforeach
                                         </div>
                                     </div>
                                 @else
-                                    <div class="nobifashion_single_info_specifications_{{ $normalizedKey }} nobifashion_single_info_variant_group">
+                                    <div class="nobifashion_single_info_specifications_{{ $group['normalized_key'] }} nobifashion_single_info_variant_group">
                                         <div class="nobifashion_single_info_option_label">
-                                            {{ $label }}:
-                                            <span id="selected-{{ $key }}">-</span>
+                                            {{ $group['label'] }}:
+                                            <span id="selected-{{ $group['key'] }}">-</span>
                                         </div>
-                                        <div class="nobifashion_single_info_option_list {{ $normalizedKey }}-list">
-                                            @foreach ($values as $val)
-                                                @php
-                                                    $stock = $variants
-                                                        ->filter(function ($variantItem) use ($key, $val) {
-                                                            $attrs = is_string($variantItem->attributes)
-                                                                ? json_decode($variantItem->attributes, true)
-                                                                : $variantItem->attributes;
-
-                                                            return isset($attrs[$key]) && $attrs[$key] === $val;
-                                                        })
-                                                        ->sum('stock_quantity');
-                                                    $isDisabled = $stock <= 0;
-                                                @endphp
+                                        <div class="nobifashion_single_info_option_list {{ $group['normalized_key'] }}-list">
+                                            @foreach ($group['values'] as $option)
                                                 <button
                                                     type="button"
-                                                    class="nobifashion_single_info_option_btn {{ $optionClass }}"
-                                                    data-attr-key="{{ $key }}"
-                                                    data-attr-value="{{ $val }}"
-                                                    {{ $isDisabled ? 'disabled' : '' }}>
-                                                    {{ $val }}
+                                                    class="nobifashion_single_info_option_btn {{ $group['option_class'] }}"
+                                                    data-attr-key="{{ $group['key'] }}"
+                                                    data-attr-value="{{ $option['value'] }}"
+                                                    {{ $option['disabled'] ? 'disabled' : '' }}>
+                                                    {{ $option['value'] }}
                                                 </button>
                                             @endforeach
                                         </div>
@@ -717,14 +510,23 @@
                                 </div>
                             </div>
 
-                            <button
-                                disabled
-                                type="submit"
-                                name="action"
-                                value="buy_now"
-                                class="nobifashion_single_info_buy_now nobifashion_single_info_specifications_actions_buy disabled">
-                                MUA NGAY
-                            </button>
+                            <div class="nobifashion_single_info_buy_group">
+                                <button
+                                    disabled
+                                    type="submit"
+                                    name="action"
+                                    value="buy_now"
+                                    class="nobifashion_single_info_buy_now nobifashion_single_info_specifications_actions_buy disabled">
+                                    MUA NGAY
+                                </button>
+
+                                @if($product->link_shopee)
+                                <button type="button" data-shopee="{{ $product->link_shopee }}" class="nobifashion_single_info_buy_shopee">
+                                    <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="0 0 109.59 122.88" style="enable-background:new 0 0 109.59 122.88" xml:space="preserve"><style type="text/css">.st0{fill:#EE4D2D;}</style><g><path class="st0" d="M74.98,91.98C76.15,82.36,69.96,76.22,53.6,71c-7.92-2.7-11.66-6.24-11.57-11.12 c0.33-5.4,5.36-9.34,12.04-9.47c4.63,0.09,9.77,1.22,14.76,4.56c0.59,0.37,1.01,0.32,1.35-0.2c0.46-0.74,1.61-2.53,2-3.17 c0.26-0.42,0.31-0.96-0.35-1.44c-0.95-0.7-3.6-2.13-5.03-2.72c-3.88-1.62-8.23-2.64-12.86-2.63c-9.77,0.04-17.47,6.22-18.12,14.47 c-0.42,5.95,2.53,10.79,8.86,14.47c1.34,0.78,8.6,3.67,11.49,4.57c9.08,2.83,13.8,7.9,12.69,13.81c-1.01,5.36-6.65,8.83-14.43,8.93 c-6.17-0.24-11.71-2.75-16.02-6.1c-0.11-0.08-0.65-0.5-0.72-0.56c-0.53-0.42-1.11-0.39-1.47,0.15c-0.26,0.4-1.92,2.8-2.34,3.43 c-0.39,0.55-0.18,0.86,0.23,1.2c1.8,1.5,4.18,3.14,5.81,3.97c4.47,2.28,9.32,3.53,14.48,3.72c3.32,0.22,7.5-0.49,10.63-1.81 C70.63,102.67,74.25,97.92,74.98,91.98L74.98,91.98z M54.79,7.18c-10.59,0-19.22,9.98-19.62,22.47h39.25 C74.01,17.16,65.38,7.18,54.79,7.18L54.79,7.18z M94.99,122.88l-0.41,0l-80.82-0.01h0c-5.5-0.21-9.54-4.66-10.09-10.19l-0.05-1 l-3.61-79.5v0C0,32.12,0,32.06,0,32c0-1.28,1.03-2.33,2.3-2.35l0,0h25.48C28.41,13.15,40.26,0,54.79,0s26.39,13.15,27.01,29.65 h25.4h0.04c1.3,0,2.35,1.05,2.35,2.35c0,0.04,0,0.08,0,0.12v0l-3.96,79.81l-0.04,0.68C105.12,118.21,100.59,122.73,94.99,122.88 L94.99,122.88z"/></g></svg>
+                                    Mua trên Shopee
+                                </button>
+                                @endif
+                            </div>
                         </form>
 
                         <div class="nobifashion_single_info_stock">
@@ -1055,4 +857,21 @@
             </div>
         </div>
     </div>
+
+    @if($product->link_shopee)
+    <!-- Floating Shopee Banner -->
+    <div id="shopee-floating-banner" class="shopee-floating-banner shopee-clickable-banner" data-shopee="{{ $product->link_shopee }}">
+        <button type="button" class="shopee-floating-banner-close" aria-label="Đóng banner">&times;</button>
+        <div class="shopee-floating-banner-content">
+            <div class="shopee-floating-banner-icon">
+                <svg viewBox="0 0 109.59 122.88" width="28" height="28"><path fill="#EE4D2D" d="M74.98,91.98C76.15,82.36,69.96,76.22,53.6,71c-7.92-2.7-11.66-6.24-11.57-11.12 c0.33-5.4,5.36-9.34,12.04-9.47c4.63,0.09,9.77,1.22,14.76,4.56c0.59,0.37,1.01,0.32,1.35-0.2c0.46-0.74,1.61-2.53,2-3.17 c0.26-0.42,0.31-0.96-0.35-1.44c-0.95-0.7-3.6-2.13-5.03-2.72c-3.88-1.62-8.23-2.64-12.86-2.63c-9.77,0.04-17.47,6.22-18.12,14.47 c-0.42,5.95,2.53,10.79,8.86,14.47c1.34,0.78,8.6,3.67,11.49,4.57c9.08,2.83,13.8,7.9,12.69,13.81c-1.01,5.36-6.65,8.83-14.43,8.93 c-6.17-0.24-11.71-2.75-16.02-6.1c-0.11-0.08-0.65-0.5-0.72-0.56c-0.53-0.42-1.11-0.39-1.47,0.15c-0.26,0.4-1.92,2.8-2.34,3.43 c-0.39,0.55-0.18,0.86,0.23,1.2c1.8,1.5,4.18,3.14,5.81,3.97c4.47,2.28,9.32,3.53,14.48,3.72c3.32,0.22,7.5-0.49,10.63-1.81 C70.63,102.67,74.25,97.92,74.98,91.98L74.98,91.98z M54.79,7.18c-10.59,0-19.22,9.98-19.62,22.47h39.25 C74.01,17.16,65.38,7.18,54.79,7.18L54.79,7.18z M94.99,122.88l-0.41,0l-80.82-0.01h0c-5.5-0.21-9.54-4.66-10.09-10.19l-0.05-1 l-3.61-79.5v0C0,32.12,0,32.06,0,32c0-1.28,1.03-2.33,2.3-2.35l0,0h25.48C28.41,13.15,40.26,0,54.79,0s26.39,13.15,27.01,29.65 h25.4h0.04c1.3,0,2.35,1.05,2.35,2.35c0,0.04,0,0.08,0,0.12v0l-3.96,79.81l-0.04,0.68C105.12,118.21,100.59,122.73,94.99,122.88 L94.99,122.88z"/></svg>
+            </div>
+            <div class="shopee-floating-banner-text">
+                <div class="shopee-floating-banner-title">Sản phẩm có trên Shopee!</div>
+                <div class="shopee-floating-banner-desc">Mua ngay để nhận mã miễn phí vận chuyển & voucher ưu đãi.</div>
+            </div>
+            <div class="shopee-floating-banner-btn">MUA NGAY</div>
+        </div>
+    </div>
+    @endif
 @endsection

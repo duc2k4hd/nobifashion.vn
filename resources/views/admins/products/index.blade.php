@@ -462,8 +462,6 @@
             const selectAll = document.getElementById('select-all-products');
             const productCheckboxes = document.querySelectorAll('.product-checkbox');
             const bulkForm = document.getElementById('bulk-action-form');
-            const importForm = document.getElementById('products-inline-import-form');
-            const importFileInput = document.getElementById('products-inline-import-file');
 
             if (selectAll) {
                 selectAll.addEventListener('change', () => {
@@ -479,33 +477,6 @@
                     if (!hasSelected) {
                         event.preventDefault();
                         alert('Vui lòng chọn ít nhất một sản phẩm trước khi thực hiện hành động.');
-                    }
-                });
-            }
-
-            if (importForm && importFileInput) {
-                const maxSizeMb = Number(importFileInput.dataset.maxSizeMb || 50);
-                const maxBytes = maxSizeMb * 1024 * 1024;
-
-                const validateImportFile = () => {
-                    const file = importFileInput.files && importFileInput.files[0] ? importFileInput.files[0] : null;
-                    if (!file) {
-                        return true;
-                    }
-
-                    if (file.size > maxBytes) {
-                        window.alert(`File quá lớn. Vui lòng chọn file nhỏ hơn ${maxSizeMb}MB.`);
-                        importFileInput.value = '';
-                        return false;
-                    }
-
-                    return true;
-                };
-
-                importFileInput.addEventListener('change', validateImportFile);
-                importForm.addEventListener('submit', (event) => {
-                    if (!validateImportFile()) {
-                        event.preventDefault();
                     }
                 });
             }
@@ -550,17 +521,14 @@
                 </div>
             </div>
 
-            <form id="products-inline-import-form" method="POST" action="{{ route('admin.products.import-excel.process') }}" enctype="multipart/form-data" class="products-import-form">
-                @csrf
-
+            <div class="products-import-form">
                 <div class="products-import-field">
-                    <label for="products-inline-import-file">Chọn file Excel</label>
-                    <input type="file" name="excel_file" id="products-inline-import-file" accept=".xlsx,.xls" required data-max-size-mb="50">
-                    <div class="products-import-hint">Chỉ chấp nhận file `.xlsx` hoặc `.xls` (tối đa 50MB).</div>
+                    <label>Import Excel</label>
+                    <div class="products-import-hint">Luồng import lớn được chuyển sang trang import riêng, chạy client-side chia chunk + nhiều worker để tránh timeout.</div>
                 </div>
 
-                <button type="submit" class="btn btn-primary">Nhập Excel</button>
-            </form>
+                <a href="{{ route('admin.products.import-excel') }}" class="btn btn-primary">Mở trang import</a>
+            </div>
         </section>
 
         <section class="products-filters">

@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Category;
+use App\Models\Product;
 use App\Models\Setting;
 use App\Models\Favorite;
 use Illuminate\Support\Facades\Cache;
@@ -44,6 +45,7 @@ class ViewServiceProvider extends ServiceProvider
                         ->toArray();
                 });
 
+                config(['settings' => $settings]);
                 View::share('settings', (object) $settings);
             }
         } catch (\Throwable $e) {
@@ -53,29 +55,61 @@ class ViewServiceProvider extends ServiceProvider
         // --- CATEGORIES ---
         try {
             if (Schema::hasTable('categories')) {
-            // Load categories với children và grandchildren (nested eager loading)
-            $categories = Category::query()
-                ->where('is_active', true)
-                ->whereNull('parent_id')
-                ->orderBy('sort_order')
-                ->orderBy('name')
-                ->with([
-                    'children' => function($query) {
-                        $query->where('is_active', true)
-                            ->orderBy('sort_order')
-                            ->orderBy('name')
-                            ->with([
-                                'children' => function($subQuery) {
-                                    $subQuery->where('is_active', true)
-                                        ->orderBy('sort_order')
-                                        ->orderBy('name');
-                                }
-                            ]);
-                    }
-                ])
-                ->get();
+                $categories = Cache::remember('view.categories.tree.v1', now()->addMinutes(15), function () {
+                    return Category::query()
+                        ->where('is_active', true)
+                        ->whereNull('parent_id')
+                        ->orderBy('sort_order')
+                        ->orderBy('name')
+                        ->with([
+                            'children' => function ($query) {
+                                $query->where('is_active', true)
+                                    ->orderBy('sort_order')
+                                    ->orderBy('name')
+                                    ->with([
+                                        'children' => function ($subQuery) {
+                                            $subQuery->where('is_active', true)
+                                                ->orderBy('sort_order')
+                                                ->orderBy('name');
+                                        }
+                                    ]);
+                            }
+                        ])
+                        ->get();
+                });
 
                 View::share('categories', $categories);
+
+                $headerCategoryProducts = Cache::remember('view.header.category_products.v1', now()->addMinutes(15), function () use ($categories) {
+                    $previewMap = [];
+
+                    foreach ($categories as $category) {
+                        $childIds = $category->children->pluck('id')->all();
+                        $categoryIds = array_values(array_unique(array_merge([$category->id], $childIds)));
+
+                        $previewMap[$category->id] = Product::query()
+                            ->active()
+                            ->select([
+                                'id',
+                                'name',
+                                'slug',
+                                'price',
+                                'sale_price',
+                                'is_featured',
+                                'created_at',
+                                'primary_category_id',
+                                'category_ids',
+                            ])
+                            ->inCategory($categoryIds)
+                            ->with(['primaryImage:id,product_id,url,alt,title'])
+                            ->limit(5)
+                            ->get();
+                    }
+
+                    return $previewMap;
+                });
+
+                View::share('headerCategoryProducts', $headerCategoryProducts);
             }
         } catch (\Throwable $e) {
             // Bỏ qua lỗi khi database chưa sẵn sàng

@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="{{ asset('clients/assets/css/home.css') }}">
     @if ((optional($banners->first())->order ?? 1) == 0)
         <link rel="preload" as="image"
-            href="{{ asset('clients/assets/img/banners/' . (optional($banners->first())->image ?? 'banner.webp')) }}"
+            href="{{ asset('clients/assets/img/banners/' . (optional($banners->first())->image_desktop ?? 'banner.webp')) }}"
             fetchpriority="high">
     @endif
 
@@ -107,7 +107,7 @@
                 <div class="nobifashion_main_slider_main_slider_track">
                     @foreach($banners as $i => $banner)
                         <div class="nobifashion_main_slider_main_slide">
-                            <img {{ $i === 0 ? 'loading=eager fetchpriority=high' : 'loading=lazy' }} src="{{ asset('clients/assets/img/banners/' . ($banner->image_desktop ?? 'no-banner.webp')) }}" alt="{{ $banner->title ?? 'Banner' }}">
+                            <img {{ $i === 0 ? 'loading=eager fetchpriority=high' : 'loading=lazy decoding=async' }} src="{{ asset('clients/assets/img/banners/' . ($banner->image_desktop ?? 'no-banner.webp')) }}" alt="{{ $banner->title ?? 'Banner' }}">
                         </div>
                     @endforeach
                 </div>
@@ -126,7 +126,7 @@
             <aside class="nobifashion_main_slider_main_side">
                 @foreach($home_banner as $banner)
                     <a href="{{ $banner->link }}" target="{{ $banner->taget }}" rel="noopener">
-                        <img src="{{ asset('clients/assets/img/banners/' . ($banner->image_desktop ?? 'no-banner.webp')) }}" alt="{{ $banner->title ?? 'Banner' }}">
+                        <img loading="lazy" decoding="async" src="{{ asset('clients/assets/img/banners/' . ($banner->image_desktop ?? 'no-banner.webp')) }}" alt="{{ $banner->title ?? 'Banner' }}">
                     </a>
                 @endforeach
             </aside>
@@ -169,28 +169,30 @@
 
         {{-- Flash Sale --}}
         @if ($flashSale && $flashSale->items && $flashSale->items->isNotEmpty())
-            @php
-                // Normalize flash sale end time to seconds (timezone-aware); JS expects ms
-                $normalizeTs = function ($v) {
-                    if ($v instanceof \Illuminate\Support\Carbon) {
-                        return $v->timezone(config('app.timezone', 'Asia/Ho_Chi_Minh'))->timestamp;
-                    }
-                    if (is_numeric($v)) {
-                        $n = (int) $v;
-                        return $n > 2147483647 ? (int) floor($n / 1000) : $n; // ms to s
-                    }
-                    if (!empty($v)) {
-                        return \Illuminate\Support\Carbon::parse($v, config('app.timezone', 'Asia/Ho_Chi_Minh'))->timestamp;
-                    }
-                    return null;
-                };
-                $homeFlashEndRaw = $flashSale->end_time ?? ($flashSale->ends_at ?? ($flashSale->endAt ?? null));
-                $homeFlashEnd = $normalizeTs($homeFlashEndRaw) ?: now()->addHours(6)->timestamp;
-            @endphp
             <script>
-                const timeFlashSale = {{ $homeFlashEnd * 1000 }}; // milliseconds
+                const timeFlashSale = {{ $flashSaleEndsAtMs ?? now()->addHours(6)->valueOf() }};
             </script>
             <section class="nobifashion_flash_sale">
+                <style>
+                    .flash-sale-hot {
+                        color: #e53935;
+                        font-weight: 700;
+                    }
+
+                    .flash-sale-low {
+                        color: #ff9800;
+                        font-weight: 700;
+                    }
+
+                    .flash-sale-sold {
+                        color: #423d3d;
+                    }
+
+                    .flash-sale-sold-out {
+                        color: #b91c1c;
+                        font-weight: 700;
+                    }
+                </style>
                 <div class="nobifashion_flash_sale_header">
                     <h2 class="nobifashion_flash_sale_title">
                         FLASH SALE ⚡
@@ -219,7 +221,7 @@
                                         {{ $productSale->product->primaryCategory->name ?? 'Sản phẩm' }}
                                     </div>
                                     <a href="/san-pham/{{ $productSale->product->slug ?? '' }}">
-                                        <img src="{{ asset('clients/assets/img/clothes/' . ($productSale->product->primaryImage->url ?? 'no-image.webp')) }}"
+                                        <img loading="lazy" decoding="async" src="{{ asset('clients/assets/img/clothes/' . ($productSale->product->primaryImage->url ?? 'no-image.webp')) }}"
                                             alt="{{ $productSale->product->primaryImage->alt ?? renderMeta($productSale->product->name ?? 'Sản phẩm thời trang') }}"
                                             class="nobifashion_flash_sale_img">
                                     </a>
@@ -263,26 +265,6 @@
                                             @else
                                                 <span class="flash-sale-sold">ĐÃ BÁN {{ $sold }}</span>
                                             @endif
-                                            <style>
-                                                .flash-sale-hot {
-                                                    color: #e53935;
-                                                    font-weight: bold;
-                                                }
-
-                                                .flash-sale-low {
-                                                    color: #ff9800;
-                                                    font-weight: bold;
-                                                }
-
-                                                .flash-sale-sold {
-                                                    color: #423d3d;
-                                                }
-
-                                                .flash-sale-sold-out {
-                                                    color: #b91c1c;
-                                                    font-weight: bold;
-                                                }
-                                            </style>
                                         </div>
                                         <div class="nobifashion_flash_sale_progress">
                                             <div class="nobifashion_flash_sale_progress_fill"
@@ -334,18 +316,14 @@
             <div class="nobifashion_main_categories_list">
                 @foreach ($categories as $category)
                     @foreach ($category->children as $child)
-                        @php
-                            $productCount = App\Models\Product::active()->inCategory($child->id)->count();
-                        @endphp
-
                         <div class="nobifashion_main_categories_item">
                             <a href="/{{ $child->slug }}">
-                                <img loading="lazy" draggable="false"
+                                <img loading="lazy" decoding="async" draggable="false"
                                     class="nobifashion_main_categories_item_img"
                                     src="{{ asset('clients/assets/img/categories/' . ($child->image ?? 'category.webp')) }}"
                                     alt="{{ $child->name }}">
                                 <h3 class="nobifashion_main_categories_item_title">{{ $child->name }}</h3>
-                                <p class="nobifashion_main_categories_item_quantity">{{ $productCount }} sản phẩm</p>
+                                <p class="nobifashion_main_categories_item_quantity">{{ $featuredCategoryCounts[$child->id] ?? 0 }} sản phẩm</p>
                             </a>
                         </div>
                     @endforeach
@@ -359,61 +337,67 @@
         {{-- Section: Men, Women, Household Collections --}}
         <section class="nobifashion_collections">
             {{-- Men's Collection --}}
-            <div class="nobifashion_collection_section">
-                <div class="nobifashion_collection_header">
-                    <h2 class="nobifashion_collection_title">THỜI TRANG NAM</h2>
-                    <a href="/thoi-trang-nam" class="nobifashion_collection_link">Xem tất cả</a>
+            @if($menProducts->isNotEmpty())
+                <div class="nobifashion_collection_section">
+                    <div class="nobifashion_collection_header">
+                        <h2 class="nobifashion_collection_title">THỜI TRANG NAM</h2>
+                        <a href="/thoi-trang-nam" class="nobifashion_collection_link">Xem tất cả</a>
+                    </div>
+                    <div class="nobifashion_collection_grid">
+                        @foreach($menProducts as $product)
+                            <div class="nobifashion_collection_item">
+                                <a href="/san-pham/{{ $product->slug }}">
+                                    <img loading="lazy" decoding="async" src="{{ asset('clients/assets/img/clothes/' . ($product->primaryImage->url ?? 'no-image.webp')) }}" alt="{{ $product->name }}">
+                                    <h3>{{ $product->name }}</h3>
+                                    <p>{{ number_format($product->sale_price ?? $product->price, 0, ',', '.') }}đ</p>
+                                </a>
+                            </div>
+                        @endforeach
+                    </div>
                 </div>
-                <div class="nobifashion_collection_grid">
-                    @foreach($menProducts as $product)
-                        <div class="nobifashion_collection_item">
-                            <a href="/san-pham/{{ $product->slug }}">
-                                <img src="{{ asset('clients/assets/img/clothes/' . ($product->primaryImage->url ?? 'no-image.webp')) }}" alt="{{ $product->name }}">
-                                <h3>{{ $product->name }}</h3>
-                                <p>{{ number_format($product->sale_price ?? $product->price, 0, ',', '.') }}đ</p>
-                            </a>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
+            @endif
 
             {{-- Women's Collection --}}
-            <div class="nobifashion_collection_section">
-                <div class="nobifashion_collection_header">
-                    <h2 class="nobifashion_collection_title">THỜI TRANG NỮ</h2>
-                    <a href="/thoi-trang-nu" class="nobifashion_collection_link">Xem tất cả</a>
+            @if($womenProducts->isNotEmpty())
+                <div class="nobifashion_collection_section">
+                    <div class="nobifashion_collection_header">
+                        <h2 class="nobifashion_collection_title">THỜI TRANG NỮ</h2>
+                        <a href="/thoi-trang-nu" class="nobifashion_collection_link">Xem tất cả</a>
+                    </div>
+                    <div class="nobifashion_collection_grid">
+                        @foreach($womenProducts as $product)
+                            <div class="nobifashion_collection_item">
+                                <a href="/san-pham/{{ $product->slug }}">
+                                    <img loading="lazy" decoding="async" src="{{ asset('clients/assets/img/clothes/' . ($product->primaryImage->url ?? 'no-image.webp')) }}" alt="{{ $product->name }}">
+                                    <h3>{{ $product->name }}</h3>
+                                    <p>{{ number_format($product->sale_price ?? $product->price, 0, ',', '.') }}đ</p>
+                                </a>
+                            </div>
+                        @endforeach
+                    </div>
                 </div>
-                <div class="nobifashion_collection_grid">
-                    @foreach($womenProducts as $product)
-                        <div class="nobifashion_collection_item">
-                            <a href="/san-pham/{{ $product->slug }}">
-                                <img src="{{ asset('clients/assets/img/clothes/' . ($product->primaryImage->url ?? 'no-image.webp')) }}" alt="{{ $product->name }}">
-                                <h3>{{ $product->name }}</h3>
-                                <p>{{ number_format($product->sale_price ?? $product->price, 0, ',', '.') }}đ</p>
-                            </a>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
+            @endif
 
             {{-- Household Collection --}}
-            <div class="nobifashion_collection_section">
-                <div class="nobifashion_collection_header">
-                    <h2 class="nobifashion_collection_title">ĐỒ GIA DỤNG</h2>
-                    <a href="/do-gia-dung" class="nobifashion_collection_link">Xem tất cả</a>
+            @if($sportProducts->isNotEmpty())
+                <div class="nobifashion_collection_section">
+                    <div class="nobifashion_collection_header">
+                        <h2 class="nobifashion_collection_title">ĐỒ GIA DỤNG</h2>
+                        <a href="/do-gia-dung" class="nobifashion_collection_link">Xem tất cả</a>
+                    </div>
+                    <div class="nobifashion_collection_grid">
+                        @foreach($sportProducts as $product)
+                            <div class="nobifashion_collection_item">
+                                <a href="/san-pham/{{ $product->slug }}">
+                                    <img loading="lazy" decoding="async" src="{{ asset('clients/assets/img/clothes/' . ($product->primaryImage->url ?? 'no-image.webp')) }}" alt="{{ $product->name }}">
+                                    <h3>{{ $product->name }}</h3>
+                                    <p>{{ number_format($product->sale_price ?? $product->price, 0, ',', '.') }}đ</p>
+                                </a>
+                            </div>
+                        @endforeach
+                    </div>
                 </div>
-                <div class="nobifashion_collection_grid">
-                    @foreach($sportProducts as $product)
-                        <div class="nobifashion_collection_item">
-                            <a href="/san-pham/{{ $product->slug }}">
-                                <img src="{{ asset('clients/assets/img/clothes/' . ($product->primaryImage->url ?? 'no-image.webp')) }}" alt="{{ $product->name }}">
-                                <h3>{{ $product->name }}</h3>
-                                <p>{{ number_format($product->sale_price ?? $product->price, 0, ',', '.') }}đ</p>
-                            </a>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
+            @endif
         </section>
 
         <hr>
@@ -439,7 +423,9 @@
                                         hành</span>
                                 </div>
                                 <div class="nobifashion_main_popular_products_item_img">
-                                    <img draggable="false" loading="lazy" width="160" height="160"
+
+                                    {{-- Bỏ tạm khung frame đi --}}
+                                    {{-- <img draggable="false" loading="lazy" width="200" height="300"
                                         class="nobifashion_main_popular_products_item_img_img"
                                         src="{{ asset('clients/assets/img/clothes/' . ($product?->primaryImage?->url ?? 'no-image.webp')) }}"
                                         alt="{{ $product?->primary_image?->alt ?? renderMeta($product?->name ?? 'Sản phẩm thời trang') }}">
@@ -449,6 +435,14 @@
                                             src="{{ asset('clients/assets/img/frame/' . ($product?->frame ?? 'frame-default.webp')) }}"
                                             alt="Khung ảnh sản phẩm"
                                             title="{{ renderMeta($product?->name ?? 'Sản phẩm thời trang') }}">
+                                    </a> --}}
+
+                                    <a class="nobifashion_main_popular_products_item_img_khung"
+                                        href="/san-pham/{{ $product?->slug ?? '' }}">
+                                        <img draggable="false" loading="lazy" decoding="async" width="200" height="300"
+                                            class="nobifashion_main_popular_products_item_img_img"
+                                            src="{{ asset('clients/assets/img/clothes/' . ($product?->primaryImage?->url ?? 'no-image.webp')) }}"
+                                            alt="{{ $product?->primary_image?->alt ?? renderMeta($product?->name ?? 'Sản phẩm thời trang') }}">
                                     </a>
                                 </div>
                                 <div class="nobifashion_main_popular_products_item_info">
@@ -534,7 +528,7 @@
                         @foreach ($productClothing as $product)
                             <div class="nobifashion_main_product_category_item">
                                 <a draggable="false" href="/san-pham/{{ $product?->slug ?? '' }}">
-                                    <img loading="lazy" src="{{ asset('clients/assets/img/clothes/' . ($product?->primaryImage?->url ?? 'no-image.webp')) }}"
+                                    <img loading="lazy" decoding="async" src="{{ asset('clients/assets/img/clothes/' . ($product?->primaryImage?->url ?? 'no-image.webp')) }}"
                                         alt="{{ $product?->primary_image?->alt ?? renderMeta($product?->name ?? 'Sản phẩm thời trang') }}">
                                     <div draggable="false" class="nobifashion_main_product_category_name">
                                         {{ renderMeta($product?->name ?? 'Tên sản phẩm') }}</div>

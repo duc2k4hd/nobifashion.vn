@@ -574,7 +574,7 @@
 .nobifashion_shop_products_content_list_item_image {
     position: relative;
     width: 100%;
-    aspect-ratio: 1 / 1;
+    aspect-ratio: 4/6;
     overflow: hidden;
     border-bottom: 1px solid #eee;
 }

@@ -217,13 +217,13 @@
     .nobifashion_main_popular_products_item_img_khung {
         width: 140px;
         height: 140px;
-        aspect-ratio: 1 / 1;
+        aspect-ratio: 4/6;
     }
 
     .nobifashion_main_popular_products_item_img_khung img {
         width: 140px;
         height: 140px;
-        aspect-ratio: 1 / 1;
+        aspect-ratio: 4/6;
     }
 
     .nobifashion_main_popular_products_list {
@@ -871,7 +871,7 @@
     }
 
     .nobifashion_single_info_images_main {
-        aspect-ratio: 1 / 1;
+        aspect-ratio: 4/6;
         /* margin: 0 auto; */
     }
 
@@ -902,7 +902,8 @@
 
     .nobifashion_single_info_images_gallery_image {
         width: calc((92vw - 30px) / 4) !important;
-        height: calc((92vw - 30px) / 4) !important;
+        /* height: calc((92vw - 30px) / 4) !important; */
+        aspect-ratio: 4/6;
     }
 
     .nobifashion_single_info_images_support_form {

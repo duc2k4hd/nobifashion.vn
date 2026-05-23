@@ -7,27 +7,89 @@ use App\Models\Banner;
 use App\Models\Category;
 use App\Models\FlashSale;
 use App\Models\Product;
-use App\Models\Voucher;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\View;
 
 class HomeController extends Controller
 {
     public function index()
     {
-        $banners = Banner::home()->active()->ordered()->get() ?? [];
-        $home_banner = Banner::where('position', 'home_banner')->active()->ordered()->limit(2)->get() ?? [];
-        $vouchers = Voucher::active();
-        $productsFeatured = Product::active()->featured()->take(18)->get() ?? [];
-        // 1. Cache phần dữ liệu nặng - CHỈ lấy flash sale đang chạy (không lấy scheduled)
-        $flashSale = Cache::remember('flash_sale_data', 300, function () {
-            return FlashSale::where('is_active', true)
+        $rootCategories = $this->resolveRootCategories();
+        $menCategoryIds = $this->resolveBranchCategoryIds($rootCategories, 'thoi-trang-nam');
+        $womenCategoryIds = $this->resolveBranchCategoryIds($rootCategories, 'thoi-trang-nu');
+        $kidsCategoryIds = $this->resolveBranchCategoryIds($rootCategories, 'tre-em');
+        $householdCategoryIds = $this->resolveBranchCategoryIds($rootCategories, 'do-gia-dung');
+
+        $homeData = Cache::remember('home.page.payload.v3', now()->addMinutes(10), function () use (
+            $rootCategories,
+            $menCategoryIds,
+            $womenCategoryIds,
+            $kidsCategoryIds,
+            $householdCategoryIds
+        ) {
+            $clothingCategoryIds = array_values(array_unique(array_merge(
+                $menCategoryIds,
+                $womenCategoryIds,
+                $kidsCategoryIds
+            )));
+
+            return [
+                'banners' => Banner::query()
+                    ->select(['id', 'title', 'image_desktop', 'order'])
+                    ->home()
+                    ->active()
+                    ->ordered()
+                    ->get(),
+                'home_banner' => Banner::query()
+                    ->select(['id', 'title', 'image_desktop', 'link', 'taget'])
+                    ->where('position', 'home_banner')
+                    ->active()
+                    ->ordered()
+                    ->limit(2)
+                    ->get(),
+                'productsFeatured' => $this->baseHomeProductQuery()
+                    ->featured()
+                    ->orderByDesc('id')
+                    ->limit(18)
+                    ->get(),
+                'productClothing' => $this->baseHomeProductQuery()
+                    ->when($clothingCategoryIds !== [], function (Builder $query) use ($clothingCategoryIds) {
+                        $query->inCategory($clothingCategoryIds);
+                    })
+                    ->orderByDesc('id')
+                    ->limit(20)
+                    ->get(),
+                'menProducts' => $this->loadHomeProductsByCategoryIds($menCategoryIds, 18),
+                'womenProducts' => $this->loadHomeProductsByCategoryIds($womenCategoryIds, 18),
+                'sportProducts' => $this->loadHomeProductsByCategoryIds($householdCategoryIds, 18),
+                'featuredCategoryCounts' => $this->buildHomeCategoryProductCounts($rootCategories),
+            ];
+        });
+
+        $flashSale = Cache::remember('home.flash_sale.payload.v2', now()->addMinute(), function () {
+            return FlashSale::query()
+                ->select(['id', 'title', 'start_time', 'end_time'])
+                ->where('is_active', true)
                 ->where('status', 'active')
-                ->where('start_time', '<=', now())  // Đã bắt đầu
-                ->where('end_time', '>=', now())    // Chưa kết thúc
-                ->orderBy('start_time', 'desc')
+                ->where('start_time', '<=', now())
+                ->where('end_time', '>=', now())
+                ->orderByDesc('start_time')
                 ->with([
                     'items' => function ($query) {
-                        $query->where('is_active', true)
+                        $query->select([
+                            'id',
+                            'flash_sale_id',
+                            'product_id',
+                            'original_price',
+                            'sale_price',
+                            'stock',
+                            'sold',
+                            'is_active',
+                            'sort_order',
+                        ])
+                            ->where('is_active', true)
                             ->whereRaw('stock > sold')
                             ->whereHas('product', function ($productQuery) {
                                 $productQuery->where('is_active', true)
@@ -37,74 +99,166 @@ class HomeController extends Controller
                             ->orderBy('id');
                     },
                     'items.product' => function ($productQuery) {
-                        $productQuery->where('is_active', true);
+                        $productQuery->select([
+                            'id',
+                            'name',
+                            'slug',
+                            'price',
+                            'sale_price',
+                            'stock_quantity',
+                            'is_active',
+                            'primary_category_id',
+                        ])
+                            ->where('is_active', true)
+                            ->where('stock_quantity', '>', 0);
                     },
-                    'items.product.primaryImage',
-                    'items.product.primaryCategory',
+                    'items.product.primaryImage:id,product_id,url,alt,title',
+                    'items.product.primaryCategory:id,name',
                 ])
-                ->first()
-                ?->makeHidden([
-                    'start_time', 'end_time', 'created_at', 'updated_at',
-                ]);
+                ->first();
         });
 
-        // 2. Lấy thời gian realtime và kiểm tra lại điều kiện
-        if ($flashSale) {
-            $flashSaleTime = FlashSale::where('id', $flashSale->id)
-                ->select('id', 'start_time', 'end_time', 'is_active', 'status')
-                ->first();
+        return view('clients.pages.home.index', $homeData + [
+            'flashSale' => $flashSale,
+            'flashSaleEndsAtMs' => $flashSale?->end_time?->valueOf(),
+        ]);
+    }
 
-            // 3. Kiểm tra lại điều kiện: phải đang chạy (không phải scheduled)
-            if ($flashSaleTime
-                && $flashSaleTime->is_active
-                && $flashSaleTime->status === 'active'
-                && $flashSaleTime->start_time <= now()
-                && $flashSaleTime->end_time >= now()) {
+    protected function resolveRootCategories(): Collection
+    {
+        $sharedCategories = View::shared('categories');
 
-                $flashSale->start_time = $flashSaleTime->start_time;
-                $flashSale->end_time = $flashSaleTime->end_time;
+        if ($sharedCategories instanceof Collection) {
+            return $sharedCategories;
+        }
 
-                // Lọc lại items nếu cần (đảm bảo chỉ lấy items active và còn hàng)
-                $flashSale->setRelation('items', $flashSale->items->filter(function ($item) {
-                    return $item->is_active
-                        && ($item->stock > $item->sold)
-                        && $item->product
-                        && $item->product->is_active
-                        && ($item->product->stock_quantity > 0);
-                }));
-            } else {
-                // Flash sale không còn đang chạy (đã tắt, đã kết thúc, hoặc chưa bắt đầu)
-                $flashSale = null;
+        return Category::query()
+            ->where('is_active', true)
+            ->whereNull('parent_id')
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->with([
+                'children' => function ($query) {
+                    $query->where('is_active', true)
+                        ->orderBy('sort_order')
+                        ->orderBy('name')
+                        ->with([
+                            'children' => function ($subQuery) {
+                                $subQuery->where('is_active', true)
+                                    ->orderBy('sort_order')
+                                    ->orderBy('name');
+                            },
+                        ]);
+                },
+            ])
+            ->get();
+    }
+
+    protected function baseHomeProductQuery(): Builder
+    {
+        return Product::query()
+            ->active()
+            ->select([
+                'id',
+                'name',
+                'slug',
+                'price',
+                'sale_price',
+                'is_featured',
+                'primary_category_id',
+            ])
+            ->with([
+                'primaryImage:id,product_id,url,alt,title',
+                'primaryCategory:id,name',
+            ]);
+    }
+
+    protected function loadHomeProductsByCategoryIds(array $categoryIds, int $limit): Collection
+    {
+        return $this->baseHomeProductQuery()
+            ->when($categoryIds !== [], function (Builder $query) use ($categoryIds) {
+                $query->inCategory($categoryIds);
+            })
+            ->orderByDesc('id')
+            ->limit($limit)
+            ->get();
+    }
+
+    protected function resolveBranchCategoryIds(Collection $rootCategories, string $rootSlug): array
+    {
+        $rootCategory = $rootCategories->firstWhere('slug', $rootSlug);
+
+        if (! $rootCategory) {
+            return [];
+        }
+
+        $ids = collect([$rootCategory->id]);
+
+        foreach ($rootCategory->children ?? [] as $child) {
+            $ids->push($child->id);
+
+            foreach ($child->children ?? [] as $grandChild) {
+                $ids->push($grandChild->id);
             }
         }
-        $productClothing = Product::active()
-            ->when($category = Category::whereIn('slug', ['thoi-trang-nam', 'thoi-trang-nu', 'thoi-trang-tre-em'])->pluck('id')->toArray(), function ($query) use ($category) {
-                $query->inCategory($category);
-            })
-            ->limit(20)->inRandomOrder()->get();
 
-        // 4. Lấy dữ liệu cho giao diện mới
-        // Lấy các danh mục gốc (Nam, Nữ, Trẻ em, Gia dụng) để hiển thị ở phần cuộn
-        $categoriesScroll = Category::whereNull('parent_id')->where('is_active', true)->orderBy('sort_order', 'asc')->get();
+        return $ids
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+    }
 
-        $menProducts = Product::active()
-            ->when($category = Category::where('slug', 'thoi-trang-nam')->first(), function ($query) use ($category) {
-                $query->inCategory($category->id);
-            })->take(4)->get();
+    protected function buildHomeCategoryProductCounts(Collection $rootCategories): array
+    {
+        $childCategoryIds = $rootCategories
+            ->flatMap(fn ($category) => $category->children->pluck('id'))
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->values()
+            ->all();
 
-        $womenProducts = Product::active()
-            ->when($category = Category::where('slug', 'thoi-trang-nu')->first(), function ($query) use ($category) {
-                $query->inCategory($category->id);
-            })->take(4)->get();
+        if ($childCategoryIds === []) {
+            return [];
+        }
 
-        $sportProducts = Product::active()
-            ->when($category = Category::where('slug', 'do-gia-dung')->first(), function ($query) use ($category) {
-                $query->inCategory($category->id);
-            })->take(4)->get();
+        return Cache::remember('home.featured_category_counts.v2', now()->addMinutes(15), function () use ($childCategoryIds) {
+            $counts = array_fill_keys($childCategoryIds, 0);
 
-        return view('clients.pages.home.index', compact(
-            'banners', 'home_banner', 'vouchers', 'productsFeatured', 'flashSale', 'productClothing',
-            'categoriesScroll', 'menProducts', 'womenProducts', 'sportProducts'
-        ));
+            Product::query()
+                ->active()
+                ->select(['id', 'primary_category_id', 'category_ids'])
+                ->where(function (Builder $query) use ($childCategoryIds) {
+                    $query->whereIn('primary_category_id', $childCategoryIds);
+
+                    foreach ($childCategoryIds as $categoryId) {
+                        $query->orWhereRaw('JSON_CONTAINS(category_ids, ?)', ['"' . (string) $categoryId . '"']);
+                    }
+                })
+                ->chunkById(500, function ($products) use (&$counts) {
+                    foreach ($products as $product) {
+                        $matchedCategoryIds = [];
+
+                        $primaryCategoryId = (int) $product->primary_category_id;
+                        if ($primaryCategoryId > 0 && array_key_exists($primaryCategoryId, $counts)) {
+                            $matchedCategoryIds[$primaryCategoryId] = true;
+                        }
+
+                        foreach ((array) $product->category_ids as $categoryId) {
+                            $categoryId = (int) $categoryId;
+                            if ($categoryId > 0 && array_key_exists($categoryId, $counts)) {
+                                $matchedCategoryIds[$categoryId] = true;
+                            }
+                        }
+
+                        foreach (array_keys($matchedCategoryIds) as $categoryId) {
+                            $counts[$categoryId]++;
+                        }
+                    }
+                });
+
+            return $counts;
+        });
     }
 }

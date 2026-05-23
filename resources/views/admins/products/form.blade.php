@@ -285,10 +285,24 @@ $productMediaInitialPagination = [
 @push('scripts')
 @include('admins.partials.media-library-modal')
 <script src="{{ asset('admins/js/media-library.js?v=' . filemtime(public_path('admins/js/media-library.js'))) }}"></script>
+@php
+    $mediaRequestLimits = [
+        'upload' => [
+            'maxFilesPerRequest' => max(1, (int) ini_get('max_file_uploads')),
+            'maxBatchBytes' => ini_get('post_max_size') ?: '8M',
+            'appMaxSingleFileKb' => max(1, (int) config('media.request_limits.upload_file_max_kb', 5120)),
+            'batchSafetyRatio' => (float) config('media.request_limits.upload_batch_safety_ratio', 0.9),
+        ],
+        'delete' => [
+            'maxItemsPerRequest' => max(1, (int) config('media.request_limits.delete_items_per_request', 200)),
+        ],
+    ];
+@endphp
 <script>
     window.mediaManagerConfig = {
         csrfToken: @json(csrf_token()),
         fallbackImage: @json(asset('clients/assets/no-image.webp')),
+        limits: @json($mediaRequestLimits),
         routes: {
             search: @json(route('admin.media.search')),
             upload: @json(route('admin.media.upload')),
@@ -619,6 +633,10 @@ $productMediaInitialPagination = [
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Mô tả chi tiết</label>
                         <textarea class="form-control tinymce-editor" name="description" rows="6">{{ old('description', $product->description) }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Link Shopee</label>
+                        <input type="text" class="form-control" name="link_shopee" value="{{ old('link_shopee', $product->link_shopee) }}" placeholder="Nhập link Shopee">
                     </div>
                 </div>
             </div>

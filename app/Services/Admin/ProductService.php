@@ -151,6 +151,7 @@ class ProductService
             'has_variants' => false,
             'created_by' => Arr::get($data, 'created_by', Auth::id()),
             'is_active' => Arr::get($data, 'is_active', true),
+            'link_shopee' => Arr::get($data, 'link_shopee'),
         ];
     }
 

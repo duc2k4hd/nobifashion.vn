@@ -654,7 +654,7 @@ const requiredAttrKeys = Array.from(
 );
 let maxStock = variants.length > 0
     ? Math.max(...variants.map((variant) => parseInt(variant.stock, 10) || 0))
-    : 0;
+    : (parseInt(document.getElementById("product-stock")?.textContent?.replace(/\D/g, "")) || 0);
 
 function increaseQty() {
     if (!hasSelection() || !findVariant()) {
@@ -817,11 +817,13 @@ let selectedAttrs = {};
 let hasInteracted = false;
 
 function hasSelection() {
+    if (requiredAttrKeys.length === 0) return true;
     return requiredAttrKeys.length > 0
         && requiredAttrKeys.every((key) => !!selectedAttrs[key]);
 }
 
 function findVariant() {
+    if (requiredAttrKeys.length === 0) return { id: '', stock: maxStock, price: 0 };
     if (!hasSelection()) return null;
 
     return variants.find((variant) =>
@@ -877,6 +879,10 @@ function setDisabled(btns, disabled) {
 }
 
 function createOrUpdateVariantInput(form, variant) { 
+    if (!variant.id) {
+        removeVariantInput(form);
+        return;
+    }
     let input = form.querySelector("input[name='variant_id']");
     if (!input) { input = document.createElement("input"); 
         input.type = "hidden"; 
@@ -1115,3 +1121,35 @@ document.querySelectorAll("[data-attr-key]").forEach(btn => {
 
 // init
 updateInfo();
+
+// Open shopee link without indexing
+document.querySelectorAll('.nobifashion_single_info_buy_shopee').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        const link = this.getAttribute('data-shopee');
+        if (link) {
+            window.open(link, '_blank', 'noopener,noreferrer');
+        }
+    });
+});
+
+// Close Shopee Floating Banner
+document.querySelectorAll('.shopee-floating-banner-close').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        e.stopPropagation(); // prevent banner click
+        const banner = document.getElementById('shopee-floating-banner');
+        if (banner) {
+            banner.style.display = 'none';
+        }
+    });
+});
+
+// Click entire banner to go to shopee
+document.querySelectorAll('.shopee-clickable-banner').forEach(banner => {
+    banner.addEventListener('click', function(e) {
+        const link = this.getAttribute('data-shopee');
+        if (link) {
+            window.open(link, '_blank', 'noopener,noreferrer');
+        }
+    });
+});

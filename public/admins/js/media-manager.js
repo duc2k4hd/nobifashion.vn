@@ -1,13 +1,16 @@
 (() => {
     class MediaManager {
-        // Max files per upload request (phải ≤ PHP max_file_uploads)
-        static MAX_FILES_PER_BATCH = 20;
+        static DEFAULT_UPLOAD_MAX_FILES_PER_BATCH = 20;
+        static DEFAULT_UPLOAD_MAX_BATCH_BYTES = 24 * 1024 * 1024;
+        static DEFAULT_UPLOAD_MAX_SINGLE_FILE_BYTES = 5 * 1024 * 1024;
+        static DEFAULT_DELETE_MAX_ITEMS_PER_BATCH = 50;
 
         constructor(config) {
             this.config = config || {};
             this.routes = this.config.routes || {};
             this.csrfToken = this.config.csrfToken || '';
             this.fallbackImage = this.config.fallbackImage || '';
+            this.limits = this.normalizeLimits(this.config.limits || {});
             this.toastTimer = null;
             this.keywordTimer = null;
             this.assignTargetSelect = null;
@@ -45,6 +48,36 @@
             this.elements = this.cacheElements();
         }
 
+        normalizeLimits(rawLimits = {}) {
+            const uploadConfig = rawLimits.upload || {};
+            const deleteConfig = rawLimits.delete || {};
+            const maxBatchBytes = this.parseSizeToBytes(uploadConfig.maxBatchBytes);
+            const batchSafetyRatio = this.normalizeRatio(uploadConfig.batchSafetyRatio, 0.9);
+
+            return {
+                upload: {
+                    maxFilesPerRequest: this.toPositiveInteger(
+                        uploadConfig.maxFilesPerRequest,
+                        MediaManager.DEFAULT_UPLOAD_MAX_FILES_PER_BATCH
+                    ),
+                    maxBatchBytes: Math.max(
+                        1,
+                        Math.floor((maxBatchBytes || MediaManager.DEFAULT_UPLOAD_MAX_BATCH_BYTES) * batchSafetyRatio)
+                    ),
+                    maxSingleFileBytes: this.toPositiveInteger(
+                        uploadConfig.appMaxSingleFileKb,
+                        Math.floor(MediaManager.DEFAULT_UPLOAD_MAX_SINGLE_FILE_BYTES / 1024)
+                    ) * 1024,
+                },
+                delete: {
+                    maxItemsPerRequest: this.toPositiveInteger(
+                        deleteConfig.maxItemsPerRequest,
+                        MediaManager.DEFAULT_DELETE_MAX_ITEMS_PER_BATCH
+                    ),
+                },
+            };
+        }
+
         setKeywordLocked(locked) {
             if (!this.elements.keyword) {
                 return;
@@ -56,6 +89,7 @@
         cacheElements() {
             return {
                 refreshBtn: document.getElementById('mediaRefreshBtn'),
+                cleanupBtn: document.getElementById('mediaCleanupBtn'),
                 toggleUploadBtn: document.getElementById('mediaToggleUploadBtn'),
                 uploadPanel: document.getElementById('mediaUploadPanel'),
                 collapseUploadBtn: document.getElementById('mediaCollapseUploadBtn'),
@@ -238,6 +272,7 @@
 
         bindEvents() {
             this.elements.refreshBtn?.addEventListener('click', () => this.fetchItems());
+            this.elements.cleanupBtn?.addEventListener('click', () => this.handleCleanup());
             this.elements.toggleUploadBtn?.addEventListener('click', () => this.toggleUploadPanel(true));
             this.elements.collapseUploadBtn?.addEventListener('click', () => this.toggleUploadPanel(false));
             this.elements.dropzone?.addEventListener('click', () => this.elements.fileInput?.click());
@@ -470,8 +505,20 @@
             event.preventDefault();
 
             const files = Array.from(this.elements.fileInput?.files || []);
+            const oversizedFiles = this.collectOversizedFiles(files);
+            const uploadableFiles = oversizedFiles.length
+                ? files.filter((file) => !oversizedFiles.includes(file))
+                : files;
             if (!files.length) {
                 this.showToast('Hãy chọn ít nhất một ảnh để upload.', 'warning');
+                return;
+            }
+
+            if (!uploadableFiles.length) {
+                this.showToast(
+                    `Không có file nào hợp lệ. Giới hạn hiện tại: ${this.formatBytes(this.limits.upload.maxSingleFileBytes)}/file.`,
+                    'warning'
+                );
                 return;
             }
 
@@ -501,12 +548,16 @@
              * - Không bao giờ fail all vì vài file có vấn đề
              */
             const folder = this.elements.uploadFolder?.value || '';
-            const totalFileSize = this.getTotalFileSize(files);
-            const chunks = this.chunkItems(files, MediaManager.MAX_FILES_PER_BATCH); // 20 files/batch
+            const totalFileSize = this.getTotalFileSize(uploadableFiles);
+            const chunks = this.buildUploadChunks(uploadableFiles);
             let uploadedCount = 0;
-            let uploadedBytes = 0;
-            let failedCount = 0;
-            let failedFiles = [];
+            let processedCount = 0;
+            let processedBytes = 0;
+            let failedCount = oversizedFiles.length;
+            let failedFiles = oversizedFiles.map((file) => ({
+                name: file.name,
+                error: `Vượt quá giới hạn ${this.formatBytes(this.limits.upload.maxSingleFileBytes)}/file`,
+            }));
 
             this.lockUi(`Đang upload ${files.length} ảnh vào thư viện...`);
             this.showLoadingProgress();
@@ -515,8 +566,8 @@
             try {
                 for (let chunkIndex = 0; chunkIndex < chunks.length; chunkIndex++) {
                     const chunk = chunks[chunkIndex];
-                    const startNum = uploadedCount + 1;
-                    const endNum = uploadedCount + chunk.length;
+                    const startNum = processedCount + 1;
+                    const endNum = processedCount + chunk.length;
 
                     this.setLoadingMessage(`Đang upload batch ${chunkIndex + 1}/${chunks.length}: ${startNum}-${endNum}/${files.length} ảnh...`);
                     this.showToast(`Upload batch ${chunkIndex + 1}/${chunks.length}: ${startNum}-${endNum}/${files.length} ảnh...`, 'warning', false);
@@ -526,7 +577,8 @@
                         const response = await this.uploadFileChunk(chunk, folder);
 
                         uploadedCount += response.uploaded_count || 0;
-                        uploadedBytes += chunkSize;
+                        processedCount += chunk.length;
+                        processedBytes += chunkSize;
                         failedCount += response.failed_count || 0;
 
                         if (response.failed_files && Array.isArray(response.failed_files)) {
@@ -534,13 +586,15 @@
                         }
 
                         const percent = totalFileSize > 0
-                            ? Math.round((uploadedBytes / totalFileSize) * 100)
+                            ? Math.round((processedBytes / totalFileSize) * 100)
                             : 0;
                         this.setLoadingProgress(
                             percent,
-                            `${this.formatBytes(uploadedBytes)} / ${this.formatBytes(totalFileSize)}`
+                            `${this.formatBytes(processedBytes)} / ${this.formatBytes(totalFileSize)}`
                         );
                     } catch (chunkError) {
+                        processedCount += chunk.length;
+                        processedBytes += this.getTotalFileSize(chunk);
                         failedCount += chunk.length;
                         failedFiles.push(...chunk.map(f => ({
                             name: f.name,
@@ -708,6 +762,94 @@
             return Array.isArray(files)
                 ? files.reduce((total, file) => total + Number(file?.size || 0), 0)
                 : 0;
+        }
+
+        buildUploadChunks(files) {
+            const chunks = [];
+            const maxFilesPerRequest = this.limits.upload.maxFilesPerRequest;
+            const maxBatchBytes = this.limits.upload.maxBatchBytes;
+            let currentChunk = [];
+            let currentBytes = 0;
+
+            files.forEach((file) => {
+                const fileSize = Number(file?.size || 0);
+                const exceedCount = currentChunk.length >= maxFilesPerRequest;
+                const exceedBytes = currentChunk.length > 0 && (currentBytes + fileSize) > maxBatchBytes;
+
+                if (exceedCount || exceedBytes) {
+                    chunks.push(currentChunk);
+                    currentChunk = [];
+                    currentBytes = 0;
+                }
+
+                currentChunk.push(file);
+                currentBytes += fileSize;
+            });
+
+            if (currentChunk.length > 0) {
+                chunks.push(currentChunk);
+            }
+
+            return chunks;
+        }
+
+        collectOversizedFiles(files) {
+            const maxSingleFileBytes = this.limits.upload.maxSingleFileBytes;
+            if (!maxSingleFileBytes) {
+                return [];
+            }
+
+            return files.filter((file) => Number(file?.size || 0) > maxSingleFileBytes);
+        }
+
+        parseSizeToBytes(size) {
+            if (typeof size === 'number' && Number.isFinite(size)) {
+                return size;
+            }
+
+            const normalized = String(size || '').trim();
+            if (!normalized) {
+                return 0;
+            }
+
+            const match = normalized.match(/^(\d+(?:\.\d+)?)\s*([KMGTP]?B?)$/i);
+            if (!match) {
+                return Number(normalized) || 0;
+            }
+
+            const value = Number(match[1]);
+            const unit = String(match[2] || 'B').toUpperCase();
+            const powerMap = {
+                B: 0,
+                K: 1,
+                KB: 1,
+                M: 2,
+                MB: 2,
+                G: 3,
+                GB: 3,
+                T: 4,
+                TB: 4,
+                P: 5,
+                PB: 5,
+            };
+
+            return Math.round(value * (1024 ** (powerMap[unit] ?? 0)));
+        }
+
+        toPositiveInteger(value, fallback) {
+            const normalized = Number(value);
+            return Number.isFinite(normalized) && normalized > 0
+                ? Math.floor(normalized)
+                : fallback;
+        }
+
+        normalizeRatio(value, fallback) {
+            const normalized = Number(value);
+            if (!Number.isFinite(normalized) || normalized <= 0 || normalized > 1) {
+                return fallback;
+            }
+
+            return normalized;
         }
 
         formatBytes(bytes) {
@@ -1288,6 +1430,90 @@
             await this.performDelete(items);
         }
 
+        async handleCleanup() {
+            if (!this.routes.cleanup) {
+                this.showToast('Thiếu route cleanup media.', 'error');
+                return;
+            }
+
+            this.lockUi('Đang phân tích các record media và file vật lý có thể dọn dẹp...');
+
+            try {
+                const preview = await this.runCleanupRequest(true);
+                const totalActions = Number(preview.database_rows_to_delete || 0) + Number(preview.physical_files_to_delete || 0);
+
+                if (totalActions === 0) {
+                    this.showToast(preview.message || 'Không có dữ liệu cần dọn dẹp.', 'success');
+                    return;
+                }
+
+                const confirmed = window.confirm(this.buildCleanupConfirmMessage(preview));
+                if (!confirmed) {
+                    return;
+                }
+            } catch (error) {
+                this.showToast(error.message || 'Không thể phân tích dữ liệu cleanup.', 'error');
+                return;
+            } finally {
+                this.unlockUi();
+            }
+
+            this.lockUi('Đang dọn dẹp media lỗi và file rác...');
+
+            try {
+                const result = await this.runCleanupRequest(false);
+                const toastType = Number(result.physical_files_failed_count || 0) > 0 ? 'warning' : 'success';
+                this.showToast(result.message || 'Đã dọn dẹp media.', toastType);
+                this.state.selectedKeys.clear();
+                await this.fetchItems({ lockUi: false });
+            } catch (error) {
+                this.showToast(error.message || 'Không thể dọn dẹp media.', 'error');
+            } finally {
+                this.unlockUi();
+            }
+        }
+
+        async runCleanupRequest(dryRun) {
+            const response = await fetch(this.routes.cleanup, {
+                method: 'POST',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': this.csrfToken,
+                },
+                body: JSON.stringify({
+                    dry_run: dryRun,
+                }),
+            });
+            const payload = await response.json();
+
+            if (!response.ok || payload.success === false) {
+                throw new Error(payload.message || 'Cleanup media thất bại.');
+            }
+
+            return payload;
+        }
+
+        buildCleanupConfirmMessage(preview) {
+            const lines = [
+                'Tool sẽ dọn dẹp các mục sau:',
+                `- Record DB bị mất file: ${this.formatNumber(preview.missing_database_rows || 0)}`,
+                `- Record DB chưa gắn đối tượng: ${this.formatNumber(preview.unassigned_database_rows || 0)}`,
+                `- File vật lý không còn bản ghi tham chiếu: ${this.formatNumber(preview.orphan_physical_files || 0)}`,
+                '',
+                `Tổng record DB sẽ xóa: ${this.formatNumber(preview.database_rows_to_delete || 0)}`,
+                `Tổng file vật lý sẽ xóa: ${this.formatNumber(preview.physical_files_to_delete || 0)}`,
+            ];
+
+            if (Number(preview.preserved_shared_files || 0) > 0) {
+                lines.push(`File dùng chung được giữ lại: ${this.formatNumber(preview.preserved_shared_files || 0)}`);
+            }
+
+            lines.push('', 'Tiếp tục dọn dẹp?');
+
+            return lines.join('\n');
+        }
+
         async performDelete(items) {
             if (!items.length || this.state.isDeleting) {
                 return;
@@ -1306,7 +1532,7 @@
             this.renderBulkBar();
             this.renderInspector();
 
-            const chunks = this.chunkItems(deletableItems, 50);
+            const chunks = this.chunkItems(deletableItems, this.limits.delete.maxItemsPerRequest);
             let processed = 0;
             let deletedCount = 0;
             let preservedFilesCount = 0;
@@ -1511,9 +1737,10 @@
         }
 
         chunkItems(items, size) {
+            const normalizedSize = Math.max(1, Number(size) || 1);
             const chunks = [];
-            for (let index = 0; index < items.length; index += size) {
-                chunks.push(items.slice(index, index + size));
+            for (let index = 0; index < items.length; index += normalizedSize) {
+                chunks.push(items.slice(index, index + normalizedSize));
             }
 
             return chunks;

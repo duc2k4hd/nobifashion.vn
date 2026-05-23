@@ -4,10 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 
 class ProductHowTo extends Model
 {
     use HasFactory;
+
+    protected static ?bool $hasIsActiveColumn = null;
 
     protected $table = 'product_how_tos';
 
@@ -41,6 +44,10 @@ class ProductHowTo extends Model
 
     public function scopeActive($query)
     {
+        if (! static::hasIsActiveColumn()) {
+            return $query;
+        }
+
         return $query->where('is_active', true);
     }
 
@@ -69,6 +76,10 @@ class ProductHowTo extends Model
      */
     public function activate()
     {
+        if (! static::hasIsActiveColumn()) {
+            return;
+        }
+
         $this->update(['is_active' => true]);
     }
 
@@ -77,6 +88,19 @@ class ProductHowTo extends Model
      */
     public function deactivate()
     {
+        if (! static::hasIsActiveColumn()) {
+            return;
+        }
+
         $this->update(['is_active' => false]);
+    }
+
+    protected static function hasIsActiveColumn(): bool
+    {
+        if (static::$hasIsActiveColumn !== null) {
+            return static::$hasIsActiveColumn;
+        }
+
+        return static::$hasIsActiveColumn = Schema::hasColumn((new static())->getTable(), 'is_active');
     }
 }

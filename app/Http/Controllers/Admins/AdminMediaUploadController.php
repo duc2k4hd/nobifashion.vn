@@ -22,10 +22,13 @@ class AdminMediaUploadController extends Controller
         FileHelperService $files,
         ImageRegistryService $registry
     ) {
+        $maxFilesPerRequest = max(1, (int) ini_get('max_file_uploads'));
+        $maxFileSizeKb = max(1, (int) config('media.request_limits.upload_file_max_kb', 5120));
+
         $validated = $request->validate([
             'folder' => 'required|in:' . implode(',', array_keys($this->folders)),
-            'files' => 'required|array|min:1',
-            'files.*' => 'file|extensions:jpg,jpeg,png,webp,gif,avif|max:5120',
+            'files' => 'required|array|min:1|max:' . $maxFilesPerRequest,
+            'files.*' => 'file|extensions:jpg,jpeg,png,webp,gif,avif|max:' . $maxFileSizeKb,
         ]);
 
         $uploadedCount = 0;
@@ -52,22 +55,32 @@ class AdminMediaUploadController extends Controller
 
                 // Store file
                 $stored = $files->storeUploadedFile($uploadedFile, $folder);
+                $image = null;
 
-                // Register image trong database
-                $image = $registry->registerLooseImage(
-                    $stored['relative_path'],
-                    [
-                        'title' => pathinfo($filename, PATHINFO_FILENAME),
-                        'alt' => pathinfo($filename, PATHINFO_FILENAME),
-                    ],
-                    $validated['folder']
-                );
+                if ($validated['folder'] === 'imports') {
+                    $results[] = [
+                        'id' => md5($stored['relative_path']),
+                        'path' => $stored['relative_path'],
+                        'type' => 'filesystem_file',
+                        'original' => asset($stored['relative_path']),
+                    ];
+                } else {
+                    // Register image trong database
+                    $image = $registry->registerLooseImage(
+                        $stored['relative_path'],
+                        [
+                            'title' => pathinfo($filename, PATHINFO_FILENAME),
+                            'alt' => pathinfo($filename, PATHINFO_FILENAME),
+                        ],
+                        $validated['folder']
+                    );
 
-                $results[] = [
-                    'id' => $image->id,
-                    'path' => $image->path,
-                    'type' => 'library_image',
-                ];
+                    $results[] = [
+                        'id' => $image->id,
+                        'path' => $image->path,
+                        'type' => 'library_image',
+                    ];
+                }
 
                 $uploadedCount++;
 
@@ -75,7 +88,8 @@ class AdminMediaUploadController extends Controller
                     'filename' => $filename,
                     'path' => $stored['relative_path'],
                     'size' => $uploadedFile->getSize(),
-                    'image_id' => $image->id,
+                    'image_id' => $image?->id,
+                    'database_registered' => $validated['folder'] !== 'imports',
                 ]);
             } catch (Throwable $exception) {
                 $failedCount++;

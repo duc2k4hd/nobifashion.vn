@@ -16,21 +16,41 @@ class Product extends Model
 
     protected $table = 'products';
 
-    protected $fillable = ['sku', 'name', 'slug', 'description', 'short_description', 'price', 'sale_price', 'cost_price', 'stock_quantity', 'meta_title', 'meta_description', 'meta_keywords', 'meta_canonical', 'brand_id', 'primary_category_id', 'category_ids', 'tag_ids', 'is_featured', 'locked_by', 'locked_at', 'has_variants', 'created_by', 'is_active'];
+    protected $fillable = ['sku', 'name', 'slug', 'description', 'short_description', 'link_shopee', 'price', 'sale_price', 'cost_price', 'stock_quantity', 'meta_title', 'meta_description', 'meta_keywords', 'meta_canonical', 'brand_id', 'primary_category_id', 'category_ids', 'tag_ids', 'is_featured', 'locked_by', 'locked_at', 'has_variants', 'created_by', 'is_active'];
 
     protected static function booted()
     {
         static::saving(function ($product) {
             // Luôn cập nhật Canonical URL để đảm bảo độ chính xác
-            if ($product->slug) {
-                $siteUrl = \App\Models\Setting::where('key', 'site_url')->value('value');
-                if ($siteUrl) {
-                    $product->meta_canonical = rtrim($siteUrl, '/') . '/san-pham/' . $product->slug;
-                } else {
-                    $product->meta_canonical = url('/san-pham/' . $product->slug);
-                }
+            $slug = trim((string) $product->slug);
+            if ($slug === '') {
+                return;
+            }
+
+            $defaultCanonical = static::buildDefaultCanonical($slug);
+            $currentCanonical = trim((string) ($product->meta_canonical ?? ''));
+            $originalSlug = trim((string) ($product->getOriginal('slug') ?? ''));
+            $originalCanonical = trim((string) ($product->getOriginal('meta_canonical') ?? ''));
+            $originalDefaultCanonical = $originalSlug !== '' ? static::buildDefaultCanonical($originalSlug) : '';
+
+            $shouldAutoFill = $currentCanonical === '';
+            $shouldRefreshGeneratedCanonical = $product->exists
+                && $product->isDirty('slug')
+                && ($originalCanonical === '' || $originalCanonical === $originalDefaultCanonical);
+
+            if ($shouldAutoFill || $shouldRefreshGeneratedCanonical) {
+                $product->meta_canonical = $defaultCanonical;
             }
         });
+    }
+
+    protected static function buildDefaultCanonical(string $slug): string
+    {
+        $siteUrl = \App\Models\Setting::where('key', 'site_url')->value('value');
+
+        return $siteUrl
+            ? rtrim($siteUrl, '/') . '/san-pham/' . $slug
+            : url('/san-pham/' . $slug);
     }
 
     protected $casts = [
@@ -119,18 +139,24 @@ class Product extends Model
 
     public function scopeInCategory($query, $categoryIds)
     {
-        // Ép về mảng để hỗ trợ cả int và array
-        $ids = is_array($categoryIds) ? $categoryIds : [$categoryIds];
+        $ids = collect(is_array($categoryIds) ? $categoryIds : [$categoryIds])
+            ->map(fn ($id) => (int) $id)
+            ->filter(fn ($id) => $id > 0)
+            ->unique()
+            ->values()
+            ->all();
+
+        if ($ids === []) {
+            return $query;
+        }
 
         return $query->where(function ($q) use ($ids) {
-            // 1️⃣ Lọc theo primary_category_id
             $q->whereIn('primary_category_id', $ids);
 
-            // 2️⃣ Lọc theo JSON category_ids (kiểu ["49","9",...])
             $q->orWhere(function ($q2) use ($ids) {
                 foreach ($ids as $id) {
-                    $stringId = (string) $id;
-                    $q2->orWhereRaw('JSON_CONTAINS(category_ids, ?)', ['"' . $stringId . '"']);
+                    $q2->orWhereRaw('JSON_CONTAINS(category_ids, ?)', [json_encode($id)])
+                        ->orWhereRaw('JSON_CONTAINS(category_ids, ?)', [json_encode((string) $id)]);
                 }
             });
         });

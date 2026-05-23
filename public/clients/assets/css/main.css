@@ -454,6 +454,7 @@ input:disabled {
 .nobifashion_single_desc_tabs_describe_product_new_img {
     position: relative;
     overflow: hidden;
+    aspect-ratio: 4/6;
 }
 
 .nobifashion_single_desc_tabs_describe_product_new_img img {
@@ -461,6 +462,7 @@ input:disabled {
     display: block;
     transition: transform 0.3s ease;
     min-height: 170px;
+    aspect-ratio: 4/6;
 }
 
 .nobifashion_single_desc_tabs_describe_product_new_item:hover img {

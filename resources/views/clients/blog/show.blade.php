@@ -2,305 +2,6 @@
 
 @section('title', renderMeta($post->meta_title ?? $post->title) . ' | ' . ($settings->site_name ?? $settings->subname ?? 'NOBI FASHION VIỆT NAM'))
 
-@section('head')
-    {{-- SEO Meta Tags --}}
-    <meta name="description" content="{{ renderMeta($post->meta_description ?? $post->excerpt_text) }}">
-    <meta name="keywords" content="{{ renderMeta($post->meta_keywords) }}">
-    <link rel="canonical" href="{{ $post->meta_canonical ?? route('client.blog.show', $post) }}">
-    <meta property="og:type" content="article">
-    <meta property="og:title" content="{{ renderMeta($post->meta_title ?? $post->title) }}">
-    <meta property="og:description" content="{{ renderMeta($post->meta_description ?? $post->excerpt_text) }}">
-    <meta property="og:url" content="{{ route('client.blog.show', $post) }}">
-    <meta property="og:image" content="{{ $post->thumbnail ? asset('clients/assets/img/posts/' . $post->thumbnail) : asset('clients/assets/no-image.webp') }}">
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{{ renderMeta($post->meta_title ?? $post->title) }}">
-    <meta name="twitter:description" content="{{ renderMeta($post->meta_description ?? $post->excerpt_text) }}">
-    <meta name="twitter:image" content="{{ $post->thumbnail ? asset('clients/assets/img/posts/' . $post->thumbnail) : asset('clients/assets/no-image.webp') }}">
-    <link rel="preload" as="image" href="{{ $post->thumbnail ? asset('clients/assets/img/posts/' . $post->thumbnail) : asset('clients/assets/no-image.webp') }}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-    {{-- Load Fonts: Crimson Pro (Elegant Serif) & Inter (Clean Sans) --}}
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-@endsection
-
-@section('schema')
-    @if(isset($schemaData) && is_array($schemaData))
-        @foreach($schemaData as $schema)
-            <script type="application/ld+json">
-                {!! json_encode($schema, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT) !!}
-            </script>
-        @endforeach
-    @endif
-
-    {{-- Comments Widget --}}
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const section = document.getElementById('comments-section');
-            if (!section) return;
-
-            const listEl = document.getElementById('comments-list');
-            const paginationEl = document.getElementById('comments-pagination');
-            const countEl = document.getElementById('comments-count');
-            const form = document.getElementById('comment-form');
-            const statusEl = document.getElementById('comment-status-message');
-            const parentInput = document.getElementById('comment-parent-id');
-            const replyIndicator = document.getElementById('reply-indicator');
-            const replyToName = document.getElementById('reply-to-name');
-            const cancelReplyBtn = document.getElementById('cancel-reply');
-
-            const config = {
-                commentableId: parseInt(section.dataset.commentableId, 10),
-                commentableType: section.dataset.commentableType,
-                apiUrl: '{{ url('/api/v1/comments') }}',
-                submitUrl: '{{ route('client.comments.store') }}',
-                csrf: document.querySelector('meta[name="csrf-token"]')?.content || '',
-            };
-
-            let currentPage = 1;
-            let lastPage = 1;
-            let isLoading = false;
-
-            const sanitize = (text = '') => {
-                const div = document.createElement('div');
-                div.textContent = text;
-                return div.innerHTML;
-            };
-
-            const formatDate = (iso) => {
-                const date = new Date(iso);
-                return Number.isNaN(date.getTime()) ? '' : date.toLocaleString('vi-VN', { hour12: false });
-            };
-
-            const renderComment = (comment, depth = 0) => {
-                const wrapper = document.createElement('div');
-                wrapper.className = 'comment-card' + (depth > 0 ? ' reply' : '');
-
-                const authorName = comment.account?.name || comment.guest_name || 'Khách';
-                const rating = Number(comment.rating) || 0;
-                const ratingStars = rating > 0
-                    ? `<div class="comment-rating" aria-label="Đánh giá ${rating} sao">
-                            ${Array.from({ length: 5 }).map((_, i) => `
-                                <span class="star ${i < rating ? 'filled' : ''}">★</span>
-                            `).join('')}
-                            <span class="rating-text">${rating}/5</span>
-                       </div>`
-                    : '';
-                const avatarText = sanitize(authorName).charAt(0).toUpperCase();
-
-                wrapper.innerHTML = `
-                    <div class="comment-author">
-                        <div class="comment-avatar">${avatarText}</div>
-                        <div>
-                            <strong>${sanitize(authorName)}</strong>
-                            <div class="comment-meta">${formatDate(comment.created_at)}</div>
-                            ${ratingStars}
-                        </div>
-                    </div>
-                    <div class="comment-content">${sanitize(comment.content)}</div>
-                    <div class="comment-actions">
-                        <button type="button" data-reply-id="${comment.id}" data-reply-name="${sanitize(authorName)}">Trả lời</button>
-                        <button type="button" data-report-id="${comment.id}">Báo xấu</button>
-                    </div>
-                `;
-
-                if (comment.replies && comment.replies.length) {
-                    comment.replies.forEach(reply => wrapper.appendChild(renderComment(reply, depth + 1)));
-                }
-
-                return wrapper;
-            };
-
-            const renderPagination = (meta) => {
-                if (!meta || meta.last_page <= 1) {
-                    paginationEl.innerHTML = '';
-                    return;
-                }
-
-                const pages = [];
-                const current = meta.current_page;
-                const last = meta.last_page;
-                const total = meta.total;
-                const perPage = meta.per_page;
-                const from = meta.from || 0;
-                const to = meta.to || 0;
-
-                // Previous button
-                pages.push(`<button class="comment-page-btn ${current === 1 ? 'disabled' : ''}" 
-                    data-page="${current - 1}" ${current === 1 ? 'disabled' : ''}>‹ Trước</button>`);
-
-                // Page numbers
-                let startPage = Math.max(1, current - 2);
-                let endPage = Math.min(last, current + 2);
-
-                if (startPage > 1) {
-                    pages.push(`<button class="comment-page-btn" data-page="1">1</button>`);
-                    if (startPage > 2) {
-                        pages.push(`<span class="comment-page-ellipsis">...</span>`);
-                    }
-                }
-
-                for (let i = startPage; i <= endPage; i++) {
-                    pages.push(`<button class="comment-page-btn ${i === current ? 'active' : ''}" 
-                        data-page="${i}">${i}</button>`);
-                }
-
-                if (endPage < last) {
-                    if (endPage < last - 1) {
-                        pages.push(`<span class="comment-page-ellipsis">...</span>`);
-                    }
-                    pages.push(`<button class="comment-page-btn" data-page="${last}">${last}</button>`);
-                }
-
-                // Next button
-                pages.push(`<button class="comment-page-btn ${current === last ? 'disabled' : ''}" 
-                    data-page="${current + 1}" ${current === last ? 'disabled' : ''}>Sau ›</button>`);
-
-                paginationEl.innerHTML = `
-                    <div class="comment-pagination-info">
-                        Hiển thị ${from}-${to} trong tổng ${total} bình luận
-                    </div>
-                    <div class="comment-pagination-buttons">
-                        ${pages.join('')}
-                    </div>
-                `;
-
-                // Attach event listeners
-                paginationEl.querySelectorAll('.comment-page-btn:not(.disabled)').forEach(btn => {
-                    btn.addEventListener('click', () => {
-                        const page = parseInt(btn.dataset.page);
-                        if (page && page !== current) {
-                            loadComments(page);
-                            window.scrollTo({ top: listEl.offsetTop - 100, behavior: 'smooth' });
-                        }
-                    });
-                });
-            };
-
-            const loadComments = async (page = 1) => {
-                if (isLoading) return;
-                isLoading = true;
-                listEl.innerHTML = '<div class="text-center text-muted">Đang tải bình luận...</div>';
-                paginationEl.innerHTML = '';
-
-                try {
-                    const url = new URL(config.apiUrl);
-                    url.searchParams.set('commentable_id', config.commentableId);
-                    url.searchParams.set('commentable_type', config.commentableType);
-                    url.searchParams.set('page', page);
-
-                    const res = await fetch(url, { headers: { Accept: 'application/json' } });
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.message || 'Không thể tải bình luận.');
-
-                    listEl.innerHTML = '';
-
-                    if (data.data && data.data.length) {
-                        data.data.forEach(comment => listEl.appendChild(renderComment(comment)));
-                    } else {
-                        listEl.innerHTML = '<div class="no-comments">Chưa có bình luận nào. Hãy là người đầu tiên!</div>';
-                    }
-
-                    // Render pagination
-                    if (data.meta) {
-                        currentPage = data.meta.current_page || 1;
-                        lastPage = data.meta.last_page || 1;
-                        renderPagination(data.meta);
-                    }
-                } catch (error) {
-                    console.error(error);
-                    listEl.innerHTML = '<div class="no-comments text-danger">Không thể tải bình luận.</div>';
-                } finally {
-                    isLoading = false;
-                }
-            };
-
-            listEl.addEventListener('click', (event) => {
-                const replyBtn = event.target.closest('button[data-reply-id]');
-                const reportBtn = event.target.closest('button[data-report-id]');
-
-                if (replyBtn) {
-                    parentInput.value = replyBtn.dataset.replyId;
-                    replyToName.textContent = replyBtn.dataset.replyName || '';
-                    replyIndicator.style.display = 'block';
-                    form.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-
-                if (reportBtn) {
-                    reportComment(reportBtn.dataset.reportId);
-                }
-            });
-
-            cancelReplyBtn?.addEventListener('click', () => {
-                parentInput.value = '';
-                replyIndicator.style.display = 'none';
-            });
-
-            const reportComment = async (commentId) => {
-                try {
-                    await fetch(`${config.apiUrl}/${commentId}/report`, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': config.csrf,
-                            'Accept': 'application/json',
-                        },
-                    });
-                    showCustomToast('Báo cáo đã được gửi. Cảm ơn bạn!', 'success');
-                } catch (error) {
-                    showCustomToast('Không thể báo cáo bình luận.', 'error');
-                }
-            };
-
-            form?.addEventListener('submit', async (event) => {
-                event.preventDefault();
-
-                // Honeypot chống bot
-                if (form.website?.value) return;
-
-                const formData = new FormData(form);
-                formData.append('commentable_id', config.commentableId);
-                formData.append('commentable_type', config.commentableType);
-
-                showCustomToast("Đang gửi bình luận...", "info");
-
-                try {
-                    const res = await fetch(config.submitUrl, {
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': config.csrf,
-                            'Accept': 'application/json',
-                        },
-                        body: formData,
-                    });
-
-                    const data = await res.json();
-                    if (!res.ok) throw new Error(data.message || "Không thể gửi bình luận.");
-
-                    // Reset form
-                    form.reset();
-                    parentInput.value = '';
-                    replyIndicator.style.display = 'none';
-
-                    // Cập nhật số lượng bình luận
-                    const newCount = parseInt(countEl.textContent || '0', 10) + 1;
-                    countEl.textContent = newCount;
-
-                    showCustomToast("Cảm ơn bạn! Bình luận sẽ hiển thị sau khi được duyệt.", "success");
-
-                } catch (error) {
-                    console.error(error);
-                    showCustomToast(error.message, "error");
-                }
-            });
-
-
-            setTimeout(() => {
-                loadComments();
-            }, 5000);
-        });
-    </script>
-@endsection
-
 @push('styles')
     <style>
         /* =========================================
@@ -960,9 +661,7 @@
             }
         }
     </style>
-@endpush
 
-@push('styles')
     <style>
         .comments-section {
             margin-top: 32px;
@@ -1218,6 +917,305 @@
         }
     </style>
 @endpush
+
+@section('head')
+    {{-- SEO Meta Tags --}}
+    <meta name="description" content="{{ renderMeta($post->meta_description ?? $post->excerpt_text) }}">
+    <meta name="keywords" content="{{ renderMeta($post->meta_keywords) }}">
+    <link rel="canonical" href="{{ $post->meta_canonical ?? route('client.blog.show', $post) }}">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="{{ renderMeta($post->meta_title ?? $post->title) }}">
+    <meta property="og:description" content="{{ renderMeta($post->meta_description ?? $post->excerpt_text) }}">
+    <meta property="og:url" content="{{ route('client.blog.show', $post) }}">
+    <meta property="og:image" content="{{ $post->thumbnail ? asset('clients/assets/img/posts/' . $post->thumbnail) : asset('clients/assets/no-image.webp') }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ renderMeta($post->meta_title ?? $post->title) }}">
+    <meta name="twitter:description" content="{{ renderMeta($post->meta_description ?? $post->excerpt_text) }}">
+    <meta name="twitter:image" content="{{ $post->thumbnail ? asset('clients/assets/img/posts/' . $post->thumbnail) : asset('clients/assets/no-image.webp') }}">
+    <link rel="preload" as="image" href="{{ $post->thumbnail ? asset('clients/assets/img/posts/' . $post->thumbnail) : asset('clients/assets/no-image.webp') }}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    {{-- Load Fonts: Crimson Pro (Elegant Serif) & Inter (Clean Sans) --}}
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+@endsection
+
+@section('schema')
+    @if(isset($schemaData) && is_array($schemaData))
+        @foreach($schemaData as $schema)
+            <script type="application/ld+json">
+                {!! json_encode($schema, JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_PRETTY_PRINT) !!}
+            </script>
+        @endforeach
+    @endif
+
+    {{-- Comments Widget --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const section = document.getElementById('comments-section');
+            if (!section) return;
+
+            const listEl = document.getElementById('comments-list');
+            const paginationEl = document.getElementById('comments-pagination');
+            const countEl = document.getElementById('comments-count');
+            const form = document.getElementById('comment-form');
+            const statusEl = document.getElementById('comment-status-message');
+            const parentInput = document.getElementById('comment-parent-id');
+            const replyIndicator = document.getElementById('reply-indicator');
+            const replyToName = document.getElementById('reply-to-name');
+            const cancelReplyBtn = document.getElementById('cancel-reply');
+
+            const config = {
+                commentableId: parseInt(section.dataset.commentableId, 10),
+                commentableType: section.dataset.commentableType,
+                apiUrl: '{{ url('/api/v1/comments') }}',
+                submitUrl: '{{ route('client.comments.store') }}',
+                csrf: document.querySelector('meta[name="csrf-token"]')?.content || '',
+            };
+
+            let currentPage = 1;
+            let lastPage = 1;
+            let isLoading = false;
+
+            const sanitize = (text = '') => {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            };
+
+            const formatDate = (iso) => {
+                const date = new Date(iso);
+                return Number.isNaN(date.getTime()) ? '' : date.toLocaleString('vi-VN', { hour12: false });
+            };
+
+            const renderComment = (comment, depth = 0) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'comment-card' + (depth > 0 ? ' reply' : '');
+
+                const authorName = comment.account?.name || comment.guest_name || 'Khách';
+                const rating = Number(comment.rating) || 0;
+                const ratingStars = rating > 0
+                    ? `<div class="comment-rating" aria-label="Đánh giá ${rating} sao">
+                            ${Array.from({ length: 5 }).map((_, i) => `
+                                <span class="star ${i < rating ? 'filled' : ''}">★</span>
+                            `).join('')}
+                            <span class="rating-text">${rating}/5</span>
+                       </div>`
+                    : '';
+                const avatarText = sanitize(authorName).charAt(0).toUpperCase();
+
+                wrapper.innerHTML = `
+                    <div class="comment-author">
+                        <div class="comment-avatar">${avatarText}</div>
+                        <div>
+                            <strong>${sanitize(authorName)}</strong>
+                            <div class="comment-meta">${formatDate(comment.created_at)}</div>
+                            ${ratingStars}
+                        </div>
+                    </div>
+                    <div class="comment-content">${sanitize(comment.content)}</div>
+                    <div class="comment-actions">
+                        <button type="button" data-reply-id="${comment.id}" data-reply-name="${sanitize(authorName)}">Trả lời</button>
+                        <button type="button" data-report-id="${comment.id}">Báo xấu</button>
+                    </div>
+                `;
+
+                if (comment.replies && comment.replies.length) {
+                    comment.replies.forEach(reply => wrapper.appendChild(renderComment(reply, depth + 1)));
+                }
+
+                return wrapper;
+            };
+
+            const renderPagination = (meta) => {
+                if (!meta || meta.last_page <= 1) {
+                    paginationEl.innerHTML = '';
+                    return;
+                }
+
+                const pages = [];
+                const current = meta.current_page;
+                const last = meta.last_page;
+                const total = meta.total;
+                const perPage = meta.per_page;
+                const from = meta.from || 0;
+                const to = meta.to || 0;
+
+                // Previous button
+                pages.push(`<button class="comment-page-btn ${current === 1 ? 'disabled' : ''}" 
+                    data-page="${current - 1}" ${current === 1 ? 'disabled' : ''}>‹ Trước</button>`);
+
+                // Page numbers
+                let startPage = Math.max(1, current - 2);
+                let endPage = Math.min(last, current + 2);
+
+                if (startPage > 1) {
+                    pages.push(`<button class="comment-page-btn" data-page="1">1</button>`);
+                    if (startPage > 2) {
+                        pages.push(`<span class="comment-page-ellipsis">...</span>`);
+                    }
+                }
+
+                for (let i = startPage; i <= endPage; i++) {
+                    pages.push(`<button class="comment-page-btn ${i === current ? 'active' : ''}" 
+                        data-page="${i}">${i}</button>`);
+                }
+
+                if (endPage < last) {
+                    if (endPage < last - 1) {
+                        pages.push(`<span class="comment-page-ellipsis">...</span>`);
+                    }
+                    pages.push(`<button class="comment-page-btn" data-page="${last}">${last}</button>`);
+                }
+
+                // Next button
+                pages.push(`<button class="comment-page-btn ${current === last ? 'disabled' : ''}" 
+                    data-page="${current + 1}" ${current === last ? 'disabled' : ''}>Sau ›</button>`);
+
+                paginationEl.innerHTML = `
+                    <div class="comment-pagination-info">
+                        Hiển thị ${from}-${to} trong tổng ${total} bình luận
+                    </div>
+                    <div class="comment-pagination-buttons">
+                        ${pages.join('')}
+                    </div>
+                `;
+
+                // Attach event listeners
+                paginationEl.querySelectorAll('.comment-page-btn:not(.disabled)').forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const page = parseInt(btn.dataset.page);
+                        if (page && page !== current) {
+                            loadComments(page);
+                            window.scrollTo({ top: listEl.offsetTop - 100, behavior: 'smooth' });
+                        }
+                    });
+                });
+            };
+
+            const loadComments = async (page = 1) => {
+                if (isLoading) return;
+                isLoading = true;
+                listEl.innerHTML = '<div class="text-center text-muted">Đang tải bình luận...</div>';
+                paginationEl.innerHTML = '';
+
+                try {
+                    const url = new URL(config.apiUrl);
+                    url.searchParams.set('commentable_id', config.commentableId);
+                    url.searchParams.set('commentable_type', config.commentableType);
+                    url.searchParams.set('page', page);
+
+                    const res = await fetch(url, { headers: { Accept: 'application/json' } });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.message || 'Không thể tải bình luận.');
+
+                    listEl.innerHTML = '';
+
+                    if (data.data && data.data.length) {
+                        data.data.forEach(comment => listEl.appendChild(renderComment(comment)));
+                    } else {
+                        listEl.innerHTML = '<div class="no-comments">Chưa có bình luận nào. Hãy là người đầu tiên!</div>';
+                    }
+
+                    // Render pagination
+                    if (data.meta) {
+                        currentPage = data.meta.current_page || 1;
+                        lastPage = data.meta.last_page || 1;
+                        renderPagination(data.meta);
+                    }
+                } catch (error) {
+                    console.error(error);
+                    listEl.innerHTML = '<div class="no-comments text-danger">Không thể tải bình luận.</div>';
+                } finally {
+                    isLoading = false;
+                }
+            };
+
+            listEl.addEventListener('click', (event) => {
+                const replyBtn = event.target.closest('button[data-reply-id]');
+                const reportBtn = event.target.closest('button[data-report-id]');
+
+                if (replyBtn) {
+                    parentInput.value = replyBtn.dataset.replyId;
+                    replyToName.textContent = replyBtn.dataset.replyName || '';
+                    replyIndicator.style.display = 'block';
+                    form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+
+                if (reportBtn) {
+                    reportComment(reportBtn.dataset.reportId);
+                }
+            });
+
+            cancelReplyBtn?.addEventListener('click', () => {
+                parentInput.value = '';
+                replyIndicator.style.display = 'none';
+            });
+
+            const reportComment = async (commentId) => {
+                try {
+                    await fetch(`${config.apiUrl}/${commentId}/report`, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': config.csrf,
+                            'Accept': 'application/json',
+                        },
+                    });
+                    showCustomToast('Báo cáo đã được gửi. Cảm ơn bạn!', 'success');
+                } catch (error) {
+                    showCustomToast('Không thể báo cáo bình luận.', 'error');
+                }
+            };
+
+            form?.addEventListener('submit', async (event) => {
+                event.preventDefault();
+
+                // Honeypot chống bot
+                if (form.website?.value) return;
+
+                const formData = new FormData(form);
+                formData.append('commentable_id', config.commentableId);
+                formData.append('commentable_type', config.commentableType);
+
+                showCustomToast("Đang gửi bình luận...", "info");
+
+                try {
+                    const res = await fetch(config.submitUrl, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': config.csrf,
+                            'Accept': 'application/json',
+                        },
+                        body: formData,
+                    });
+
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.message || "Không thể gửi bình luận.");
+
+                    // Reset form
+                    form.reset();
+                    parentInput.value = '';
+                    replyIndicator.style.display = 'none';
+
+                    // Cập nhật số lượng bình luận
+                    const newCount = parseInt(countEl.textContent || '0', 10) + 1;
+                    countEl.textContent = newCount;
+
+                    showCustomToast("Cảm ơn bạn! Bình luận sẽ hiển thị sau khi được duyệt.", "success");
+
+                } catch (error) {
+                    console.error(error);
+                    showCustomToast(error.message, "error");
+                }
+            });
+
+
+            setTimeout(() => {
+                loadComments();
+            }, 5000);
+        });
+    </script>
+@endsection
 
 @section('content')
     @php

@@ -194,21 +194,7 @@
         <div class="nobifashion_header_main_nav_links">
             @foreach ($categories as $category)
                 @php
-                    // Nếu danh mục có con → lấy sản phẩm của chính nó + các con
-                    if ($category->children->isNotEmpty()) {
-                        $childIds = $category->children->pluck('id')->toArray();
-                        $categoryIds = array_merge([$category->id], $childIds);
-                    } else {
-                        // Nếu là danh mục con → chỉ lấy chính nó
-                        $categoryIds = [$category->id];
-                    }
-
-                    // Lấy sản phẩm theo scope inCategory()
-                    $productsCategories = \App\Models\Product::active()
-                        ->inCategory($categoryIds)
-                        ->with('primaryImage')
-                        ->limit(5)
-                        ->get();
+                    $productsCategories = collect($headerCategoryProducts[$category->id] ?? [])
                 @endphp
                 <div class="nobifashion_header_main_nav_links_item">
                     <h3 class="nobifashion_header_main_nav_links_item_title"><a href="/{{ $category->slug }}">{{ $category->name }}</a><svg xmlns="http://www.w3.org/2000/svg"
@@ -223,11 +209,17 @@
                                     <span class="nobifashion_header_main_nav_links_item_list_product_label_text">{{ $product?->label }}</span>
                                 </div>
                                 <div class="nobifashion_header_main_nav_links_item_list_product_img">
-                                    <img class="nobifashion_header_main_nav_links_item_list_product_img_image"
+                                    {{-- Bỏ tạm khung frame đi --}}
+                                    {{-- <img class="nobifashion_header_main_nav_links_item_list_product_img_image"
                                         src="{{ asset('clients/assets/img/clothes/'. $product?->primaryImage?->url) }}" alt="{{ $product?->primaryImage?->alt }}" title="{{ $product?->primaryImage?->title }}">
                                     <a href="/san-pham/{{ $product?->slug }}">
                                         <img class="nobifashion_header_main_nav_links_item_list_product_img_khung"
                                             src="{{ asset('clients/assets/img/frame/'. ($product?->frame ?? 'frame-free-ship-hot.png')) }}" alt="Khung ảnh sản phẩm">
+                                    </a> --}}
+
+                                    <a href="/san-pham/{{ $product?->slug }}">
+                                        <img class="nobifashion_header_main_nav_links_item_list_product_img_image"
+                                            src="{{ asset('clients/assets/img/clothes/'. $product?->primaryImage?->url) }}" alt="{{ $product?->primaryImage?->alt }}" title="{{ $product?->primaryImage?->title }}">
                                     </a>
                                 </div>
                                 <div class="nobifashion_header_main_nav_links_item_list_product_info">
@@ -421,9 +413,6 @@
                         @foreach ($category->children as $child)
                             @php
                                 // Load children của child nếu chưa được eager load
-                                if (!$child->relationLoaded('children')) {
-                                    $child->load('children');
-                                }
                                 $childChildren = $child->children;
                             @endphp
                             <div class="nobifashion_mobile_categories_content_item_wrapper">

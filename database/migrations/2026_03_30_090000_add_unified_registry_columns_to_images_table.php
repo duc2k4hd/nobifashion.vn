@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
     protected array $directories = [];
+    protected array $columnLengths = [];
 
     public function __construct()
     {
@@ -72,13 +73,13 @@ return new class extends Migration
                     DB::table('images')
                         ->where('id', $row->id)
                         ->update([
-                            'name' => $name,
-                            'path' => $path ?: $row->path,
-                            'url' => $url ?: $row->url,
-                            'entity_type' => $row->entity_type ?: ($row->product_id ? 'product' : null),
+                            'name' => $this->fitColumnValue('name', $name),
+                            'path' => $this->fitColumnValue('path', $path ?: $row->path),
+                            'url' => $this->fitColumnValue('url', $url ?: $row->url),
+                            'entity_type' => $this->fitColumnValue('entity_type', $row->entity_type ?: ($row->product_id ? 'product' : null)),
                             'entity_id' => $row->entity_id ?: ($row->product_id ?: null),
-                            'role' => $row->role ?: $this->resolveDefaultRole($row->product_id, $row->is_primary ?? false),
-                            'context' => $context ?: $row->context,
+                            'role' => $this->fitColumnValue('role', $row->role ?: $this->resolveDefaultRole($row->product_id, $row->is_primary ?? false)),
+                            'context' => $this->fitColumnValue('context', $context ?: $row->context),
                         ]);
                 }
             });
@@ -327,21 +328,21 @@ return new class extends Migration
 
         return [
             'product_id' => $entityType === 'product' ? $entityId : null,
-            'name' => $name,
-            'entity_type' => $entityType,
+            'name' => $this->fitColumnValue('name', $name),
+            'entity_type' => $this->fitColumnValue('entity_type', $entityType),
             'entity_id' => $entityId,
-            'role' => $role,
-            'title' => $title ?: $name,
+            'role' => $this->fitColumnValue('role', $role),
+            'title' => $this->fitColumnValue('title', $title ?: $name),
             'notes' => $description,
-            'alt' => $alt ?: $title ?: $name,
-            'url' => $path ?: $storedPath,
-            'path' => $path ?: $storedPath,
-            'extension' => $metadata['extension'] ?? strtolower(pathinfo((string) $storedPath, PATHINFO_EXTENSION)),
-            'mime_type' => $metadata['mime_type'] ?? null,
+            'alt' => $this->fitColumnValue('alt', $alt ?: $title ?: $name),
+            'url' => $this->fitColumnValue('url', $path ?: $storedPath),
+            'path' => $this->fitColumnValue('path', $path ?: $storedPath),
+            'extension' => $this->fitColumnValue('extension', $metadata['extension'] ?? strtolower(pathinfo((string) $storedPath, PATHINFO_EXTENSION))),
+            'mime_type' => $this->fitColumnValue('mime_type', $metadata['mime_type'] ?? null),
             'size' => $metadata['size'] ?? 0,
             'width' => $metadata['width'] ?? null,
             'height' => $metadata['height'] ?? null,
-            'context' => $context,
+            'context' => $this->fitColumnValue('context', $context),
             'file_modified_at' => $metadata['modified_at'] ?? null,
             'thumbnail_url' => null,
             'medium_url' => null,
@@ -476,5 +477,48 @@ return new class extends Migration
             'height' => $info[1] ?? null,
             'modified_at' => date('Y-m-d H:i:s', filemtime($absolutePath) ?: time()),
         ];
+    }
+
+    protected function fitColumnValue(string $column, mixed $value): mixed
+    {
+        if (! is_string($value)) {
+            return $value;
+        }
+
+        $length = $this->getColumnLength($column);
+        if ($length === null || mb_strlen($value) <= $length) {
+            return $value;
+        }
+
+        if ($column === 'name') {
+            $extension = pathinfo($value, PATHINFO_EXTENSION);
+            if ($extension !== '') {
+                $suffix = '.' . $extension;
+                $baseLength = max(1, $length - mb_strlen($suffix));
+
+                return mb_substr(pathinfo($value, PATHINFO_FILENAME), 0, $baseLength) . $suffix;
+            }
+        }
+
+        return mb_substr($value, 0, $length);
+    }
+
+    protected function getColumnLength(string $column): ?int
+    {
+        if (array_key_exists($column, $this->columnLengths)) {
+            return $this->columnLengths[$column];
+        }
+
+        $info = DB::table('information_schema.columns')
+            ->select('CHARACTER_MAXIMUM_LENGTH')
+            ->whereRaw('TABLE_SCHEMA = DATABASE()')
+            ->where('TABLE_NAME', 'images')
+            ->where('COLUMN_NAME', $column)
+            ->first();
+
+        $length = $info?->CHARACTER_MAXIMUM_LENGTH;
+        $this->columnLengths[$column] = $length !== null ? (int) $length : null;
+
+        return $this->columnLengths[$column];
     }
 };

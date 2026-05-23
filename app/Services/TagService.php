@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\Post;
+use App\Models\Product;
 use App\Models\Tag;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\DB;
@@ -322,6 +324,47 @@ class TagService
     }
 
     /**
+     * Cập nhật usage_count cho các tag đang được tham chiếu trong tag_ids của entity.
+     *
+     * @param  array<int, int|string>  $oldTagIds
+     * @param  array<int, int|string>  $newTagIds
+     */
+    public function updateUsageCountForTags(array $oldTagIds = [], array $newTagIds = []): void
+    {
+        $tagIds = array_values(array_unique(array_filter(array_map(
+            'intval',
+            array_merge($oldTagIds, $newTagIds)
+        ))));
+
+        if ($tagIds === []) {
+            return;
+        }
+
+        $tags = Tag::query()
+            ->whereIn('id', $tagIds)
+            ->get(['id', 'entity_type']);
+
+        foreach ($tags as $tag) {
+            $tag->forceFill([
+                'usage_count' => $this->resolveUsageCountForTag($tag),
+            ])->saveQuietly();
+        }
+    }
+
+    protected function resolveUsageCountForTag(Tag $tag): int
+    {
+        return match ($tag->entity_type) {
+            Product::class, 'product' => Product::query()
+                ->whereJsonContains('tag_ids', $tag->id)
+                ->count(),
+            Post::class, 'post' => Post::query()
+                ->whereJsonContains('tag_ids', $tag->id)
+                ->count(),
+            default => 0,
+        };
+    }
+
+    /**
      * Gắn tag cho entity
      */
     public function assignToEntity(string $entityType, int $entityId, array $tagIds): array
@@ -379,4 +422,3 @@ class TagService
             ->toArray();
     }
 }
-

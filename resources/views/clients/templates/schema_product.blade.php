@@ -90,15 +90,7 @@
             "name": "Trang chủ"
           }
         }
-        @php
-          $position = 2;
-          $categoryBreadcrumb = $product?->primaryCategory?->first() ?? null;
-          $breadcrumbPath = collect();
-          while ($categoryBreadcrumb) {
-            $breadcrumbPath->prepend($categoryBreadcrumb);
-            $categoryBreadcrumb = $categoryBreadcrumb->parent ?? null;
-          }
-        @endphp
+        @php $position = 2; @endphp
         @foreach ($breadcrumbPath as $breadcrumb)
         ,{
           "@type": "ListItem",
@@ -110,20 +102,6 @@
         }
         @php $position++; @endphp
         @endforeach
-        @if ($product->primaryCategory)
-          @php $lastCategory = $product?->extraCategories()?->last(); @endphp
-          @if ($lastCategory && !$breadcrumbPath->contains('id', $lastCategory->id))
-          ,{
-            "@type": "ListItem",
-            "position": {{ $position }},
-            "item": {
-              "@id": "#",
-              "name": "{{ $lastCategory->name }}"
-            }
-          }
-          @php $position++; @endphp
-          @endif
-        @endif
         ,{
           "@type": "ListItem",
           "position": {{ $position }},
@@ -140,7 +118,7 @@
       "name": "{{ renderMeta($product->meta_title ?? ($product->name ?? 'Sản phẩm thời trang chính hãng - NOBI FASHION')) }}",
       "image": {
         "@type": "ImageObject",
-        "url": "{{ asset('clients/assets/img/clothers/' . ($product->primary_image->url ?? 'no-image.jpg')) }}",
+        "url": "{{ asset('clients/assets/img/clothes/' . ($product->primaryImage->url ?? 'no-image.jpg')) }}",
         "width": 500,
         "height": 500
       },
@@ -246,16 +224,17 @@
         @endif
       ]
     }
-    @if (optional($product->howtos->first())->steps)
+    @php $schemaHowTo = $product->howTos->first(); @endphp
+    @if (optional($schemaHowTo)->steps)
     ,{
       "@type": "HowTo",
-      "name": "{{ ($product->howtos->first()->title ?? 'Cách bảo quản và phối đồ đẹp') }}",
-      "description": "{{ ($product->howtos->first()->description ?? 'Hướng dẫn phối đồ nhanh gọn, giữ form áo/quần bền đẹp khi giặt sấy.') }}",
-      "image": "{{ asset('clients/assets/img/clothers/' . ($product->primary_image->url ?? 'no-image.jpg')) }}",
+      "name": "{{ ($schemaHowTo->title ?? 'Cách bảo quản và phối đồ đẹp') }}",
+      "description": "{{ ($schemaHowTo->description ?? 'Hướng dẫn phối đồ nhanh gọn, giữ form áo/quần bền đẹp khi giặt sấy.') }}",
+      "image": "{{ asset('clients/assets/img/clothes/' . ($product->primaryImage->url ?? 'no-image.jpg')) }}",
       "totalTime": "PT15M",
       "estimatedCost": { "@type": "MonetaryAmount", "currency": "VND", "value": "10000" },
       @php
-        $howto = data_get($product, 'howtos.0');
+        $howto = $schemaHowTo;
         $supplies = collect(data_get($howto, 'supplies', []))->filter()->values();
         $steps    = collect(data_get($howto, 'steps', []))->filter()->values();
       @endphp

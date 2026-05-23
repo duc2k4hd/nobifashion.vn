@@ -53,6 +53,7 @@ class ProductRequest extends FormRequest
             'is_featured' => ['nullable', 'boolean'],
             'has_variants' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
+            'link_shopee' => ['nullable', 'string'],
 
             'images' => ['nullable', 'array'],
             'images.*.id' => ['nullable', 'integer', 'exists:images,id'],

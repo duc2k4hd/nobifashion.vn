@@ -525,14 +525,14 @@
 }
 
 .nobifashion_header_main_nav_links_item_list_product_img {
-    aspect-ratio: 1 / 1;
+    aspect-ratio: 4 / 6;
     width: 200px;
-    height: 200px;
+    height: 300px;
 }
 
 .nobifashion_header_main_nav_links_item_list_product_img_image {
     width: 200px;
-    height: 200px;
+    height: 300px;
     position: absolute;
     margin: 10px 0 0 0;
     left: 50%;
@@ -545,7 +545,7 @@
 
 .nobifashion_header_main_nav_links_item_list_product_img_khung {
     width: 200px;
-    height: 200px;
+    height: 300px;
     position: absolute;
     margin: 10px 0 0 0;
     left: 50%;

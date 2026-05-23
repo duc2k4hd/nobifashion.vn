@@ -12,7 +12,8 @@
                 <div class="nobifashion_single_desc_tabs_describe_product_new_item">
                     <div class="nobifashion_single_desc_tabs_describe_product_new_img">
                         <a href="/san-pham/{{ $new->slug ?? 'san-pham-moi' }}">
-                            <img src="{{ asset('clients/assets/img/clothes/' . ($new->primaryImage->url ?? 'no-image.webp')) }}"
+                            <img loading="lazy" decoding="async"
+                                src="{{ asset('clients/assets/img/clothes/' . ($new->primaryImage->url ?? 'no-image.webp')) }}"
                                 alt="Áo Thun Nam Basic">
                             <span class="nobifashion_single_desc_tabs_describe_product_new_badge">New</span>
                         </a>

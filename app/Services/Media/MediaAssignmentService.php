@@ -9,6 +9,8 @@ use App\Models\Post;
 use App\Models\Product;
 use App\Models\Profile;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class MediaAssignmentService
@@ -59,6 +61,49 @@ class MediaAssignmentService
             'library_image' => $this->deleteLibraryImage((int) $id, $deletePhysical),
             default => false,
         };
+    }
+
+    public function deleteByManagedPath(string $relativePath): array
+    {
+        $normalizedPath = $this->registry->normalizeStoredPath($relativePath);
+        if (
+            ! $normalizedPath
+            || Str::startsWith($normalizedPath, ['http://', 'https://'])
+            || ! $this->files->isManagedMediaPath($normalizedPath, config('media.directories', []))
+        ) {
+            return [
+                'success' => false,
+                'deleted_records' => 0,
+                'file_deleted' => false,
+            ];
+        }
+
+        $images = Image::query()
+            ->get()
+            ->filter(fn (Image $image) => $this->imageMatchesManagedPath($image, $normalizedPath))
+            ->values();
+
+        $deletedRecords = 0;
+
+        DB::transaction(function () use ($images, &$deletedRecords) {
+            foreach ($images as $image) {
+                [$source, $sourceId] = $this->resolveSourcePair($image);
+                if (! $this->delete($source, (string) $sourceId, false)) {
+                    throw new \RuntimeException('Không thể xóa bản ghi media đang tham chiếu file.');
+                }
+
+                $deletedRecords++;
+            }
+        });
+
+        $fileDeleted = ! $this->files->fileExists($normalizedPath)
+            || $this->files->deleteManagedFile($normalizedPath, config('media.directories', []));
+
+        return [
+            'success' => $fileDeleted,
+            'deleted_records' => $deletedRecords,
+            'file_deleted' => $fileDeleted,
+        ];
     }
 
     public function assignExisting(string $targetType, int $targetId, array $paths, array $meta = []): array
@@ -403,6 +448,11 @@ class MediaAssignmentService
     protected function deleteLibraryImage(int $imageId, bool $deletePhysical = true): bool
     {
         $image = Image::findOrFail($imageId);
+
+        if ($this->isImageReferencedInPostContent($image)) {
+            throw new \DomainException('Ảnh đang được dùng trong nội dung bài viết, không thể xóa trực tiếp.');
+        }
+
         if ($deletePhysical) {
             $this->deleteManagedPath($image->path ?: $image->url);
         }
@@ -492,5 +542,121 @@ class MediaAssignmentService
         }
 
         $this->files->deleteFile($normalized ?: $path);
+    }
+
+    protected function isImageReferencedInPostContent(Image $image): bool
+    {
+        $normalizedPath = $this->registry->normalizeStoredPath(
+            $image->path ?: $image->url,
+            $this->defaultFolderKeyForImage($image)
+        );
+
+        if (! $normalizedPath || ! Schema::hasTable('posts')) {
+            return false;
+        }
+
+        $basename = basename($normalizedPath);
+        $postQuery = DB::table('posts')->select(['content']);
+        if (Schema::hasColumn('posts', 'deleted_at')) {
+            $postQuery->whereNull('deleted_at');
+        }
+
+        $postQuery->where('content', 'like', '%' . $basename . '%');
+
+        foreach ($postQuery->cursor() as $post) {
+            if (in_array($normalizedPath, $this->extractManagedPathsFromHtml((string) ($post->content ?? '')), true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function imageMatchesManagedPath(Image $image, string $relativePath): bool
+    {
+        $fallbackFolderKey = $this->defaultFolderKeyForImage($image);
+
+        foreach ([
+            $image->path,
+            $image->url,
+            $image->thumbnail_url,
+            $image->medium_url,
+        ] as $candidate) {
+            $normalized = $this->registry->normalizeStoredPath($candidate, $fallbackFolderKey);
+            if ($normalized === $relativePath) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    protected function resolveSourcePair(Image $image): array
+    {
+        return match (true) {
+            $image->entity_type === 'product' || $image->product_id !== null => ['product_image', $image->id],
+            $image->entity_type === 'post' => ['post_thumbnail', $image->entity_id],
+            $image->entity_type === 'category' => ['category_image', $image->entity_id],
+            $image->entity_type === 'banner' && $image->role === 'mobile' => ['banner_mobile', $image->entity_id],
+            $image->entity_type === 'banner' => ['banner_desktop', $image->entity_id],
+            $image->entity_type === 'profile' && $image->role === 'sub_avatar' => ['profile_sub_avatar', $image->entity_id],
+            $image->entity_type === 'profile' => ['profile_avatar', $image->entity_id],
+            default => ['library_image', $image->id],
+        };
+    }
+
+    protected function defaultFolderKeyForImage(Image $image): ?string
+    {
+        return match ($image->entity_type ?: ($image->product_id ? 'product' : $image->context)) {
+            'product' => 'clothes',
+            'post' => 'posts',
+            'category' => 'categories',
+            'banner' => 'banners',
+            'profile' => 'accounts_avatars',
+            default => null,
+        };
+    }
+
+    /**
+     * @return string[]
+     */
+    protected function extractManagedPathsFromHtml(string $html): array
+    {
+        if (trim($html) === '') {
+            return [];
+        }
+
+        preg_match_all('/<img\b[^>]*\bsrc\s*=\s*(["\'])(.*?)\1/i', $html, $matches);
+
+        $paths = [];
+        foreach ($matches[2] ?? [] as $src) {
+            $managedPath = $this->normalizeEmbeddedMediaPath($src, 'posts');
+            if ($managedPath) {
+                $paths[$managedPath] = $managedPath;
+            }
+        }
+
+        return array_values($paths);
+    }
+
+    protected function normalizeEmbeddedMediaPath(?string $src, ?string $fallbackFolderKey = null): ?string
+    {
+        $decoded = trim(html_entity_decode((string) $src, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+        if ($decoded === '' || Str::startsWith($decoded, ['data:', 'blob:'])) {
+            return null;
+        }
+
+        $parsedPath = parse_url($decoded, PHP_URL_PATH);
+        $path = is_string($parsedPath) && $parsedPath !== '' ? $parsedPath : $decoded;
+
+        if (Str::startsWith($decoded, ['http://', 'https://'])) {
+            $normalized = $this->files->normalizeRelativePath($path);
+
+            return $this->files->isManagedMediaPath($normalized, config('media.directories', []))
+                ? $normalized
+                : null;
+        }
+
+        return $this->registry->normalizeStoredPath($path, $fallbackFolderKey);
     }
 }

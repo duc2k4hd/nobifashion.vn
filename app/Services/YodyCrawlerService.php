@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Category;
 use App\Models\YodyTempProduct;
+use App\Support\ProductWorkbookSchema;
 use Illuminate\Http\Client\Pool;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Http;
@@ -918,42 +919,37 @@ class YodyCrawlerService
 
         $this->fillSheet(
             $spreadsheet->getActiveSheet(),
-            'products',
-            [
-                'sku','name','slug','description','short_description','price','sale_price',
-                'cost_price','stock_quantity','meta_title','meta_description','meta_keywords',
-                'meta_canonical','primary_category_slug','category_slugs','tag_slugs',
-                'is_featured','has_variants','created_by','is_active','brand_slug',
-            ],
-            $productRows
+            ProductWorkbookSchema::SHEET_PRODUCTS,
+            ProductWorkbookSchema::productHeaders(),
+            $this->normalizeWorkbookProductRows($productRows)
         );
 
         $this->fillSheet(
             $spreadsheet->createSheet(),
-            'images',
-            ['sku','image_key','local_path','title','notes','alt','is_primary','order'],
+            ProductWorkbookSchema::SHEET_IMAGES,
+            ProductWorkbookSchema::imageHeaders(),
             $imageRows
         );
 
         $this->fillSheet(
             $spreadsheet->createSheet(),
-            'product_variants',
-            ['sku','price','stock_quantity','attributes_color','attributes_size','image_key'],
-            $variantRows
+            ProductWorkbookSchema::SHEET_VARIANTS,
+            ProductWorkbookSchema::variantHeaders(),
+            $this->normalizeWorkbookVariantRows($variantRows)
         );
 
         $this->fillSheet(
             $spreadsheet->createSheet(),
-            'product_faqs',
-            ['sku','question','answer','order'],
+            ProductWorkbookSchema::SHEET_FAQS,
+            ProductWorkbookSchema::faqHeaders(),
             $faqRows
         );
 
         $this->fillSheet(
             $spreadsheet->createSheet(),
-            'product_how_tos',
-            ['sku','title','description','steps','supplies'],
-            $howToRows
+            ProductWorkbookSchema::SHEET_HOW_TOS,
+            ProductWorkbookSchema::howToHeaders(),
+            $this->normalizeWorkbookHowToRows($howToRows)
         );
 
         $fileName = 'yody_products_import_' . now()->format('Y-m-d_H-i-s') . '.xlsx';
@@ -962,6 +958,86 @@ class YodyCrawlerService
         $writer->save($fullPath);
 
         return $fileName;
+    }
+
+    private function normalizeWorkbookProductRows(array $rows): array
+    {
+        return array_map(function (array $row): array {
+            return [
+                $row[0] ?? null,
+                $row[1] ?? null,
+                $row[2] ?? null,
+                $row[3] ?? null,
+                $row[4] ?? null,
+                $row[5] ?? null,
+                $row[6] ?? null,
+                $row[7] ?? null,
+                $row[8] ?? null,
+                $row[9] ?? null,
+                $row[10] ?? null,
+                $row[11] ?? null,
+                $row[12] ?? null,
+                $row[13] ?? null,
+                $row[14] ?? null,
+                $row[15] ?? null,
+                $row[16] ?? null,
+                $row[17] ?? null,
+                $row[18] ?? null,
+                $row[19] ?? null,
+                $row[20] ?? null,
+            ];
+        }, $rows);
+    }
+
+    private function normalizeWorkbookVariantRows(array $rows): array
+    {
+        return array_map(function (array $row): array {
+            $productSku = $row[0] ?? null;
+            $price = $row[1] ?? null;
+            $stockQuantity = $row[2] ?? null;
+            $color = trim((string) ($row[3] ?? ''));
+            $size = trim((string) ($row[4] ?? ''));
+            $imageKey = $row[5] ?? null;
+
+            $attributes = array_filter([
+                'color' => $color,
+                'size' => $size,
+            ], fn ($value) => $value !== '');
+
+            $variantNameParts = [];
+            if ($color !== '') {
+                $variantNameParts[] = 'Màu ' . $color;
+            }
+            if ($size !== '') {
+                $variantNameParts[] = 'Size ' . $size;
+            }
+
+            return [
+                $productSku,
+                ! empty($variantNameParts) ? implode(' / ', $variantNameParts) : 'Variant mặc định',
+                null,
+                $price,
+                null,
+                $stockQuantity,
+                $imageKey,
+                ! empty($attributes) ? json_encode($attributes, JSON_UNESCAPED_UNICODE) : null,
+                1,
+            ];
+        }, $rows);
+    }
+
+    private function normalizeWorkbookHowToRows(array $rows): array
+    {
+        return array_map(function (array $row): array {
+            return [
+                $row[0] ?? null,
+                $row[1] ?? null,
+                $row[2] ?? null,
+                $row[3] ?? null,
+                $row[4] ?? null,
+                1,
+            ];
+        }, $rows);
     }
 
     public function getTempLibrarySummary(array $filters = []): array

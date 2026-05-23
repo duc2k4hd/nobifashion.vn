@@ -4,7 +4,7 @@
     <hr style="flex: 1; height: 2px; background-color: #e6525e; border: none; margin: 0;">
 </div>
 <div class="nobifashion_single_product_related">
-    <h3 class="nobifashion_single_product_related_title">📦 Sản phẩm liên quan</h3>
+    <h3 class="nobifashion_single_product_related_title">📦 Có thể bạn sẽ quan tâm</h3>
 
     <div class="nobifashion_single_product_related_grid">
         @if($productRelated->isNotEmpty())
@@ -12,7 +12,7 @@
                 <!-- Item -->
                 <div class="nobifashion_single_product_related_item">
                     <a href="/san-pham/{{ $related->slug ?? 'san-pham-lien-quan' }}" class="nobifashion_single_product_related_img">
-                        <img src="{{ asset('clients/assets/img/clothes/'. ($related->primaryImage->url ?? 'no-image.webp')) }}" alt="{{ $related->name }}">
+                        <img loading="lazy" decoding="async" src="{{ asset('clients/assets/img/clothes/'. ($related->primaryImage->url ?? 'no-image.webp')) }}" alt="{{ $related->name }}">
                         @if($related->is_featured)
                             <span class="nobifashion_single_product_related_badge">Hot</span>
                         @elseif($related->created_at->diffInDays(now()) <= 30)

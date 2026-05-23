@@ -320,6 +320,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
             Route::get('/import-excel', [ImportExcelController::class, 'index'])->name('import-excel');
             Route::post('/import-excel', [ImportExcelController::class, 'import'])->name('import-excel.process');
+            Route::post('/import-excel/start', [ImportExcelController::class, 'startImportWithFile'])->name('import-excel.start');
+            Route::post('/import-excel/process-chunk', [ImportExcelController::class, 'processImportChunk'])->name('import-excel.process-chunk');
+            Route::get('/import-excel/progress', [ImportExcelController::class, 'getImportProgress'])->name('import-excel.progress');
+            Route::post('/import-excel/cancel', [ImportExcelController::class, 'cancelImport'])->name('import-excel.cancel');
             Route::get('/export-excel', [ImportExcelController::class, 'export'])->name('export-excel');
         });
 
@@ -408,6 +412,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/update/{id}', [AdminMediaController::class, 'update'])->name('update');
             Route::post('/delete/{id}', AdminMediaDeleteController::class)->name('delete');
             Route::post('/bulk-delete', [AdminMediaController::class, 'bulkDelete'])->name('bulk-delete');
+            Route::post('/cleanup', [AdminMediaController::class, 'cleanup'])->name('cleanup');
             Route::post('/assign-to-model', AdminMediaAssignController::class)->name('assign');
             
             // Media Library routes (WordPress-style)
