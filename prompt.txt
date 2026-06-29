@@ -1,0 +1,41 @@
+Dưới đây là 10 prompt kịch bản chụp ảnh sản phẩm áo theo tỉ lệ 550x825px, phong cách ảnh thật, tự nhiên, không bị cảm giác AI. Bạn chỉ cần thay phần [ảnh áo sản phẩm] và [ảnh người mẫu] bằng ảnh thực tế khi đưa vào công cụ tạo ảnh.
+
+Prompt 1 – Người mẫu mặc áo đứng ngoài phố
+
+Tạo ảnh thời trang chân thực kích thước 550x825px. Sử dụng chính xác mẫu áo từ [ảnh áo sản phẩm], cho người mẫu trong [ảnh người mẫu] mặc lên người một cách tự nhiên, đúng form áo, đúng màu sắc, đúng họa tiết, đúng chất liệu. Người mẫu đứng trên vỉa hè thành phố, ánh sáng ban ngày dịu nhẹ, background phố xá hơi mờ, phong cách streetwear trẻ trung. Ảnh chụp như bằng máy ảnh thật, da người tự nhiên, nếp vải thật, không làm áo bị méo, không thay đổi logo/họa tiết, không tạo cảm giác AI, không lỗi tay, không lỗi mặt, không chữ thừa, không watermark.
+
+Prompt 2 – Người mẫu ngồi quán cà phê mặc áo
+
+Tạo ảnh lifestyle chân thực kích thước 550x825px. Dùng mẫu áo từ [ảnh áo sản phẩm], mặc lên người mẫu trong [ảnh người mẫu] với dáng mặc tự nhiên, đúng màu, đúng kiểu cổ áo, tay áo, họa tiết và chất liệu. Người mẫu ngồi trong quán cà phê hiện đại, một tay cầm ly cà phê, dáng thoải mái, ánh sáng cửa sổ mềm, không gian ấm áp. Ảnh giống ảnh chụp lookbook thật, chi tiết vải rõ, nếp áo tự nhiên, khuôn mặt và tay chân cân đối, không bị nhựa, không quá bóng, không tạo cảm giác ảnh AI, không watermark.
+
+Prompt 3 – Người mẫu cầm áo trước gương
+
+Tạo ảnh chân thực kích thước 550x825px. Sử dụng mẫu áo từ [ảnh áo sản phẩm], người mẫu trong [ảnh người mẫu] đứng trước gương trong phòng thay đồ, hai tay cầm chiếc áo trước ngực như đang thử đồ. Áo phải hiển thị rõ mặt trước, đúng màu sắc, đúng thiết kế, đúng form, không biến dạng họa tiết. Bối cảnh phòng thử đồ thời trang, ánh sáng trắng mềm, phong cách tự nhiên như ảnh chụp bằng điện thoại cao cấp. Ảnh thật, sắc nét, không cảm giác AI, không lỗi tay, không méo áo, không chữ thừa, không watermark.
+
+Prompt 4 – Áo treo trên móc, người mẫu đứng cạnh
+
+Tạo ảnh sản phẩm thời trang chân thực kích thước 550x825px. Dùng đúng mẫu áo từ [ảnh áo sản phẩm], treo áo trên móc gỗ hoặc giá treo quần áo, người mẫu trong [ảnh người mẫu] đứng cạnh và nhẹ nhàng cầm phần vai áo. Áo phải là chủ thể chính, hiển thị rõ form dáng, màu sắc, họa tiết, chất liệu vải. Bối cảnh studio tối giản, nền sáng sạch, ánh sáng mềm tự nhiên, phong cách lookbook thương mại. Ảnh giống ảnh chụp thật, không bị cảm giác AI, không thay đổi thiết kế áo, không lỗi bàn tay, không watermark.
+
+Prompt 5 – Người mẫu mặc áo trong studio nền trắng
+
+Tạo ảnh lookbook studio chân thực kích thước 550x825px. Cho người mẫu trong [ảnh người mẫu] mặc chính xác mẫu áo từ [ảnh áo sản phẩm], giữ nguyên thiết kế, màu sắc, logo, họa tiết và chất liệu. Người mẫu đứng thẳng nhẹ, một tay để túi quần, một tay thả tự nhiên, nền trắng hoặc xám nhạt, ánh sáng studio mềm đều. Ảnh phải rõ form áo, phù hợp dùng làm ảnh sản phẩm thương mại. Không làm mặt quá mịn, không da nhựa, không lỗi tay, không thay đổi áo, không tạo cảm giác AI, không watermark.
+
+Prompt 6 – Người mẫu mặc áo đi dạo công viên
+
+Tạo ảnh lifestyle thời trang kích thước 550x825px, phong cách ảnh thật. Dùng mẫu áo từ [ảnh áo sản phẩm] và mặc lên người mẫu trong [ảnh người mẫu], áo phải đúng form, đúng màu, đúng họa tiết và chất liệu. Người mẫu đang đi bộ trong công viên, dáng tự nhiên, ánh sáng chiều nhẹ, nền cây xanh mờ phía sau. Chụp toàn thân hoặc 3/4 người để thấy rõ áo. Ảnh có chiều sâu, màu sắc tự nhiên, nếp vải thật, không bị bóng nhựa, không lỗi cơ thể, không cảm giác AI, không chữ thừa, không watermark.
+
+Prompt 7 – Người mẫu cầm áo trên tay trong shop thời trang
+
+Tạo ảnh chân thực kích thước 550x825px. Người mẫu trong [ảnh người mẫu] đứng trong cửa hàng thời trang, cầm mẫu áo từ [ảnh áo sản phẩm] bằng hai tay ở phía trước, như đang giới thiệu sản phẩm. Áo phải hiển thị rõ toàn bộ mặt trước, đúng màu sắc, đúng họa tiết, đúng kiểu dáng và chất liệu. Background có kệ quần áo treo phía sau, ánh sáng showroom đẹp, không gian gọn gàng. Ảnh thương mại tự nhiên, không giống ảnh AI, không lỗi ngón tay, không méo áo, không thêm chữ/logo lạ, không watermark.
+
+Prompt 8 – Người mẫu mặc áo phối đồ trẻ trung
+
+Tạo ảnh thời trang chân thực kích thước 550x825px. Dùng đúng mẫu áo từ [ảnh áo sản phẩm] cho người mẫu trong [ảnh người mẫu] mặc lên người, phối cùng quần jeans hoặc quần kaki đơn giản, giày sneaker, phong cách trẻ trung năng động. Người mẫu đứng tự nhiên trước background tường bê tông hoặc tường trơn hiện đại, ánh sáng ban ngày tự nhiên. Áo phải giữ nguyên màu, họa tiết, chất vải và form dáng. Ảnh sắc nét như chụp bằng máy ảnh thật, không bị AI, không lỗi tay, không méo mặt, không watermark.
+
+Prompt 9 – Cận cảnh nửa người để nổi bật chất vải
+
+Tạo ảnh cận cảnh thời trang chân thực kích thước 550x825px. Cho người mẫu trong [ảnh người mẫu] mặc mẫu áo từ [ảnh áo sản phẩm], khung hình từ đầu đến ngang đùi hoặc từ cổ đến eo, tập trung làm nổi bật chất liệu vải, đường may, form cổ áo, tay áo và họa tiết. Người mẫu có thể chạm nhẹ vào phần cổ áo hoặc tay áo. Bối cảnh tối giản, ánh sáng mềm, màu ảnh tự nhiên. Giữ đúng thiết kế áo, không làm sai màu, không biến dạng họa tiết, không lỗi tay, không cảm giác AI, không watermark.
+
+Prompt 10 – Người mẫu mặc áo chụp phong cách thương mại online
+
+Tạo ảnh bán hàng online chân thực kích thước 550x825px. Sử dụng chính xác mẫu áo từ [ảnh áo sản phẩm], mặc lên người mẫu trong [ảnh người mẫu] với dáng đứng tự nhiên, thân thiện, nhìn về camera. Background sạch, sáng, có thể là studio mini hoặc góc phòng hiện đại. Áo là điểm nhấn chính, hiển thị rõ form dáng, màu sắc, họa tiết, cổ áo, tay áo và chất vải. Ảnh giống ảnh shop thời trang thật, không quá chỉnh sửa, không da nhựa, không lỗi bàn tay, không thay đổi thiết kế áo, không chữ thừa, không watermark.

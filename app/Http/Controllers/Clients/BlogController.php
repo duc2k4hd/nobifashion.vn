@@ -105,7 +105,8 @@ class BlogController extends Controller
                 ->get();
 
             // Gộp lại: 5 bài mới hơn (đảo ngược lại cho đúng thứ tự thời gian) + 5 bài cũ hơn
-            return $after->reverse()->concat($before);
+            // Dùng unique('id') để loại bỏ bài trùng nếu có cùng thời gian xuất bản
+            return $after->reverse()->concat($before)->unique('id')->values();
         });
 
         // 20 bài random và cache mỗi bài

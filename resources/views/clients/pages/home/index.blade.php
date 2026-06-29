@@ -84,7 +84,12 @@
                                     <h3 class="nobifashion_main_slider_main_cats_sub_title">{{ $cat->name }}</h3>
                                     @foreach($cat->children as $child)
                                         <div class="nobifashion_main_slider_main_cats_sub_item">
-                                            <a class="nobifashion_main_slider_main_cats_sub_link" href="/{{ $child->slug }}">{{ $child->name }}</a>
+                                            <a class="nobifashion_main_slider_main_cats_sub_link" href="/{{ $child->slug }}" style="display: flex; justify-content: space-between; align-items: center;">
+                                                <span>{{ $child->name }}</span>
+                                                @if($child->children && $child->children->count())
+                                                    <span style="font-size: 16px;">›</span>
+                                                @endif
+                                            </a>
                                             @if($child->children && $child->children->count())
                                                 <div class="nobifashion_main_slider_main_cats_sub2">
                                                     <h3 class="nobifashion_main_slider_main_cats_sub_title">{{ $child->name }}</h3>
@@ -320,7 +325,7 @@
                             <a href="/{{ $child->slug }}">
                                 <img loading="lazy" decoding="async" draggable="false"
                                     class="nobifashion_main_categories_item_img"
-                                    src="{{ asset('clients/assets/img/categories/' . ($child->image ?? 'category.webp')) }}"
+                                    src="{{ !empty($child->image) ? asset('clients/assets/img/categories/' . $child->image) : asset('clients/assets/img/no-image.webp') }}"
                                     alt="{{ $child->name }}">
                                 <h3 class="nobifashion_main_categories_item_title">{{ $child->name }}</h3>
                                 <p class="nobifashion_main_categories_item_quantity">{{ $featuredCategoryCounts[$child->id] ?? 0 }} sản phẩm</p>

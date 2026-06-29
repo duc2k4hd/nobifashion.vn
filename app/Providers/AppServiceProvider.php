@@ -75,5 +75,11 @@ class AppServiceProvider extends ServiceProvider
         } catch (\Throwable $e) {
             // Bỏ qua lỗi khi container chưa sẵn sàng hoặc đang chạy trong console
         }
+        
+        Relation::morphMap([
+            'post' => \App\Models\Post::class,
+            'product' => \App\Models\Product::class,
+            'category' => \App\Models\Category::class,
+        ]);
     }
 }

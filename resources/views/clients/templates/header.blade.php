@@ -34,12 +34,6 @@
         <div class="nobifashion_header_main_search">
             <form class="nobifashion_header_main_search_form" action="{{ route('client.product.shop.search') }}" method="post">
                 @csrf
-                {{-- <select class="nobifashion_header_main_search_select" name="" id="">
-                    <option value="">Tất cả danh mục</option>
-                    @foreach ($categories as $category)
-                        <option value="">{{ $category->name }}</option>
-                    @endforeach
-                </select> --}}
                 <input name="search_text" class="nobifashion_header_main_search_input" type="text"
                     placeholder="Tìm kiếm sản phẩm..." value="{{ old('keyword', request('keyword')) }}">
                     <button class="nobifashion_header_main_search_btn" type="submit" aria-label="Tìm kiếm" title="Tìm kiếm"><svg xmlns="http://www.w3.org/2000/svg"
@@ -95,19 +89,7 @@
                         viewBox="0 0 512 512"><path
                             d="M406.5 399.6C387.4 352.9 341.5 320 288 320l-64 0c-53.5 0-99.4 32.9-118.5 79.6C69.9 362.2 48 311.7 48 256C48 141.1 141.1 48 256 48s208 93.1 208 208c0 55.7-21.9 106.2-57.5 143.6zm-40.1 32.7C334.4 452.4 296.6 464 256 464s-78.4-11.6-110.5-31.7c7.3-36.7 39.7-64.3 78.5-64.3l64 0c38.8 0 71.2 27.6 78.5 64.3zM256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zm0-272a40 40 0 1 1 0-80 40 40 0 1 1 0 80zm-88-40a88 88 0 1 0 176 0 88 88 0 1 0 -176 0z" />
                     </svg>
-                        {{-- @if ($account)
-                            @php
-                                $accountName = $account->name;
-                                $words = explode(' ', $accountName);
-                                $firstWord = $words[0];
-                                if (strlen($accountName) > 20) {
-                                    $displayName = strlen($firstWord) > 20 ? '...' : $firstWord . '...';
-                                } else {
-                                    $displayName = trim($accountName);
-                                }
-                            @endphp
-                        @endif --}}
-                    <span class="nobifashion_header_main_titlenobifashion_header_main_icon_name">{{ $accountLabel }}</span>
+                    <span class="nobifashion_header_main_title nobifashion_header_main_icon_name">{{ $accountLabel }}</span>
                 </a>
             </div>
         </div>
@@ -194,85 +176,26 @@
         <div class="nobifashion_header_main_nav_links">
             @foreach ($categories as $category)
                 @php
-                    $productsCategories = collect($headerCategoryProducts[$category->id] ?? [])
+                    $productsCategories = collect($headerCategoryProducts[$category->id] ?? []);
                 @endphp
                 <div class="nobifashion_header_main_nav_links_item">
-                    <h3 class="nobifashion_header_main_nav_links_item_title"><a href="/{{ $category->slug }}">{{ $category->name }}</a><svg xmlns="http://www.w3.org/2000/svg"
-                            viewBox="0 0 448 512"><path
-                                d="M201.4 374.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 306.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z" />
-                        </svg>
+                    <h3 class="nobifashion_header_main_nav_links_item_title">
+                        <a href="/{{ $category->slug }}">{{ $category->name }}
+                        @if($category->children && $category->children->count())
+                        <svg xmlns="http://www.w3.org/2000/svg"
+                                viewBox="0 0 448 512" style="width: 10px; height: 10px; margin-left: 5px; fill: currentColor; transition: transform 0.3s;"><path
+                                    d="M201.4 374.6c12.5 12.5 32.8 12.5 45.3 0l160-160c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L224 306.7 86.6 169.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l160 160z" />
+                            </svg>
+                        @endif
+                        </a>
                     </h3>
-                    <div class="nobifashion_header_main_nav_links_item_list">
-                        @foreach ($productsCategories as $product)
-                            <div class="nobifashion_header_main_nav_links_item_list_product">
-                                <div class="nobifashion_header_main_nav_links_item_list_product_label">
-                                    <span class="nobifashion_header_main_nav_links_item_list_product_label_text">{{ $product?->label }}</span>
-                                </div>
-                                <div class="nobifashion_header_main_nav_links_item_list_product_img">
-                                    {{-- Bỏ tạm khung frame đi --}}
-                                    {{-- <img class="nobifashion_header_main_nav_links_item_list_product_img_image"
-                                        src="{{ asset('clients/assets/img/clothes/'. $product?->primaryImage?->url) }}" alt="{{ $product?->primaryImage?->alt }}" title="{{ $product?->primaryImage?->title }}">
-                                    <a href="/san-pham/{{ $product?->slug }}">
-                                        <img class="nobifashion_header_main_nav_links_item_list_product_img_khung"
-                                            src="{{ asset('clients/assets/img/frame/'. ($product?->frame ?? 'frame-free-ship-hot.png')) }}" alt="Khung ảnh sản phẩm">
-                                    </a> --}}
-
-                                    <a href="/san-pham/{{ $product?->slug }}">
-                                        <img class="nobifashion_header_main_nav_links_item_list_product_img_image"
-                                            src="{{ asset('clients/assets/img/clothes/'. $product?->primaryImage?->url) }}" alt="{{ $product?->primaryImage?->alt }}" title="{{ $product?->primaryImage?->title }}">
-                                    </a>
-                                </div>
-                                <div class="nobifashion_header_main_nav_links_item_list_product_info">
-                                    <h3 class="nobifashion_header_main_nav_links_item_list_product_info_title">
-                                        <a href="/san-pham/{{ $product?->slug }}">{{ $product?->name }}</a>
-                                    </h3>
-                                    <div class="nobifashion_header_main_nav_links_item_list_product_info_rating">
-                                        <span class="nobifashion_header_main_nav_links_item_list_product_info_rating_star">
-                                            @php
-                                                $star = rand(4, 5);
-                                                for ($i = 1; $i <= $star; $i++) {
-                                                    if ($star == 4) {
-                                                        echo '<svg xmlns="http://www.w3.org/2000/svg" height="10" width="10" viewBox="0 0 640 640"><!--!Font Awesome Free v7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#FFD43B" d="M341.5 45.1C337.4 37.1 329.1 32 320.1 32C311.1 32 302.8 37.1 298.7 45.1L225.1 189.3L65.2 214.7C56.3 216.1 48.9 222.4 46.1 231C43.3 239.6 45.6 249 51.9 255.4L166.3 369.9L141.1 529.8C139.7 538.7 143.4 547.7 150.7 553C158 558.3 167.6 559.1 175.7 555L320.1 481.6L464.4 555C472.4 559.1 482.1 558.3 489.4 553C496.7 547.7 500.4 538.8 499 529.8L473.7 369.9L588.1 255.4C594.5 249 596.7 239.6 593.9 231C591.1 222.4 583.8 216.1 574.8 214.7L415 189.3L341.5 45.1z"/></svg>';
-
-                                                        if ($i == 4) {
-                                                            echo '<svg xmlns="http://www.w3.org/2000/svg" height="10" width="10" viewBox="0 0 640 640"><!--!Font Awesome Free v7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#FFD43B" d="M320.1 417.6C330.1 417.6 340 419.9 349.1 424.6L423.5 462.5L410.5 380C407.3 359.8 414 339.3 428.4 324.8L487.4 265.7L404.9 252.6C384.7 249.4 367.2 236.7 357.9 218.5L319.9 144.1L319.9 417.7zM489.4 553C482.1 558.3 472.4 559.1 464.4 555L320.1 481.6L175.8 555C167.8 559.1 158.1 558.3 150.8 553C143.5 547.7 139.8 538.8 141.2 529.8L166.4 369.9L52 255.4C45.6 249 43.4 239.6 46.2 231C49 222.4 56.3 216.1 65.3 214.7L225.2 189.3L298.8 45.1C302.9 37.1 311.2 32 320.2 32C329.2 32 337.5 37.1 341.6 45.1L415 189.3L574.9 214.7C583.8 216.1 591.2 222.4 594 231C596.8 239.6 594.5 249 588.2 255.4L473.7 369.9L499 529.8C500.4 538.7 496.7 547.7 489.4 553z"/></svg>';
-                                                            break;
-                                                        }
-                                                    }
-                                                    if ($star == 5) {
-                                                        echo '<svg xmlns="http://www.w3.org/2000/svg" height="10" width="10" viewBox="0 0 640 640"><!--!Font Awesome Free v7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path fill="#FFD43B" d="M341.5 45.1C337.4 37.1 329.1 32 320.1 32C311.1 32 302.8 37.1 298.7 45.1L225.1 189.3L65.2 214.7C56.3 216.1 48.9 222.4 46.1 231C43.3 239.6 45.6 249 51.9 255.4L166.3 369.9L141.1 529.8C139.7 538.7 143.4 547.7 150.7 553C158 558.3 167.6 559.1 175.7 555L320.1 481.6L464.4 555C472.4 559.1 482.1 558.3 489.4 553C496.7 547.7 500.4 538.8 499 529.8L473.7 369.9L588.1 255.4C594.5 249 596.7 239.6 593.9 231C591.1 222.4 583.8 216.1 574.8 214.7L415 189.3L341.5 45.1z"/></svg>';
-                                                    }
-                                                }
-                                            @endphp
-                                        </span>
-                                        <span class="nobifashion_header_main_nav_links_item_list_product_info_rating_count"><a style="color: #FF3366; text-decoration: underline;" href="/san-pham/{{ $product->slug }}">({{ rand(4, 5) }} review)</a></span>
-                                    </div>
-                                    <div class="nobifashion_header_main_nav_links_item_list_product_info_price">
-                                        @if (!empty($product?->sale_price) && $product?->sale_price < $product?->price)
-                                            <span
-                                                class="nobifashion_header_main_nav_links_item_list_product_info_price_new">{{ number_format($product?->sale_price ?? 0, 0, ',', '.') }}đ</span>
-                                            <span
-                                                class="nobifashion_header_main_nav_links_item_list_product_info_price_old">{{ number_format($product?->price ?? $product?->sale_price, 0, ',', '.') }}đ</span>
-                                        @else
-                                            <span class="nobifashion_header_main_nav_links_item_list_product_info_price_new">
-                                                {{ number_format($product?->price ?? 0, 0, ',', '.') }} ₫
-                                            </span>
-                                        @endif
-                                    </div>
-                                    <div class="nobifashion_header_main_nav_links_item_list_product_info_actions">
-                                        <button onclick="window.location.href = `/san-pham/{{ $product->slug }}`" class="nobifashion_header_main_nav_links_item_list_product_info_actions_add_to_cart">Xem chi tiết</button>
-                                        <button data-product-id="{{ $product->id }}" class="nobifashion_fav_btn {{ in_array($product->id, $favoriteProductIds ?? []) ? 'active' : '' }}" aria-label="Yêu thích">
-                                            @if(in_array($product->id, $favoriteProductIds ?? []))
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path fill="#ff0000" d="M305 151.1L320 171.8L335 151.1C360 116.5 400.2 96 442.9 96C516.4 96 576 155.6 576 229.1L576 231.7C576 343.9 436.1 474.2 363.1 529.9C350.7 539.3 335.5 544 320 544C304.5 544 289.2 539.4 276.9 529.9C203.9 474.2 64 343.9 64 231.7L64 229.1C64 155.6 123.6 96 197.1 96C239.8 96 280 116.5 305 151.1z"/></svg>
-                                            @else
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><path fill="#ff0000" d="M442.9 144C415.6 144 389.9 157.1 373.9 179.2L339.5 226.8C335 233 327.8 236.7 320.1 236.7C312.4 236.7 305.2 233 300.7 226.8L266.3 179.2C250.3 157.1 224.6 144 197.3 144C150.3 144 112.2 182.1 112.2 229.1C112.2 279 144.2 327.5 180.3 371.4C221.4 421.4 271.7 465.4 306.2 491.7C309.4 494.1 314.1 495.9 320.2 495.9C326.3 495.9 331 494.1 334.2 491.7C368.7 465.4 419 421.3 460.1 371.4C496.3 327.5 528.2 279 528.2 229.1C528.2 182.1 490.1 144 443.1 144zM335 151.1C360 116.5 400.2 96 442.9 96C516.4 96 576 155.6 576 229.1C576 297.7 533.1 358 496.9 401.9C452.8 455.5 399.6 502 363.1 529.8C350.8 539.2 335.6 543.9 320 543.9C304.4 543.9 289.2 539.2 276.9 529.8C240.4 502 187.2 455.5 143.1 402C106.9 358.1 64 297.7 64 229.1C64 155.6 123.6 96 197.1 96C239.8 96 280 116.5 305 151.1L320 171.8L335 151.1z"/></svg>
-                                            @endif
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
+                    @if($category->children && $category->children->count())
+                        <ul class="nobifashion_header_main_nav_links_item_list_sub">
+                            @foreach ($category->children as $child)
+                                <li><a href="/{{ $child->slug }}">{{ $child->name }}</a></li>
+                            @endforeach
+                        </ul>
+                    @endif
                 </div>
             @endforeach
             <div class="nobifashion_header_main_nav_category_lists_items_item_list">

@@ -34,7 +34,21 @@ class PostController extends Controller
 
     public function index(Request $request): View
     {
-        $query = Post::query()
+        // Nếu lọc bài đã xóa mềm thì dùng onlyTrashed(), ngược lại query bình thường
+        if ($request->input('status') === 'trashed') {
+            $query = Post::onlyTrashed()
+                ->with(['author.profile', 'category'])
+                ->when($request->filled('category_id'), fn ($q) => $q->where('category_id', $request->integer('category_id')))
+                ->when($request->filled('author_id'), fn ($q) => $q->where('created_by', $request->integer('author_id')))
+                ->when($request->filled('tag_id'), function ($q) use ($request) {
+                    $tagId = $request->integer('tag_id');
+                    $q->whereHas('tags', fn ($tagQuery) => $tagQuery->where('tags.id', $tagId));
+                })
+                ->when($request->filled('without_thumbnail'), fn ($q) => $q->whereNull('thumbnail'))
+                ->when($request->filled('date_from'), fn ($q) => $q->whereDate('published_at', '>=', $request->date('date_from')))
+                ->when($request->filled('date_to'), fn ($q) => $q->whereDate('published_at', '<=', $request->date('date_to')));
+        } else {
+            $query = Post::query()
             ->with(['author.profile', 'category'])
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))
             ->when($request->filled('category_id'), fn ($q) => $q->where('category_id', $request->integer('category_id')))
@@ -50,6 +64,7 @@ class PostController extends Controller
             ->when($request->filled('without_thumbnail'), fn ($q) => $q->whereNull('thumbnail'))
             ->when($request->filled('date_from'), fn ($q) => $q->whereDate('published_at', '>=', $request->date('date_from')))
             ->when($request->filled('date_to'), fn ($q) => $q->whereDate('published_at', '<=', $request->date('date_to')));
+        }
 
         $searchMeta = $this->progressiveSearchService->apply(
             $query,
@@ -60,7 +75,12 @@ class PostController extends Controller
 
         $query->orderByDesc(DB::raw('COALESCE(published_at, created_at)'));
 
-        $posts = $query->paginate(20)->withQueryString();
+        $perPage = $request->input('limit', 50);
+        if (!in_array((int)$perPage, [50, 100, 300, 1000])) {
+            $perPage = 50;
+        }
+
+        $posts = $query->paginate((int)$perPage)->withQueryString();
 
         return view('admins.posts.index', [
             'posts' => $posts,
@@ -154,8 +174,27 @@ class PostController extends Controller
     {
         $post->delete();
 
-        return redirect()->route('admin.posts.index')
-            ->with('success', 'Đã xóa bài viết.');
+        return back()->with('success', 'Đã xóa bài viết.');
+    }
+
+    public function bulkDestroy(Request $request): RedirectResponse
+    {
+        $ids = $request->input('ids');
+        if (empty($ids) || !is_array($ids)) {
+            return back()->with('error', 'Chưa chọn bài viết nào.');
+        }
+
+        $isTrashed = $request->boolean('is_trashed');
+
+        if ($isTrashed) {
+            // Bài đã ở trong thùng rác -> xóa vĩnh viễn (force delete)
+            $count = Post::withTrashed()->whereIn('id', $ids)->forceDelete();
+        } else {
+            // Bài bình thường -> xóa mềm
+            $count = Post::whereIn('id', $ids)->delete();
+        }
+
+        return back()->with('success', "Đã xóa {$count} bài viết thành công.");
     }
 
     public function restore(int $postId): RedirectResponse

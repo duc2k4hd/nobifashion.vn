@@ -40,6 +40,11 @@
             margin: 0;
             flex-wrap: wrap;
         }
+
+        .breadcrumb-list * {
+            font-size: 12px;
+        }  
+
         .breadcrumb-item {
             display: flex;
             align-items: center;
@@ -48,7 +53,6 @@
         .breadcrumb-item a {
             color: var(--text-muted, #6b7280);
             text-decoration: none;
-            font-size: 13px;
             transition: color 0.2s;
             display: flex;
             align-items: center;
@@ -57,23 +61,19 @@
         .breadcrumb-item a:hover {
             color: var(--text-primary, #111827);
         }
-        .breadcrumb-item a i {
-            font-size: 12px;
-        }
         .breadcrumb-item.active span {
             color: var(--text-primary, #111827);
-            font-size: 13px;
             font-weight: 500;
         }
         .breadcrumb-separator {
             color: var(--text-muted, #9ca3af);
-            font-size: 10px;
+            font-size: 8px !important;
             display: flex;
             align-items: center;
         }
 
         .breadcrumb-separator i {
-            font-size: 10px;
+            font-size: 8px !important;
             display: flex;
             align-items: flex-end;
             margin-top: 2px;
@@ -91,8 +91,8 @@
         }
         .category-badge {
             display: inline-block;
-            background: #f3f4f6;
-            color: var(--text-primary);
+            background: #bcbfc3;
+            color: white;
             padding: 4px 12px;
             border-radius: 12px;
             font-size: 11px;
@@ -890,15 +890,18 @@
             .blog-breadcrumb {
                 padding: 10px 0;
             }
+            .breadcrumb-list * {
+                font-size: 10px;
+            } 
             .breadcrumb-item a,
             .breadcrumb-item.active span {
-                font-size: 12px;
+                font-size: 8px;
             }
             .breadcrumb-item a i {
-                font-size: 11px;
+                font-size: 8px;
             }
             .breadcrumb-separator {
-                font-size: 9px;
+                font-size: 8px;
             }
             .comments-section {
                 padding: 16px;
@@ -1257,7 +1260,7 @@
                     <i class="fa-solid fa-angles-right"></i>
                 </li>
                 <li class="breadcrumb-item active" aria-current="page">
-                    <span>{{ renderMeta(Str::limit($post->title, 80)) }}</span>
+                    <span>{{ renderMeta(Str::limit($post->title, 500)) }}</span>
                 </li>
             </ol>
         </div>
@@ -1411,7 +1414,7 @@
                     <div class="comment-form-card" id="comment-form-card">
                         <h4>Để lại bình luận</h4>
                         <p class="comment-info-note">
-                            Bình luận sẽ hiển thị sau khi được kiểm duyệt. Chúng tôi giới hạn 1 bình luận / 5 giây để tránh spam.
+                            Bình luận của bạn sẽ được hiển thị sau khi được kiểm duyệt. Vui lòng tuân thủ nguyên tắc bình luận để cùng xây dựng một cộng đồng văn minh, tích cực và tôn trọng lẫn nhau.
                         </p>
                         <form id="comment-form">
                             @csrf
@@ -1473,6 +1476,7 @@
                                     <img src="{{ $related->thumbnail ? asset('clients/assets/img/posts/' . $related->thumbnail) : asset('clients/assets/img/clothes/no-image.webp') }}" 
                                          alt="{{ renderMeta($related->title) }}" 
                                          class="related-thumb"
+                                         onerror="this.onerror=null; this.src='{{ asset('clients/assets/img/no-image.webp') }}'"
                                          loading="lazy">
                                     <div class="related-info">
                                         <h4>{{ renderMeta($related->title) }}</h4>

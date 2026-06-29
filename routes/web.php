@@ -476,6 +476,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('posts/import-batch', [PostImportExportController::class, 'importBatch'])->name('posts.import-batch');
 
         Route::resource('posts', AdminPostController::class)->except(['show'])->names('posts');
+        Route::post('posts/bulk-destroy', [AdminPostController::class, 'bulkDestroy'])->name('posts.bulk-destroy');
         Route::post('posts/{post}/publish', [AdminPostController::class, 'publish'])->name('posts.publish');
         Route::post('posts/{post}/archive', [AdminPostController::class, 'archive'])->name('posts.archive');
         Route::post('posts/{post}/duplicate', [AdminPostController::class, 'duplicate'])->name('posts.duplicate');

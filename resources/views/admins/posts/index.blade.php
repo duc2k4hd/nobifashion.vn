@@ -11,7 +11,7 @@
         $slimSelectJsVersion = file_exists($slimSelectJsPath) ? filemtime($slimSelectJsPath) : null;
         $slimSelectJsAsset = asset('admins/vendor/slimselect/slimselect.min.js') . ($slimSelectJsVersion ? '?v=' . $slimSelectJsVersion : '');
     @endphp
-    <link rel="shortcut icon" href="{{ asset('admins/img/icons/posts-icon.png') }}" type="image/x-icon">
+    <link rel="shortcut icon" href="{{ asset('admins/img/icons/posts-icon.png') }}" type="image/png">
     <link rel="stylesheet" href="{{ $slimSelectCssAsset }}">
 @endpush
 
@@ -34,6 +34,20 @@
 
         .posts-search-hint {
             font-size: 0.8rem;
+        }
+
+        .post-thumb-wrap {
+            width: 80px;
+            min-width: 80px;
+        }
+
+        .post-thumb-wrap img {
+            width: 80px;
+            height: 45px;
+            object-fit: cover;
+            border-radius: 4px;
+            display: block;
+            background: #f0f0f0;
         }
     </style>
 @endpush
@@ -67,6 +81,7 @@
                         @foreach($statusOptions as $value => $label)
                             <option value="{{ $value }}" @selected(($filters['status'] ?? '') === $value)>{{ $label }}</option>
                         @endforeach
+                        <option value="trashed" @selected(($filters['status'] ?? '') === 'trashed')>🗑 Đã xóa mềm</option>
                     </select>
                 </div>
 
@@ -133,6 +148,16 @@
                     </select>
                 </div>
 
+                <div class="col-md-2">
+                    <label class="form-label text-uppercase text-muted small">Hiển thị</label>
+                    <select name="limit" class="form-select" data-slim-select data-allow-deselect="false" data-placeholder="Số lượng">
+                        <option value="50" @selected(($filters['limit'] ?? 50) == 50)>50 bài / trang</option>
+                        <option value="100" @selected(($filters['limit'] ?? 50) == 100)>100 bài / trang</option>
+                        <option value="300" @selected(($filters['limit'] ?? 50) == 300)>300 bài / trang</option>
+                        <option value="1000" @selected(($filters['limit'] ?? 50) == 1000)>1000 bài / trang</option>
+                    </select>
+                </div>
+
                 <div class="col-md-4">
                     <label class="form-label text-uppercase text-muted small">Từ khóa</label>
                     <input
@@ -162,13 +187,37 @@
         </div>
     </div>
 
+
+    <form action="{{ route('admin.posts.bulk-destroy') }}" method="POST" id="bulkDeleteForm">
+        @csrf
+        {{-- Truyền cờ để controller biết đang ở chế độ xóa vĩnh viễn hay xóa mềm --}}
+        <input type="hidden" name="is_trashed" value="{{ ($filters['status'] ?? '') === 'trashed' ? '1' : '0' }}">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                @if(($filters['status'] ?? '') === 'trashed')
+                    <button type="submit" class="btn btn-sm btn-danger" id="btnBulkDelete" disabled onclick="return confirm('Xóa VĨNH VIỄN các bài đã chọn? Hành động này không thể hoàn tác!');">
+                        <i class="fas fa-trash me-1"></i> Xóa vĩnh viễn các mục đã chọn
+                    </button>
+                @else
+                    <button type="submit" class="btn btn-sm btn-danger" id="btnBulkDelete" disabled onclick="return confirm('Bạn có chắc chắn muốn xóa các bài viết đã chọn?');">
+                        <i class="fas fa-trash me-1"></i> Xóa các mục đã chọn
+                    </button>
+                @endif
+            </div>
+        </div>
+
+
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="bg-light">
                         <tr>
+                            <th style="width:40px">
+                                <input class="form-check-input" type="checkbox" id="checkAll">
+                            </th>
                             <th style="width:40px">ID</th>
+                            <th style="width:90px">Ảnh</th>
                             <th>Tiêu đề</th>
                             <th>Danh mục</th>
                             <th>Trạng thái</th>
@@ -191,7 +240,22 @@
 
                         @forelse($posts as $post)
                             <tr>
+                                <td>
+                                    <input class="form-check-input item-check" type="checkbox" name="ids[]" value="{{ $post->id }}">
+                                </td>
                                 <td>#{{ $post->id }}</td>
+                                <td class="post-thumb-wrap">
+                                    @php
+                                        $thumbSrc = asset('clients/assets/img/posts/'.$post->thumbnail ?? 'https://placehold.co/80x45/e9ecef/adb5bd?text=No+Img');
+                                    @endphp
+                                    <img
+                                        src="{{ $thumbSrc }}"
+                                        alt="{{ $post->title }}"
+                                        loading="lazy"
+                                        onerror="this.onerror=null;this.src='https://placehold.co/80x45/e9ecef/adb5bd?text=No+Img'"
+                                        @if(!$thumbSrc) src="https://placehold.co/80x45/e9ecef/adb5bd?text=No+Img" @endif
+                                    >
+                                </td>
                                 <td>
                                     <div class="fw-semibold">{{ renderMeta($post->title) }}</div>
                                     <div class="text-muted small">{{ $post->slug }}</div>
@@ -202,9 +266,13 @@
                                 </td>
                                 <td>{{ $post->category?->name ?? '—' }}</td>
                                 <td>
-                                    <span class="badge bg-{{ $statusBadge[$post->status] ?? 'secondary' }}">
-                                        {{ $statusOptions[$post->status] ?? ucfirst($post->status) }}
-                                    </span>
+                                    @if($post->trashed())
+                                        <span class="badge bg-danger">🗑 Đã xóa mềm</span>
+                                    @else
+                                        <span class="badge bg-{{ $statusBadge[$post->status] ?? 'secondary' }}">
+                                            {{ $statusOptions[$post->status] ?? ucfirst($post->status) }}
+                                        </span>
+                                    @endif
                                 </td>
                                 <td>
                                     @if($post->is_featured)
@@ -264,7 +332,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="text-center py-5 text-muted">
+                                <td colspan="10" class="text-center py-5 text-muted">
                                     Chưa có bài viết nào khớp bộ lọc.
                                 </td>
                             </tr>
@@ -278,6 +346,7 @@
             {{ $posts->links('pagination::bootstrap-5') }}
         </div>
     </div>
+    </form>
 @endsection
 
 @push('scripts')
@@ -337,6 +406,34 @@
                     this.innerHTML = originalContent;
                 }
             });
+
+            // Handle Checkboxes for Bulk Delete
+            const checkAll = document.getElementById('checkAll');
+            const itemChecks = document.querySelectorAll('.item-check');
+            const btnBulkDelete = document.getElementById('btnBulkDelete');
+
+            if (checkAll && itemChecks.length > 0) {
+                checkAll.addEventListener('change', function () {
+                    itemChecks.forEach(cb => cb.checked = this.checked);
+                    toggleBulkDeleteButton();
+                });
+
+                itemChecks.forEach(cb => {
+                    cb.addEventListener('change', function () {
+                        if (!this.checked) checkAll.checked = false;
+                        if (document.querySelectorAll('.item-check:checked').length === itemChecks.length) {
+                            checkAll.checked = true;
+                        }
+                        toggleBulkDeleteButton();
+                    });
+                });
+            }
+
+            function toggleBulkDeleteButton() {
+                if (btnBulkDelete) {
+                    btnBulkDelete.disabled = document.querySelectorAll('.item-check:checked').length === 0;
+                }
+            }
         });
     </script>
 @endpush

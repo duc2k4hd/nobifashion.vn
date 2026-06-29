@@ -479,6 +479,10 @@
   cursor: grab;
   padding-bottom: 20px;
   /* Thêm khoảng đệm để tránh cắt nội dung */
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
 }
 
 /* Ẩn thanh cuộn cho trình duyệt WebKit (Chrome, Safari) */
@@ -517,6 +521,8 @@
   min-height: 80px !important;
   aspect-ratio: 16 / 9;
   object-fit: cover;
+  -webkit-user-drag: none;
+  user-drag: none;
 }
 
 .nobifashion_main_categories_item_title {
@@ -535,6 +541,8 @@
 .nobifashion_main_categories_item a {
   text-decoration: none;
   color: inherit;
+  -webkit-user-drag: none;
+  user-drag: none;
 }
 
 .nobifashion_flash_sale {

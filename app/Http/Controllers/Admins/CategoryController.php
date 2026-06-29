@@ -241,7 +241,7 @@ class CategoryController extends Controller
 
     private function uploadImage($file): string
     {
-        $filename = Str::random(20) . '.' . $file->getClientOriginalExtension();
+        $filename = $file->getClientOriginalName();
         $destination = public_path('clients/assets/img/categories');
 
         if (!is_dir($destination)) {
@@ -347,6 +347,7 @@ class CategoryController extends Controller
                     'meta_title' => $category->meta_title,
                     'meta_description' => $category->meta_description,
                     'meta_keywords' => $category->meta_keywords,
+                    'image' => $category->image,
                 ],
             ]);
         } catch (\Illuminate\Validation\ValidationException $e) {

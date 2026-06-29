@@ -7,38 +7,136 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        @property --nobi-angle {
+            syntax: "<angle>";
+            inherits: false;
+            initial-value: 0deg;
+        }
+        
         .nobifashion_profile_card-header {
+            position: relative;
+            display: flex;
+            align-items: center;
+            min-height: 240px;
+            overflow: hidden;
+            isolation: isolate;
             background-repeat: no-repeat;
             background-position: bottom center;
             background-size: 100% auto;
             aspect-ratio: 14 / 2;
         }
+
+        .nobifashion_profile_header-content {
+            position: relative;
+            z-index: 2;
+            width: 100%;
+        }
+
+        .nobifashion_profile_header-bg-upload-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: 9999px;
+            background: rgba(255, 255, 255, 0.92);
+            color: #374151;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.18);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        .nobifashion_profile_header-bg-upload-label:hover {
+            background: #ffffff;
+        }
+
+        .nobifashion_profile_header-info-actions {
+            margin-top: 16px;
+        }
+        
+        .nobifashion_profile_card-header::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            padding: 3px;
+            border-radius: inherit;
+            pointer-events: none;
+            z-index: 1;
+            background: conic-gradient(
+                from var(--nobi-angle),
+                rgba(255, 0, 0, 0.18) 0deg 285deg,
+                rgba(255, 0, 0, 0.55) 320deg,
+                #ff0000 345deg,
+                rgba(255, 0, 0, 0.55) 360deg
+            );
+            -webkit-mask:
+                linear-gradient(#000 0 0) content-box,
+                linear-gradient(#000 0 0);
+            -webkit-mask-composite: xor;
+            mask:
+                linear-gradient(#000 0 0) content-box,
+                linear-gradient(#000 0 0);
+            mask-composite: exclude;
+            animation: nobi-border-run 2s linear infinite;
+        }
+        
+        @keyframes nobi-border-run {
+            from { --nobi-angle: 0deg; }
+            to { --nobi-angle: 360deg; }
+        }
         .nobifashion_profile_avatar-upload {
             position: relative;
-            max-width: 200px;
+            width: 192px;
+            max-width: 192px;
             margin: 0 auto;
         }
         .nobifashion_profile_avatar-upload .nobifashion_profile_avatar-edit {
             position: absolute;
             right: 12px;
-            z-index: 1;
-            bottom: 10px;
+            z-index: 3;
+            bottom: 17px;
         }
         .nobifashion_profile_avatar-upload .nobifashion_profile_avatar-preview {
             width: 192px;
             height: 192px;
             position: relative;
-            border-radius: 100%;
-            border: 6px solid #f8f9fa;
+            box-sizing: border-box;
+            overflow: hidden;
+            border-radius: 50%;
+            border: 6px solid red;
             box-shadow: 0 2px 4px 0 rgba(0, 0, 0, 0.1);
         }
         .nobifashion_profile_avatar-upload .nobifashion_profile_avatar-preview > div {
             width: 100%;
             height: 100%;
-            border-radius: 100%;
+            border-radius: 50%;
             background-size: cover;
             background-repeat: no-repeat;
             background-position: center;
+        }
+
+        @media (min-width: 768px) {
+            .nobifashion_profile_header-content {
+                min-height: 192px;
+                align-items: center;
+            }
+
+            .nobifashion_profile_header-info-actions {
+                margin-top: 18px;
+            }
+
+            .nobifashion_profile_avatar-upload {
+                flex: 0 0 192px;
+                width: 192px;
+                max-width: none;
+                margin: 0 24px 0 0;
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            .nobifashion_profile_card-header {
+                aspect-ratio: auto;
+                min-height: 360px;
+            }
         }
         .nobifashion_profile_tab-content {
             display: none;
@@ -803,15 +901,7 @@
 
         <div class="nobifashion_profile_card bg-white rounded-xl shadow-md overflow-hidden">
             <div class="nobifashion_profile_card-header border-b p-6 relative" style="background-image: url({{ $subAvatarUrl }}); background-size: cover; background-position: center;">
-                <!-- Sub Avatar Upload Button -->
-                <div class="absolute top-4 right-4">
-                    <input type="file" id="nobifashion_profile_sub_avatar-upload" class="hidden" accept="image/*">
-                    <label for="nobifashion_profile_sub_avatar-upload" class="bg-white bg-opacity-80 hover:bg-opacity-100 text-gray-700 rounded-full p-2 cursor-pointer transition shadow-md">
-                        <i class="fas fa-image text-sm"></i>
-                        <span class="text-xs ml-1">Ảnh nền</span>
-                    </label>
-                </div>
-                <div class="flex flex-col md:flex-row items-center">
+                <div class="nobifashion_profile_header-content flex flex-col md:flex-row items-center">
                     <div class="nobifashion_profile_avatar-upload mb-4 md:mb-0 md:mr-6">
                         <div class="nobifashion_profile_avatar-preview">
                            
@@ -819,7 +909,7 @@
                         </div>
                         <div class="nobifashion_profile_avatar-edit">
                             <input type="file" id="nobifashion_profile_avatar-upload" class="hidden" accept="image/*">
-                            <label for="nobifashion_profile_avatar-upload" class="bg-blue-500 text-white rounded-full p-2 cursor-pointer hover:bg-blue-600 transition">
+                            <label for="nobifashion_profile_avatar-upload" class="bg-blue-500 text-white rounded-full px-3 py-2 cursor-pointer hover:bg-blue-600 transition">
                                 <i class="fas fa-pencil-alt text-sm"></i>
                             </label>
                         </div>
@@ -828,6 +918,13 @@
                         <h2 class="text-2xl font-semibold" id="nobifashion_profile_display-name">{{ $account->name }}</h2>
                         <p class="text-gray-600 mb-2 text-white" id="nobifashion_profile_email">{{ $account->email }}</p>
                         <p class="text-gray-500 text-sm text-white">Tham gia từ: <span id="nobifashion_profile_join-date">Tháng {{ \Carbon\Carbon::parse($account->created_at)->month }} năm {{ \Carbon\Carbon::parse($account->created_at)->year }}</span></p>
+                        <div class="nobifashion_profile_header-info-actions">
+                            <input type="file" id="nobifashion_profile_sub_avatar-upload" class="hidden" accept="image/*">
+                            <label for="nobifashion_profile_sub_avatar-upload" class="nobifashion_profile_header-bg-upload-label cursor-pointer transition">
+                                <i class="fas fa-image text-sm"></i>
+                                <span class="text-xs">Đổi ảnh phụ</span>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>
