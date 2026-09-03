@@ -65,6 +65,10 @@
             <a href="{{ route('admin.posts.import-excel') }}" class="btn btn-outline-info">
                 <i class="fas fa-file-upload me-1"></i> Nhập CSV/Excel
             </a>
+            <label class="btn btn-danger mb-0" style="cursor:pointer;" title="Xóa bài viết từ file .txt chứa ID (1 ID/dòng)">
+                <i class="fas fa-trash-alt me-1"></i> Xóa từ TXT
+                <input type="file" id="btnDeleteFromTxt" accept=".txt" style="display:none">
+            </label>
             <a href="{{ route('admin.posts.create') }}" class="btn btn-primary">
                 <i class="fas fa-plus me-1"></i> Viết bài mới
             </a>
@@ -205,7 +209,7 @@
                 @endif
             </div>
         </div>
-
+    </form>
 
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
@@ -241,7 +245,7 @@
                         @forelse($posts as $post)
                             <tr>
                                 <td>
-                                    <input class="form-check-input item-check" type="checkbox" name="ids[]" value="{{ $post->id }}">
+                                    <input form="bulkDeleteForm" class="form-check-input item-check" type="checkbox" name="ids[]" value="{{ $post->id }}">
                                 </td>
                                 <td>#{{ $post->id }}</td>
                                 <td class="post-thumb-wrap">
@@ -295,37 +299,61 @@
                                         <a href="{{ route('admin.posts.edit', $post) }}" class="btn btn-sm btn-outline-primary">Sửa</a>
                                         <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown"></button>
                                         <div class="dropdown-menu dropdown-menu-end">
-                                            <a class="dropdown-item" href="{{ route('client.blog.show', $post) }}" target="_blank">Xem ngoài site</a>
-
-                                            <form action="{{ route('admin.posts.duplicate', $post) }}" method="POST" class="dropdown-item p-0">
-                                                @csrf
-                                                <button class="btn btn-link dropdown-item text-start" type="submit">Nhân bản</button>
-                                            </form>
-
-                                            @if(!$post->is_featured)
-                                                <form action="{{ route('admin.posts.feature', $post) }}" method="POST" class="dropdown-item p-0">
+                                            @if($post->trashed())
+                                                <!-- Hành động cho bài viết trong thùng rác -->
+                                                <form action="{{ route('admin.posts.restore', $post->id) }}" method="POST" class="dropdown-item p-0">
                                                     @csrf
-                                                    <button class="btn btn-link dropdown-item text-start" type="submit">Đánh dấu nổi bật</button>
+                                                    @method('PATCH')
+                                                    <button class="btn btn-link dropdown-item text-success text-start" type="submit">Khôi phục</button>
+                                                </form>
+
+                                                <div class="dropdown-divider"></div>
+
+                                                <form
+                                                    action="{{ route('admin.posts.bulk-destroy') }}"
+                                                    method="POST"
+                                                    class="dropdown-item p-0"
+                                                    onsubmit="return confirm('Bạn có chắc chắn muốn xóa vĩnh viễn bài viết này? Hành động này không thể hoàn tác!')"
+                                                >
+                                                    @csrf
+                                                    <input type="hidden" name="ids[]" value="{{ $post->id }}">
+                                                    <input type="hidden" name="is_trashed" value="1">
+                                                    <button class="btn btn-link dropdown-item text-danger text-start" type="submit">Xóa vĩnh viễn</button>
                                                 </form>
                                             @else
-                                                <form action="{{ route('admin.posts.unfeature', $post) }}" method="POST" class="dropdown-item p-0">
+                                                <!-- Hành động cho bài viết bình thường -->
+                                                <a class="dropdown-item" href="{{ route('client.blog.show', $post) }}" target="_blank">Xem ngoài site</a>
+
+                                                <form action="{{ route('admin.posts.duplicate', $post) }}" method="POST" class="dropdown-item p-0">
                                                     @csrf
-                                                    <button class="btn btn-link dropdown-item text-start" type="submit">Bỏ nổi bật</button>
+                                                    <button class="btn btn-link dropdown-item text-start" type="submit">Nhân bản</button>
+                                                </form>
+
+                                                @if(!$post->is_featured)
+                                                    <form action="{{ route('admin.posts.feature', $post) }}" method="POST" class="dropdown-item p-0">
+                                                        @csrf
+                                                        <button class="btn btn-link dropdown-item text-start" type="submit">Đánh dấu nổi bật</button>
+                                                    </form>
+                                                @else
+                                                    <form action="{{ route('admin.posts.unfeature', $post) }}" method="POST" class="dropdown-item p-0">
+                                                        @csrf
+                                                        <button class="btn btn-link dropdown-item text-start" type="submit">Bỏ nổi bật</button>
+                                                    </form>
+                                                @endif
+
+                                                <div class="dropdown-divider"></div>
+
+                                                <form
+                                                    action="{{ route('admin.posts.destroy', $post) }}"
+                                                    method="POST"
+                                                    class="dropdown-item p-0"
+                                                    onsubmit="return confirm('Xóa bài viết này?')"
+                                                >
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button class="btn btn-link dropdown-item text-danger text-start" type="submit">Xóa</button>
                                                 </form>
                                             @endif
-
-                                            <div class="dropdown-divider"></div>
-
-                                            <form
-                                                action="{{ route('admin.posts.destroy', $post) }}"
-                                                method="POST"
-                                                class="dropdown-item p-0"
-                                                onsubmit="return confirm('Xóa bài viết này?')"
-                                            >
-                                                @csrf
-                                                @method('DELETE')
-                                                <button class="btn btn-link dropdown-item text-danger text-start" type="submit">Xóa</button>
-                                            </form>
                                         </div>
                                     </div>
                                 </td>
@@ -346,7 +374,6 @@
             {{ $posts->links('pagination::bootstrap-5') }}
         </div>
     </div>
-    </form>
 @endsection
 
 @push('scripts')
@@ -433,6 +460,72 @@
                 if (btnBulkDelete) {
                     btnBulkDelete.disabled = document.querySelectorAll('.item-check:checked').length === 0;
                 }
+            }
+
+            // Handle Delete from TXT
+            const btnDeleteFromTxt = document.getElementById('btnDeleteFromTxt');
+            if (btnDeleteFromTxt) {
+                btnDeleteFromTxt.addEventListener('change', function (e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = async function (e) {
+                        const content = e.target.result;
+                        const ids = content.split('\n')
+                            .map(id => id.trim())
+                            .filter(id => id !== '' && !isNaN(id))
+                            .map(id => parseInt(id, 10));
+
+                        if (ids.length === 0) {
+                            alert('Không tìm thấy ID hợp lệ nào trong file.');
+                            btnDeleteFromTxt.value = '';
+                            return;
+                        }
+
+                        if (!confirm(`Tìm thấy ${ids.length} ID. Bạn có chắc chắn muốn xóa cực nhanh TẤT CẢ dữ liệu liên quan (trừ ảnh) của các bài viết này? Hành động này KHÔNG THỂ HOÀN TÁC.`)) {
+                            btnDeleteFromTxt.value = '';
+                            return;
+                        }
+
+                        // Xử lý chia batch
+                        const batchSize = 100;
+                        let successCount = 0;
+                        const parentLabel = btnDeleteFromTxt.parentElement;
+                        const originalHTML = parentLabel.innerHTML;
+                        parentLabel.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Đang xóa...';
+                        parentLabel.style.pointerEvents = 'none';
+
+                        try {
+                            for (let i = 0; i < ids.length; i += batchSize) {
+                                const batchIds = ids.slice(i, i + batchSize);
+                                const response = await fetch("{{ route('admin.posts.bulk-destroy') }}", {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                        'Accept': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        ids: batchIds,
+                                        force_clean: 1
+                                    })
+                                });
+                                const result = await response.json();
+                                if (result.success) {
+                                    successCount += result.count || batchIds.length;
+                                }
+                            }
+                            alert(`Đã xóa sạch thành công ${successCount} bài viết!`);
+                            window.location.reload();
+                        } catch (error) {
+                            console.error(error);
+                            alert('Có lỗi xảy ra trong quá trình xóa: ' + error.message);
+                            window.location.reload();
+                        }
+                    };
+                    reader.readAsText(file);
+                });
             }
         });
     </script>

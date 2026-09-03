@@ -2,744 +2,1473 @@
 
 namespace App\Services;
 
-use App\Models\Post;
+use DateTimeImmutable;
 use DOMDocument;
+use DOMElement;
+use DOMNode;
 use DOMXPath;
+use Illuminate\Http\Client\Pool;
+use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class CoolmateCrawlerService
 {
-    protected AIService $aiService;
-    protected int $userId;
+    private const CSV_CELL_CHARACTER_LIMIT = 30000;
 
-    public function __construct(AIService $aiService)
-    {
-        $this->aiService = $aiService;
-        $this->userId = auth('web')->id() ?? 1;
-    }
+    private const PAGE_BATCH_SIZE = 8;
+
+    private const IMAGE_BATCH_SIZE = 16;
+
+    private const PAGE_TIMEOUT_SECONDS = 35;
+
+    private const IMAGE_TIMEOUT_SECONDS = 25;
+
+    private const PAGE_SELECTOR = 'div.entry-content.single-page';
+
+    private const CRAWLED_URLS_FILE = 'crawled_urls.json';
 
     /**
-     * Crawl danh sách category URLs (JSON endpoint hoặc HTML)
+     * Crawl bài viết theo batch, lưu ảnh vào thư mục tạm và xuất toàn bộ dữ liệu ra CSV.
+     * Không đọc hoặc ghi dữ liệu Post trong database.
      */
-    public function crawlCategories(array $categoryUrls): array
+    public function crawlPostsToCsv(array $postUrls, bool $recrawlExisting = false): array
     {
+        set_time_limit(3600);
+        $this->ensureTempDirectories();
+
         $results = [
+            'total' => count($postUrls),
+            'processed' => 0,
             'success' => 0,
             'failed' => 0,
+            'skipped' => 0,
+            'skipped_duplicate' => 0,
+            'skipped_history' => 0,
+            'recrawl_existing' => $recrawlExisting,
+            'image_downloaded_count' => 0,
+            'main_image_count' => 0,
+            'extra_image_count' => 0,
             'posts' => [],
+            'warnings' => [],
             'errors' => [],
+            'file_name' => null,
+            'file_path' => null,
+            'main_directory' => $this->mainImageDirectory(),
+            'extra_directory' => $this->extraImageDirectory(),
+            'page_batch_size' => self::PAGE_BATCH_SIZE,
+            'image_batch_size' => self::IMAGE_BATCH_SIZE,
         ];
 
-        Log::info('=== COOLMATE CRAWLER START ===');
-        Log::info('Total category URLs: ' . count($categoryUrls));
+        $urls = $this->sanitizePostUrls($postUrls, $results, $recrawlExisting);
+        if ($urls === []) {
+            return $results;
+        }
 
-        foreach ($categoryUrls as $categoryUrl) {
+        $fetchErrors = [];
+        $htmlPayloads = $this->fetchHtmlPayloads($urls, $fetchErrors);
+        $articles = [];
+
+        foreach ($urls as $url) {
+            $results['processed']++;
+
+            if (! isset($htmlPayloads[$url])) {
+                $results['failed']++;
+                $results['errors'][] = "Không thể tải {$url}: ".($fetchErrors[$url] ?? 'Không nhận được HTML hợp lệ.');
+
+                continue;
+            }
+
             try {
-                Log::info("Processing Coolmate category URL: {$categoryUrl}");
-                $postUrls = $this->extractPostUrlsFromCategory($categoryUrl);
-                Log::info("Found " . count($postUrls) . " post URLs from Coolmate category");
-
-                if (empty($postUrls)) {
-                    $results['errors'][] = "Không tìm thấy bài viết nào trong danh mục: {$categoryUrl}";
-                    Log::warning("No posts found in Coolmate category: {$categoryUrl}");
-                }
-
-                foreach ($postUrls as $postUrl) {
-                    try {
-                        Log::info("Crawling Coolmate post URL: {$postUrl}");
-                        $post = $this->crawlPost($postUrl);
-                        if ($post) {
-                            $results['success']++;
-                            $results['posts'][] = [
-                                'id' => $post->id,
-                                'title' => $post->title,
-                                'slug' => $post->slug,
-                            ];
-                            Log::info("Successfully crawled Coolmate post: {$post->title} (ID: {$post->id})");
-                        } else {
-                            $results['failed']++;
-                            $results['errors'][] = "Không thể crawl bài viết: {$postUrl}";
-                            Log::warning("Failed to crawl Coolmate post: {$postUrl}");
-                        }
-                    } catch (\Throwable $e) {
-                        $results['failed']++;
-                        $results['errors'][] = "Lỗi khi crawl {$postUrl}: " . $e->getMessage();
-                        Log::error("Error crawling Coolmate post: {$postUrl}", [
-                            'error' => $e->getMessage(),
-                            'trace' => $e->getTraceAsString(),
-                        ]);
-                    }
-                }
+                $articles[] = $this->extractArticleData($htmlPayloads[$url], $url);
             } catch (\Throwable $e) {
-                $results['errors'][] = "Lỗi khi crawl danh mục {$categoryUrl}: " . $e->getMessage();
-                Log::error("Error crawling Coolmate category: {$categoryUrl}", [
+                $results['failed']++;
+                $results['errors'][] = "Không thể phân tích {$url}: {$e->getMessage()}";
+                Log::error('Coolmate article parsing failed', [
+                    'url' => $url,
                     'error' => $e->getMessage(),
-                    'trace' => $e->getTraceAsString(),
                 ]);
             }
         }
 
-        Log::info("=== COOLMATE CRAWLER END === Success: {$results['success']}, Failed: {$results['failed']}");
+        if ($articles === []) {
+            return $results;
+        }
+
+        $imageJobs = $this->buildImageJobs($articles);
+        $imageResults = $this->downloadImagesInBatches($imageJobs);
+        $csvRows = $this->buildCsvRows($articles, $imageJobs, $imageResults, $results);
+        $fileName = $this->createCsv($csvRows);
+
+        $results['file_name'] = $fileName;
+        $results['file_path'] = $this->tempRootDirectory().DIRECTORY_SEPARATOR.$fileName;
+        $this->rememberCrawledArticles($articles);
+
         return $results;
     }
 
     /**
-     * Từ 1 URL danh mục (JSON endpoint hoặc HTML), lấy list link bài viết
-     *
-     * - Nếu Content-Type: application/json → decode giống coolmate.json, lấy field "data"
-     * - Ngược lại: parse trực tiếp HTML (giống debug.html)
-     *
-     * Cả 2 case đều dùng cùng 1 cấu trúc HTML: h5.post-title a.plain
+     * Trả về đường dẫn an toàn của file CSV trong temp Coolmate.
      */
-    protected function extractPostUrlsFromCategory(string $categoryUrl): array
+    public function resolveExportPath(string $fileName): ?string
     {
-        Log::info("=== COOLMATE: EXTRACT POST URLS FROM CATEGORY ===");
-        Log::info("Category URL: {$categoryUrl}");
-
-        $response = Http::timeout(90)->get($categoryUrl);
-
-        if (!$response->successful()) {
-            Log::error('Coolmate category HTTP error', [
-                'status' => $response->status(),
-                'body' => Str::limit($response->body(), 500),
-            ]);
-            throw new \RuntimeException("Coolmate category HTTP error: " . $response->status());
+        $safeFileName = basename($fileName);
+        if (
+            $safeFileName !== $fileName
+            || ! preg_match('/^coolmate_posts_[0-9_-]+\.csv$/', $safeFileName)
+        ) {
+            return null;
         }
 
-        $contentType = $response->header('Content-Type', '');
-        $rawBody = $response->body();
-        $html = '';
+        $path = $this->tempRootDirectory().DIRECTORY_SEPARATOR.$safeFileName;
+        if (! is_file($path)) {
+            return null;
+        }
 
-        if (str_contains($contentType, 'application/json')) {
-            Log::info('Coolmate category responded with JSON, decoding...');
-            $data = $response->json();
-            if (!isset($data['data']) || !is_string($data['data'])) {
-                Log::error('Coolmate JSON missing "data" field', ['body' => $data]);
-                throw new \RuntimeException('Coolmate JSON missing "data" field');
+        $resolvedRoot = realpath($this->tempRootDirectory());
+        $resolvedPath = realpath($path);
+        if (
+            $resolvedRoot === false
+            || $resolvedPath === false
+            || ! str_starts_with($resolvedPath, $resolvedRoot.DIRECTORY_SEPARATOR)
+        ) {
+            return null;
+        }
+
+        return $resolvedPath;
+    }
+
+    private function sanitizePostUrls(
+        array $postUrls,
+        array &$results,
+        bool $recrawlExisting
+    ): array
+    {
+        $urls = [];
+        $seen = [];
+        $crawledUrls = $this->loadCrawledUrls();
+
+        foreach ($postUrls as $postUrl) {
+            $originalUrl = trim((string) $postUrl);
+            $normalizedUrl = $this->normalizePostUrl($originalUrl);
+
+            if ($normalizedUrl === null) {
+                $results['failed']++;
+                $results['errors'][] = "URL Coolmate không hợp lệ: {$originalUrl}";
+
+                continue;
             }
-            // JSON decode đã chuyển \u003C thành <, nên chỉ cần dùng trực tiếp
-            $html = $data['data'];
-        } else {
-            Log::info('Coolmate category responded with HTML');
-            $html = $rawBody;
+
+            if (isset($seen[$normalizedUrl])) {
+                $results['skipped']++;
+                $results['skipped_duplicate']++;
+                $results['warnings'][] = "Bỏ qua URL trùng trong danh sách: {$normalizedUrl}";
+
+                continue;
+            }
+
+            $seen[$normalizedUrl] = true;
+
+            if (! $recrawlExisting && isset($crawledUrls[$normalizedUrl])) {
+                $results['skipped']++;
+                $results['skipped_history']++;
+                $results['warnings'][] = "Bỏ qua URL đã crawl trước đó: {$normalizedUrl}";
+
+                continue;
+            }
+
+            $urls[] = $normalizedUrl;
         }
 
-        Log::info("Coolmate category HTML fragment length: " . strlen($html));
+        return $urls;
+    }
 
-        if (empty($html)) {
-            Log::warning("Empty HTML returned from Coolmate category URL");
+    /**
+     * @return array<string, array{crawled_at?: string, title?: string, slug?: string}>
+     */
+    private function loadCrawledUrls(): array
+    {
+        $path = $this->crawledUrlsPath();
+        if (! is_file($path)) {
             return [];
         }
 
-        $dom = new DOMDocument();
-        @$dom->loadHTML('<?xml encoding="UTF-8">' . $html);
-        $xpath = new DOMXPath($dom);
-
-        $postUrls = [];
-
-        // Chuẩn theo debug.html: h5.post-title a[href]
-        $linkNodes = $xpath->query("//h5[contains(@class,'post-title')]//a[@href]");
-        Log::info("Coolmate: found {$linkNodes->length} post link nodes");
-
-        foreach ($linkNodes as $linkNode) {
-            /** @var \DOMElement $linkNode */
-            $href = trim($linkNode->getAttribute('href'));
-            if (empty($href)) {
-                continue;
-            }
-            $absolute = $this->makeAbsoluteUrl($href, $categoryUrl);
-            $postUrls[] = $absolute;
-            Log::info("Coolmate: added post URL: {$absolute}");
+        $handle = fopen($path, 'rb');
+        if ($handle === false) {
+            throw new \RuntimeException("Không thể đọc lịch sử URL Coolmate: {$path}");
         }
 
-        $postUrls = array_values(array_unique($postUrls));
-        Log::info("Coolmate: total unique post URLs: " . count($postUrls));
+        try {
+            if (! flock($handle, LOCK_SH)) {
+                throw new \RuntimeException("Không thể khóa lịch sử URL Coolmate: {$path}");
+            }
 
-        return $postUrls;
+            $contents = stream_get_contents($handle);
+            flock($handle, LOCK_UN);
+        } finally {
+            fclose($handle);
+        }
+
+        if ($contents === false || trim($contents) === '') {
+            return [];
+        }
+
+        $registry = json_decode($contents, true);
+        if (! is_array($registry)) {
+            throw new \RuntimeException("File lịch sử URL Coolmate không phải JSON hợp lệ: {$path}");
+        }
+
+        return is_array($registry['urls'] ?? null) ? $registry['urls'] : [];
     }
 
     /**
-     * Crawl 1 bài viết Coolmate
-     */
-    public function crawlPost(string $postUrl): ?Post
-    {
-        ini_set('max_execution_time', 600);
-        set_time_limit(600);
-
-        Log::info("=== COOLMATE: CRAWL POST ===");
-        Log::info("Post URL: {$postUrl}");
-
-        // Dùng Playwright service để đảm bảo JS render đủ (đợi selector content xuất hiện)
-        // Chỉ truyền selector chính, fallback sẽ xử lý trong PHP
-        $html = $this->fetchHtml($postUrl, 'div.entry-content.single-page');
-        Log::info("Coolmate post HTML length: " . strlen($html));
-
-        if (empty($html)) {
-            Log::warning("Empty HTML returned from Coolmate post URL");
-            return null;
-        }
-
-        $dom = new DOMDocument();
-        @$dom->loadHTML('<?xml encoding="UTF-8">' . $html);
-        $xpath = new DOMXPath($dom);
-
-        // 1. Title: <h1 class="entry-title">
-        $titleNode = $xpath->query("//h1[contains(@class,'entry-title')]")->item(0);
-        Log::info("Coolmate title node found: " . ($titleNode ? 'yes' : 'no'));
-
-        $originalTitle = $titleNode ? trim($titleNode->textContent) : '';
-        Log::info("Coolmate original title: " . ($originalTitle ?: 'EMPTY'));
-
-        if (empty($originalTitle)) {
-            Log::warning("Coolmate: empty title, skip post");
-            return null;
-        }
-
-        // Viết lại tiêu đề chuẩn SEO bằng AI
-        $seoTitle = $this->aiService->rewriteTitle($originalTitle);
-        if (empty($seoTitle)) {
-            $seoTitle = $originalTitle;
-        }
-        // Lưu bản raw để tạo slug (không chứa placeholder)
-        $rawSeoTitleForSlug = $seoTitle;
-        // Thay các năm (2010-2026) thành [NOBI]currentyear[NOBI] trong title (KHÔNG ảnh hưởng slug)
-        if (function_exists('replaceYearsWithPlaceholder')) {
-            $seoTitle = replaceYearsWithPlaceholder($seoTitle);
-        }
-
-        // 2. Meta description: <meta property="og:description">
-        $metaDescNode = $xpath->query("//meta[@property='og:description']")->item(0);
-        Log::info("Coolmate meta description node found: " . ($metaDescNode ? 'yes' : 'no'));
-
-        $originalDescription = $metaDescNode && $metaDescNode->hasAttribute('content')
-            ? trim($metaDescNode->getAttribute('content'))
-            : '';
-        Log::info("Coolmate original description: " . ($originalDescription ? Str::limit($originalDescription, 120) : 'EMPTY'));
-
-        $seoDescription = '';
-        if (!empty($originalDescription)) {
-            $seoDescription = $this->aiService->rewriteDescription($originalDescription);
-        }
-        if (empty($seoDescription)) {
-            $seoDescription = Str::limit(strip_tags($seoTitle), 200);
-        }
-        // Thay năm trong meta description (chỉ text, không đụng tới URL/ảnh)
-        if (function_exists('replaceYearsWithPlaceholder')) {
-            $seoDescription = replaceYearsWithPlaceholder($seoDescription);
-        }
-
-        // 3. Tạo slug (KHÔNG chứa năm, KHÔNG chứa Coolmate)
-        //    Dùng bản raw trước khi chèn placeholder để slug không chứa [NOBI]...
-        $titleForSlug = $rawSeoTitleForSlug;
-        // Bỏ các năm 2000-2035
-        $titleForSlug = preg_replace('/\b(20[0-3][0-9])\b/u', '', $titleForSlug);
-        // Bỏ thương hiệu Coolmate
-        $titleForSlug = preg_replace('/\b[Cc]oolmate(\.me)?\b/u', '', $titleForSlug);
-        $titleForSlug = preg_replace('/\s+/', ' ', $titleForSlug);
-        $titleForSlug = trim($titleForSlug);
-        if (empty($titleForSlug)) {
-            $titleForSlug = $originalTitle;
-        }
-
-        $slug = Str::slug($titleForSlug);
-        $slug = preg_replace('/[^a-z0-9\-]/', '', $slug);
-        $slug = preg_replace('/\-+/', '-', $slug);
-        $slug = trim($slug, '-');
-        if (empty($slug)) {
-            $slug = Str::slug($originalTitle);
-        }
-        $slug = $this->ensureUniqueSlug($slug);
-        $metaCanonical = 'https://nobifashion.vn/' . $slug;
-
-        // 4. Thumbnail từ meta og:image
-        $thumbnail = $this->extractThumbnail($xpath, $postUrl, $slug, $seoTitle);
-
-        // 5. Content: theo yêu cầu mới -> tìm <article> trước, rồi lấy div.entry-content.single-page đầu tiên bên trong
-        $articleNode = $xpath->query("//article")->item(0);
-        Log::info("Coolmate article node found: " . ($articleNode ? 'yes' : 'no'));
-
-        $contentDiv = null;
-
-        if ($articleNode) {
-            $contentDiv = $xpath->query(".//div[contains(@class,'entry-content') and contains(@class,'single-page')]", $articleNode)->item(0);
-            Log::info("Coolmate: entry-content single-page inside article found: " . ($contentDiv ? 'yes' : 'no'));
-        }
-
-        // Fallback: nếu trong article không có thì tìm toàn trang
-        if (!$contentDiv) {
-            $contentDiv = $xpath->query("//div[contains(@class,'entry-content') and contains(@class,'single-page')]")->item(0);
-            Log::info("Coolmate: entry-content single-page global found: " . ($contentDiv ? 'yes' : 'no'));
-        }
-
-        // Fallback 1: chỉ có entry-content
-        if (!$contentDiv) {
-            $contentDiv = $xpath->query("//div[contains(@class,'entry-content')]")->item(0);
-            Log::info("Coolmate: trying fallback selector (entry-content only)");
-        }
-
-        Log::info("Coolmate entry-content node found: " . ($contentDiv ? 'yes' : 'no'));
-
-        if (!$contentDiv) {
-            Log::warning("Coolmate: entry-content not found with all fallbacks, skip post");
-            return null;
-        }
-
-        // Lấy innerHTML của contentDiv (giống OnoffCrawlerService)
-        $rawContentHtml = '';
-        $dom = $contentDiv->ownerDocument;
-        foreach ($contentDiv->childNodes as $child) {
-            if ($child->nodeType === XML_ELEMENT_NODE || $child->nodeType === XML_TEXT_NODE) {
-                $rawContentHtml .= $dom->saveHTML($child);
-            }
-        }
-        Log::info("Coolmate raw content HTML length: " . strlen($rawContentHtml));
-        Log::info("Coolmate raw content HTML preview (first 500 chars): " . substr($rawContentHtml, 0, 500));
-
-        if (empty($rawContentHtml) || trim(strip_tags($rawContentHtml)) === '') {
-            Log::warning("Coolmate: empty content HTML after extraction, skip post");
-            // Thử fallback: lấy toàn bộ innerHTML bằng cách khác
-            $rawContentHtml = '';
-            foreach ($contentDiv->childNodes as $child) {
-                $rawContentHtml .= $dom->saveHTML($child);
-            }
-            if (empty($rawContentHtml) || trim(strip_tags($rawContentHtml)) === '') {
-                Log::warning("Coolmate: fallback extraction also empty, skip post");
-                return null;
-            }
-            Log::info("Coolmate: fallback extraction succeeded, length=" . strlen($rawContentHtml));
-        }
-
-        // Xử lý HTML: xóa class/attr, xử lý thẻ a/img, thay Coolmate → Nobi Fashion Việt Nam
-        $processedHtml = $this->processHtml($rawContentHtml, $slug, $postUrl);
-        Log::info("Coolmate processed HTML length: " . strlen($processedHtml));
-
-        // Gọi AI viết lại content (giữ nguyên vị trí img)
-        $maxContentLength = 30000;
-        $contentForAI = $processedHtml;
-        if (strlen($contentForAI) > $maxContentLength) {
-            $contentForAI = substr($contentForAI, 0, $maxContentLength);
-            $lastTagPos = strrpos($contentForAI, '>');
-            if ($lastTagPos !== false) {
-                $contentForAI = substr($contentForAI, 0, $lastTagPos + 1);
-            }
-        }
-
-        Log::info("Coolmate: calling AI to rewrite content, length=" . strlen($contentForAI));
-        $aiContent = $this->aiService->rewriteContentForRoutine($contentForAI);
-        if (empty($aiContent)) {
-            Log::warning("Coolmate: AI returned empty content, fallback to processed HTML");
-            $aiContent = $processedHtml;
-        } else {
-            if (strlen($processedHtml) > $maxContentLength) {
-                $remaining = substr($processedHtml, $maxContentLength);
-                $firstTagPos = strpos($remaining, '>');
-                if ($firstTagPos !== false) {
-                    $remaining = substr($remaining, $firstTagPos + 1);
-                    $aiContent .= "\n" . $remaining;
-                }
-            }
-        }
-
-        // Finalize content: div → p, xóa class/attr lần nữa, giữ HTML sạch
-        $finalContent = $this->finalizeContent($aiContent);
-        Log::info("Coolmate final content length: " . strlen($finalContent));
-
-        // Guard: nếu finalizeContent làm rỗng thì fallback về processedHtml (đã sạch) để không mất content
-        if (empty($finalContent) || trim(strip_tags($finalContent)) === '') {
-            Log::warning("Coolmate: finalContent empty after finalizeContent, fallback to processedHtml");
-            $finalContent = $this->finalizeContent($processedHtml);
-            Log::info("Coolmate final content length (fallback): " . strlen($finalContent));
-        }
-
-        // 6. Meta keywords
-        $metaKeywords = $this->aiService->generateMetaKeywords($seoTitle, $seoDescription);
-        if (empty($metaKeywords)) {
-            $metaKeywords = $this->generateFallbackKeywords($seoTitle);
-        }
-
-        // Tạo post
-        $post = Post::create([
-            'title' => $seoTitle,
-            'slug' => $slug,
-            'meta_title' => $seoTitle,
-            'meta_description' => $seoDescription,
-            'meta_keywords' => $metaKeywords,
-            'meta_canonical' => $metaCanonical,
-            'content' => $finalContent,
-            'thumbnail' => $thumbnail['path'] ?? null,
-            'thumbnail_alt_text' => $thumbnail['alt'] ?? $seoTitle,
-            'status' => 'published',
-            'published_at' => now(),
-            'category_id' => 2,
-            'created_by' => $this->userId,
-            'account_id' => $this->userId,
-        ]);
-
-        return $post;
-    }
-
-    protected function extractThumbnail(DOMXPath $xpath, string $postUrl, string $slug, string $title): array
-    {
-        Log::info("=== COOLMATE: EXTRACT THUMBNAIL ===");
-        $result = ['path' => null, 'alt' => $title];
-
-        $metaImageNode = $xpath->query("//meta[@property='og:image']")->item(0);
-        Log::info("Coolmate og:image node found: " . ($metaImageNode ? 'yes' : 'no'));
-
-        if ($metaImageNode && $metaImageNode->hasAttribute('content')) {
-            $imgUrl = trim($metaImageNode->getAttribute('content'));
-            Log::info("Coolmate og:image URL: {$imgUrl}");
-
-            if (!empty($imgUrl)) {
-                $absoluteImgUrl = $this->makeAbsoluteUrl($imgUrl, $postUrl);
-                $extension = $this->getImageExtension($absoluteImgUrl);
-                $filename = $slug . '.' . $extension;
-                $savePath = public_path('clients/assets/img/posts/' . $filename);
-
-                $dir = dirname($savePath);
-                if (!is_dir($dir)) {
-                    mkdir($dir, 0755, true);
-                }
-
-                if ($this->downloadImage($absoluteImgUrl, $savePath)) {
-                    $result['path'] = 'clients/assets/img/posts/' . $filename;
-                    $result['alt'] = $title;
-                    Log::info("Coolmate thumbnail saved: {$result['path']}");
-                }
-            }
-        }
-
-        return $result;
-    }
-
-    /**
-     * Xử lý HTML: xóa class/thuộc tính, thay Coolmate → Nobi Fashion Việt Nam, xử lý thẻ a/img
-     */
-    protected function processHtml(string $html, string $slug, string $postUrl = ''): string
-    {
-        $dom = new DOMDocument();
-        @$dom->loadHTML('<?xml encoding="UTF-8">' . $html);
-        $xpath = new DOMXPath($dom);
-
-        $allowedTags = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'strong', 'em', 'b', 'i', 'u', 'a', 'img', 'br', 'blockquote'];
-
-        $allNodes = $xpath->query('//*');
-        foreach ($allNodes as $node) {
-            /** @var \DOMElement $node */
-            if (!in_array(strtolower($node->nodeName), $allowedTags, true)) {
-                continue;
-            }
-
-            $attributesToRemove = [];
-            foreach ($node->attributes as $attr) {
-                $attrName = $attr->nodeName;
-                if (!in_array($attrName, ['href', 'src', 'alt', 'title'], true)) {
-                    $attributesToRemove[] = $attrName;
-                }
-            }
-            foreach ($attributesToRemove as $attrName) {
-                $node->removeAttribute($attrName);
-            }
-        }
-
-        // Xử lý thẻ a:
-        // - Nếu text chứa Coolmate/coolmate/coolmate.me → href = nobifashion.vn, text = Nobi Fashion Việt Nam
-        // - Ngược lại: href = random meta_canonical
-        $linkNodes = $xpath->query('//a');
-        foreach ($linkNodes as $linkNode) {
-            /** @var \DOMElement $linkNode */
-            $linkText = trim($linkNode->textContent);
-            if (preg_match('/coolmate(\.me)?/i', $linkText)) {
-                $linkNode->setAttribute('href', 'https://nobifashion.vn');
-                $linkNode->nodeValue = 'Nobi Fashion Việt Nam';
-            } else {
-                $randomPost = Post::whereNotNull('meta_canonical')
-                    ->inRandomOrder()
-                    ->first();
-                if ($randomPost && $randomPost->meta_canonical) {
-                    $linkNode->setAttribute('href', $randomPost->meta_canonical);
-                } else {
-                    $linkNode->setAttribute('href', 'https://nobifashion.vn');
-                }
-            }
-        }
-
-        // Thay Coolmate/coolmate/coolmate.me trong text (không nằm trong <a>) → Nobi Fashion Việt Nam
-        $textNodes = $xpath->query('//text()[not(ancestor::a)]');
-        foreach ($textNodes as $textNode) {
-            $text = $textNode->nodeValue;
-            if (preg_match('/coolmate(\.me)?/i', $text)) {
-                $newText = preg_replace('/coolmate(\.me)?/i', 'Nobi Fashion Việt Nam', $text);
-                $textNode->nodeValue = $newText;
-            }
-        }
-
-        // Xử lý thẻ img: tải ảnh về và thay src
-        $imgNodes = $xpath->query('//img');
-        foreach ($imgNodes as $imgNode) {
-            /** @var \DOMElement $imgNode */
-            $imgUrl = '';
-            if ($imgNode->hasAttribute('src')) {
-                $imgUrl = $imgNode->getAttribute('src');
-            } elseif ($imgNode->hasAttribute('data-src')) {
-                $imgUrl = $imgNode->getAttribute('data-src');
-            }
-
-            if (!empty($imgUrl) && !str_starts_with($imgUrl, 'data:')) {
-                $absoluteImgUrl = $imgUrl;
-                if (!filter_var($imgUrl, FILTER_VALIDATE_URL) && !empty($postUrl)) {
-                    $absoluteImgUrl = $this->makeAbsoluteUrl($imgUrl, $postUrl);
-                }
-
-                if (filter_var($absoluteImgUrl, FILTER_VALIDATE_URL)) {
-                    $extension = $this->getImageExtension($absoluteImgUrl);
-                    $filename = $slug . '-' . uniqid() . '.' . $extension;
-                    $savePath = public_path('clients/assets/img/posts/' . $filename);
-
-                    $dir = dirname($savePath);
-                    if (!is_dir($dir)) {
-                        mkdir($dir, 0755, true);
-                    }
-
-                    if ($this->downloadImage($absoluteImgUrl, $savePath)) {
-                        $imgNode->setAttribute('src', 'https://nobifashion.vn/clients/assets/img/posts/' . $filename);
-                        if ($imgNode->hasAttribute('data-src')) {
-                            $imgNode->removeAttribute('data-src');
-                        }
-                    }
-                }
-            }
-        }
-
-        $html = $dom->saveHTML();
-        return $html;
-    }
-
-    /**
-     * Finalize content: chuyển div thành p, xóa class/id/style/data-*, chỉ giữ HTML cơ bản sạch
+     * Chỉ ghi nhớ các bài đã được xuất CSV thành công.
      *
-     * (Dùng same logic với Onoff, đã tối ưu để tránh rác & encoding lỗi)
+     * @param  array<int, array<string, mixed>>  $articles
      */
-    protected function finalizeContent(string $html): string
+    private function rememberCrawledArticles(array $articles): void
     {
-        $originalInput = $html;
+        if ($articles === []) {
+            return;
+        }
 
-        // 1) Remove wrappers / declarations
-        $html = preg_replace('/<!DOCTYPE[^>]*>/i', '', $html);
-        $html = preg_replace('/<\?xml[^>]*\?>/i', '', $html);
-        $html = preg_replace('/<\/?html[^>]*>/i', '', $html);
-        $html = preg_replace('/<\/?body[^>]*>/i', '', $html);
+        $path = $this->crawledUrlsPath();
+        $handle = fopen($path, 'c+b');
+        if ($handle === false) {
+            throw new \RuntimeException("Không thể ghi lịch sử URL Coolmate: {$path}");
+        }
 
-        // 2) Decode entities (đảm bảo tiếng Việt chuẩn)
-        $html = html_entity_decode($html, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        try {
+            if (! flock($handle, LOCK_EX)) {
+                throw new \RuntimeException("Không thể khóa lịch sử URL Coolmate: {$path}");
+            }
 
-        // 3) Convert div -> p (đơn giản, vì content đã được AI trả HTML bài viết)
-        $html = preg_replace('/<div\b[^>]*>/i', '<p>', $html);
-        $html = preg_replace('/<\/div>/i', '</p>', $html);
+            rewind($handle);
+            $contents = stream_get_contents($handle);
+            $registry = trim((string) $contents) === ''
+                ? ['version' => 1, 'urls' => []]
+                : json_decode((string) $contents, true);
 
-        // 4) Unwrap span (xóa span nhưng giữ text)
-        $html = preg_replace('/<span\b[^>]*>/i', '', $html);
-        $html = preg_replace('/<\/span>/i', '', $html);
+            if (! is_array($registry) || ! is_array($registry['urls'] ?? null)) {
+                throw new \RuntimeException("File lịch sử URL Coolmate không phải JSON hợp lệ: {$path}");
+            }
 
-        // 5) Chuẩn hóa <a>: chỉ giữ href/title; nếu thiếu href thì set https://nobifashion.vn
-        $html = preg_replace_callback('/<a\b([^>]*)>/i', function ($m) {
-            $attrs = $m[1] ?? '';
-            $href = '';
-            $title = '';
-            if (preg_match('/\bhref\s*=\s*("([^"]*)"|\'([^\']*)\')/i', $attrs, $mm)) {
-                $href = $mm[2] !== '' ? $mm[2] : ($mm[3] ?? '');
-            }
-            if (preg_match('/\btitle\s*=\s*("([^"]*)"|\'([^\']*)\')/i', $attrs, $mm)) {
-                $title = $mm[2] !== '' ? $mm[2] : ($mm[3] ?? '');
-            }
-            if (trim($href) === '') {
-                $href = 'https://nobifashion.vn';
-            }
-            $out = '<a href="' . htmlspecialchars($href, ENT_QUOTES | ENT_HTML5, 'UTF-8') . '"';
-            if (trim($title) !== '') {
-                $out .= ' title="' . htmlspecialchars($title, ENT_QUOTES | ENT_HTML5, 'UTF-8') . '"';
-            }
-            $out .= '>';
-            return $out;
-        }, $html);
+            $crawledAt = (new DateTimeImmutable)->format(DATE_ATOM);
+            foreach ($articles as $article) {
+                $sourceUrl = (string) ($article['source_url'] ?? '');
+                if ($sourceUrl === '') {
+                    continue;
+                }
 
-        // 6) Chuẩn hóa <img>: chỉ giữ src/alt/title
-        // - Nếu src rỗng hoặc là data:* (base64 placeholder) thì XÓA hẳn img
-        $html = preg_replace_callback('/<img\b([^>]*?)(\/?)>/i', function ($m) {
-            $attrs = $m[1] ?? '';
-            $src = '';
-            $alt = '';
-            $title = '';
-            if (preg_match('/\bsrc\s*=\s*("([^"]*)"|\'([^\']*)\')/i', $attrs, $mm)) {
-                $src = $mm[2] !== '' ? $mm[2] : ($mm[3] ?? '');
+                $registry['urls'][$sourceUrl] = [
+                    'crawled_at' => $crawledAt,
+                    'title' => $this->normalizeUtf8((string) ($article['title'] ?? '')),
+                    'slug' => $this->normalizeUtf8((string) ($article['slug'] ?? '')),
+                ];
             }
-            if (preg_match('/\balt\s*=\s*("([^"]*)"|\'([^\']*)\')/i', $attrs, $mm)) {
-                $alt = $mm[2] !== '' ? $mm[2] : ($mm[3] ?? '');
-            }
-            if (preg_match('/\btitle\s*=\s*("([^"]*)"|\'([^\']*)\')/i', $attrs, $mm)) {
-                $title = $mm[2] !== '' ? $mm[2] : ($mm[3] ?? '');
-            }
-            $src = trim($src);
-            if ($src === '' || str_starts_with(strtolower($src), 'data:')) {
-                return '';
-            }
-            $out = '<img src="' . htmlspecialchars($src, ENT_QUOTES | ENT_HTML5, 'UTF-8') . '"';
-            if (trim($alt) !== '') {
-                $out .= ' alt="' . htmlspecialchars($alt, ENT_QUOTES | ENT_HTML5, 'UTF-8') . '"';
-            }
-            if (trim($title) !== '') {
-                $out .= ' title="' . htmlspecialchars($title, ENT_QUOTES | ENT_HTML5, 'UTF-8') . '"';
-            }
-            $out .= '>';
-            return $out;
-        }, $html);
 
-        // 7) Xóa attributes còn lại trên các tag khác (class/id/style/data-*...)
-        $html = preg_replace('/<(?!a\b|img\b)([a-z0-9]+)\s+[^>]*?>/i', '<$1>', $html);
+            ksort($registry['urls']);
+            $json = $this->encodeJson($registry, JSON_PRETTY_PRINT);
 
-        // 8) Chỉ giữ các tag thông dụng
-        $allowed = '(p|h1|h2|h3|h4|h5|h6|ul|ol|li|strong|em|b|i|u|a|img|br|blockquote)';
-        $html = preg_replace('/<(\/?)(?!' . $allowed . '\b)[a-z0-9]+\b[^>]*>/i', '', $html);
+            rewind($handle);
+            if (! ftruncate($handle, 0) || fwrite($handle, $json.PHP_EOL) === false) {
+                throw new \RuntimeException("Không thể cập nhật lịch sử URL Coolmate: {$path}");
+            }
 
-        // 9) Cleanup whitespace
-        $html = preg_replace('/\s+/', ' ', $html);
-        $html = str_replace('> <', '><', $html);
-        $html = trim($html);
+            fflush($handle);
+            flock($handle, LOCK_UN);
+        } finally {
+            fclose($handle);
+        }
+    }
 
-        // Guard cuối: nếu vẫn rỗng thì trả về processed html gốc (decode tối thiểu) thay vì rỗng
-        if ($html === '' && trim(strip_tags($originalInput)) !== '') {
-            $fallback = html_entity_decode($originalInput, ENT_QUOTES | ENT_HTML5, 'UTF-8');
-            $fallback = preg_replace('/<!DOCTYPE[^>]*>/i', '', $fallback);
-            $fallback = preg_replace('/<\?xml[^>]*\?>/i', '', $fallback);
-            $fallback = preg_replace('/<\/?html[^>]*>/i', '', $fallback);
-            $fallback = preg_replace('/<\/?body[^>]*>/i', '', $fallback);
-            $fallback = preg_replace('/\s+/', ' ', $fallback);
-            $fallback = str_replace('> <', '><', $fallback);
-            return trim($fallback);
+    private function crawledUrlsPath(): string
+    {
+        return $this->tempRootDirectory().DIRECTORY_SEPARATOR.self::CRAWLED_URLS_FILE;
+    }
+
+    /**
+     * Tải nhiều trang song song theo từng batch; Playwright chỉ là fallback.
+     */
+    private function fetchHtmlPayloads(array $urls, array &$errors): array
+    {
+        $payloads = [];
+
+        foreach (array_chunk($urls, self::PAGE_BATCH_SIZE) as $chunkUrls) {
+            try {
+                $responses = Http::pool(function (Pool $pool) use ($chunkUrls) {
+                    $requests = [];
+
+                    foreach ($chunkUrls as $index => $url) {
+                        $key = 'page_'.$index;
+                        $requests[$key] = $pool
+                            ->as($key)
+                            ->withHeaders($this->pageRequestHeaders())
+                            ->connectTimeout(12)
+                            ->timeout(self::PAGE_TIMEOUT_SECONDS)
+                            ->retry(1, 250)
+                            ->get($url);
+                    }
+
+                    return $requests;
+                });
+            } catch (\Throwable $e) {
+                $responses = [];
+                Log::warning('Coolmate page pool failed', [
+                    'error' => $e->getMessage(),
+                    'urls' => $chunkUrls,
+                ]);
+            }
+
+            foreach ($chunkUrls as $index => $url) {
+                $response = $responses['page_'.$index] ?? null;
+
+                if (
+                    $response instanceof Response
+                    && $response->successful()
+                    && $this->isUsableHtml($response->body(), self::PAGE_SELECTOR)
+                ) {
+                    $payloads[$url] = $response->body();
+
+                    continue;
+                }
+
+                try {
+                    $payloads[$url] = $this->fetchHtmlWithPlaywright($url, self::PAGE_SELECTOR);
+                } catch (\Throwable $e) {
+                    $status = $response instanceof Response ? "HTTP {$response->status()}; " : '';
+                    $errors[$url] = $status.$e->getMessage();
+                }
+            }
+        }
+
+        return $payloads;
+    }
+
+    private function fetchHtmlWithPlaywright(string $url, string $waitForSelector): string
+    {
+        $serviceUrl = rtrim(env('PLAYWRIGHT_SERVICE_URL', 'http://localhost:3001'), '/');
+        $response = Http::connectTimeout(8)
+            ->timeout(120)
+            ->post($serviceUrl.'/crawl', [
+                'url' => $url,
+                'waitForSelector' => $waitForSelector,
+            ]);
+
+        if (! $response->successful()) {
+            throw new \RuntimeException("Playwright HTTP {$response->status()}");
+        }
+
+        $data = $response->json();
+        $html = is_array($data) ? (string) ($data['html'] ?? '') : '';
+
+        if (
+            ! is_array($data)
+            || ($data['success'] ?? false) !== true
+            || ! $this->isUsableHtml($html, $waitForSelector)
+        ) {
+            throw new \RuntimeException(
+                'Playwright không trả về HTML bài viết hợp lệ: '
+                .(is_array($data) ? ($data['error'] ?? 'unknown error') : 'invalid JSON')
+            );
         }
 
         return $html;
     }
 
-    protected function makeAbsoluteUrl(string $relativeUrl, string $baseUrl): string
+    private function extractArticleData(string $html, string $sourceUrl): array
     {
-        if (filter_var($relativeUrl, FILTER_VALIDATE_URL)) {
-            return $relativeUrl;
-        }
-        $parsedBase = parse_url($baseUrl);
-        $scheme = $parsedBase['scheme'] ?? 'https';
-        $host = $parsedBase['host'] ?? '';
+        $html = $this->normalizeUtf8($html);
+        $dom = $this->loadHtml($html);
+        $xpath = new DOMXPath($dom);
 
-        if (str_starts_with($relativeUrl, '//')) {
-            return $scheme . ':' . $relativeUrl;
+        $rawTitle = $this->firstNodeText(
+            $xpath,
+            "//h1[contains(concat(' ', normalize-space(@class), ' '), ' entry-title ')]"
+        );
+        if ($rawTitle === '') {
+            $rawTitle = $this->metaContent($xpath, 'property', 'og:title');
         }
-        if (str_starts_with($relativeUrl, '/')) {
-            return $scheme . '://' . $host . $relativeUrl;
+        $rawTitle = $this->normalizeText($rawTitle);
+
+        if ($rawTitle === '') {
+            throw new \RuntimeException('Không tìm thấy tiêu đề bài viết.');
         }
-        $basePath = dirname($parsedBase['path'] ?? '/');
-        return $scheme . '://' . $host . $basePath . '/' . ltrim($relativeUrl, '/');
+
+        $title = $this->transformTitle($rawTitle);
+        $imageFallbackTitle = $this->transformText($rawTitle);
+
+        $slug = Str::slug($title, '-');
+        if ($slug === '') {
+            throw new \RuntimeException('Không thể tạo slug từ tiêu đề bài viết.');
+        }
+
+        $contentNode = $xpath->query(
+            "//article//div[contains(concat(' ', normalize-space(@class), ' '), ' entry-content ')"
+            ." and contains(concat(' ', normalize-space(@class), ' '), ' single-page ')]"
+        )->item(0);
+
+        if (! $contentNode instanceof DOMElement) {
+            $contentNode = $xpath->query(
+                "//div[contains(concat(' ', normalize-space(@class), ' '), ' entry-content ')]"
+            )->item(0);
+        }
+
+        if (! $contentNode instanceof DOMElement) {
+            throw new \RuntimeException('Không tìm thấy nội dung bài viết.');
+        }
+
+        $this->removeUnwantedContentNodes($contentNode);
+        $extraImages = $this->collectContentImages(
+            $contentNode,
+            $sourceUrl,
+            $imageFallbackTitle
+        );
+        $this->transformContentText($contentNode);
+        $this->cleanContentMarkup($contentNode);
+        $content = $this->innerHtml($contentNode);
+
+        if (trim(strip_tags($content)) === '') {
+            throw new \RuntimeException('Nội dung bài viết rỗng sau khi xử lý.');
+        }
+
+        $description = $this->transformText(
+            $this->metaContent($xpath, 'property', 'og:description')
+                ?: $this->metaContent($xpath, 'name', 'description')
+        );
+        $mainImageUrl = $this->absoluteUrl(
+            $this->metaContent($xpath, 'property', 'og:image'),
+            $sourceUrl
+        );
+        $canonical = $this->linkHref($xpath, 'canonical') ?: $sourceUrl;
+        $publishedAt = $this->normalizePublishedAt(
+            $this->metaContent($xpath, 'property', 'article:published_time')
+        );
+        $keywords = $this->transformText($this->metaContent($xpath, 'name', 'keywords'));
+        $tags = array_values(array_unique(array_filter(array_map(
+            fn (string $tag): string => $this->transformText($tag),
+            $this->metaContents($xpath, 'property', 'article:tag')
+        ))));
+
+        return [
+            'source_url' => $sourceUrl,
+            'title' => $title,
+            'slug' => $slug,
+            'content' => $content,
+            'excerpt' => $description,
+            'meta_title' => $this->transformText(
+                $this->metaContent($xpath, 'property', 'og:title')
+            ) ?: $title,
+            'meta_description' => $description,
+            'meta_keywords' => $keywords,
+            'meta_canonical' => $canonical,
+            'published_at' => $publishedAt,
+            'category_slug' => Str::slug(
+                $this->transformText(
+                    $this->metaContent($xpath, 'property', 'article:section')
+                ),
+                '-'
+            ),
+            'tags' => $tags,
+            'main_image_url' => $mainImageUrl,
+            'main_image_alt' => $this->transformText(
+                $this->metaContent($xpath, 'property', 'og:image:alt')
+            ) ?: $imageFallbackTitle,
+            'extra_images' => $extraImages,
+        ];
     }
 
-    protected function getImageExtension(string $url): string
+    private function removeUnwantedContentNodes(DOMElement $contentNode): void
     {
-        $path = parse_url($url, PHP_URL_PATH);
-        $extension = pathinfo($path, PATHINFO_EXTENSION);
-        return $extension ? strtolower($extension) : 'jpg';
+        $xpath = new DOMXPath($contentNode->ownerDocument);
+        $nodes = $xpath->query('.//script|.//style|.//noscript|.//iframe|.//form|.//button|.//svg', $contentNode);
+
+        if ($nodes === false) {
+            return;
+        }
+
+        $toRemove = [];
+        foreach ($nodes as $node) {
+            $toRemove[] = $node;
+        }
+
+        foreach ($toRemove as $node) {
+            $node->parentNode?->removeChild($node);
+        }
     }
 
-    protected function downloadImage(string $url, string $savePath): bool
-    {
-        try {
-            $response = Http::timeout(60)->get($url);
-            if ($response->successful()) {
-                file_put_contents($savePath, $response->body());
-                Log::info("Coolmate image downloaded: {$savePath}");
-                return true;
+    private function collectContentImages(
+        DOMElement $contentNode,
+        string $sourceUrl,
+        string $fallbackTitle
+    ): array {
+        $xpath = new DOMXPath($contentNode->ownerDocument);
+        $nodes = $xpath->query('.//img', $contentNode);
+        $images = [];
+
+        if ($nodes === false) {
+            return $images;
+        }
+
+        foreach ($nodes as $node) {
+            if (! $node instanceof DOMElement) {
+                continue;
             }
-            Log::warning("Coolmate image download failed: {$url}, status=" . $response->status());
-        } catch (\Throwable $e) {
-            Log::error("Coolmate image download exception: {$url}", ['error' => $e->getMessage()]);
+
+            $imageUrl = $this->imageSource($node, $sourceUrl);
+            if ($imageUrl === null) {
+                $node->parentNode?->removeChild($node);
+
+                continue;
+            }
+
+            $order = count($images) + 1;
+            $placeholder = "__COOLMATE_EXTRA_IMAGE_{$order}__";
+            $alt = $this->transformText($node->getAttribute('alt')) ?: $fallbackTitle;
+            $imageSlug = Str::slug($alt, '-') ?: Str::slug($fallbackTitle, '-');
+
+            $node->setAttribute('src', $placeholder);
+            $node->setAttribute('alt', $alt);
+            $node->setAttribute('title', $alt);
+            foreach (['srcset', 'data-src', 'data-lazy-src', 'data-original', 'data-srcset', 'loading'] as $attribute) {
+                $node->removeAttribute($attribute);
+            }
+
+            $images[] = [
+                'order' => $order,
+                'url' => $imageUrl,
+                'alt' => $alt,
+                'image_slug' => $imageSlug,
+                'placeholder' => $placeholder,
+            ];
         }
-        return false;
+
+        return $images;
     }
 
-    protected function ensureUniqueSlug(string $slug): string
+    private function transformContentText(DOMElement $contentNode): void
     {
-        $originalSlug = $slug;
-        $counter = 1;
-        while (Post::where('slug', $slug)->exists()) {
-            $slug = $originalSlug . '-' . $counter;
-            $counter++;
+        $xpath = new DOMXPath($contentNode->ownerDocument);
+        $textNodes = $xpath->query('.//text()', $contentNode);
+
+        if ($textNodes === false) {
+            return;
         }
-        return $slug;
+
+        foreach ($textNodes as $textNode) {
+            $textNode->nodeValue = $this->replaceHistoricalYears(
+                $this->replaceBrandNames((string) $textNode->nodeValue)
+            );
+        }
     }
 
-    protected function generateFallbackKeywords(string $title): string
+    private function cleanContentMarkup(DOMElement $contentNode): void
     {
-        $words = preg_split('/\s+/', $title);
-        $keywords = array_slice($words, 0, 10);
-        return implode(', ', $keywords);
+        $allowedAttributes = [
+            'img' => ['src', 'alt', 'title'],
+            'th' => ['colspan', 'rowspan'],
+            'td' => ['colspan', 'rowspan'],
+        ];
+        $allowedTags = [
+            'p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+            'ul', 'ol', 'li', 'strong', 'em', 'b', 'i', 'u',
+            'img', 'br', 'blockquote', 'table', 'thead',
+            'tbody', 'tr', 'th', 'td', 'figure', 'figcaption', 'hr',
+        ];
+
+        $xpath = new DOMXPath($contentNode->ownerDocument);
+        $nodes = $xpath->query('.//*', $contentNode);
+        $elements = [];
+
+        if ($nodes !== false) {
+            foreach ($nodes as $node) {
+                if ($node instanceof DOMElement) {
+                    $elements[] = $node;
+                }
+            }
+        }
+
+        foreach (array_reverse($elements) as $element) {
+            $tagName = strtolower($element->tagName);
+
+            if ($tagName === 'a') {
+                $this->replaceAnchorWithEm($element);
+
+                continue;
+            }
+
+            if (! in_array($tagName, $allowedTags, true)) {
+                $this->unwrapElement($element);
+
+                continue;
+            }
+
+            $keepAttributes = $allowedAttributes[$tagName] ?? [];
+            $removeAttributes = [];
+            foreach ($element->attributes as $attribute) {
+                if (! in_array(strtolower($attribute->name), $keepAttributes, true)) {
+                    $removeAttributes[] = $attribute->name;
+                }
+            }
+            foreach ($removeAttributes as $attributeName) {
+                $element->removeAttribute($attributeName);
+            }
+        }
+    }
+
+    private function replaceAnchorWithEm(DOMElement $anchor): void
+    {
+        $parent = $anchor->parentNode;
+        if (! $parent instanceof DOMNode) {
+            return;
+        }
+
+        $emphasis = $anchor->ownerDocument->createElement('em');
+        while ($anchor->firstChild) {
+            $emphasis->appendChild($anchor->firstChild);
+        }
+
+        $parent->replaceChild($emphasis, $anchor);
+    }
+
+    private function unwrapElement(DOMElement $element): void
+    {
+        $parent = $element->parentNode;
+        if (! $parent instanceof DOMNode) {
+            return;
+        }
+
+        while ($element->firstChild) {
+            $parent->insertBefore($element->firstChild, $element);
+        }
+
+        $parent->removeChild($element);
+    }
+
+    private function buildImageJobs(array $articles): array
+    {
+        $jobs = [];
+        $clearedSlugs = [];
+
+        foreach ($articles as $articleIndex => $article) {
+            $slug = $article['slug'];
+
+            if (! isset($clearedSlugs[$slug])) {
+                $this->clearStoredArticleImages($slug);
+                $clearedSlugs[$slug] = true;
+            }
+
+            if ($article['main_image_url']) {
+                $jobs[] = [
+                    'key' => "article_{$articleIndex}_main",
+                    'article_index' => $articleIndex,
+                    'type' => 'main',
+                    'order' => 0,
+                    'slug' => $slug,
+                    'file_slug' => $slug,
+                    'url' => $article['main_image_url'],
+                    'alt' => $article['main_image_alt'],
+                    'source_url' => $article['source_url'],
+                ];
+            }
+
+            foreach ($article['extra_images'] as $image) {
+                $jobs[] = [
+                    'key' => "article_{$articleIndex}_extra_{$image['order']}",
+                    'article_index' => $articleIndex,
+                    'type' => 'extra',
+                    'order' => $image['order'],
+                    'slug' => $slug,
+                    'file_slug' => $image['image_slug'],
+                    'url' => $image['url'],
+                    'alt' => $image['alt'],
+                    'source_url' => $article['source_url'],
+                ];
+            }
+        }
+
+        return $jobs;
     }
 
     /**
-     * Fetch HTML using Playwright service (đảm bảo JS render đủ)
+     * Tải ảnh song song theo batch và ghi đè đúng tên file quy định.
      */
-    protected function fetchHtml(string $url, ?string $waitForSelector = null): string
+    private function downloadImagesInBatches(array $jobs): array
     {
-        Log::info("=== COOLMATE: FETCH HTML WITH PLAYWRIGHT SERVICE ===");
-        Log::info("URL: {$url}");
-        if ($waitForSelector) {
-            Log::info("Wait for selector: {$waitForSelector}");
+        $results = [];
+
+        foreach (array_chunk($jobs, self::IMAGE_BATCH_SIZE) as $chunkJobs) {
+            try {
+                $responses = Http::pool(function (Pool $pool) use ($chunkJobs) {
+                    $requests = [];
+
+                    foreach ($chunkJobs as $index => $job) {
+                        $key = 'image_'.$index;
+                        $requests[$key] = $pool
+                            ->as($key)
+                            ->withHeaders([
+                                // Không ưu tiên WebP/AVIF để CDN trả đúng định dạng ảnh nguồn.
+                                'Accept' => 'image/*,*/*;q=0.8',
+                                'Referer' => $job['source_url'],
+                                'User-Agent' => $this->pageRequestHeaders()['User-Agent'],
+                            ])
+                            ->connectTimeout(12)
+                            ->timeout(self::IMAGE_TIMEOUT_SECONDS)
+                            ->retry(1, 200)
+                            ->get($job['url']);
+                    }
+
+                    return $requests;
+                });
+            } catch (\Throwable $e) {
+                $responses = [];
+                Log::warning('Coolmate image pool failed', [
+                    'error' => $e->getMessage(),
+                ]);
+            }
+
+            foreach ($chunkJobs as $index => $job) {
+                $response = $responses['image_'.$index] ?? null;
+
+                if (! $response instanceof Response || ! $this->isValidImageResponse($response, $job['url'])) {
+                    $results[$job['key']] = [
+                        'status' => 'failed',
+                        'error' => $response instanceof Response
+                            ? "HTTP {$response->status()} hoặc dữ liệu không phải ảnh"
+                            : 'Không nhận được phản hồi ảnh',
+                        'relative_path' => null,
+                        'absolute_path' => null,
+                    ];
+
+                    continue;
+                }
+
+                $extension = $this->imageExtension($job['url'], $response);
+                $fileName = $job['type'] === 'main'
+                    ? "{$job['file_slug']}.{$extension}"
+                    : "{$job['file_slug']}-{$job['order']}.{$extension}";
+                $directory = $job['type'] === 'main'
+                    ? $this->mainImageDirectory()
+                    : $this->extraImageDirectory();
+                $relativeDirectory = $job['type'] === 'main'
+                    ? 'storage/app/tmp/coolmate/main'
+                    : 'storage/app/tmp/coolmate/extra';
+                $fullPath = $directory.DIRECTORY_SEPARATOR.$fileName;
+
+                $this->deleteImageVariants($directory, $job['file_slug'], $job['type'], (int) $job['order']);
+
+                if (file_put_contents($fullPath, $response->body()) === false) {
+                    $results[$job['key']] = [
+                        'status' => 'failed',
+                        'error' => 'Không thể ghi file ảnh vào thư mục tạm',
+                        'relative_path' => null,
+                        'absolute_path' => null,
+                    ];
+
+                    continue;
+                }
+
+                @chmod($fullPath, 0644);
+                $results[$job['key']] = [
+                    'status' => 'downloaded',
+                    'error' => null,
+                    'file_name' => $fileName,
+                    'relative_path' => $relativeDirectory.'/'.$fileName,
+                    'absolute_path' => $fullPath,
+                    'extension' => $extension,
+                ];
+            }
+        }
+
+        return $results;
+    }
+
+    private function buildCsvRows(
+        array $articles,
+        array $imageJobs,
+        array $imageResults,
+        array &$results
+    ): array {
+        $jobsByArticle = [];
+        $imageDetailsByArticle = [];
+
+        foreach ($imageJobs as $job) {
+            $imageResult = $imageResults[$job['key']] ?? [
+                'status' => 'failed',
+                'error' => 'Không có kết quả tải ảnh',
+                'relative_path' => null,
+                'absolute_path' => null,
+            ];
+            $jobsByArticle[$job['article_index']][$job['key']] = $imageResult;
+
+            if ($imageResult['status'] === 'downloaded') {
+                $results['image_downloaded_count']++;
+                $results[$job['type'] === 'main' ? 'main_image_count' : 'extra_image_count']++;
+            } else {
+                $results['warnings'][] = "Không tải được ảnh {$job['url']}: {$imageResult['error']}";
+            }
+
+            $imageDetailsByArticle[$job['article_index']][] = [
+                'article_url' => $job['source_url'],
+                'article_slug' => $job['slug'],
+                'image_slug' => $job['file_slug'],
+                'type' => $job['type'] === 'main' ? 'main' : 'extra',
+                'order' => $job['order'],
+                'original_url' => $job['url'],
+                'relative_path' => $imageResult['relative_path'] ?? '',
+                'absolute_path' => $imageResult['absolute_path'] ?? '',
+                'alt' => $job['alt'],
+                'status' => $imageResult['status'],
+                'error' => $imageResult['error'] ?? '',
+            ];
+        }
+
+        $rows = [];
+        $crawledAt = (new DateTimeImmutable)->format('Y-m-d H:i:s');
+
+        foreach ($articles as $articleIndex => $article) {
+            $content = $article['content'];
+            $downloadedExtraPaths = [];
+            $extraImagePaths = [];
+            $mainImagePath = $article['main_image_url'] ?? '';
+
+            $mainKey = "article_{$articleIndex}_main";
+            if (($jobsByArticle[$articleIndex][$mainKey]['status'] ?? null) === 'downloaded') {
+                $mainImagePath = $jobsByArticle[$articleIndex][$mainKey]['relative_path'];
+            }
+
+            foreach ($article['extra_images'] as $image) {
+                $extraKey = "article_{$articleIndex}_extra_{$image['order']}";
+                $imageResult = $jobsByArticle[$articleIndex][$extraKey] ?? null;
+                $replacement = $image['url'];
+
+                if (($imageResult['status'] ?? null) === 'downloaded') {
+                    $replacement = $imageResult['relative_path'];
+                    $downloadedExtraPaths[] = $replacement;
+                }
+
+                $extraImagePaths[] = $replacement;
+                $content = str_replace($image['placeholder'], $replacement, $content);
+            }
+
+            $rows[] = [
+                '',
+                $article['title'],
+                $article['slug'],
+                $article['category_slug'],
+                $content,
+                $article['excerpt'],
+                $mainImagePath,
+                implode(', ', $extraImagePaths),
+                $article['main_image_alt'],
+                'draft',
+                0,
+                implode(', ', $article['tags']),
+                $article['meta_title'],
+                $article['meta_description'],
+                $article['meta_keywords'],
+                $article['meta_canonical'],
+                '',
+                $article['published_at'],
+                $article['source_url'],
+                $article['main_image_url'] ?? '',
+                $this->encodeJson($downloadedExtraPaths),
+                count($article['extra_images']),
+                $this->encodeJson($imageDetailsByArticle[$articleIndex] ?? []),
+                $crawledAt,
+            ];
+
+            $results['success']++;
+            $results['posts'][] = [
+                'title' => $article['title'],
+                'slug' => $article['slug'],
+                'source_url' => $article['source_url'],
+                'main_image' => $mainImagePath,
+                'extra_image_count' => count($article['extra_images']),
+                'content_length' => mb_strlen($content, 'UTF-8'),
+            ];
+        }
+
+        return $rows;
+    }
+
+    private function createCsv(array $rows): string
+    {
+        $timestamp = (new DateTimeImmutable)->format('Y-m-d_H-i-s-u');
+        $fileName = "coolmate_posts_{$timestamp}.csv";
+        $path = $this->tempRootDirectory().DIRECTORY_SEPARATOR.$fileName;
+        $handle = fopen($path, 'wb');
+        if ($handle === false) {
+            throw new \RuntimeException("Không thể tạo file CSV: {$path}");
+        }
+
+        $headers = [
+            'ID',
+            'Tiêu đề',
+            'Slug',
+            'Danh mục (Slug)',
+            'Nội dung',
+            'Tóm tắt',
+            'Thumbnail URL',
+            'Ảnh phụ',
+            'Alt ảnh',
+            'Trạng thái',
+            'Nổi bật',
+            'Tags (phẩy)',
+            'Meta Title',
+            'Meta Description',
+            'Meta Keywords',
+            'Meta Canonical',
+            'Tác giả (Email)',
+            'Ngày xuất bản',
+            'URL nguồn',
+            'Ảnh chính gốc',
+            'Ảnh phụ đã lưu (JSON)',
+            'Số ảnh phụ',
+            'Chi tiết ảnh (JSON)',
+            'Ngày crawl',
+        ];
+
+        [$headers, $rows] = $this->splitLongContentColumns($headers, $rows);
+
+        try {
+            if (fwrite($handle, "\xEF\xBB\xBF") === false) {
+                throw new \RuntimeException("Không thể ghi BOM UTF-8 vào file CSV: {$path}");
+            }
+
+            $this->writeCsvRow($handle, $headers, $path);
+            foreach ($rows as $row) {
+                $this->writeCsvRow($handle, $row, $path);
+            }
+        } finally {
+            fclose($handle);
+        }
+
+        $this->validateCsvFile($path, count($headers), count($rows));
+
+        return $fileName;
+    }
+
+    private function splitLongContentColumns(array $headers, array $rows): array
+    {
+        $contentColumnIndex = array_search('Nội dung', $headers, true);
+        if ($contentColumnIndex === false) {
+            throw new \RuntimeException('Không tìm thấy cột Nội dung trong CSV.');
+        }
+
+        $chunkedRows = [];
+        $maximumChunkCount = 1;
+
+        foreach ($rows as $row) {
+            $content = (string) ($row[$contentColumnIndex] ?? '');
+            $chunks = [];
+            $contentLength = mb_strlen($content, 'UTF-8');
+
+            for ($offset = 0; $offset < $contentLength; $offset += self::CSV_CELL_CHARACTER_LIMIT) {
+                $chunks[] = mb_substr(
+                    $content,
+                    $offset,
+                    self::CSV_CELL_CHARACTER_LIMIT,
+                    'UTF-8'
+                );
+            }
+
+            if ($chunks === []) {
+                $chunks = [''];
+            }
+
+            $row[$contentColumnIndex] = $chunks[0];
+            $row['_content_chunks'] = array_slice($chunks, 1);
+            $maximumChunkCount = max($maximumChunkCount, count($chunks));
+            $chunkedRows[] = $row;
+        }
+
+        for ($chunkNumber = 2; $chunkNumber <= $maximumChunkCount; $chunkNumber++) {
+            $headers[] = "Nội dung {$chunkNumber}";
+        }
+
+        foreach ($chunkedRows as &$row) {
+            $extraChunks = $row['_content_chunks'];
+            unset($row['_content_chunks']);
+
+            for ($chunkNumber = 2; $chunkNumber <= $maximumChunkCount; $chunkNumber++) {
+                $row[] = $extraChunks[$chunkNumber - 2] ?? '';
+            }
+        }
+        unset($row);
+
+        return [$headers, $chunkedRows];
+    }
+
+    /**
+     * @param  resource  $handle
+     */
+    private function writeCsvRow($handle, array $row, string $path): void
+    {
+        $values = array_map(
+            fn (mixed $value): string => $this->sanitizeCsvText((string) $value),
+            $row
+        );
+
+        if (fputcsv($handle, $values, ',', '"', '', "\r\n") === false) {
+            throw new \RuntimeException("Không thể ghi dữ liệu vào file CSV: {$path}");
+        }
+    }
+
+    private function validateCsvFile(
+        string $path,
+        int $expectedColumnCount,
+        int $expectedDataRowCount
+    ): void {
+        $handle = fopen($path, 'rb');
+        if ($handle === false) {
+            throw new \RuntimeException("Không thể kiểm tra file CSV: {$path}");
+        }
+
+        $rowNumber = 0;
+
+        try {
+            while (($row = fgetcsv($handle, null, ',', '"', '')) !== false) {
+                $rowNumber++;
+
+                if (count($row) !== $expectedColumnCount) {
+                    throw new \RuntimeException(
+                        "File CSV lỗi cấu trúc tại dòng dữ liệu {$rowNumber}: "
+                        .count($row)." cột, cần {$expectedColumnCount} cột."
+                    );
+                }
+
+                foreach ($row as $columnIndex => $value) {
+                    if (str_contains($value, "\r") || str_contains($value, "\n")) {
+                        throw new \RuntimeException(
+                            "File CSV còn ký tự xuống dòng tại bản ghi {$rowNumber}, "
+                            ."cột ".($columnIndex + 1).'.'
+                        );
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            @unlink($path);
+
+            throw $e;
+        } finally {
+            fclose($handle);
+        }
+
+        $actualDataRowCount = max(0, $rowNumber - 1);
+        if ($actualDataRowCount !== $expectedDataRowCount) {
+            @unlink($path);
+
+            throw new \RuntimeException(
+                "File CSV lỗi số bản ghi: {$actualDataRowCount}, cần {$expectedDataRowCount}."
+            );
+        }
+    }
+
+    private function clearStoredArticleImages(string $slug): void
+    {
+        foreach ([$this->mainImageDirectory(), $this->extraImageDirectory()] as $directory) {
+            foreach (glob($directory.DIRECTORY_SEPARATOR.$slug.'*') ?: [] as $path) {
+                $fileName = basename($path);
+                $pattern = $directory === $this->mainImageDirectory()
+                    ? '/^'.preg_quote($slug, '/').'\.[a-z0-9]+$/i'
+                    : '/^'.preg_quote($slug, '/').'-[0-9]+\.[a-z0-9]+$/i';
+
+                if (is_file($path) && preg_match($pattern, $fileName)) {
+                    @unlink($path);
+                }
+            }
+        }
+    }
+
+    private function deleteImageVariants(
+        string $directory,
+        string $slug,
+        string $type,
+        int $order
+    ): void {
+        $prefix = $type === 'main' ? $slug : "{$slug}-{$order}";
+
+        foreach (glob($directory.DIRECTORY_SEPARATOR.$prefix.'.*') ?: [] as $path) {
+            if (is_file($path)) {
+                @unlink($path);
+            }
+        }
+    }
+
+    private function ensureTempDirectories(): void
+    {
+        foreach ([
+            $this->tempRootDirectory(),
+            $this->mainImageDirectory(),
+            $this->extraImageDirectory(),
+        ] as $directory) {
+            if (! is_dir($directory) && ! mkdir($directory, 0755, true) && ! is_dir($directory)) {
+                throw new \RuntimeException("Không thể tạo thư mục {$directory}");
+            }
+        }
+    }
+
+    protected function tempRootDirectory(): string
+    {
+        return storage_path('app/tmp/coolmate');
+    }
+
+    protected function mainImageDirectory(): string
+    {
+        return $this->tempRootDirectory().DIRECTORY_SEPARATOR.'main';
+    }
+
+    protected function extraImageDirectory(): string
+    {
+        return $this->tempRootDirectory().DIRECTORY_SEPARATOR.'extra';
+    }
+
+    private function normalizePostUrl(string $url): ?string
+    {
+        if ($url === '' || ! filter_var($url, FILTER_VALIDATE_URL)) {
+            return null;
+        }
+
+        $parts = parse_url($url);
+        if (! is_array($parts)) {
+            return null;
+        }
+
+        $scheme = strtolower($parts['scheme'] ?? '');
+        $host = strtolower(rtrim($parts['host'] ?? '', '.'));
+
+        if (
+            ! in_array($scheme, ['http', 'https'], true)
+            || ! in_array($host, ['coolmate.me', 'www.coolmate.me'], true)
+            || isset($parts['user'])
+            || isset($parts['pass'])
+            || isset($parts['port'])
+        ) {
+            return null;
+        }
+
+        $path = $parts['path'] ?? '/';
+        if ($path !== '/') {
+            $path = rtrim($path, '/');
+        }
+
+        return 'https://www.coolmate.me'.($path !== '' ? $path : '/');
+    }
+
+    private function pageRequestHeaders(): array
+    {
+        return [
+            'Accept' => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language' => 'vi-VN,vi;q=0.9,en;q=0.8',
+            'Cache-Control' => 'no-cache',
+            'Referer' => 'https://www.coolmate.me/blog',
+            'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+        ];
+    }
+
+    private function isUsableHtml(string $html, ?string $selector = null): bool
+    {
+        if (strlen(trim($html)) < 200) {
+            return false;
+        }
+
+        foreach (['Just a moment', 'cf-browser-verification', 'cf-chl-'] as $marker) {
+            if (stripos($html, $marker) !== false) {
+                return false;
+            }
+        }
+
+        if ($selector !== self::PAGE_SELECTOR) {
+            return true;
+        }
+
+        $dom = $this->loadHtml($html);
+        $xpath = new DOMXPath($dom);
+
+        return $xpath->query(
+            "//div[contains(concat(' ', normalize-space(@class), ' '), ' entry-content ')"
+            ." and contains(concat(' ', normalize-space(@class), ' '), ' single-page ')]"
+        )->length > 0;
+    }
+
+    private function isValidImageResponse(Response $response, string $url): bool
+    {
+        if (! $response->successful() || $response->body() === '') {
+            return false;
+        }
+
+        $contentType = strtolower((string) $response->header('Content-Type'));
+        if (str_starts_with($contentType, 'image/')) {
+            return true;
+        }
+
+        $extension = strtolower(pathinfo((string) parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION));
+
+        return in_array($extension, ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif'], true)
+            && ! str_contains($contentType, 'text/html');
+    }
+
+    private function imageExtension(string $url, Response $response): string
+    {
+        $urlExtension = strtolower(pathinfo((string) parse_url($url, PHP_URL_PATH), PATHINFO_EXTENSION));
+        $mime = strtolower(trim(explode(';', (string) $response->header('Content-Type'))[0]));
+        $mimeExtension = match ($mime) {
+            'image/jpeg' => in_array($urlExtension, ['jpg', 'jpeg'], true)
+                ? $urlExtension
+                : 'jpg',
+            'image/png' => 'png',
+            'image/apng' => 'apng',
+            'image/webp' => 'webp',
+            'image/gif' => 'gif',
+            'image/avif' => 'avif',
+            'image/svg+xml' => 'svg',
+            'image/bmp' => 'bmp',
+            'image/tiff' => in_array($urlExtension, ['tif', 'tiff'], true)
+                ? $urlExtension
+                : 'tiff',
+            'image/x-icon', 'image/vnd.microsoft.icon' => 'ico',
+            default => null,
+        };
+
+        if ($mimeExtension !== null) {
+            return $mimeExtension;
+        }
+
+        if (
+            in_array(
+                $urlExtension,
+                ['jpg', 'jpeg', 'png', 'apng', 'webp', 'gif', 'avif', 'svg', 'bmp', 'tif', 'tiff', 'ico'],
+                true
+            )
+        ) {
+            return $urlExtension;
+        }
+
+        throw new \RuntimeException("Không xác định được định dạng ảnh gốc: {$url}");
+    }
+
+    private function imageSource(DOMElement $image, string $baseUrl): ?string
+    {
+        foreach (['data-src', 'data-lazy-src', 'data-original', 'src'] as $attribute) {
+            $value = trim($image->getAttribute($attribute));
+            if ($value !== '' && ! str_starts_with(strtolower($value), 'data:')) {
+                return $this->absoluteUrl($value, $baseUrl);
+            }
+        }
+
+        foreach (['data-srcset', 'srcset'] as $attribute) {
+            $srcset = trim($image->getAttribute($attribute));
+            if ($srcset === '') {
+                continue;
+            }
+
+            $firstCandidate = trim(explode(',', $srcset)[0]);
+            $url = trim(preg_split('/\s+/', $firstCandidate)[0] ?? '');
+            if ($url !== '') {
+                return $this->absoluteUrl($url, $baseUrl);
+            }
+        }
+
+        return null;
+    }
+
+    private function absoluteUrl(string $url, string $baseUrl): ?string
+    {
+        $url = trim($url);
+        if ($url === '' || str_starts_with(strtolower($url), 'data:')) {
+            return null;
+        }
+
+        if (filter_var($url, FILTER_VALIDATE_URL)) {
+            return $url;
+        }
+
+        $base = parse_url($baseUrl);
+        if (! is_array($base) || empty($base['host'])) {
+            return null;
+        }
+
+        $scheme = $base['scheme'] ?? 'https';
+        if (str_starts_with($url, '//')) {
+            return $scheme.':'.$url;
+        }
+
+        if (str_starts_with($url, '/')) {
+            return $scheme.'://'.$base['host'].$url;
+        }
+
+        $basePath = dirname($base['path'] ?? '/');
+
+        return $scheme.'://'.$base['host'].rtrim($basePath, '/').'/'.ltrim($url, '/');
+    }
+
+    private function loadHtml(string $html): DOMDocument
+    {
+        $dom = new DOMDocument('1.0', 'UTF-8');
+        @$dom->loadHTML(
+            '<?xml encoding="UTF-8">'.$html,
+            LIBXML_NOERROR | LIBXML_NOWARNING | LIBXML_NONET | LIBXML_COMPACT
+        );
+
+        return $dom;
+    }
+
+    private function metaContent(DOMXPath $xpath, string $attribute, string $value): string
+    {
+        $node = $xpath->query(
+            "//meta[translate(@{$attribute}, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')='"
+            .strtolower($value)."']/@content"
+        )->item(0);
+
+        return $node ? trim((string) $node->nodeValue) : '';
+    }
+
+    private function metaContents(DOMXPath $xpath, string $attribute, string $value): array
+    {
+        $nodes = $xpath->query(
+            "//meta[translate(@{$attribute}, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')='"
+            .strtolower($value)."']/@content"
+        );
+        $values = [];
+
+        if ($nodes !== false) {
+            foreach ($nodes as $node) {
+                $content = $this->normalizeText((string) $node->nodeValue);
+                if ($content !== '') {
+                    $values[] = $content;
+                }
+            }
+        }
+
+        return array_values(array_unique($values));
+    }
+
+    private function linkHref(DOMXPath $xpath, string $relation): string
+    {
+        $node = $xpath->query(
+            "//link[contains(concat(' ', normalize-space(@rel), ' '), ' {$relation} ')]/@href"
+        )->item(0);
+
+        return $node ? trim((string) $node->nodeValue) : '';
+    }
+
+    private function firstNodeText(DOMXPath $xpath, string $query): string
+    {
+        $node = $xpath->query($query)->item(0);
+
+        return $node ? trim((string) $node->textContent) : '';
+    }
+
+    private function normalizePublishedAt(string $value): string
+    {
+        if ($value === '') {
+            return '';
         }
 
         try {
-            $playwrightServiceUrl = env('PLAYWRIGHT_SERVICE_URL', 'http://localhost:3001');
+            $date = new DateTimeImmutable($value);
+            $year = (int) $date->format('Y');
 
-            Log::info("Calling Playwright service: {$playwrightServiceUrl}/crawl");
-
-            $payload = ['url' => $url];
-            if ($waitForSelector) {
-                $payload['waitForSelector'] = $waitForSelector;
+            if ($year >= 1990 && $year <= 2025) {
+                $date = $date->setDate(
+                    2026,
+                    (int) $date->format('m'),
+                    (int) $date->format('d')
+                );
             }
 
-            $response = Http::timeout(120)
-                ->post("{$playwrightServiceUrl}/crawl", $payload);
-
-            if ($response->successful()) {
-                $data = $response->json();
-
-                if (isset($data['success']) && $data['success'] === true && isset($data['html'])) {
-                    $html = $data['html'];
-                    Log::info("Coolmate Playwright response body length: " . strlen($html));
-                    Log::info("Coolmate Playwright response body preview (first 500 chars): " . substr($html, 0, 500));
-
-                    if (strpos($html, 'Just a moment') !== false || strpos($html, 'cf-browser-verification') !== false) {
-                        Log::warning("Coolmate: Cloudflare challenge still present in response");
-                    }
-                    return $html;
-                } else {
-                    Log::error("Coolmate Playwright service returned an error or invalid data", [
-                        'response_body' => $response->body(),
-                    ]);
-                    throw new \Exception("Coolmate Playwright service returned an error: " . ($data['error'] ?? 'Unknown error'));
-                }
-            } else {
-                Log::error("Coolmate Playwright service HTTP error", [
-                    'status' => $response->status(),
-                    'body' => $response->body(),
-                ]);
-                throw new \Exception("Coolmate Playwright service HTTP error: " . $response->status());
-            }
-        } catch (\Exception $e) {
-            Log::critical('COOLMATE PLAYWRIGHT SERVICE FAILED', [
-                'url' => $url,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-            throw new \Exception("Failed to fetch Coolmate URL with Playwright service: " . $e->getMessage());
+            return $date->format('Y-m-d H:i:s');
+        } catch (\Throwable) {
+            return $this->replaceHistoricalYears($value);
         }
+    }
+
+    private function transformText(string $value): string
+    {
+        return $this->normalizeText(
+            $this->replaceHistoricalYears(
+                $this->replaceBrandNames($value)
+            )
+        );
+    }
+
+    private function transformTitle(string $value): string
+    {
+        $value = $this->replaceBrandNames($this->normalizeText($value));
+        $value = (string) preg_replace(
+            '/(?<!\d)(?:199[0-9]|20[01][0-9]|202[0-6])(?!\d)/u',
+            '',
+            $value
+        );
+        $value = (string) preg_replace('/\s+/u', ' ', $value);
+
+        return trim($value, " \t\n\r\0\x0B-–—|:,");
+    }
+
+    private function replaceBrandNames(string $value): string
+    {
+        return (string) preg_replace(
+            '/(?:coolmate(?:\.me)?|cool(?:[\s\x{00A0}]+)?blog)/iu',
+            'Khánh Beauty',
+            $value
+        );
+    }
+
+    private function replaceHistoricalYears(string $value): string
+    {
+        return (string) preg_replace(
+            '/(?<!\d)(?:199[0-9]|20[01][0-9]|202[0-5])(?!\d)/u',
+            '2026',
+            $value
+        );
+    }
+
+    private function normalizeText(string $value): string
+    {
+        $value = html_entity_decode($value, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+        return trim((string) preg_replace('/\s+/u', ' ', $value));
+    }
+
+    private function innerHtml(DOMElement $element): string
+    {
+        $html = '';
+        foreach ($element->childNodes as $childNode) {
+            $html .= $element->ownerDocument->saveHTML($childNode);
+        }
+
+        return trim($html);
+    }
+
+    private function sanitizeCsvText(string $value): string
+    {
+        $value = (string) preg_replace(
+            '/[^\P{C}\t\r\n]/u',
+            '',
+            $this->normalizeUtf8($value)
+        );
+
+        return (string) preg_replace('/\R+/u', ' ', $value);
+    }
+
+    private function normalizeUtf8(string $value): string
+    {
+        return mb_check_encoding($value, 'UTF-8')
+            ? $value
+            : mb_convert_encoding($value, 'UTF-8', 'UTF-8');
+    }
+
+    private function encodeJson(mixed $value, int $flags = 0): string
+    {
+        return json_encode(
+            $value,
+            $flags
+                | JSON_UNESCAPED_SLASHES
+                | JSON_UNESCAPED_UNICODE
+                | JSON_INVALID_UTF8_SUBSTITUTE
+                | JSON_THROW_ON_ERROR
+        );
     }
 }
-

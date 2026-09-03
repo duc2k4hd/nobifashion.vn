@@ -78,7 +78,16 @@ class MediaAssignmentService
             ];
         }
 
+        $basename = basename($normalizedPath);
         $images = Image::query()
+            ->where(function($q) use ($normalizedPath, $basename) {
+                $q->where('path', $normalizedPath)
+                  ->orWhere('url', $normalizedPath)
+                  ->orWhere('thumbnail_url', $normalizedPath)
+                  ->orWhere('medium_url', $normalizedPath)
+                  ->orWhere('path', 'LIKE', '%' . $basename)
+                  ->orWhere('url', 'LIKE', '%' . $basename);
+            })
             ->get()
             ->filter(fn (Image $image) => $this->imageMatchesManagedPath($image, $normalizedPath))
             ->values();

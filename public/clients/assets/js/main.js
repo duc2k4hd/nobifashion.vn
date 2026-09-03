@@ -229,12 +229,22 @@ document
 // MENU CỐ ĐỊNH KHI CUỘN
 const mainMenu = document.querySelector(".nobifashion_header_main_nav");
 if (mainMenu) {
+    const placeholder = document.createElement("div");
+    placeholder.className = "nobifashion_header_main_nav_placeholder";
+    placeholder.style.display = "none";
+    mainMenu.parentNode.insertBefore(placeholder, mainMenu);
+
     window.addEventListener("scroll", () => {
         if (mainMenu && mainMenu.classList) {
-            mainMenu.classList.toggle(
-                "nobifashion_header_main_nav_fixed",
-                window.scrollY > 240
-            );
+            const isFixed = window.scrollY > 140;
+            if (isFixed) {
+                placeholder.style.height = `${mainMenu.offsetHeight}px`;
+                placeholder.style.display = "block";
+                mainMenu.classList.add("nobifashion_header_main_nav_fixed");
+            } else {
+                placeholder.style.display = "none";
+                mainMenu.classList.remove("nobifashion_header_main_nav_fixed");
+            }
         }
     });
 }
@@ -416,11 +426,13 @@ document.addEventListener('DOMContentLoaded', function() {
     if (searchBtn) {
         searchBtn.addEventListener('click', e => {
             e.preventDefault();
+            const form = searchBtn.closest('form');
+            const searchAction = form ? form.getAttribute('action') : '/shop/search';
             const input = document.querySelector('.nobifashion_header_main_search_input');
             if (input) {
                 const keyword = input.value.trim();
                 if (keyword.length > 0) {
-                    window.location.href = '/shop/search?keyword=' + encodeURIComponent(keyword);
+                    window.location.href = searchAction + '?keyword=' + encodeURIComponent(keyword);
                 }
             }
         });
@@ -461,7 +473,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
             timer = setTimeout(async () => {
                 try {
-                    const res = await fetch('/api/search', {
+                    const form = input.closest('form');
+                    const searchApi = form ? form.getAttribute('data-api') : '/api/search';
+                    const urlPrefix = form ? form.getAttribute('data-url-prefix') : '/san-pham/';
+                    const notFoundMsg = form ? form.getAttribute('data-not-found') : 'Không tìm thấy kết quả';
+
+                    // 🔹 Hiển thị Loading đẹp mắt
+                    suggestBox.innerHTML = `
+                        <div style="padding: 15px; text-align: center; color: #666; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                            <svg width="20" height="20" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke="#ff3366" stroke-width="4" stroke-dasharray="31.4 31.4" stroke-linecap="round"><animateTransform attributeName="transform" type="rotate" repeatCount="indefinite" dur="1s" values="0 25 25;360 25 25"/></circle></svg>
+                            <span>Đang tìm kiếm...</span>
+                        </div>
+                    `;
+                    suggestBox.style.display = 'block';
+
+                    const res = await fetch(searchApi, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -472,45 +498,50 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (!res.ok) throw new Error(`HTTP ${res.status}`);
                     const data = await res.json();
 
-                    // 🔹 Xóa cũ
-                    suggestBox.innerHTML = '';
+                    // 🔹 Tắt loading và hiển thị dữ liệu sau 1s theo yêu cầu
+                    setTimeout(() => {
+                        suggestBox.innerHTML = '';
 
-                    if (data.length === 0) {
-                        suggestBox.innerHTML = `<div style="padding: 10px; color: #666;">Không tìm thấy sản phẩm</div>`;
-                        suggestBox.style.display = 'block';
-                        return;
-                    }
+                        if (data.length === 0) {
+                            suggestBox.innerHTML = `<div style="padding: 10px; color: #666;">${notFoundMsg}</div>`;
+                            suggestBox.style.display = 'block';
+                            return;
+                        }
 
-                    // 🔹 Render kết quả
-                    data.forEach(item => {
-                        const div = document.createElement('div');
-                        div.className = 'nobifashion_search_suggestion_item';
-                        div.style.padding = '10px 15px';
-                        div.style.cursor = 'pointer';
-                        div.style.transition = 'background 0.2s';
-                        div.innerHTML = `<span style="color:#333;">${item.name}</span>`;
-                        div.addEventListener('mouseenter', () => div.style.background = '#f9f9f9');
-                        div.addEventListener('mouseleave', () => div.style.background = '#fff');
-                        div.addEventListener('click', () => {
-                            window.location.href = '/san-pham/' + item.slug;
+                        // Render kết quả
+                        data.forEach(item => {
+                            const div = document.createElement('div');
+                            div.className = 'nobifashion_search_suggestion_item';
+                            div.style.padding = '10px 15px';
+                            div.style.cursor = 'pointer';
+                            div.style.transition = 'background 0.2s';
+                            div.innerHTML = `<span style="color:#333;">${item.title || item.name}</span>`;
+                            div.addEventListener('mouseenter', () => div.style.background = '#f9f9f9');
+                            div.addEventListener('mouseleave', () => div.style.background = '#fff');
+                            div.addEventListener('click', () => {
+                                window.location.href = urlPrefix + item.slug;
+                            });
+                            suggestBox.appendChild(div);
                         });
-                        suggestBox.appendChild(div);
-                    });
 
-                    suggestBox.style.display = 'block';
+                        suggestBox.style.display = 'block';
+                    }, 300);
+
                 } catch (err) {
                     console.error('Search error:', err);
                 }
-            }, 400);
+            }, 500);
         });
 
         input.addEventListener('keydown', e => {
             if (e.key === 'Enter') {
                 e.preventDefault();
+                const form = input.closest('form');
+                const searchAction = form ? form.getAttribute('action') : '/shop/search';
                 if (input) {
                     const keyword = input.value.trim();
                     if (keyword.length > 0) {
-                        window.location.href = '/shop/search?keyword=' + encodeURIComponent(keyword);
+                        window.location.href = searchAction + '?keyword=' + encodeURIComponent(keyword);
                     }
                 }
             }

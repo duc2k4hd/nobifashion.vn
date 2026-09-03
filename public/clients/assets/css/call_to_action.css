@@ -1,53 +1,165 @@
-.nobifashion_back_to_top {
-  background-color: var(--primary-color);
-  border-radius: 50%;
-  width: 48px;
-  height: 48px;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-  transition: background-color 0.3s ease, transform 0.3s ease;
-  z-index: 999;
-}
-.nobifashion_back_to_top:hover {
-  background-color: #e62e5c;
-  transform: scale(1.05);
-}
-.nobifashion_back_to_top svg {
-  width: 20px;
-  height: 20px;
-  fill: #fff;
-  pointer-events: none;
-}
-
+/* Base container */
 .nobifashion_chat {
   position: fixed;
-  bottom: 10px;
-  right: 10px;
+  bottom: 30px;
+  right: 30px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 15px;
   z-index: 998;
   align-items: flex-end;
 }
+
+/* Base button styles */
+.nobifashion_back_to_top,
 .nobifashion_chat a {
+  position: relative;
   display: inline-flex;
-  width: 48px;
-  height: 48px;
-  background-color: #fff;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
   align-items: center;
   justify-content: center;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  text-decoration: none;
+  cursor: pointer;
 }
+
+.nobifashion_back_to_top {
+    display: none;
+    background-color: #fff;
+}
+
+.nobifashion_back_to_top svg {
+    fill: #333;
+    width: 20px;
+    height: 20px;
+}
+
+.nobifashion_chat_zalo {
+    background-color: #0068FF;
+}
+
+.nobifashion_chat_facebook {
+    background-color: #0866FF;
+}
+
+.nobifashion_chat_phone {
+    background-color: var(--primary-color);
+    animation: phonePulse 2s infinite;
+}
+
+.nobifashion_chat a svg {
+  width: 24px;
+  height: 24px;
+  fill: #fff;
+  transition: transform 0.3s ease;
+}
+
+/* Hover effects */
+.nobifashion_back_to_top:hover,
 .nobifashion_chat a:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
-.nobifashion_chat svg {
-  width: 20px;
-  height: 20px;
+
+.nobifashion_chat a:hover svg {
+    transform: scale(1.15);
+}
+
+.nobifashion_back_to_top:hover {
+    background-color: #f8f9fa;
+}
+
+/* Tooltips */
+.nobifashion_back_to_top::after,
+.nobifashion_chat a::after {
+    position: absolute;
+    right: 65px;
+    top: 50%;
+    transform: translateY(-50%) translateX(10px);
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    padding: 6px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+/* Tooltip Triangle */
+.nobifashion_back_to_top::before,
+.nobifashion_chat a::before {
+    content: '';
+    position: absolute;
+    right: 59px;
+    top: 50%;
+    transform: translateY(-50%) translateX(10px);
+    border-width: 6px;
+    border-style: solid;
+    border-color: transparent transparent transparent rgba(0, 0, 0, 0.8);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* Tooltip Texts */
+.nobifashion_back_to_top::after { content: "Lên đầu trang"; }
+.nobifashion_chat_zalo::after { content: "Chat Zalo"; }
+.nobifashion_chat_phone::after { content: "Gọi điện ngay"; }
+.nobifashion_chat_facebook::after { content: "Messenger"; }
+
+/* Show tooltips on hover */
+.nobifashion_back_to_top:hover::after,
+.nobifashion_chat a:hover::after,
+.nobifashion_back_to_top:hover::before,
+.nobifashion_chat a:hover::before {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(-50%) translateX(0);
+}
+
+/* Phone Pulse Animation */
+@keyframes phonePulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 51, 102, 0.6);
+    }
+    70% {
+        box-shadow: 0 0 0 15px rgba(255, 51, 102, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 51, 102, 0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .nobifashion_chat {
+        bottom: 20px;
+        right: 20px;
+        gap: 12px;
+    }
+    .nobifashion_back_to_top,
+    .nobifashion_chat a {
+        width: 44px;
+        height: 44px;
+    }
+    .nobifashion_chat a svg {
+        width: 20px;
+        height: 20px;
+    }
+    /* Hide tooltips on mobile to prevent clutter */
+    .nobifashion_back_to_top::after,
+    .nobifashion_chat a::after,
+    .nobifashion_back_to_top::before,
+    .nobifashion_chat a::before {
+        display: none !important;
+    }
 }

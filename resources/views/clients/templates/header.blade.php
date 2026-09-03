@@ -32,10 +32,18 @@
             </a>
         </div>
         <div class="nobifashion_header_main_search">
-            <form class="nobifashion_header_main_search_form" action="{{ route('client.product.shop.search') }}" method="post">
+            @php
+                $isBlog = request()->routeIs('client.blog.*');
+                $searchAction = $isBlog ? route('client.blog.search.keyword') : route('client.product.shop.search.keyword');
+                $searchApi = $isBlog ? route('client.blog.search.api') : route('client.product.shop.search');
+                $placeholder = $isBlog ? 'Tìm kiếm bài viết...' : 'Tìm kiếm sản phẩm...';
+                $itemUrlPrefix = $isBlog ? '/blog/' : '/san-pham/';
+                $notFoundMsg = $isBlog ? 'Không tìm thấy bài viết' : 'Không tìm thấy sản phẩm';
+            @endphp
+            <form class="nobifashion_header_main_search_form" action="{{ $searchAction }}" method="post" data-api="{{ $searchApi }}" data-url-prefix="{{ $itemUrlPrefix }}" data-not-found="{{ $notFoundMsg }}">
                 @csrf
                 <input name="search_text" class="nobifashion_header_main_search_input" type="text"
-                    placeholder="Tìm kiếm sản phẩm..." value="{{ old('keyword', request('keyword')) }}">
+                    placeholder="{{ $placeholder }}" value="{{ old('keyword', request('keyword')) }}">
                     <button class="nobifashion_header_main_search_btn" type="submit" aria-label="Tìm kiếm" title="Tìm kiếm"><svg xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 512 512"><path
                             d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z" />
@@ -232,7 +240,7 @@
         </div>
 
         <div class="nobifashion_mobile_search_section">
-            <form action="{{ route('client.product.shop.search') }}" method="POST" class="nobifashion_mobile_search_form">
+            <form action="{{ $searchAction ?? route('client.product.shop.search') }}" method="POST" class="nobifashion_mobile_search_form" data-api="{{ $searchApi ?? route('client.product.shop.search') }}" data-url-prefix="{{ $itemUrlPrefix ?? '/san-pham/' }}" data-not-found="{{ $notFoundMsg ?? 'Không tìm thấy sản phẩm' }}">
                 @csrf
                 <select class="nobifashion_mobile_search_select" name="category">
                     <option value="">Danh mục</option>
@@ -240,7 +248,8 @@
                         <option value="{{ $category->slug }}">{{ $category->name }}</option>
                     @endforeach
                 </select>
-                <input class="nobifashion_mobile_search_input" type="text" name="search_text" value="" placeholder="Tìm kiếm sản phẩm...">
+                <input name="search_text" class="nobifashion_header_mobile_main_nav_search_input" type="text"
+                    placeholder="{{ $placeholder ?? 'Tìm kiếm sản phẩm...' }}" value="{{ old('keyword', request('keyword')) }}">
                 <button class="nobifashion_mobile_search_btn" type="submit">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="18" height="18" fill="currentColor">
                         <path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352a144 144 0 1 0 0-288 144 144 0 1 0 0 288z"></path>

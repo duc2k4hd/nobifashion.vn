@@ -101,7 +101,7 @@
                      'title' => Str::limit(trim($item['Tiêu đề'] ?? ''), 250),
                      'slug' => !empty($item['Slug']) ? trim($item['Slug']) : null,
                      'category_slug' => trim($item['Danh mục (Slug)'] ?? ''),
-                     'content' => $item['Nội dung'] ?? '',
+                     'content' => $this->joinImportedContent($item),
                      'excerpt' => $item['Tóm tắt'] ?? '',
                      'thumbnail' => $item['Thumbnail URL'] ?? '',
                      'thumbnail_alt_text' => $item['Alt ảnh'] ?? '',
@@ -195,5 +195,21 @@
              'success_count' => $successCount,
              'errors' => $errors
          ]);
+     }
+
+     private function joinImportedContent(array $item): string
+     {
+         $content = (string) ($item['Nội dung'] ?? '');
+
+         for ($part = 2; $part <= 100; $part++) {
+             $column = "Nội dung {$part}";
+             if (! array_key_exists($column, $item)) {
+                 break;
+             }
+
+             $content .= (string) $item[$column];
+         }
+
+         return $content;
      }
  }

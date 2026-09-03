@@ -74,22 +74,22 @@
             <div class="card-body">
                 <h5 class="fw-bold mb-3">Tags</h5>
                             @php
-                                // Lấy tag IDs từ relationship nếu có post, hoặc từ old input
-                                $selectedTagIds = old('tag_ids', []);
-                                if (empty($selectedTagIds) && isset($post) && $post->exists) {
-                                    // Lấy tags từ relationship
-                                    $selectedTagIds = $post->tags()->pluck('id')->toArray();
+                                $selectedTagNames = [];
+                                if (old('tag_ids')) {
+                                    $selectedTagNames = \App\Models\Tag::whereIn('id', old('tag_ids'))->pluck('name')->toArray();
+                                } elseif (isset($post) && $post->exists) {
+                                    $selectedTagNames = $post->tags()->pluck('name')->toArray();
                                 }
-                                // Nếu vẫn không có, thử lấy từ tag_ids JSON (backward compatibility)
-                                if (empty($selectedTagIds) && isset($post) && !empty($post->tag_ids)) {
-                                    $selectedTagIds = is_array($post->tag_ids) ? $post->tag_ids : [];
+                                if (empty($selectedTagNames) && isset($post) && !empty($post->tag_ids)) {
+                                    $legacyIds = is_array($post->tag_ids) ? $post->tag_ids : [];
+                                    $selectedTagNames = \App\Models\Tag::whereIn('id', $legacyIds)->pluck('name')->toArray();
                                 }
                             @endphp
                 <div class="mb-3">
                     <label class="form-label small text-muted">Chọn từ danh sách có sẵn:</label>
                     <select name="tag_ids[]" id="tagSelect" class="form-select" multiple>
                             @foreach($tags as $tag)
-                                <option value="{{ $tag->id }}" @selected(in_array($tag->id, $selectedTagIds))>
+                                <option value="{{ $tag->id }}" @selected(in_array($tag->name, $selectedTagNames))>
                                     {{ $tag->name }}
                                 </option>
                             @endforeach
@@ -365,6 +365,91 @@
                 alert('Media Library chưa được khởi tạo');
             }
         }
+
+        // ==========================================
+        // Cảnh báo khi rời trang nếu chưa lưu
+        // ==========================================
+        let isDirty = false;
+        let formSubmitted = false;
+        const postForm = document.getElementById('post-form');
+
+        // Theo dõi thay đổi của các input, select, textarea
+        document.querySelectorAll('#post-form input, #post-form select, #post-form textarea').forEach(el => {
+            el.addEventListener('input', () => isDirty = true);
+            el.addEventListener('change', () => isDirty = true);
+        });
+
+        // Theo dõi submit form
+        if (postForm) {
+            postForm.addEventListener('submit', () => formSubmitted = true);
+        }
+
+        // Bắt sự kiện thoát trang / reload (Browser mặc định)
+        window.addEventListener('beforeunload', function (e) {
+            if (isDirty && !formSubmitted) {
+                e.preventDefault();
+                e.returnValue = 'Bạn có thay đổi chưa lưu!';
+            }
+        });
+
+        // Bắt sự kiện click vào các link
+        document.addEventListener('click', function(e) {
+            const link = e.target.closest('a');
+            
+            // Nếu click vào link, có thay đổi chưa lưu, và chưa submit form
+            if (link && isDirty && !formSubmitted) {
+                const href = link.getAttribute('href');
+                
+                // Bỏ qua nếu là link giả, link mở tab mới, hoặc download
+                if (!href || href.startsWith('#') || href.startsWith('javascript:') || link.getAttribute('target') === '_blank' || link.hasAttribute('download')) {
+                    return;
+                }
+
+                // Nếu là nút "Hủy" hoặc "Quay lại" trong form thì cũng cảnh báo
+                e.preventDefault();
+
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'Chưa lưu thay đổi!',
+                        text: 'Bạn có những thay đổi chưa được lưu. Bạn muốn làm gì?',
+                        icon: 'warning',
+                        showDenyButton: true,
+                        showCancelButton: true,
+                        confirmButtonText: '<i class="fas fa-save"></i> Lưu & Chuyển đi',
+                        denyButtonText: '<i class="fas fa-times"></i> Rời đi (Bỏ lưu)',
+                        cancelButtonText: 'Ở lại',
+                        confirmButtonColor: '#0d6efd',
+                        denyButtonColor: '#dc3545',
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            formSubmitted = true;
+                            if (postForm) postForm.submit();
+                        } else if (result.isDenied) {
+                            isDirty = false;
+                            window.location.href = href;
+                        }
+                    });
+                } else {
+                    if (confirm('Bạn có thay đổi chưa lưu. Nhấn OK để rời đi (mất dữ liệu), Cancel để ở lại.')) {
+                        isDirty = false;
+                        window.location.href = href;
+                    }
+                }
+            }
+        });
+
+        // Đối với CKEditor, theo dõi thay đổi
+        const checkEditorForDirty = setInterval(() => {
+            if (window.CKEditor5API && window.CKEditor5API.get('post-content-editor')) {
+                const editor = window.CKEditor5API.get('post-content-editor');
+                editor.model.document.on('change:data', () => {
+                    isDirty = true;
+                });
+                clearInterval(checkEditorForDirty);
+            }
+        }, 1000);
+        setTimeout(() => clearInterval(checkEditorForDirty), 10000);
+
     </script>
 @endpush
 

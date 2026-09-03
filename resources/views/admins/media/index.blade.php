@@ -125,7 +125,10 @@
                         @foreach($folders as $folder)
                             <li>
                                 <button type="button" class="media-folder-filter" data-folder="{{ $folder['key'] }}">
-                                    <span>{{ $folder['label'] }}</span>
+                                    <span>
+                                        {{ $folder['label'] }}
+                                        <small class="text-muted ms-1">({{ $folder['file_count'] ?? 0 }})</small>
+                                    </span>
                                     <small>{{ $folder['path'] }}</small>
                                 </button>
                             </li>

@@ -574,7 +574,16 @@
 
                     try {
                         const chunkSize = this.getTotalFileSize(chunk);
-                        const response = await this.uploadFileChunk(chunk, folder);
+                        const response = await this.uploadFileChunk(chunk, folder, (loadedBytes) => {
+                            const currentTotalLoaded = processedBytes + loadedBytes;
+                            const percent = totalFileSize > 0
+                                ? Math.round((currentTotalLoaded / totalFileSize) * 100)
+                                : 0;
+                            this.setLoadingProgress(
+                                percent,
+                                `${this.formatBytes(currentTotalLoaded)} / ${this.formatBytes(totalFileSize)}`
+                            );
+                        });
 
                         uploadedCount += response.uploaded_count || 0;
                         processedCount += chunk.length;
@@ -585,6 +594,7 @@
                             failedFiles.push(...response.failed_files);
                         }
 
+                        // Ensure 100% completion per chunk end
                         const percent = totalFileSize > 0
                             ? Math.round((processedBytes / totalFileSize) * 100)
                             : 0;
@@ -633,7 +643,7 @@
             }
         }
 
-        uploadFileChunk(fileChunk, folder) {
+        uploadFileChunk(fileChunk, folder, onProgress) {
             const formData = new FormData();
             formData.append('_token', this.csrfToken);
             formData.append('folder', folder);
@@ -654,7 +664,6 @@
                 xhr.addEventListener('load', () => {
                     const payload = this.parseJsonResponse(xhr);
 
-                    // Accept 200-299 OR 422 with partial success (some files uploaded)
                     const isSuccessful = xhr.status >= 200 && xhr.status < 300;
                     const hasPartialSuccess = payload?.uploaded_count > 0;
 
@@ -679,9 +688,8 @@
                 });
 
                 xhr.upload.addEventListener('progress', (event) => {
-                    if (event.lengthComputable) {
-                        const percent = Math.round((event.loaded / event.total) * 100);
-                        // Có thể dùng để track progress per chunk nếu cần
+                    if (event.lengthComputable && typeof onProgress === 'function') {
+                        onProgress(event.loaded);
                     }
                 });
 

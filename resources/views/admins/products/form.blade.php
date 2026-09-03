@@ -559,6 +559,67 @@ $productMediaInitialPagination = [
                 event.returnValue = '';
             });
 
+            // Bắt sự kiện click vào các link để cảnh báo
+            document.addEventListener('click', function(e) {
+                const link = e.target.closest('a');
+                
+                if (link && isDirty) {
+                    const href = link.getAttribute('href');
+                    
+                    if (!href || href.startsWith('#') || href.startsWith('javascript:') || link.getAttribute('target') === '_blank' || link.hasAttribute('download')) {
+                        return;
+                    }
+
+                    e.preventDefault();
+
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Chưa lưu thay đổi!',
+                            text: 'Bạn có những thay đổi chưa được lưu cho sản phẩm này. Bạn muốn làm gì?',
+                            icon: 'warning',
+                            showDenyButton: true,
+                            showCancelButton: true,
+                            confirmButtonText: '<i class="fas fa-save"></i> Lưu & Chuyển đi',
+                            denyButtonText: '<i class="fas fa-times"></i> Rời đi (Bỏ lưu)',
+                            cancelButtonText: 'Ở lại',
+                            confirmButtonColor: '#0d6efd',
+                            denyButtonColor: '#dc3545',
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                isDirty = false;
+                                form.submit();
+                            } else if (result.isDenied) {
+                                isDirty = false;
+                                @if($isEdit)
+                                fetch('{{ route("admin.products.release-lock", $product) }}', {
+                                    method: 'POST',
+                                    headers: {
+                                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                                        'Content-Type': 'application/json',
+                                    }
+                                }).catch(() => {});
+                                @endif
+                                window.location.href = href;
+                            }
+                        });
+                    } else {
+                        if (confirm('Bạn có thay đổi chưa lưu cho sản phẩm này. Nhấn OK để rời đi (mất dữ liệu), Cancel để ở lại.')) {
+                            isDirty = false;
+                            @if($isEdit)
+                            fetch('{{ route("admin.products.release-lock", $product) }}', {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
+                                    'Content-Type': 'application/json',
+                                }
+                            }).catch(() => {});
+                            @endif
+                            window.location.href = href;
+                        }
+                    }
+                }
+            });
+
             // Release lock khi submit thành công
             form.addEventListener('submit', () => {
                 isDirty = false;
@@ -938,7 +999,7 @@ $productMediaInitialPagination = [
                             <select name="tag_ids[]" id="tagSelect" class="form-select" multiple>
                                 @if(isset($tags) && is_iterable($tags))
                                     @foreach($tags as $tag)
-                                        <option value="{{ $tag->id ?? $tag['id'] ?? '' }}" @selected(in_array($tag->id ?? $tag['id'] ?? '', $selectedTagIds ?? []))>
+                                        <option value="{{ $tag->id ?? $tag['id'] ?? '' }}" @selected(in_array($tag->name ?? $tag['name'] ?? '', $selectedTagNames ?? []))>
                                             {{ $tag->name ?? $tag['name'] ?? '' }}
                                         </option>
                                     @endforeach

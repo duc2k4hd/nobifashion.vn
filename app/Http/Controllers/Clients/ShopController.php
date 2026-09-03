@@ -105,6 +105,11 @@ class ShopController extends Controller
             ->limit(10)
             ->get();
 
+        $products->transform(function ($product) {
+            $product->name = renderMeta($product->name);
+            return $product;
+        });
+
         return response()->json($products);
     }
 

@@ -105,3 +105,5 @@ Route::middleware('throttle:30,1')->prefix('/v1')->name('api.v1.')->group(functi
         Route::get('/payments', [\App\Http\Controllers\Apis\V1\PayOS\PayOSController::class, 'getPayments'])->name('payments');
     });
 });
+
+

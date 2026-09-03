@@ -28,7 +28,13 @@ class MediaLibraryController extends Controller
         $perPage = min(200, max(1, (int) $request->input('per_page', 100)));
         $search = trim((string) $request->input('search', ''));
 
-        $query = Image::forContext($context)->latest('created_at');
+        // Lấy danh sách ID lớn nhất của mỗi path (để tránh hiển thị ảnh trùng lặp khi 1 ảnh được dùng nhiều nơi)
+        $subQuery = \Illuminate\Support\Facades\DB::table('images')
+            ->selectRaw('MAX(id) as max_id')
+            ->when($context, fn ($q) => $q->where('context', $context))
+            ->groupBy('path');
+
+        $query = Image::whereIn('id', $subQuery)->latest('created_at');
 
         if ($search !== '') {
             $query->where(function ($builder) use ($search) {

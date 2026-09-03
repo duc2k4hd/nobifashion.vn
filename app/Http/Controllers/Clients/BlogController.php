@@ -74,6 +74,129 @@ class BlogController extends Controller
         ]);
     }
 
+    public function searchApi(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $keyword = trim($request->input('keyword', ''));
+
+        if ($keyword === '') {
+            return response()->json([]);
+        }
+
+        $words = array_filter(explode(' ', $keyword));
+
+        $posts = \App\Models\Post::published()
+            ->select('id', 'title', 'slug', 'thumbnail')
+            ->where(function ($q) use ($keyword, $words) {
+                // Ưu tiên cụm từ chính xác trước
+                $q->where('title', 'LIKE', "%{$keyword}%")
+                  ->orWhere('meta_title', 'LIKE', "%{$keyword}%")
+                  ->orWhere('meta_description', 'LIKE', "%{$keyword}%");
+
+                // Tìm theo từng từ khóa nhỏ
+                if (count($words) > 1) {
+                    $q->orWhere(function ($sub) use ($words) {
+                        foreach ($words as $word) {
+                            $sub->where('title', 'LIKE', "%{$word}%")
+                               ->orWhere('meta_title', 'LIKE', "%{$word}%")
+                               ->orWhere('meta_description', 'LIKE', "%{$word}%");
+                        }
+                    });
+                }
+            })
+            ->orderByRaw("CASE 
+                WHEN title LIKE ? OR title LIKE ? OR title LIKE ? OR title = ? THEN 1
+                WHEN title LIKE ? THEN 2
+                WHEN meta_title LIKE ? OR meta_description LIKE ? THEN 3
+                ELSE 4 
+            END ASC", [
+                "% {$keyword} %", "{$keyword} %", "% {$keyword}", "{$keyword}",
+                "%{$keyword}%", 
+                "%{$keyword}%", "%{$keyword}%"
+            ])
+            ->orderByDesc('published_at')
+            ->limit(10)
+            ->get();
+
+        $posts->transform(function ($post) {
+            $post->title = renderMeta($post->title);
+            return $post;
+        });
+
+        return response()->json($posts);
+    }
+
+    public function searchKeyword(Request $request): View
+    {
+        $keyword = trim($request->input('keyword', ''));
+        $words = array_filter(explode(' ', $keyword));
+
+        $postsQuery = \App\Models\Post::published()
+            ->with(['author', 'category']);
+            
+        if ($keyword !== '') {
+            $postsQuery->where(function ($q) use ($keyword, $words) {
+                $q->where('title', 'LIKE', "%{$keyword}%")
+                  ->orWhere('meta_title', 'LIKE', "%{$keyword}%")
+                  ->orWhere('meta_description', 'LIKE', "%{$keyword}%");
+
+                if (count($words) > 1) {
+                    $q->orWhere(function ($sub) use ($words) {
+                        foreach ($words as $word) {
+                            $sub->where('title', 'LIKE', "%{$word}%")
+                               ->orWhere('meta_title', 'LIKE', "%{$word}%")
+                               ->orWhere('meta_description', 'LIKE', "%{$word}%");
+                        }
+                    });
+                }
+            })
+            ->orderByRaw("CASE 
+                WHEN title LIKE ? OR title LIKE ? OR title LIKE ? OR title = ? THEN 1
+                WHEN title LIKE ? THEN 2
+                WHEN meta_title LIKE ? OR meta_description LIKE ? THEN 3
+                ELSE 4 
+            END ASC", [
+                "% {$keyword} %", "{$keyword} %", "% {$keyword}", "{$keyword}",
+                "%{$keyword}%", 
+                "%{$keyword}%", "%{$keyword}%"
+            ]);
+        }
+        
+        $posts = $postsQuery->orderByDesc('published_at')
+            ->paginate(14)
+            ->withQueryString();
+
+        $featuredPosts = \Illuminate\Support\Facades\Cache::remember('blog:featured', 600, function () {
+            return \App\Models\Post::published()->featured()->with(['author', 'category'])->latest('published_at')->take(3)->get();
+        });
+
+        $sidebarCategories = \Illuminate\Support\Facades\Cache::remember('blog:sidebar:categories', 600, function () {
+            return \App\Models\Category::select('id', 'name', 'slug')->withCount(['posts as posts_count' => fn ($q) => $q->published()])->orderByDesc('posts_count')->take(10)->get();
+        });
+
+        $sidebarTags = \Illuminate\Support\Facades\Cache::remember('blog:sidebar:tags', 600, fn () => \App\Models\Tag::orderBy('name')->take(20)->get());
+
+        $recentPosts = \Illuminate\Support\Facades\Cache::remember('blog:recent', 600, function () {
+            return \App\Models\Post::published()->latest('published_at')->take(5)->get(['id', 'title', 'slug', 'published_at']);
+        });
+
+        $popularPosts = \Illuminate\Support\Facades\Cache::remember('blog:popular', 600, function () {
+            return \App\Models\Post::published()->orderByDesc('views')->take(5)->get(['id', 'title', 'slug', 'published_at', 'views']);
+        });
+
+        $schemaData = $this->buildIndexSchemaData($posts, $featuredPosts, $sidebarCategories);
+
+        return view('clients.blog.index', [
+            'posts' => $posts,
+            'featuredPosts' => $featuredPosts,
+            'sidebarCategories' => $sidebarCategories,
+            'sidebarTags' => $sidebarTags,
+            'recentPosts' => $recentPosts,
+            'popularPosts' => $popularPosts,
+            'schemaData' => $schemaData,
+            'searchKeyword' => $keyword // Thêm vào để hiển thị view nếu cần
+        ]);
+    }
+
     public function show(Request $request, string $slug): View
     {
         $post = Post::where('slug', $slug)->first();

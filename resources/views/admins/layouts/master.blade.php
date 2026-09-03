@@ -477,10 +477,36 @@
             </a>
             
             <div class="menu-section">Nội Dung</div>
-            <a href="{{ route('admin.posts.index') }}" class="menu-item {{ request()->routeIs('admin.posts.*') ? 'active' : '' }}">
-                <span class="menu-item-icon">📝</span>
-                Bài viết
-            </a>
+            <div class="menu-group">
+                <div class="menu-group-header {{ request()->routeIs('admin.posts.*') ? 'expanded' : '' }}" data-group="posts">
+                    <span class="menu-item-icon">📝</span>
+                    <span>Bài viết</span>
+                    <span class="menu-arrow">▶</span>
+                </div>
+                <div class="menu-group-items {{ request()->routeIs('admin.posts.*') ? 'expanded' : '' }}" id="posts-group">
+                    <a href="{{ route('admin.posts.create') }}" class="menu-item {{ request()->routeIs('admin.posts.create') ? 'active' : '' }}">
+                        Thêm bài viết mới
+                    </a>
+                    <a href="{{ route('admin.posts.index') }}" class="menu-item {{ (request()->routeIs('admin.posts.index') && !request('status') && !request('is_trashed')) || request()->routeIs('admin.posts.edit') || request()->routeIs('admin.posts.show') ? 'active' : '' }}">
+                        Tất cả bài viết
+                    </a>
+                    <a href="{{ route('admin.posts.index', ['status' => 'published']) }}" class="menu-item {{ request()->routeIs('admin.posts.index') && request('status') === 'published' ? 'active' : '' }}">
+                        Đã xuất bản
+                    </a>
+                    <a href="{{ route('admin.posts.index', ['status' => 'pending']) }}" class="menu-item {{ request()->routeIs('admin.posts.index') && request('status') === 'pending' ? 'active' : '' }}">
+                        Chờ duyệt
+                    </a>
+                    <a href="{{ route('admin.posts.index', ['status' => 'draft']) }}" class="menu-item {{ request()->routeIs('admin.posts.index') && request('status') === 'draft' ? 'active' : '' }}">
+                        Bản nháp
+                    </a>
+                    <a href="{{ route('admin.posts.index', ['status' => 'archived']) }}" class="menu-item {{ request()->routeIs('admin.posts.index') && request('status') === 'archived' ? 'active' : '' }}">
+                        Lưu trữ
+                    </a>
+                    <a href="{{ route('admin.posts.index', ['status' => 'trashed']) }}" class="menu-item {{ request()->routeIs('admin.posts.index') && request('status') === 'trashed' ? 'active' : '' }}">
+                        Thùng rác
+                    </a>
+                </div>
+            </div>
             <a href="{{ route('admin.comments.index') }}" class="menu-item {{ request()->routeIs('admin.comments.*') ? 'active' : '' }}">
                 <span class="menu-item-icon">💬</span>
                 Bình luận
@@ -585,6 +611,10 @@
             <a href="{{ route('admin.settings.index') }}" class="menu-item {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
                 <span class="menu-item-icon">⚙️</span>
                 Cài Đặt
+            </a>
+            <a href="{{ route('admin.tools.index') }}" class="menu-item {{ request()->routeIs('admin.tools.*') ? 'active' : '' }}">
+                <span class="menu-item-icon">🧰</span>
+                Công cụ hệ thống
             </a>
             <div class="menu-group">
                 <div class="menu-group-header" data-group="tools">

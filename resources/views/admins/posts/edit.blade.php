@@ -38,7 +38,7 @@
         </div>
     </div>
 
-    <form action="{{ route('admin.posts.update', $post) }}" method="POST">
+    <form id="post-form" action="{{ route('admin.posts.update', $post) }}" method="POST">
         @csrf
         @method('PUT')
         @include('admins.posts.partials.form', [
@@ -47,7 +47,7 @@
             'tags' => $tags,
             'seoInsights' => $seoInsights,
         ])
-        <div class="mt-4 d-flex justify-content-end gap-2">
+        <div class="sticky-action-bar">
             <a href="{{ route('admin.posts.index') }}" class="btn btn-outline-secondary">Quay lại</a>
             <button class="btn btn-primary">Cập nhật</button>
         </div>

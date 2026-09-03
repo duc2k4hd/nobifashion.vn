@@ -257,13 +257,15 @@ Route::get('/san-pham/{slug}', [ProductDetailController::class, 'index'])->name(
 
 Route::get('/shop', [ShopController::class, 'index'])->name('client.product.shop.index');
 Route::get('/shop/search', [ShopController::class, 'searchKeyword'])->name('client.product.shop.search.keyword');
-Route::post('/api/search', [ShopController::class, 'search'])->name('client.product.shop.search');
+Route::post('/api/search', [ShopController::class, 'search'])->name('client.product.shop.search')->middleware('throttle:30,1');
 
 Route::post('/contact/phone', [ContactController::class, 'store'])->name('client.page.contact.store');
 Route::post('/product/phone-request', [ContactController::class, 'sendPhoneRequest'])->name('client.product.phone.request');
 
 Route::prefix('blog')->name('client.blog.')->group(function () {
     Route::get('/', [BlogController::class, 'index'])->name('index');
+    Route::get('/search', [BlogController::class, 'searchKeyword'])->name('search.keyword');
+    Route::post('/api/search', [BlogController::class, 'searchApi'])->name('search.api')->middleware('throttle:30,1');
     Route::get('/{slug}', [BlogController::class, 'show'])->name('show');
 });
 
@@ -464,6 +466,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/{account}/profile/avatar', [AccountProfileController::class, 'upload'])->name('profile.avatar');
         });
 
+        Route::prefix('tools')->name('tools.')->group(function () {
+            Route::get('/', [\App\Http\Controllers\Admins\ToolsController::class, 'index'])->name('index');
+            Route::get('/scan-post-images', [\App\Http\Controllers\Admins\ToolsController::class, 'scanPostImages'])->name('scan-post-images');
+            Route::post('/delete-post-images', [\App\Http\Controllers\Admins\ToolsController::class, 'deletePostImages'])->name('delete-post-images');
+            Route::get('/export-post-images', [\App\Http\Controllers\Admins\ToolsController::class, 'exportPostImages'])->name('export-post-images');
+        });
+
         Route::resource('settings', SettingController::class)->except(['show'])->names('settings');
         Route::resource('banners', BannerController::class)->except(['show'])->names('banners');
         Route::patch('banners/{banner}/toggle', [BannerController::class, 'toggle'])->name('banners.toggle');
@@ -644,6 +653,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::prefix('coolmate-crawler')->name('coolmate-crawler.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admins\CoolmateCrawlerController::class, 'index'])->name('index');
             Route::post('/crawl', [\App\Http\Controllers\Admins\CoolmateCrawlerController::class, 'crawl'])->name('crawl');
+            Route::get('/download/{filename}', [\App\Http\Controllers\Admins\CoolmateCrawlerController::class, 'download'])
+                ->where('filename', 'coolmate_posts_[0-9_-]+\.csv')
+                ->name('download');
         });
 
         // Yody Crawler Tool

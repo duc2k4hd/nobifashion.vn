@@ -177,11 +177,27 @@ class PostController extends Controller
         return back()->with('success', 'Đã xóa bài viết.');
     }
 
-    public function bulkDestroy(Request $request): RedirectResponse
+    public function bulkDestroy(Request $request)
     {
         $ids = $request->input('ids');
         if (empty($ids) || !is_array($ids)) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'Chưa chọn bài viết nào.']);
+            }
             return back()->with('error', 'Chưa chọn bài viết nào.');
+        }
+
+        if ($request->boolean('force_clean')) {
+            // Xóa bulk cực nhanh qua DB Query Builder, ko trigger model events để giữ lại ảnh
+            \App\Models\Comment::where('commentable_type', Post::class)->whereIn('commentable_id', $ids)->delete();
+            \App\Models\Tag::where('entity_type', Post::class)->whereIn('entity_id', $ids)->delete();
+            \App\Models\PostRevision::whereIn('post_id', $ids)->delete();
+            $count = Post::withTrashed()->whereIn('id', $ids)->forceDelete();
+
+            if ($request->expectsJson()) {
+                return response()->json(['success' => true, 'count' => $count]);
+            }
+            return back()->with('success', "Đã xóa sạch {$count} bài viết thành công.");
         }
 
         $isTrashed = $request->boolean('is_trashed');
@@ -192,6 +208,10 @@ class PostController extends Controller
         } else {
             // Bài bình thường -> xóa mềm
             $count = Post::whereIn('id', $ids)->delete();
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'count' => $count]);
         }
 
         return back()->with('success', "Đã xóa {$count} bài viết thành công.");

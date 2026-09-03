@@ -16,7 +16,7 @@
         <a href="{{ route('admin.posts.index') }}" class="btn btn-outline-secondary">← Quay lại danh sách</a>
     </div>
 
-    <form action="{{ route('admin.posts.store') }}" method="POST">
+    <form id="post-form" action="{{ route('admin.posts.store') }}" method="POST">
         @csrf
         @include('admins.posts.partials.form', [
             'post' => $post,
@@ -24,7 +24,7 @@
             'tags' => $tags,
             'seoInsights' => ['score' => 0, 'warnings' => []],
         ])
-        <div class="mt-4 d-flex justify-content-end gap-2">
+        <div class="sticky-action-bar">
             <a href="{{ route('admin.posts.index') }}" class="btn btn-outline-secondary">Hủy</a>
             <button class="btn btn-primary">Lưu bài viết</button>
         </div>

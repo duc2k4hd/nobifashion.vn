@@ -89,7 +89,8 @@ class MediaScannerService
         $filters = $filters === [] ? [] : $this->normalizeFilters($filters);
 
         if ($filters !== [] && $this->requiresDeepScan($filters)) {
-            return $this->buildLegacyDashboardStats();
+            $specificFolderKey = $filters['folder'] !== 'all' ? $filters['folder'] : null;
+            return $this->buildLegacyDashboardStats($specificFolderKey);
         }
 
         if ($this->dashboardStats !== null) {
@@ -171,7 +172,8 @@ class MediaScannerService
 
     protected function legacySearch(array $filters): LengthAwarePaginator
     {
-        $items = $this->getAllItems();
+        $specificFolderKey = $filters['folder'] !== 'all' ? $filters['folder'] : null;
+        $items = $this->getAllItems($specificFolderKey);
 
         if ($filters['type'] !== 'all') {
             $items = $items->where('type', $filters['type'])->values();
@@ -401,10 +403,10 @@ class MediaScannerService
         ];
     }
 
-    protected function buildLegacyDashboardStats(): array
+    protected function buildLegacyDashboardStats(?string $specificFolderKey = null): array
     {
-        $items = $this->getAllItems();
-        $inventory = $this->getFilesystemInventory();
+        $items = $this->getAllItems($specificFolderKey);
+        $inventory = $this->getFilesystemInventory($specificFolderKey);
 
         return [
             'library_items' => $items->count(),
@@ -683,14 +685,14 @@ class MediaScannerService
         });
     }
 
-    protected function getAllItems(): Collection
+    protected function getAllItems(?string $specificFolderKey = null): Collection
     {
-        if ($this->allItems !== null) {
+        if ($specificFolderKey === null && $this->allItems !== null) {
             return $this->allItems;
         }
 
-        $inventory = $this->getFilesystemInventory();
-        $trackedItems = $this->collectTrackedItems($inventory);
+        $inventory = $this->getFilesystemInventory($specificFolderKey);
+        $trackedItems = $this->collectTrackedItems($inventory, $specificFolderKey);
 
         $trackedPaths = $trackedItems->flatMap(fn (array $item) => $item['_managed_paths'] ?? [])->filter()->unique()->values()->all();
         $hiddenPaths = $trackedItems->flatMap(fn (array $item) => $item['_hidden_paths'] ?? [])->filter()->unique()->values()->all();
@@ -709,7 +711,7 @@ class MediaScannerService
         return $this->allItems;
     }
 
-    protected function collectTrackedItems(array $inventory): Collection
+    protected function collectTrackedItems(array $inventory, ?string $specificFolderKey = null): Collection
     {
         $ownerMaps = [
             'product' => Product::query()->select('id', 'name')->get()->keyBy('id'),
@@ -719,9 +721,28 @@ class MediaScannerService
             'profile' => Profile::query()->select('id', 'full_name', 'nickname')->get()->keyBy('id'),
         ];
 
-        return Image::query()
-            ->latest('created_at')
-            ->get()
+        $query = Image::query()->latest('created_at');
+        if ($specificFolderKey && isset($this->directories[$specificFolderKey])) {
+            $directory = trim(str_replace('\\', '/', $this->directories[$specificFolderKey]), '/');
+            $query->where(function (Builder $builder) use ($directory, $specificFolderKey) {
+                $builder->where('path', $directory)
+                    ->orWhere('path', 'like', $directory . '/%')
+                    ->orWhere('url', $directory)
+                    ->orWhere('url', 'like', $directory . '/%');
+                match ($specificFolderKey) {
+                    'clothes' => $builder->orWhere(function (Builder $inner) {
+                        $inner->where('entity_type', 'product')->orWhereNotNull('product_id');
+                    }),
+                    'posts' => $builder->orWhere('entity_type', 'post'),
+                    'categories' => $builder->orWhere('entity_type', 'category'),
+                    'banners' => $builder->orWhere('entity_type', 'banner'),
+                    'accounts_avatars' => $builder->orWhere('entity_type', 'profile'),
+                    default => null,
+                };
+            });
+        }
+
+        return $query->get()
             ->map(fn (Image $image) => $this->mapImageRecord($image, $inventory, $ownerMaps));
     }
 
@@ -921,15 +942,18 @@ class MediaScannerService
         })->values();
     }
 
-    protected function getFilesystemInventory(): array
+    protected function getFilesystemInventory(?string $specificFolderKey = null): array
     {
-        if ($this->filesystemInventory !== null) {
+        if ($specificFolderKey === null && $this->filesystemInventory !== null) {
             return $this->filesystemInventory;
         }
 
         $inventory = [];
+        $dirsToScan = $specificFolderKey && isset($this->directories[$specificFolderKey]) 
+            ? [$specificFolderKey => $this->directories[$specificFolderKey]]
+            : $this->directories;
 
-        foreach ($this->directories as $relativeDirectory) {
+        foreach ($dirsToScan as $relativeDirectory) {
             $absoluteDirectory = public_path(trim($relativeDirectory, '/'));
             if (!is_dir($absoluteDirectory)) {
                 continue;

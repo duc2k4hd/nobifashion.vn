@@ -35,12 +35,22 @@ class AdminMediaController extends Controller
         $folders = $directories->map(function ($path, $key) {
             $label = Str::headline(str_replace('_', ' ', $key));
             $scope = str_starts_with($path, 'clients/') ? 'Frontend' : 'Admin';
+            
+            $realPath = public_path($path);
+            $fileCount = 0;
+            if (is_dir($realPath)) {
+                // Sử dụng FilesystemIterator để đếm file trực tiếp ở tầng C/OS siêu nhanh
+                // Tránh dùng File::files() vì nó nạp toàn bộ SplFileInfo của tất cả files vào RAM gây chậm web.
+                $fi = new \FilesystemIterator($realPath, \FilesystemIterator::SKIP_DOTS);
+                $fileCount = iterator_count($fi);
+            }
 
             return [
                 'key' => $key,
                 'path' => $path,
                 'label' => $label,
                 'scope' => $scope,
+                'file_count' => $fileCount,
             ];
         })->values();
 
@@ -131,20 +141,16 @@ class AdminMediaController extends Controller
                 continue;
             }
 
-            $item = $scanner->findItem(
-                $source,
-                $itemPayload['id'] ?? null,
-                $itemPayload['path'] ?? null
-            );
-
-            if (!$item) {
-                $failed[] = $itemPayload;
-                continue;
-            }
+            $id = $itemPayload['id'] ?? null;
+            $path = $itemPayload['path'] ?? null;
 
             if ($source === 'filesystem_file') {
+                if (!$path) {
+                    $failed[] = $itemPayload;
+                    continue;
+                }
                 try {
-                    $result = $assignment->deleteByManagedPath($item['relative_path'] ?? '');
+                    $result = $assignment->deleteByManagedPath($path);
                     $success = (bool) ($result['success'] ?? false);
                 } catch (\DomainException $exception) {
                     $success = false;
@@ -154,11 +160,37 @@ class AdminMediaController extends Controller
                     $failureMessages[] = $exception->getMessage();
                 }
             } else {
-                $deletePhysical = !($item['is_shared'] ?? false);
+                if (!$id) {
+                    $failed[] = $itemPayload;
+                    continue;
+                }
+
+                $deletePhysical = true;
+                $assetKey = null;
+
+                if ($source === 'product_image' || $source === 'library_image' || $source === 'profile_avatar' || $source === 'profile_sub_avatar' || $source === 'category_image' || $source === 'banner_desktop' || $source === 'banner_mobile') {
+                    // Quick resolve asset key from image table if it's an image entity.
+                    // For others, simply assume it's true unless matched.
+                    if ($source === 'product_image' || $source === 'library_image') {
+                        $img = \App\Models\Image::find($id);
+                        $assetKey = $img ? ($img->path ?: $img->url) : null;
+                    } elseif ($source === 'post_thumbnail') {
+                        $post = \App\Models\Post::find($id);
+                        $assetKey = $post ? $post->thumbnail : null;
+                    }
+                    
+                    if ($assetKey && !\Illuminate\Support\Str::startsWith($assetKey, ['http://', 'https://'])) {
+                        $usageCount = \App\Models\Image::where('path', $assetKey)->orWhere('url', $assetKey)->count();
+                        if ($usageCount > 1) {
+                            $deletePhysical = false;
+                        }
+                    }
+                }
+
                 try {
                     $success = $assignment->delete(
                         $source,
-                        (string) $item['delete_id'],
+                        (string) $id,
                         $deletePhysical
                     );
                 } catch (\DomainException $exception) {

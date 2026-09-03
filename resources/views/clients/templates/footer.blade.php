@@ -124,9 +124,9 @@
                 <a href="{{ route('client.policy.payment') }}">Chính sách thanh toán</a>
                 <a href="{{ route('client.policy.privacy') }}">Chính sách bảo mật thông tin</a>
                 <a href="{{ route('client.policy.privacy') }}">Chính sách bảo mật dữ liệu</a>
-                <a href="{!! $settings->dmca ?? ''  !!}" title="DMCA.com Protection Status" class="dmca-badge"> <img loading="lazy" src ="{!! $settings->dmca_logo ?? ''  !!}"  alt="DMCA.com Protection Status" /></a>  <script defer src="https://images.dmca.com/Badges/DMCABadgeHelper.min.js"> </script>
-                <a href="{{ route('client.policy.sale') }}">
-                    <img loading="lazy" width="100%" src="{{ asset('clients/assets/img/other/sales-policy.png') }}" alt="Chính sách bán hàng được chứng nhận">
+                <a style="position: relative;" href="{!! $settings->dmca ?? ''  !!}" title="DMCA.com Protection Status" class="dmca-badge"> <img style="position: relative; object-fit: cover; width: 100%;" loading="lazy" src ="{!! $settings->dmca_logo ?? ''  !!}"  alt="DMCA.com Protection Status" /></a>  <script defer src="https://images.dmca.com/Badges/DMCABadgeHelper.min.js"> </script>
+                <a style="position: relative;" href="{{ route('client.policy.sale') }}">
+                    <img loading="lazy" style="position: relative; object-fit: cover; width: 100%;" src="{{ asset('clients/assets/img/other/sales-policy.png') }}" alt="Chính sách bán hàng được chứng nhận">
                 </a>
             </div>
         </div>

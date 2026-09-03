@@ -999,7 +999,7 @@ function updateInfo() {
     resetSelectedLabels();
 
     if (hasSelection() && variant) {
-        const displayPrice = parseInt(variant.price, 10) || parseInt(minPriceVariant?.price, 10) || 0;
+        const displayPrice = parseInt(variant.price, 10) || parseInt(minPriceVariant?.price, 10) || baseCurrentPrice || 0;
         const referenceOriginalPrice = baseOriginalPrice > displayPrice ? baseOriginalPrice : 0;
         const stockCount = parseInt(variant.stock, 10) || 0;
 

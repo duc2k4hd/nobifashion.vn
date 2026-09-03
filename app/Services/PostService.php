@@ -203,6 +203,19 @@ class PostService
             $data['excerpt'] = $this->seoService->generateExcerpt($data['content']);
         }
 
+        // Kiểm tra tính tồn tại của ảnh đại diện (thumbnail)
+        if (! empty($data['thumbnail'])) {
+            $thumbnail = trim($data['thumbnail']);
+            if (! str_starts_with($thumbnail, 'http://') && ! str_starts_with($thumbnail, 'https://')) {
+                $localPath = public_path('clients/assets/img/posts/' . $thumbnail);
+                if (! file_exists($localPath) || ! is_file($localPath)) {
+                    $data['thumbnail'] = null;
+                }
+            }
+        } else {
+            $data['thumbnail'] = null;
+        }
+
         return $data;
     }
 
