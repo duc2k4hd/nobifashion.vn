@@ -6,7 +6,7 @@
 @push('head')
     <link rel="shortcut icon" href="{{ asset('admins/img/icons/media-icon.png') }}" type="image/x-icon">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css">
-    <link rel="stylesheet" href="{{ asset('admins/css/media-manager.css?v=' . filemtime(public_path('admins/css/media-manager.css'))) }}">
+    <link rel="stylesheet" href="{{ asset('admins/css/media-manager.css') }}?v={{ env('APP_VERSION') }}">
 @endpush
 
 @section('content')
@@ -375,5 +375,5 @@
             },
         };
     </script>
-    <script src="{{ asset('admins/js/media-manager.js?v=' . filemtime(public_path('admins/js/media-manager.js'))) }}"></script>
+    <script src="{{ asset('admins/js/media-manager.js') }}?v={{ env('APP_VERSION') }}"></script>
 @endpush

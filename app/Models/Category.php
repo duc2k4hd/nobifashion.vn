@@ -167,4 +167,20 @@ class Category extends Model
     {
         return $this->parent_id === null;
     }
+
+    /**
+     * Lấy URL ảnh danh mục hoặc fallback ảnh mặc định.
+     */
+    public function getImageUrlAttribute(): string
+    {
+        if (!empty($this->image)) {
+            if (str_starts_with($this->image, 'http://') || str_starts_with($this->image, 'https://')) {
+                return $this->image;
+            }
+            if (file_exists(public_path('clients/assets/img/categories/' . $this->image))) {
+                return asset('clients/assets/img/categories/' . $this->image);
+            }
+        }
+        return asset('clients/assets/img/categories/no-image.webp');
+    }
 }

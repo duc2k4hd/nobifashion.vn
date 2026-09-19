@@ -17,7 +17,7 @@
     <title>@yield('title')</title>
 </head>
 
-<body>
+<body class="@yield('body_class')">
     {!! $settings->google_tag_body !!}
     <div class="nobifashion">
         @include('clients.pages.loading.index')

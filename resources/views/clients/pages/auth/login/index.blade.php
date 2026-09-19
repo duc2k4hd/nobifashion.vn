@@ -238,8 +238,8 @@
     <div id="custom-toast-container" class="custom-toast-container"></div>
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="{{ asset('clients/assets/js/main.js') }}"></script>
-    <script src="{{ asset('clients/assets/js/login.js') }}"></script>
+    <script src="{{ asset('clients/assets/js/main.js') }}?v={{ env('APP_VERSION') }}"></script>
+    <script src="{{ asset('clients/assets/js/login.js') }}?v={{ env('APP_VERSION') }}"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {

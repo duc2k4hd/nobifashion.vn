@@ -3,7 +3,7 @@
 @section('title', renderMeta($pageTitle))
 
 @section('head')
-    <link rel="stylesheet" href="{{ asset('clients/assets/css/shop.css') }}">
+    <link rel="stylesheet" href="{{ asset('clients/assets/css/shop.css') }}?v={{ env('APP_VERSION') }}">
 
     <!-- 🔑 Keywords -->
     <meta name="keywords" content="{{ renderMeta($pageKeywords) }}">
@@ -55,7 +55,7 @@
 
 
 @section('foot')
-    <script src="{{ asset('clients/assets/js/shop.js') }}"></script>
+    <script src="{{ asset('clients/assets/js/shop.js') }}?v={{ env('APP_VERSION') }}"></script>
 @endsection
 
 @section('schema')
@@ -438,7 +438,8 @@
                                             <img class="nobifashion_shop_products_content_list_item_image_img"
                                                 src="{{ asset('clients/assets/img/clothes/' . ($product?->primaryImage?->url ?? 'no-image.webp')) }}"
                                                 alt="{{ $product?->primaryImage?->alt ?? $product?->name }}"
-                                                title="{{ $product?->primaryImage?->title ?? $product?->name }}">
+                                                title="{{ $product?->primaryImage?->title ?? $product?->name }}"
+                                                onerror="this.onerror=null;this.src='{{ asset('clients/assets/img/clothes/no-image.webp') }}';">
                                         </a>
                                     </div>
                                     <div class="nobifashion_shop_products_content_list_item_category">

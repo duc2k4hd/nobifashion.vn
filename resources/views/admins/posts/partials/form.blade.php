@@ -202,7 +202,7 @@
         console.log('=== POSTS FORM SCRIPTS LOADING ===');
         console.log('Loading media-library.js...');
     </script>
-    <script src="{{ asset('admins/js/media-library.js?v=' . time()) }}"></script>
+    <script src="{{ asset('admins/js/media-library.js') }}?v={{ env('APP_VERSION') }}"></script>
     <script>
         console.log('=== POSTS FORM SCRIPTS LOADING ===');
         console.log('Loading media-library.js...');

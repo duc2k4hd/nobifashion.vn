@@ -11,7 +11,7 @@
     ($settings->site_name ?? 'NOBI FASHION'))
 
 @section('head')
-    <link rel="stylesheet" href="{{ asset('clients/assets/css/single.css?v=' . filemtime(public_path('clients/assets/css/single.css'))) }}">
+    <link rel="stylesheet" href="{{ asset('clients/assets/css/single.css') }}?v={{ env('APP_VERSION') }}">
     @if ($product?->primaryImage?->url)
         <link rel="preload" as="image"
             href="{{ asset('clients/assets/img/clothes/' . ($product?->primaryImage?->url ?? 'no-image.webp')) }}"
@@ -65,7 +65,7 @@
 @endsection
 
 @section('foot')
-    <script src="{{ asset('clients/assets/js/single.js?v=' . filemtime(public_path('clients/assets/js/single.js'))) }}"></script>
+    <script src="{{ asset('clients/assets/js/single.js') }}?v={{ env('APP_VERSION') }}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('phone-request-form');

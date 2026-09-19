@@ -22,7 +22,7 @@ class HomeController extends Controller
         $kidsCategoryIds = $this->resolveBranchCategoryIds($rootCategories, 'tre-em');
         $householdCategoryIds = $this->resolveBranchCategoryIds($rootCategories, 'do-gia-dung');
 
-        $homeData = Cache::remember('home.page.payload.v3', now()->addMinutes(10), function () use (
+        $homeData = Cache::remember('home.page.payload.v4', now()->addMinutes(10), function () use (
             $rootCategories,
             $menCategoryIds,
             $womenCategoryIds,
@@ -160,6 +160,7 @@ class HomeController extends Controller
             ->active()
             ->select([
                 'id',
+                'sku',
                 'name',
                 'slug',
                 'price',
@@ -169,7 +170,9 @@ class HomeController extends Controller
             ])
             ->with([
                 'primaryImage:id,product_id,url,alt,title',
+                'images:id,product_id,url,alt,title,order',
                 'primaryCategory:id,name',
+                'variants:id,product_id,sku,price,sale_price,stock_quantity,attributes,is_active',
             ]);
     }
 

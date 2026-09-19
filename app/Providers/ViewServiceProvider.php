@@ -70,7 +70,14 @@ class ViewServiceProvider extends ServiceProvider
                                         'children' => function ($subQuery) {
                                             $subQuery->where('is_active', true)
                                                 ->orderBy('sort_order')
-                                                ->orderBy('name');
+                                                ->orderBy('name')
+                                                ->with([
+                                                    'children' => function ($greatQuery) {
+                                                        $greatQuery->where('is_active', true)
+                                                            ->orderBy('sort_order')
+                                                            ->orderBy('name');
+                                                    }
+                                                ]);
                                         }
                                     ]);
                             }

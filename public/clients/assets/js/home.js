@@ -1,402 +1,371 @@
-(async () => {
-    // === SLIDER CHÍNH ===
-    const sliderList =
-        document.querySelector(".nobifashion_main_slider_main_slider_track") ||
-        document.querySelector(".nobifashion_main_slider_track");
+/* Home Page Specialized Controller - Nobi Fashion (Chỉ xử lý banner & gallery sản phẩm trang chủ) */
+(() => {
+  "use strict";
 
-    const slides = document.querySelectorAll(
-        ".nobifashion_main_slider_main_slide, .nobifashion_main_slider_item"
-    );
+  const prefix = "nobifashion_home_";
+  let page = document.querySelector(`.${prefix}page`);
+  if (!page) {
+    document.body.classList.add(`${prefix}page`);
+    page = document.body;
+  }
 
-    const dots = document.querySelectorAll(
-        ".nobifashion_main_slider_main_dots button, .nobifashion_main_slider_dot"
-    );
+  const get = (name) => document.getElementById(prefix + name);
+  const all = (selector, root = page) => root ? [...root.querySelectorAll(selector)] : [];
+  const normalize = (value) =>
+    (value || "")
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "")
+      .replace(/[đĐ]/g, "d")
+      .toLowerCase()
+      .trim();
 
-    let currentSlide = 0;
+  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const mobileMedia = window.matchMedia("(max-width: 959px)");
 
-    const updateSlider = () => {
-        if (!sliderList || slides.length === 0) return;
+  const safeJsonParse = (str, fallback = []) => {
+    try {
+      const parsed = JSON.parse(str);
+      return Array.isArray(parsed) ? parsed : fallback;
+    } catch {
+      return fallback;
+    }
+  };
 
-        dots.forEach(dot =>
-            dot.classList.remove("nobifashion_main_slider_dot_active")
-        );
+  const products = new Map();
+  try {
+    all("[data-nobifashion-product]").forEach((card) => {
+      try {
+        const id = card.dataset.nobifashionProduct || "";
+        if (!id) return;
+        const nameElem = card.querySelector(`.${prefix}product_name`);
+        const name = nameElem ? nameElem.textContent.trim() : "";
+        const galleryLink = card.querySelector(`.${prefix}product_gallery_link`);
+        const href = galleryLink ? galleryLink.href : "#";
+        const imgElem = card.querySelector(`.${prefix}product_image`);
+        const image = imgElem ? imgElem.getAttribute("src") : "";
+        const images = safeJsonParse(card.dataset.nobifashionImages, image ? [image] : []);
+        const price = Number(card.dataset.nobifashionPrice) || 0;
 
-        if (dots[currentSlide]) {
-            dots[currentSlide].classList.add("nobifashion_main_slider_dot_active");
-        }
-
-        sliderList.style.transform = `translateX(-${currentSlide * 100}%)`;
-    };
-
-    document
-        .querySelector(".nobifashion_main_slider_prev")
-        ?.addEventListener("click", () => {
-            currentSlide = (currentSlide - 1 + slides.length) % slides.length;
-            updateSlider();
+        products.set(id, {
+          id,
+          name,
+          card,
+          price,
+          href,
+          image,
+          images: images.length ? images : (image ? [image] : []),
+          imageIndex: 0,
         });
-
-    document
-        .querySelector(".nobifashion_main_slider_next")
-        ?.addEventListener("click", () => {
-            currentSlide = (currentSlide + 1) % slides.length;
-            updateSlider();
-        });
-
-    dots.forEach((dot, idx) => {
-        dot?.addEventListener("click", () => {
-            currentSlide = idx;
-            updateSlider();
-        });
+      } catch (err) {}
     });
+  } catch (err) {}
 
-    if (sliderList && slides.length > 1) {
-        setInterval(() => {
-            currentSlide = (currentSlide + 1) % slides.length;
-            updateSlider();
-        }, 5000);
+  // --- PRODUCT GALLERY & SWATCHES ---
+  function updateGallery(product, index) {
+    if (!product || !product.images || !product.images.length) return;
+    const total = product.images.length;
+    product.imageIndex = (index + total) % total;
+    const image = product.card.querySelector(`.${prefix}product_image`);
+    if (image && product.images[product.imageIndex]) {
+      image.src = product.images[product.imageIndex];
     }
+    const gallery = product.card.querySelector(`.${prefix}product_gallery`);
+    if (gallery) {
+      gallery.setAttribute(
+        "aria-label",
+        `${product.name}, ảnh ${product.imageIndex + 1} trên ${total}`,
+      );
+    }
+    const dots = product.card.querySelector(`.${prefix}gallery_dots`);
+    if (dots) {
+      dots.replaceChildren();
+      product.images.forEach((_, position) => {
+        const dot = document.createElement("span");
+        dot.className = `${prefix}gallery_dot`;
+        dot.setAttribute("aria-current", String(position === product.imageIndex));
+        dots.append(dot);
+      });
+      dots.hidden = total < 2;
+    }
+    all("[data-nobifashion-gallery]", product.card).forEach((button) => {
+      button.hidden = total < 2;
+    });
+  }
 
-    // ============================================
-    // CATEGORY AUTO SCROLL — CHỐNG NULL 100%
-    // ============================================
-
-    function autoScrollCategories() {
-        const slider = document.querySelector(".nobifashion_main_categories_list");
-        if (!slider) return;
-
-        let isDown = false;
-        let isDragging = false;
-        let startX;
-        let scrollLeft;
-
-        let autoScrollInterval;
-        let scrollDirection = 1;
-
-        let itemWidth = 0;
-        const firstItem = slider.querySelector(".nobifashion_main_categories_item");
-
-        if (firstItem) {
-            const gap = 20;
-            itemWidth = firstItem.offsetWidth + gap;
+  products.forEach((product) => {
+    try {
+      const gallery = product.card.querySelector(`.${prefix}product_gallery`);
+      const swatches = product.card.querySelector(`.${prefix}swatches`);
+      if (swatches) {
+        const updateSwatches = () => {
+          const prevArrow = product.card.querySelector('[data-nobifashion-swatch-scroll="-1"]');
+          const nextArrow = product.card.querySelector('[data-nobifashion-swatch-scroll="1"]');
+          if (prevArrow) prevArrow.hidden = swatches.scrollLeft < 2;
+          if (nextArrow) {
+            nextArrow.hidden =
+              swatches.scrollLeft + swatches.clientWidth >= swatches.scrollWidth - 2;
+          }
+        };
+        swatches.addEventListener("scroll", updateSwatches, { passive: true });
+        if ("ResizeObserver" in window) {
+          new ResizeObserver(updateSwatches).observe(swatches);
+        } else {
+          window.addEventListener("resize", updateSwatches, { passive: true });
         }
+        updateSwatches();
+      }
 
-        function startAutoScroll() {
-            stopAutoScroll();
-            autoScrollInterval = setInterval(() => {
-                const maxScrollLeft = slider.scrollWidth - slider.clientWidth;
-                let targetScrollLeft;
+      let touchStart;
+      let swiped = false;
+      updateGallery(product, 0);
 
-                if (scrollDirection === 1) {
-                    const nextScroll = slider.scrollLeft + itemWidth;
-                    if (nextScroll >= maxScrollLeft) {
-                        scrollDirection = -1;
-                        targetScrollLeft = maxScrollLeft;
-                    } else {
-                        targetScrollLeft = nextScroll;
-                    }
-                } else {
-                    const nextScroll = slider.scrollLeft - itemWidth;
-                    if (nextScroll <= 0) {
-                        scrollDirection = 1;
-                        targetScrollLeft = 0;
-                    } else {
-                        targetScrollLeft = nextScroll;
-                    }
-                }
-
-                const startTime = performance.now();
-                const startPosition = slider.scrollLeft;
-                const duration = 500;
-
-                function animateScroll(currentTime) {
-                    const elapsedTime = currentTime - startTime;
-                    const progress = Math.min(elapsedTime / duration, 1);
-                    slider.scrollLeft =
-                        startPosition +
-                        (targetScrollLeft - startPosition) * progress;
-
-                    if (progress < 1) {
-                        requestAnimationFrame(animateScroll);
-                    }
-                }
-
-                requestAnimationFrame(animateScroll);
-            }, 2000);
-        }
-
-        function stopAutoScroll() {
-            clearInterval(autoScrollInterval);
-        }
-
-        slider.addEventListener("mousedown", e => {
-            stopAutoScroll();
-            isDown = true;
-            isDragging = false;
-            slider.classList.add("active-drag");
-            startX = e.pageX - slider.offsetLeft;
-            scrollLeft = slider.scrollLeft;
+      if (gallery) {
+        gallery.addEventListener("keydown", (event) => {
+          if (
+            event.target !== gallery ||
+            !["ArrowLeft", "ArrowRight"].includes(event.key)
+          )
+            return;
+          event.preventDefault();
+          updateGallery(
+            product,
+            product.imageIndex + (event.key === "ArrowRight" ? 1 : -1),
+          );
         });
-
-        slider.addEventListener("mouseup", () => {
-            isDown = false;
-            slider.classList.remove("active-drag");
-            setTimeout(startAutoScroll, 1000);
-        });
-
-        slider.addEventListener("mouseleave", () => {
-            if (isDown) {
-                isDown = false;
-                slider.classList.remove("active-drag");
-                setTimeout(startAutoScroll, 1000);
+        gallery.addEventListener(
+          "touchstart",
+          (event) => {
+            if (event.touches?.[0]) {
+              touchStart = {
+                x: event.touches[0].clientX,
+                y: event.touches[0].clientY,
+              };
             }
-        });
-
-        slider.addEventListener("mousemove", e => {
-            if (!isDown) return;
-            e.preventDefault();
-            const x = e.pageX - slider.offsetLeft;
-            const walk = x - startX;
-            if (Math.abs(walk) > 5) isDragging = true;
-            slider.scrollLeft = scrollLeft - walk;
-        });
-
-        slider.addEventListener("touchstart", e => {
-            stopAutoScroll();
-            isDown = true;
-            isDragging = false;
-            slider.classList.add("active-drag");
-            startX = e.touches[0].pageX - slider.offsetLeft;
-            scrollLeft = slider.scrollLeft;
-        });
-
-        slider.addEventListener("touchend", () => {
-            isDown = false;
-            slider.classList.remove("active-drag");
-            setTimeout(startAutoScroll, 1000);
-        });
-
-        slider.addEventListener("touchmove", e => {
-            if (!isDown) return;
-            e.preventDefault();
-            const x = e.touches[0].pageX - slider.offsetLeft;
-            const walk = x - startX;
-            if (Math.abs(walk) > 5) isDragging = true;
-            slider.scrollLeft = scrollLeft - walk;
-        });
-
-        slider.addEventListener(
-            "click",
-            e => {
-                if (isDragging) {
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                }
-            },
-            true
+            swiped = false;
+          },
+          { passive: true },
         );
-
-        startAutoScroll();
-    }
-
-    // ============================================
-    // FLASH SALE — CHỐNG NULL
-    // ============================================
-
-    function handleFlashSale() {
-        const slider = document.querySelector(".nobifashion_flash_sale_list");
-        const btnPrev = document.querySelector(".nobifashion_flash_sale_prev");
-        const btnNext = document.querySelector(".nobifashion_flash_sale_next");
-
-        if (!slider) return;
-
-        const step = 400;
-        let isDown = false;
-        let isDragging = false;
-        let startX;
-        let scrollLeft;
-
-        btnPrev?.addEventListener("click", () => {
-            slider.scrollBy({ left: -step, behavior: "smooth" });
-        });
-
-        btnNext?.addEventListener("click", () => {
-            slider.scrollBy({ left: step, behavior: "smooth" });
-        });
-
-        slider.addEventListener("mousedown", e => {
-            isDown = true;
-            isDragging = false;
-            e.preventDefault();
-            startX = e.pageX - slider.offsetLeft;
-            scrollLeft = slider.scrollLeft;
-        });
-
-        slider.addEventListener("mouseleave", () => {
-            isDown = false;
-        });
-
-        slider.addEventListener("mouseup", () => {
-            isDown = false;
-        });
-
-        slider.addEventListener("mousemove", e => {
-            if (!isDown) return;
-            e.preventDefault();
-            const x = e.pageX - slider.offsetLeft;
-            const walk = (x - startX) * 1.5;
-            if (Math.abs(walk) > 5) isDragging = true;
-            slider.scrollLeft = scrollLeft - walk;
-        });
-
-        slider.addEventListener("touchstart", e => {
-            isDown = true;
-            isDragging = false;
-            startX = e.touches[0].pageX - slider.offsetLeft;
-            scrollLeft = slider.scrollLeft;
-        });
-
-        slider.addEventListener("touchend", () => {
-            isDown = false;
-        });
-
-        slider.addEventListener("touchmove", e => {
-            if (!isDown) return;
-            e.preventDefault();
-            const x = e.touches[0].pageX - slider.offsetLeft;
-            const walk = (x - startX) * 2;
-            if (Math.abs(walk) > 5) isDragging = true;
-            slider.scrollLeft = scrollLeft - walk;
-        });
-
-        slider.addEventListener(
-            "click",
-            e => {
-                if (isDragging) e.preventDefault();
-            },
-            true
-        );
-    }
-
-    // ============================================
-    // SCROLL CATEGORY PRODUCTS — CHỐNG NULL
-    // ============================================
-
-    function scrollProductCategories() {
-        const slider = document.querySelector(
-            ".nobifashion_main_product_category_products"
-        );
-        if (!slider) return;
-
-        let isDown = false;
-        let startX;
-        let scrollLeft;
-
-        slider.addEventListener("mousedown", e => {
-            isDown = true;
-            startX = e.pageX - slider.offsetLeft;
-            scrollLeft = slider.scrollLeft;
-        });
-
-        slider.addEventListener("mouseleave", () => {
-            isDown = false;
-        });
-
-        slider.addEventListener("mouseup", () => {
-            isDown = false;
-        });
-
-        slider.addEventListener("mousemove", e => {
-            if (!isDown) return;
-            e.preventDefault();
-            const x = e.pageX - slider.offsetLeft;
-            const walk = x - startX;
-            slider.scrollLeft = scrollLeft - walk;
-        });
-
-        slider.addEventListener("touchstart", e => {
-            startX = e.touches[0].pageX - slider.offsetLeft;
-            scrollLeft = slider.scrollLeft;
-        });
-
-        slider.addEventListener("touchmove", e => {
-            const x = e.touches[0].pageX - slider.offsetLeft;
-            const walk = x - startX;
-            slider.scrollLeft = scrollLeft - walk;
-        });
-    }
-
-    // ============================================
-    // FLASH SALE TIMER — CHỐNG NULL
-    // ============================================
-
-    const endTime = typeof timeFlashSale !== "undefined" ? timeFlashSale : null;
-
-    const daysEl = document.querySelector(".nobifashion_flash_sale_timer_days");
-    const hoursEl = document.querySelector(".nobifashion_flash_sale_timer_hours");
-    const minutesEl = document.querySelector(
-        ".nobifashion_flash_sale_timer_minutes"
-    );
-    const secondsEl = document.querySelector(
-        ".nobifashion_flash_sale_timer_seconds"
-    );
-
-    if (endTime && daysEl && hoursEl && minutesEl && secondsEl) {
-        let prevDays, prevHours, prevMinutes, prevSeconds;
-
-        function animateFlip(el, newValue) {
-            if (!el) return;
-            el.textContent = newValue;
-            el.classList.remove("flip-animate");
-            void el.offsetWidth;
-            el.classList.add("flip-animate");
-        }
-
-        function updateTimer() {
-            const now = new Date().getTime();
-            let distance = endTime - now;
-
-            if (distance <= 0) {
-                animateFlip(daysEl, "00");
-                animateFlip(hoursEl, "00");
-                animateFlip(minutesEl, "00");
-                animateFlip(secondsEl, "00");
-                clearInterval(interval);
-                return;
+        gallery.addEventListener(
+          "touchend",
+          (event) => {
+            if (!touchStart || !event.changedTouches?.[0]) return;
+            const dx = event.changedTouches[0].clientX - touchStart.x;
+            const dy = event.changedTouches[0].clientY - touchStart.y;
+            if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
+              updateGallery(product, product.imageIndex + (dx < 0 ? 1 : -1));
+              swiped = true;
             }
+            touchStart = null;
+          },
+          { passive: true },
+        );
+        gallery.addEventListener(
+          "click",
+          (event) => {
+            if (swiped) {
+              event.preventDefault();
+              swiped = false;
+            }
+          },
+          true,
+        );
+      }
+    } catch (err) {}
+  });
 
-            let days = Math.floor(distance / (1000 * 60 * 60 * 24));
-            let hours = Math.floor(
-                (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
-            );
-            let minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            let seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-            days = String(days).padStart(2, "0");
-            hours = String(hours).padStart(2, "0");
-            minutes = String(minutes).padStart(2, "0");
-            seconds = String(seconds).padStart(2, "0");
-
-            if (seconds !== prevSeconds) animateFlip(secondsEl, seconds);
-            if (minutes !== prevMinutes) animateFlip(minutesEl, minutes);
-            if (hours !== prevHours) animateFlip(hoursEl, hours);
-            if (days !== prevDays) animateFlip(daysEl, days);
-
-            prevDays = days;
-            prevHours = hours;
-            prevMinutes = minutes;
-            prevSeconds = seconds;
-        }
-
-        const interval = setInterval(updateTimer, 1000);
-        updateTimer();
+  // --- BANNER VIDEO CONTROLS ---
+  const videos = all(`.${prefix}banner_video`);
+  function syncVideoButton(video) {
+    if (!video || !video.id) return;
+    const button = page.querySelector(
+      `[data-nobifashion-video-toggle="${video.id}"]`,
+    );
+    if (!button) return;
+    button.setAttribute(
+      "aria-label",
+      video.paused ? "Phát video" : "Tạm dừng video",
+    );
+    button.setAttribute("aria-pressed", String(!video.paused));
+    const path = button.querySelector("path");
+    if (path) {
+      path.setAttribute(
+        "d",
+        video.paused ? "m9 5 10 7-10 7Z" : "M9 6v12M15 6v12",
+      );
     }
+  }
+  function videoSource(video) {
+    if (!video) return;
+    const src = mobileMedia.matches
+      ? video.dataset.nobifashionVideoMobile
+      : video.dataset.nobifashionVideoDesktop;
+    if (src && video.getAttribute("src") !== src) {
+      video.src = src;
+      video.load();
+    }
+  }
+  function playVideo(video) {
+    if (!video) return;
+    videoSource(video);
+    video.muted = true;
+    try {
+      const playPromise = video.play();
+      if (playPromise) playPromise.catch(() => syncVideoButton(video));
+    } catch {}
+  }
+  function updateVideos() {
+    const canPlay = !document.hidden && !all("dialog[open]").length;
+    videos.forEach((video) => {
+      if (
+        canPlay &&
+        video.dataset.nobifashionVisible === "true" &&
+        video.dataset.nobifashionPaused !== "true" &&
+        !reducedMotion.matches &&
+        !navigator.connection?.saveData
+      )
+        playVideo(video);
+      else {
+        try { video.pause(); } catch {}
+      }
+    });
+  }
+  videos.forEach((video) => {
+    video.addEventListener("play", () => syncVideoButton(video));
+    video.addEventListener("pause", () => syncVideoButton(video));
+    video.addEventListener("error", () => {
+      video.hidden = true;
+      syncVideoButton(video);
+    });
+    video.addEventListener("loadeddata", () => {
+      video.hidden = false;
+    });
+  });
+  if ("IntersectionObserver" in window) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(({ target, isIntersecting }) => {
+          target.dataset.nobifashionVisible = String(isIntersecting);
+        });
+        updateVideos();
+      },
+      { threshold: 0.2 },
+    );
+    videos.forEach((video) => observer.observe(video));
+  }
+  mobileMedia.addEventListener("change", () => {
+    videos.forEach((video) => {
+      if (video.hasAttribute("src")) videoSource(video);
+    });
+    updateVideos();
+  });
+  reducedMotion.addEventListener("change", updateVideos);
+  document.addEventListener("visibilitychange", updateVideos);
 
-    // ============================================
-    // KHỞI CHẠY CHÍNH – TẤT CẢ ĐỀU CHỐNG NULL
-    // ============================================
+  // --- HEADER TONE ADAPTATION ON HOME ---
+  let scrollPending = false;
+  function updateHeaderTone() {
+    scrollPending = false;
+    const header = get("header");
+    if (header) {
+      const offset = header.offsetHeight / 2;
+      const section = all("[data-nobifashion-tone]").find((item) => {
+        const bounds = item.getBoundingClientRect();
+        return bounds.height && bounds.top <= offset && bounds.bottom > offset;
+      });
+      header.dataset.tone = section?.dataset.nobifashionTone || "light";
+    }
+  }
+  function scheduleHeaderTone() {
+    if (!scrollPending) {
+      scrollPending = true;
+      requestAnimationFrame(updateHeaderTone);
+    }
+  }
+  window.addEventListener("scroll", scheduleHeaderTone, { passive: true });
+  window.addEventListener("resize", scheduleHeaderTone, { passive: true });
+  scheduleHeaderTone();
 
-    scrollProductCategories();
-    handleFlashSale();
-
-    setTimeout(autoScrollCategories, 3000);
+  // --- HOME DELEGATE FOR GALLERY, SWATCH, VIDEO ---
+  page.addEventListener("click", (event) => {
+    const swatchArrow = event.target.closest(
+      "[data-nobifashion-swatch-scroll]",
+    );
+    if (swatchArrow) {
+      const swatches = swatchArrow.parentElement?.querySelector(
+        `.${prefix}swatches`,
+      );
+      if (swatches) {
+        swatches.scrollBy({
+          left:
+            swatches.clientWidth *
+            0.75 *
+            Number(swatchArrow.dataset.nobifashionSwatchScroll),
+          behavior: reducedMotion.matches ? "instant" : "smooth",
+        });
+      }
+      return;
+    }
+    const arrow = event.target.closest("[data-nobifashion-gallery]");
+    if (arrow) {
+      const prodCard = arrow.closest("[data-nobifashion-product]");
+      if (prodCard) {
+        const product = products.get(prodCard.dataset.nobifashionProduct);
+        if (product) {
+          updateGallery(
+            product,
+            product.imageIndex + Number(arrow.dataset.direction || 0),
+          );
+        }
+      }
+      return;
+    }
+    const color = event.target.closest("[data-nobifashion-color]");
+    if (color) {
+      const prodCard = color.closest("[data-nobifashion-product]");
+      if (prodCard) {
+        const product = products.get(prodCard.dataset.nobifashionProduct);
+        if (product) {
+          all("[data-nobifashion-color]", product.card).forEach((button) =>
+            button.setAttribute("aria-pressed", String(button === color)),
+          );
+          if (color.dataset.nobifashionImages) {
+            product.images = safeJsonParse(color.dataset.nobifashionImages, product.images);
+          }
+          all(
+            `.${prefix}product_gallery_link, .${prefix}product_name a`,
+            product.card,
+          ).forEach((link) => {
+            try {
+              const destination = new URL(product.href, window.location.origin);
+              if (color.dataset.nobifashionColor) {
+                destination.searchParams.set(
+                  "colorDisplayCode",
+                  color.dataset.nobifashionColor,
+                );
+              }
+              link.href = destination.href;
+            } catch {}
+          });
+          updateGallery(product, 0);
+        }
+      }
+      return;
+    }
+    const toggle = event.target.closest("[data-nobifashion-video-toggle]");
+    if (toggle) {
+      const video = document.getElementById(
+        toggle.dataset.nobifashionVideoToggle,
+      );
+      if (video) {
+        if (video.paused) {
+          video.dataset.nobifashionPaused = "false";
+          playVideo(video);
+        } else {
+          video.dataset.nobifashionPaused = "true";
+          video.pause();
+        }
+      }
+      return;
+    }
+  });
 })();

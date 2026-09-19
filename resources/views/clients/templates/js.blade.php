@@ -1,4 +1,5 @@
-<script src="{{ asset('clients/assets/js/main.js?v=' . time()) }}"></script>
+<script src="{{ asset('clients/assets/js/main.js') }}?v={{ env('APP_VERSION') }}"></script>
+<script defer src="{{ asset('clients/assets/js/header.js') }}?v={{ env('APP_VERSION') }}"></script>
 
 @php
     $alerts = [

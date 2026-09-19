@@ -81,7 +81,7 @@ $productMediaInitialPagination = [
 @endif
 
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css">
-<link rel="stylesheet" href="{{ asset('admins/css/media-manager.css?v=' . filemtime(public_path('admins/css/media-manager.css'))) }}">
+<link rel="stylesheet" href="{{ asset('admins/css/media-manager.css') }}?v={{ env('APP_VERSION') }}">
 @endpush
 
 @push('styles')
@@ -284,7 +284,7 @@ $productMediaInitialPagination = [
 
 @push('scripts')
 @include('admins.partials.media-library-modal')
-<script src="{{ asset('admins/js/media-library.js?v=' . filemtime(public_path('admins/js/media-library.js'))) }}"></script>
+<script src="{{ asset('admins/js/media-library.js') }}?v={{ env('APP_VERSION') }}"></script>
 @php
     $mediaRequestLimits = [
         'upload' => [
@@ -323,8 +323,8 @@ $productMediaInitialPagination = [
         modalTitleBase: 'Chọn ảnh cho gallery sản phẩm',
     };
 </script>
-<script src="{{ asset('admins/js/media-manager.js?v=' . filemtime(public_path('admins/js/media-manager.js'))) }}"></script>
-<script src="{{ asset('admins/js/product-media-picker.js?v=' . filemtime(public_path('admins/js/product-media-picker.js'))) }}"></script>
+<script src="{{ asset('admins/js/media-manager.js') }}?v={{ env('APP_VERSION') }}"></script>
+<script src="{{ asset('admins/js/product-media-picker.js') }}?v={{ env('APP_VERSION') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', () => {
         const counters = {};

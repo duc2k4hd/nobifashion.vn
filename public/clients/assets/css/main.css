@@ -16,6 +16,9 @@
     --border-color: #ffe0e5;
     --border: 1px solid var(--border-color);
     --active-color: #cc2a55;
+    --nobifashion_home_black: #000;
+    --nobifashion_home_white: #fff;
+    --nobifashion_home_header_height: 64px;
 }
 
 /* Breadcrumb styling */

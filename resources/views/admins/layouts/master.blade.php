@@ -7,7 +7,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Admin Panel') | {{ $settings->site_name }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-    <link rel="stylesheet" href="{{ asset('admins/css/custom.css') }}">
+    <link rel="stylesheet" href="{{ asset('admins/css/custom.css') }}?v={{ env('APP_VERSION') }}">
     @stack('styles')
     <style>
         * {
@@ -939,7 +939,7 @@
     <link rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/47.4.0/ckeditor5.css" crossorigin>
     <script src="https://cdn.ckeditor.com/ckeditor5/47.4.0/ckeditor5.umd.js" crossorigin></script>
     <script src="https://cdn.ckeditor.com/ckeditor5/47.4.0/translations/vi.umd.js" crossorigin></script>
-    <script src="{{ asset('admins/js/ckeditor-init.js?v=' . time()) }}"></script>
+    <script src="{{ asset('admins/js/ckeditor-init.js') }}?v={{ env('APP_VERSION') }}"></script>
     @stack('scripts')
     
     <!-- Back to Top Button -->

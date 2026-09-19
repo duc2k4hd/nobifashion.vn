@@ -1,16 +1,16 @@
 <meta name="author" content="{{ $settings->seo_author ?? 'NOBI FASHION' }}">
 
 <link rel="apple-touch-icon" sizes="180x180"
-    href="{{ asset('/clients/assets/img/business/' . ($settings->site_favicon ?? 'favicon.png')) }}?v={{ time() }}">
+    href="{{ asset('/clients/assets/img/business/' . ($settings->site_favicon ?? 'favicon.png')) }}?v={{ env('APP_VERSION') }}">
 <link rel="icon" type="image/png" sizes="32x32"
-    href="{{ asset('/clients/assets/img/business/' . ($settings->site_favicon ?? 'favicon.png')) }}?v={{ time() }}">
+    href="{{ asset('/clients/assets/img/business/' . ($settings->site_favicon ?? 'favicon.png')) }}?v={{ env('APP_VERSION') }}">
 <link rel="icon" type="image/png" sizes="16x16"
-    href="{{ asset('/clients/assets/img/business/' . ($settings->site_favicon ?? 'favicon.png')) }}?v={{ time() }}">
+    href="{{ asset('/clients/assets/img/business/' . ($settings->site_favicon ?? 'favicon.png')) }}?v={{ env('APP_VERSION') }}">
 <link rel="mask-icon"
-    href="{{ asset('clients/assets/img/business/' . ($settings->site_favicon ?? 'favicon.png')) }}?v={{ time() }}"
+    href="{{ asset('clients/assets/img/business/' . ($settings->site_favicon ?? 'favicon.png')) }}?v={{ env('APP_VERSION') }}"
     color="#5bbad5">
 <link rel="icon"
-    href="{{ asset('clients/assets/img/business/' . ($settings->site_favicon ?? 'favicon.png')) }}?v={{ time() }}"
+    href="{{ asset('clients/assets/img/business/' . ($settings->site_favicon ?? 'favicon.png')) }}?v={{ env('APP_VERSION') }}"
     type="image/x-icon">
 <meta name="theme-color" content="#ff3366">
 

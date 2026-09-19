@@ -4,7 +4,7 @@
 
 @section('head')
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.css" rel="stylesheet">
-    <link rel="stylesheet" href="{{ asset('clients/assets/css/checkout.css') }}">
+    <link rel="stylesheet" href="{{ asset('clients/assets/css/checkout.css') }}?v={{ env('APP_VERSION') }}">
     <meta name="robots" content="follow, noindex"/>
 @endsection
 
@@ -12,8 +12,8 @@
     <script src="https://unpkg.com/slim-select@latest/dist/slimselect.min.js"></script>
     <link href="https://unpkg.com/slim-select@latest/dist/slimselect.css" rel="stylesheet">
     </link>
-    <script src="{{ asset('clients/assets/js/fallback-select.js') }}"></script>
-    <script defer src="{{ asset('clients/assets/js/order.js') }}"></script>
+    <script src="{{ asset('clients/assets/js/fallback-select.js') }}?v={{ env('APP_VERSION') }}"></script>
+    <script defer src="{{ asset('clients/assets/js/order.js') }}?v={{ env('APP_VERSION') }}"></script>
     
     <!-- Debug button for loading overlay -->
     <script>

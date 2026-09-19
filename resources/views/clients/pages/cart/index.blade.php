@@ -6,13 +6,13 @@
         : 'Giỏ hàng - ' . renderMeta(data_get($settings ?? [], 'site_name', data_get($settings ?? [], 'subname', 'Bạn'))))
 
 @section('head')
-    <link rel="stylesheet" href="{{ asset('clients/assets/css/cart.css') }}">
+    <link rel="stylesheet" href="{{ asset('clients/assets/css/cart.css') }}?v={{ env('APP_VERSION') }}">
     <meta name="robots" content="follow, noindex"/>
     <meta name="csrf-token" content="{{ csrf_token() }}">
 @endsection
 
 @section('foot')
-    <script src="{{ asset('clients/assets/js/cart.js') }}"></script>
+    <script src="{{ asset('clients/assets/js/cart.js') }}?v={{ env('APP_VERSION') }}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Quantity update functionality

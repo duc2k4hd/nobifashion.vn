@@ -5,12 +5,8 @@
 
 @push('head')
     @php
-        $slimSelectCssPath = public_path('admins/vendor/slimselect/slimselect.css');
-        $slimSelectCssVersion = file_exists($slimSelectCssPath) ? filemtime($slimSelectCssPath) : null;
-        $slimSelectCssAsset = asset('admins/vendor/slimselect/slimselect.css') . ($slimSelectCssVersion ? '?v=' . $slimSelectCssVersion : '');
-        $slimSelectJsPath = public_path('admins/vendor/slimselect/slimselect.min.js');
-        $slimSelectJsVersion = file_exists($slimSelectJsPath) ? filemtime($slimSelectJsPath) : null;
-        $slimSelectJsAsset = asset('admins/vendor/slimselect/slimselect.min.js') . ($slimSelectJsVersion ? '?v=' . $slimSelectJsVersion : '');
+        $slimSelectCssAsset = asset('admins/vendor/slimselect/slimselect.css') . '?v=' . env('APP_VERSION');
+        $slimSelectJsAsset = asset('admins/vendor/slimselect/slimselect.min.js') . '?v=' . env('APP_VERSION');
     @endphp
     <link rel="shortcut icon" href="{{ asset('admins/img/icons/products-icon.png') }}" type="image/x-icon">
     <link rel="stylesheet" href="{{ $slimSelectCssAsset }}">
