@@ -66,12 +66,13 @@
                         @foreach ($rootCat->children as $category)
                             <a class="nobifashion_home_category" href="{{ url('/' . $category->slug) }}">
                                 <img class="nobifashion_home_category_image"
-                                    src="{{ $category->image_url }}"
+                                    src="{{ $category->image_url ?? asset('clients/assets/img/clothes/no-image.webp') }}"
                                     alt="{{ $category->name }}"
                                     width="80"
                                     height="80"
                                     loading="lazy"
-                                    decoding="async">
+                                    decoding="async"
+                                    onerror="this.onerror=null; this.src='{{ asset('clients/assets/img/clothes/no-image.webp') }}';">
                                 <span class="nobifashion_home_category_text">{{ $category->name }}</span>
                             </a>
                         @endforeach
