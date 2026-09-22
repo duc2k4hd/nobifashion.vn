@@ -98,8 +98,8 @@ class CoolmateCrawlerServiceTest extends TestCase
         $this->assertSame(1, $results['skipped_duplicate']);
         $this->assertSame(0, $results['skipped_history']);
         $this->assertSame(3, $results['image_downloaded_count']);
-        $this->assertSame(8, $results['page_batch_size']);
-        $this->assertSame(16, $results['image_batch_size']);
+        $this->assertSame(16, $results['page_batch_size']);
+        $this->assertSame(32, $results['image_batch_size']);
         $this->assertGreaterThan(32767, $results['posts'][0]['content_length']);
 
         $mainPath = $mainDirectory.DIRECTORY_SEPARATOR.'top-khanh-beauty-ao-dep.webp';
@@ -237,6 +237,176 @@ class CoolmateCrawlerServiceTest extends TestCase
 
         $this->assertTrue(mb_check_encoding($decoded['title'], 'UTF-8'));
         $this->assertStringContainsString("\u{FFFD}", $decoded['title']);
+    }
+
+    public function test_crawl_posts_skips_main_image_download_when_option_disabled(): void
+    {
+        $sourceUrl = 'https://www.coolmate.me/blog/ao-khoac-dep-2026';
+        $html = <<<HTML
+        <html>
+            <head>
+                <meta property="og:title" content="Áo Khoác Nam Đẹp 2026">
+                <meta property="og:image" content="https://cdn.coolmate.me/main-jacket.webp">
+                <meta property="article:published_time" content="2026-01-01T00:00:00+07:00">
+                <link rel="canonical" href="{$sourceUrl}">
+            </head>
+            <body>
+                <article>
+                    <h1 class="entry-title">Áo Khoác Nam Đẹp 2026</h1>
+                    <div class="entry-content single-page">
+                        <p>Nội dung áo khoác.</p>
+                        <img src="https://cdn.coolmate.me/extra-jacket.webp" alt="Ảnh phụ áo khoác">
+                    </div>
+                </article>
+            </body>
+        </html>
+        HTML;
+
+        $this->httpFactory->fake([
+            $sourceUrl => $this->httpFactory->response($html, 200, ['Content-Type' => 'text/html']),
+            'https://cdn.coolmate.me/extra-jacket.webp' => $this->httpFactory->response('EXTRA', 200, ['Content-Type' => 'image/webp']),
+            '*' => $this->httpFactory->response('', 500),
+        ]);
+
+        $service = $this->makeService();
+        $results = $service->crawlPostsToCsv([$sourceUrl], false, false);
+
+        $this->assertSame(1, $results['success']);
+        $this->assertSame(1, $results['image_downloaded_count']);
+        $this->assertSame(0, $results['main_image_count']);
+        $this->assertSame(1, $results['extra_image_count']);
+        $this->assertFalse($results['download_main_image']);
+
+        $mainPath = $this->tempDirectory.DIRECTORY_SEPARATOR.'main'.DIRECTORY_SEPARATOR.'ao-khoac-nam-dep-2026.webp';
+        $this->assertFileDoesNotExist($mainPath);
+
+        $extraPath = $this->tempDirectory.DIRECTORY_SEPARATOR.'extra'.DIRECTORY_SEPARATOR.'anh-phu-ao-khoac-1.webp';
+        $this->assertFileExists($extraPath);
+
+        $csvHandle = fopen($results['file_path'], 'rb');
+        $headers = fgetcsv($csvHandle, null, ',', '"', '');
+        $headersByName = array_flip($headers);
+        $csvRow = fgetcsv($csvHandle, null, ',', '"', '');
+        fclose($csvHandle);
+
+        $this->assertSame('https://cdn.coolmate.me/main-jacket.webp', $csvRow[$headersByName['Thumbnail URL']]);
+    }
+
+    public function test_crawl_posts_handles_extremely_long_image_alt_safely(): void
+    {
+        $sourceUrl = 'https://www.coolmate.me/blog/do-boi-dai-tay-2026';
+        $extremelyLongAlt = str_repeat('Phu hop voi nhieu hoat dong do boi dai tay ', 20); // ~860 ký tự
+        $html = <<<HTML
+        <html>
+            <head>
+                <meta property="og:title" content="Top Đồ Bơi Nữ 2026">
+                <meta property="article:published_time" content="2026-01-01T00:00:00+07:00">
+                <link rel="canonical" href="{$sourceUrl}">
+            </head>
+            <body>
+                <article>
+                    <h1 class="entry-title">Top Đồ Bơi Nữ 2026</h1>
+                    <div class="entry-content single-page">
+                        <p>Nội dung đồ bơi.</p>
+                        <img src="https://cdn.coolmate.me/swimsuit.jpg" alt="{$extremelyLongAlt}">
+                    </div>
+                </article>
+            </body>
+        </html>
+        HTML;
+
+        $this->httpFactory->fake([
+            $sourceUrl => $this->httpFactory->response($html, 200, ['Content-Type' => 'text/html']),
+            'https://cdn.coolmate.me/swimsuit.jpg' => $this->httpFactory->response('SWIMSUIT', 200, ['Content-Type' => 'image/jpeg']),
+            '*' => $this->httpFactory->response('', 500),
+        ]);
+
+        $service = $this->makeService();
+        $results = $service->crawlPostsToCsv([$sourceUrl], false, false);
+
+        $this->assertSame(1, $results['success']);
+        $this->assertSame(1, $results['image_downloaded_count']);
+
+        $extraDir = $this->tempDirectory.DIRECTORY_SEPARATOR.'extra';
+        $savedFiles = glob($extraDir.DIRECTORY_SEPARATOR.'*.jpg') ?: [];
+        $this->assertCount(1, $savedFiles);
+        $savedFileName = basename($savedFiles[0]);
+
+        // Đảm bảo tên file ngắn gọn dưới 85 ký tự, không bị vượt giới hạn hệ điều hành Windows (255 chars)
+        $this->assertLessThanOrEqual(85, strlen($savedFileName));
+    }
+
+    public function test_crawl_posts_appends_multiple_chunks_into_single_csv_file(): void
+    {
+        $url1 = 'https://www.coolmate.me/blog/bai-viet-1';
+        $url2 = 'https://www.coolmate.me/blog/bai-viet-2';
+
+        $html1 = <<<HTML
+        <html>
+            <head>
+                <meta property="og:title" content="Bài Viết 1">
+                <meta property="og:description" content="Mô tả bài viết 1 cho crawler test">
+            </head>
+            <body>
+                <article>
+                    <div class="entry-content single-page">
+                        <p>Nội dung bài viết số 1 phục vụ kiểm tra append nhiều chunk vào chung một file CSV duy nhất mà không bị lỗi hay trùng lặp.</p>
+                    </div>
+                </article>
+            </body>
+        </html>
+        HTML;
+
+        $html2 = <<<HTML
+        <html>
+            <head>
+                <meta property="og:title" content="Bài Viết 2">
+                <meta property="og:description" content="Mô tả bài viết 2 cho crawler test">
+            </head>
+            <body>
+                <article>
+                    <div class="entry-content single-page">
+                        <p>Nội dung bài viết số 2 phục vụ kiểm tra append nhiều chunk vào chung một file CSV duy nhất mà không bị lỗi hay trùng lặp.</p>
+                    </div>
+                </article>
+            </body>
+        </html>
+        HTML;
+
+        $this->httpFactory->fake([
+            $url1 => $this->httpFactory->response($html1, 200, ['Content-Type' => 'text/html']),
+            $url2 => $this->httpFactory->response($html2, 200, ['Content-Type' => 'text/html']),
+            '*' => $this->httpFactory->response('', 500),
+        ]);
+
+        $service = $this->makeService();
+        $targetCsv = 'coolmate_posts_batch_test.csv';
+
+        // Chunk 1 cào URL 1
+        $result1 = $service->crawlPostsToCsv([$url1], false, false, $targetCsv);
+        $this->assertSame(1, $result1['success']);
+        $this->assertSame($targetCsv, $result1['file_name']);
+
+        // Chunk 2 cào URL 2, ghi nối tiếp vào cùng file CSV
+        $result2 = $service->crawlPostsToCsv([$url2], false, false, $targetCsv);
+        $this->assertSame(1, $result2['success']);
+        $this->assertSame($targetCsv, $result2['file_name']);
+
+        // Kiểm tra file CSV chỉ có 1 file và chứa đúng 2 dòng dữ liệu + 1 dòng header
+        $csvPath = $this->tempDirectory.DIRECTORY_SEPARATOR.$targetCsv;
+        $this->assertFileExists($csvPath);
+
+        $handle = fopen($csvPath, 'rb');
+        $rows = [];
+        while (($row = fgetcsv($handle, null, ',', '"', '')) !== false) {
+            $rows[] = $row;
+        }
+        fclose($handle);
+
+        // 1 header + 2 dòng data = 3 dòng
+        $this->assertCount(3, $rows);
+        $this->assertSame('Bài Viết 1', $rows[1][1]);
+        $this->assertSame('Bài Viết 2', $rows[2][1]);
     }
 
     private function makeService(): CoolmateCrawlerService

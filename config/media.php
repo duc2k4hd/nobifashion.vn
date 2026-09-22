@@ -30,7 +30,7 @@ return [
     'request_limits' => [
         'upload_file_max_kb' => 5120,
         'upload_batch_safety_ratio' => 0.9,
-        'delete_items_per_request' => 200,
+        'delete_items_per_request' => 1000,
     ],
 ];
 

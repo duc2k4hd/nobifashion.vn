@@ -1536,6 +1536,8 @@
             }
 
             this.lockUi('Đang chuẩn bị xóa ảnh đã chọn...');
+            this.showLoadingProgress();
+            this.setLoadingProgress(0, `0 / ${items.length} ảnh (0%)`);
             this.state.isDeleting = true;
             this.renderBulkBar();
             this.renderInspector();
@@ -1548,8 +1550,10 @@
 
             try {
                 for (const chunk of chunks) {
-                    this.setLoadingMessage(`Đang xóa ${processed + 1}-${processed + chunk.length}/${items.length} ảnh...`);
-                    this.showToast(`Đang xóa ${processed + 1}-${processed + chunk.length}/${items.length} ảnh...`, 'warning', false);
+                    const startNum = processed + 1;
+                    const endNum = processed + chunk.length;
+                    this.setLoadingMessage(`Đang xóa ${startNum}-${endNum}/${items.length} ảnh...`);
+                    this.showToast(`Đang xóa ${startNum}-${endNum}/${items.length} ảnh...`, 'warning', false);
 
                     const response = await fetch(this.routes.bulkDelete, {
                         method: 'POST',
@@ -1572,6 +1576,9 @@
                     preservedFilesCount += Number(payload.preserved_files_count || 0);
                     failedCount += Number(payload.failed_count || 0);
                     processed += chunk.length;
+
+                    const percent = Math.round((processed / items.length) * 100);
+                    this.setLoadingProgress(percent, `${processed} / ${items.length} ảnh (${percent}%)`);
                 }
 
                 this.state.selectedKeys.clear();

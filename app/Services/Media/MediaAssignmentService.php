@@ -115,6 +115,223 @@ class MediaAssignmentService
         ];
     }
 
+    /**
+     * Xóa hàng loạt media theo batch siêu tốc (Bulk SQL + Bulk Unlink)
+     * Thay thế vòng lặp N*5 queries bằng 2-3 queries duy nhất cho toàn bộ mẻ.
+     *
+     * @param array $items Mảng các item dạng [['source' => ..., 'id' => ..., 'path' => ...]]
+     * @return array{deleted_count: int, preserved_files_count: int, failed_count: int, failure_messages: array}
+     */
+    public function deleteBatch(array $items): array
+    {
+        $deletedCount = 0;
+        $preservedFilesCount = 0;
+        $failedCount = 0;
+        $failureMessages = [];
+
+        $imageIds = [];
+        $filesystemPaths = [];
+        $otherItems = [];
+
+        foreach ($items as $item) {
+            $source = $item['source'] ?? '';
+            $id = $item['id'] ?? null;
+            $path = $item['path'] ?? null;
+
+            if ($source === 'filesystem_file') {
+                if ($path) {
+                    $filesystemPaths[] = $path;
+                } else {
+                    $failedCount++;
+                }
+            } elseif ($source === 'product_image' || $source === 'library_image') {
+                if ($id) {
+                    $imageIds[] = (int) $id;
+                } else {
+                    $failedCount++;
+                }
+            } else {
+                if ($id) {
+                    $otherItems[] = $item;
+                } else {
+                    $failedCount++;
+                }
+            }
+        }
+
+        // 1. Xử lý bulk cho bảng images (chiếm >99% dữ liệu)
+        if (!empty($imageIds)) {
+            $records = DB::table('images')
+                ->whereIn('id', $imageIds)
+                ->select(['id', 'path', 'url', 'thumbnail_url', 'medium_url', 'context'])
+                ->get();
+
+            $allCandidates = [];
+
+            foreach ($records as $rec) {
+                $ctx = $rec->context === 'product' ? 'clothes' : null;
+                $orig = $this->registry->normalizeStoredPath($rec->path ?: $rec->url, $ctx);
+                $thumb = $rec->thumbnail_url ? $this->registry->normalizeStoredPath($rec->thumbnail_url, $ctx) : null;
+                $med = $rec->medium_url ? $this->registry->normalizeStoredPath($rec->medium_url, $ctx) : null;
+
+                if ($orig && !Str::startsWith($orig, ['http://', 'https://'])) {
+                    $allCandidates[$orig] = true;
+                }
+                if ($thumb && !Str::startsWith($thumb, ['http://', 'https://'])) {
+                    $allCandidates[$thumb] = true;
+                }
+                if ($med && !Str::startsWith($med, ['http://', 'https://'])) {
+                    $allCandidates[$med] = true;
+                }
+            }
+
+            // Tìm các file dùng chung (đang được record KHÁC ngoài danh sách cần xóa tham chiếu)
+            $candidateKeys = array_keys($allCandidates);
+            $sharedMap = [];
+
+            if (!empty($candidateKeys)) {
+                foreach (array_chunk($candidateKeys, 500) as $chunk) {
+                    $sharedInDb = DB::table('images')
+                        ->whereNotIn('id', $imageIds)
+                        ->where(function ($q) use ($chunk) {
+                            $q->whereIn('path', $chunk)
+                              ->orWhereIn('url', $chunk);
+                        })
+                        ->pluck('path')
+                        ->merge(
+                            DB::table('images')
+                                ->whereNotIn('id', $imageIds)
+                                ->whereIn('url', $chunk)
+                                ->pluck('url')
+                        )
+                        ->filter()
+                        ->flip()
+                        ->all();
+
+                    $sharedMap = array_merge($sharedMap, $sharedInDb);
+                }
+            }
+
+            // Xóa file vật lý bằng @unlink siêu tốc
+            $physicalPreserved = 0;
+            foreach ($allCandidates as $relPath => $_) {
+                if (isset($sharedMap[$relPath])) {
+                    $physicalPreserved++;
+                    continue; // File đang dùng chung, giữ lại
+                }
+
+                $abs = public_path($relPath);
+                if ($abs && is_file($abs)) {
+                    @unlink($abs);
+                }
+            }
+
+            // Xóa toàn bộ DB records bằng 1 câu DELETE duy nhất
+            $deletedRows = DB::table('images')->whereIn('id', $imageIds)->delete();
+            $deletedCount += $deletedRows;
+            $preservedFilesCount += $physicalPreserved;
+        }
+
+        // 2. Xử lý nhóm file mồ côi (filesystem_file)
+        if (!empty($filesystemPaths)) {
+            $directories = config('media.directories', []);
+            foreach ($filesystemPaths as $relPath) {
+                $normalized = $this->registry->normalizeStoredPath($relPath);
+                if ($normalized && $this->files->isManagedMediaPath($normalized, $directories)) {
+                    $abs = public_path($normalized);
+                    if ($abs && is_file($abs)) {
+                        @unlink($abs);
+                    }
+                    $deletedCount++;
+                } else {
+                    $failedCount++;
+                }
+            }
+        }
+
+        // 3. Xử lý các entity lẻ khác nếu có
+        foreach ($otherItems as $item) {
+            try {
+                $ok = $this->delete($item['source'], (string) $item['id'], true);
+                if ($ok) {
+                    $deletedCount++;
+                } else {
+                    $failedCount++;
+                }
+            } catch (\Throwable $e) {
+                $failedCount++;
+                $failureMessages[] = $e->getMessage();
+            }
+        }
+
+        return [
+            'deleted_count' => $deletedCount,
+            'preserved_files_count' => $preservedFilesCount,
+            'failed_count' => $failedCount,
+            'failure_messages' => array_unique($failureMessages),
+        ];
+    }
+
+    /**
+     * Xóa 1 batch theo scope (ví dụ: 'unassigned_record') siêu tốc, tiết kiệm RAM
+     */
+    public function deleteScopeChunk(string $scope = 'unassigned_record', int $batchSize = 1000): array
+    {
+        $batchSize = max(50, min($batchSize, 10000));
+
+        if ($scope === 'unassigned_record') {
+            $records = DB::table('images')
+                ->where(function ($builder) {
+                    $builder->where(function ($inner) {
+                        $inner->whereNull('entity_id')
+                              ->whereNull('product_id');
+                    })->orWhere('entity_type', 'library');
+                })
+                ->select(['id'])
+                ->limit($batchSize)
+                ->get();
+
+            if ($records->isEmpty()) {
+                return [
+                    'processed' => 0,
+                    'preserved_files_count' => 0,
+                    'remaining' => 0,
+                    'finished' => true,
+                ];
+            }
+
+            $items = $records->map(fn ($r) => [
+                'source' => 'product_image',
+                'id' => $r->id,
+            ])->all();
+
+            $res = $this->deleteBatch($items);
+
+            $remaining = DB::table('images')
+                ->where(function ($builder) {
+                    $builder->where(function ($inner) {
+                        $inner->whereNull('entity_id')
+                              ->whereNull('product_id');
+                    })->orWhere('entity_type', 'library');
+                })
+                ->count();
+
+            return [
+                'processed' => $res['deleted_count'],
+                'preserved_files_count' => $res['preserved_files_count'],
+                'remaining' => $remaining,
+                'finished' => ($remaining === 0),
+            ];
+        }
+
+        return [
+            'processed' => 0,
+            'preserved_files_count' => 0,
+            'remaining' => 0,
+            'finished' => true,
+        ];
+    }
+
     public function assignExisting(string $targetType, int $targetId, array $paths, array $meta = []): array
     {
         $original = $paths['original'] ?? null;

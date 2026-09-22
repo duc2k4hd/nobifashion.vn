@@ -129,86 +129,11 @@ class AdminMediaController extends Controller
             'items.*.path' => 'nullable|string',
         ]);
 
-        $deletedCount = 0;
-        $preservedFilesCount = 0;
-        $failed = [];
-        $failureMessages = [];
-
-        foreach ($validated['items'] as $itemPayload) {
-            $source = $itemPayload['source'];
-            if (!in_array($source, $this->deletableSources, true)) {
-                $failed[] = $itemPayload;
-                continue;
-            }
-
-            $id = $itemPayload['id'] ?? null;
-            $path = $itemPayload['path'] ?? null;
-
-            if ($source === 'filesystem_file') {
-                if (!$path) {
-                    $failed[] = $itemPayload;
-                    continue;
-                }
-                try {
-                    $result = $assignment->deleteByManagedPath($path);
-                    $success = (bool) ($result['success'] ?? false);
-                } catch (\DomainException $exception) {
-                    $success = false;
-                    $failureMessages[] = $exception->getMessage();
-                } catch (\RuntimeException $exception) {
-                    $success = false;
-                    $failureMessages[] = $exception->getMessage();
-                }
-            } else {
-                if (!$id) {
-                    $failed[] = $itemPayload;
-                    continue;
-                }
-
-                $deletePhysical = true;
-                $assetKey = null;
-
-                if ($source === 'product_image' || $source === 'library_image' || $source === 'profile_avatar' || $source === 'profile_sub_avatar' || $source === 'category_image' || $source === 'banner_desktop' || $source === 'banner_mobile') {
-                    // Quick resolve asset key from image table if it's an image entity.
-                    // For others, simply assume it's true unless matched.
-                    if ($source === 'product_image' || $source === 'library_image') {
-                        $img = \App\Models\Image::find($id);
-                        $assetKey = $img ? ($img->path ?: $img->url) : null;
-                    } elseif ($source === 'post_thumbnail') {
-                        $post = \App\Models\Post::find($id);
-                        $assetKey = $post ? $post->thumbnail : null;
-                    }
-                    
-                    if ($assetKey && !\Illuminate\Support\Str::startsWith($assetKey, ['http://', 'https://'])) {
-                        $usageCount = \App\Models\Image::where('path', $assetKey)->orWhere('url', $assetKey)->count();
-                        if ($usageCount > 1) {
-                            $deletePhysical = false;
-                        }
-                    }
-                }
-
-                try {
-                    $success = $assignment->delete(
-                        $source,
-                        (string) $id,
-                        $deletePhysical
-                    );
-                } catch (\DomainException $exception) {
-                    $success = false;
-                    $failureMessages[] = $exception->getMessage();
-                }
-
-                if ($success && !$deletePhysical) {
-                    $preservedFilesCount++;
-                }
-            }
-
-            if ($success) {
-                $deletedCount++;
-            } else {
-                $failed[] = $itemPayload;
-            }
-        }
+        $result = $assignment->deleteBatch($validated['items']);
+        $deletedCount = $result['deleted_count'];
+        $preservedFilesCount = $result['preserved_files_count'];
+        $failedCount = $result['failed_count'];
+        $failureMessages = $result['failure_messages'];
 
         $message = $deletedCount > 0
             ? "Đã xử lý {$deletedCount} mục media."
@@ -226,8 +151,31 @@ class AdminMediaController extends Controller
             'message' => $message,
             'deleted_count' => $deletedCount,
             'preserved_files_count' => $preservedFilesCount,
-            'failed_count' => count($failed),
+            'failed_count' => $failedCount,
         ], $deletedCount > 0 ? 200 : 400);
+    }
+
+    /**
+     * Xóa nhanh hàng loạt media theo Scope (chia chunk tránh tốn RAM và timeout server)
+     */
+    public function fastDeleteScope(Request $request, MediaAssignmentService $assignment)
+    {
+        $validated = $request->validate([
+            'scope' => 'required|string',
+            'batch_size' => 'nullable|integer|min:50|max:2000',
+        ]);
+
+        $batchSize = $validated['batch_size'] ?? 1000;
+        $result = $assignment->deleteScopeChunk($validated['scope'], $batchSize);
+
+        return response()->json([
+            'success' => true,
+            'processed' => $result['processed'],
+            'preserved_files_count' => $result['preserved_files_count'],
+            'remaining' => $result['remaining'],
+            'finished' => $result['finished'],
+            'message' => "Đã xử lý {$result['processed']} ảnh. Còn lại {$result['remaining']} ảnh.",
+        ]);
     }
 
     public function cleanup(Request $request, MediaCleanupService $cleanup)

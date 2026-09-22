@@ -17,13 +17,13 @@ class CoolmateCrawlerService
 {
     private const CSV_CELL_CHARACTER_LIMIT = 30000;
 
-    private const PAGE_BATCH_SIZE = 8;
+    private const PAGE_BATCH_SIZE = 16;
 
-    private const IMAGE_BATCH_SIZE = 16;
+    private const IMAGE_BATCH_SIZE = 32;
 
-    private const PAGE_TIMEOUT_SECONDS = 35;
+    private const PAGE_TIMEOUT_SECONDS = 25;
 
-    private const IMAGE_TIMEOUT_SECONDS = 25;
+    private const IMAGE_TIMEOUT_SECONDS = 15;
 
     private const PAGE_SELECTOR = 'div.entry-content.single-page';
 
@@ -33,8 +33,12 @@ class CoolmateCrawlerService
      * Crawl bài viết theo batch, lưu ảnh vào thư mục tạm và xuất toàn bộ dữ liệu ra CSV.
      * Không đọc hoặc ghi dữ liệu Post trong database.
      */
-    public function crawlPostsToCsv(array $postUrls, bool $recrawlExisting = false): array
-    {
+    public function crawlPostsToCsv(
+        array $postUrls,
+        bool $recrawlExisting = false,
+        bool $downloadMainImage = true,
+        ?string $targetFileName = null
+    ): array {
         set_time_limit(3600);
         $this->ensureTempDirectories();
 
@@ -47,6 +51,7 @@ class CoolmateCrawlerService
             'skipped_duplicate' => 0,
             'skipped_history' => 0,
             'recrawl_existing' => $recrawlExisting,
+            'download_main_image' => $downloadMainImage,
             'image_downloaded_count' => 0,
             'main_image_count' => 0,
             'extra_image_count' => 0,
@@ -93,13 +98,19 @@ class CoolmateCrawlerService
         }
 
         if ($articles === []) {
+            if ($targetFileName !== null && trim($targetFileName) !== '') {
+                $safeName = basename($targetFileName);
+                $results['file_name'] = $safeName;
+                $results['file_path'] = $this->tempRootDirectory().DIRECTORY_SEPARATOR.$safeName;
+            }
+
             return $results;
         }
 
-        $imageJobs = $this->buildImageJobs($articles);
+        $imageJobs = $this->buildImageJobs($articles, $downloadMainImage);
         $imageResults = $this->downloadImagesInBatches($imageJobs);
-        $csvRows = $this->buildCsvRows($articles, $imageJobs, $imageResults, $results);
-        $fileName = $this->createCsv($csvRows);
+        $csvRows = $this->buildCsvRows($articles, $imageJobs, $imageResults, $results, $downloadMainImage);
+        $fileName = $this->writeCsv($csvRows, $targetFileName);
 
         $results['file_name'] = $fileName;
         $results['file_path'] = $this->tempRootDirectory().DIRECTORY_SEPARATOR.$fileName;
@@ -305,9 +316,9 @@ class CoolmateCrawlerService
                         $requests[$key] = $pool
                             ->as($key)
                             ->withHeaders($this->pageRequestHeaders())
-                            ->connectTimeout(12)
+                            ->connectTimeout(8)
                             ->timeout(self::PAGE_TIMEOUT_SECONDS)
-                            ->retry(1, 250)
+                            ->retry(1, 100)
                             ->get($url);
                     }
 
@@ -526,7 +537,9 @@ class CoolmateCrawlerService
             $order = count($images) + 1;
             $placeholder = "__COOLMATE_EXTRA_IMAGE_{$order}__";
             $alt = $this->transformText($node->getAttribute('alt')) ?: $fallbackTitle;
-            $imageSlug = Str::slug($alt, '-') ?: Str::slug($fallbackTitle, '-');
+            $rawSlug = Str::slug($alt, '-') ?: Str::slug($fallbackTitle, '-');
+            $imageSlug = Str::limit($rawSlug, 70, '');
+            $imageSlug = rtrim($imageSlug, '-') ?: 'image-'.$order;
 
             $node->setAttribute('src', $placeholder);
             $node->setAttribute('alt', $alt);
@@ -646,7 +659,7 @@ class CoolmateCrawlerService
         $parent->removeChild($element);
     }
 
-    private function buildImageJobs(array $articles): array
+    private function buildImageJobs(array $articles, bool $downloadMainImage = true): array
     {
         $jobs = [];
         $clearedSlugs = [];
@@ -659,7 +672,7 @@ class CoolmateCrawlerService
                 $clearedSlugs[$slug] = true;
             }
 
-            if ($article['main_image_url']) {
+            if ($downloadMainImage && ! empty($article['main_image_url'])) {
                 $jobs[] = [
                     'key' => "article_{$articleIndex}_main",
                     'article_index' => $articleIndex,
@@ -713,9 +726,9 @@ class CoolmateCrawlerService
                                 'Referer' => $job['source_url'],
                                 'User-Agent' => $this->pageRequestHeaders()['User-Agent'],
                             ])
-                            ->connectTimeout(12)
+                            ->connectTimeout(8)
                             ->timeout(self::IMAGE_TIMEOUT_SECONDS)
-                            ->retry(1, 200)
+                            ->retry(1, 100)
                             ->get($job['url']);
                     }
 
@@ -745,9 +758,12 @@ class CoolmateCrawlerService
                 }
 
                 $extension = $this->imageExtension($job['url'], $response);
+                $fileSlug = Str::limit($job['file_slug'], 70, '');
+                $fileSlug = rtrim($fileSlug, '-') ?: 'image';
+
                 $fileName = $job['type'] === 'main'
-                    ? "{$job['file_slug']}.{$extension}"
-                    : "{$job['file_slug']}-{$job['order']}.{$extension}";
+                    ? "{$fileSlug}.{$extension}"
+                    : "{$fileSlug}-{$job['order']}.{$extension}";
                 $directory = $job['type'] === 'main'
                     ? $this->mainImageDirectory()
                     : $this->extraImageDirectory();
@@ -756,28 +772,41 @@ class CoolmateCrawlerService
                     : 'storage/app/tmp/coolmate/extra';
                 $fullPath = $directory.DIRECTORY_SEPARATOR.$fileName;
 
-                $this->deleteImageVariants($directory, $job['file_slug'], $job['type'], (int) $job['order']);
+                try {
+                    if (! is_dir($directory)) {
+                        @mkdir($directory, 0755, true);
+                    }
 
-                if (file_put_contents($fullPath, $response->body()) === false) {
+                    $this->deleteImageVariants($directory, $fileSlug, $job['type'], (int) $job['order']);
+
+                    if (@file_put_contents($fullPath, $response->body()) === false) {
+                        $results[$job['key']] = [
+                            'status' => 'failed',
+                            'error' => 'Không thể ghi file ảnh vào thư mục tạm',
+                            'relative_path' => null,
+                            'absolute_path' => null,
+                        ];
+
+                        continue;
+                    }
+
+                    @chmod($fullPath, 0644);
+                    $results[$job['key']] = [
+                        'status' => 'downloaded',
+                        'error' => null,
+                        'file_name' => $fileName,
+                        'relative_path' => $relativeDirectory.'/'.$fileName,
+                        'absolute_path' => $fullPath,
+                        'extension' => $extension,
+                    ];
+                } catch (\Throwable $e) {
                     $results[$job['key']] = [
                         'status' => 'failed',
-                        'error' => 'Không thể ghi file ảnh vào thư mục tạm',
+                        'error' => 'Lỗi lưu file ảnh: '.$e->getMessage(),
                         'relative_path' => null,
                         'absolute_path' => null,
                     ];
-
-                    continue;
                 }
-
-                @chmod($fullPath, 0644);
-                $results[$job['key']] = [
-                    'status' => 'downloaded',
-                    'error' => null,
-                    'file_name' => $fileName,
-                    'relative_path' => $relativeDirectory.'/'.$fileName,
-                    'absolute_path' => $fullPath,
-                    'extension' => $extension,
-                ];
             }
         }
 
@@ -788,7 +817,8 @@ class CoolmateCrawlerService
         array $articles,
         array $imageJobs,
         array $imageResults,
-        array &$results
+        array &$results,
+        bool $downloadMainImage = true
     ): array {
         $jobsByArticle = [];
         $imageDetailsByArticle = [];
@@ -828,6 +858,22 @@ class CoolmateCrawlerService
         $crawledAt = (new DateTimeImmutable)->format('Y-m-d H:i:s');
 
         foreach ($articles as $articleIndex => $article) {
+            if (! $downloadMainImage && ! empty($article['main_image_url'])) {
+                $imageDetailsByArticle[$articleIndex][] = [
+                    'article_url' => $article['source_url'],
+                    'article_slug' => $article['slug'],
+                    'image_slug' => $article['slug'],
+                    'type' => 'main',
+                    'order' => 0,
+                    'original_url' => $article['main_image_url'],
+                    'relative_path' => '',
+                    'absolute_path' => '',
+                    'alt' => $article['main_image_alt'],
+                    'status' => 'skipped_by_option',
+                    'error' => '',
+                ];
+            }
+
             $content = $article['content'];
             $downloadedExtraPaths = [];
             $extraImagePaths = [];
@@ -893,17 +939,14 @@ class CoolmateCrawlerService
         return $rows;
     }
 
-    private function createCsv(array $rows): string
+    private function createCsv(array $rows, ?string $targetFileName = null): string
     {
-        $timestamp = (new DateTimeImmutable)->format('Y-m-d_H-i-s-u');
-        $fileName = "coolmate_posts_{$timestamp}.csv";
-        $path = $this->tempRootDirectory().DIRECTORY_SEPARATOR.$fileName;
-        $handle = fopen($path, 'wb');
-        if ($handle === false) {
-            throw new \RuntimeException("Không thể tạo file CSV: {$path}");
-        }
+        return $this->writeCsv($rows, $targetFileName);
+    }
 
-        $headers = [
+    private function writeCsv(array $rows, ?string $targetFileName = null): string
+    {
+        $defaultHeaders = [
             'ID',
             'Tiêu đề',
             'Slug',
@@ -930,24 +973,126 @@ class CoolmateCrawlerService
             'Ngày crawl',
         ];
 
-        [$headers, $rows] = $this->splitLongContentColumns($headers, $rows);
-
-        try {
-            if (fwrite($handle, "\xEF\xBB\xBF") === false) {
-                throw new \RuntimeException("Không thể ghi BOM UTF-8 vào file CSV: {$path}");
-            }
-
-            $this->writeCsvRow($handle, $headers, $path);
-            foreach ($rows as $row) {
-                $this->writeCsvRow($handle, $row, $path);
-            }
-        } finally {
-            fclose($handle);
+        if ($targetFileName === null || trim($targetFileName) === '') {
+            $timestamp = (new DateTimeImmutable)->format('Y-m-d_H-i-s-u');
+            $fileName = "coolmate_posts_{$timestamp}.csv";
+        } else {
+            $fileName = basename($targetFileName);
         }
 
-        $this->validateCsvFile($path, count($headers), count($rows));
+        $path = $this->tempRootDirectory().DIRECTORY_SEPARATOR.$fileName;
+
+        if (! is_file($path)) {
+            $handle = fopen($path, 'wb');
+            if ($handle === false) {
+                throw new \RuntimeException("Không thể tạo file CSV: {$path}");
+            }
+
+            [$headers, $splitRows] = $this->splitLongContentColumns($defaultHeaders, $rows);
+
+            try {
+                if (fwrite($handle, "\xEF\xBB\xBF") === false) {
+                    throw new \RuntimeException("Không thể ghi BOM UTF-8 vào file CSV: {$path}");
+                }
+
+                $this->writeCsvRow($handle, $headers, $path);
+                foreach ($splitRows as $row) {
+                    $this->writeCsvRow($handle, $row, $path);
+                }
+            } finally {
+                fclose($handle);
+            }
+
+            $this->validateCsvFile($path, count($headers), count($splitRows));
+
+            return $fileName;
+        }
+
+        $readHandle = fopen($path, 'rb');
+        if ($readHandle === false) {
+            throw new \RuntimeException("Không thể đọc header CSV: {$path}");
+        }
+
+        $headers = fgetcsv($readHandle, null, ',', '"', '');
+        fclose($readHandle);
+
+        if (! is_array($headers) || empty($headers)) {
+            throw new \RuntimeException("File CSV tồn tại nhưng không có header hợp lệ: {$path}");
+        }
+
+        $headers[0] = (string) preg_replace('/^\xEF\xBB\xBF/', '', (string) $headers[0]);
+        $formattedRows = $this->formatRowsForExistingHeaders($headers, $rows);
+
+        $appendHandle = fopen($path, 'ab');
+        if ($appendHandle === false) {
+            throw new \RuntimeException("Không thể mở file CSV để ghi nối tiếp: {$path}");
+        }
+
+        try {
+            foreach ($formattedRows as $row) {
+                $this->writeCsvRow($appendHandle, $row, $path);
+            }
+        } finally {
+            fclose($appendHandle);
+        }
 
         return $fileName;
+    }
+
+    private function formatRowsForExistingHeaders(array $headers, array $rows): array
+    {
+        $contentColumnIndex = array_search('Nội dung', $headers, true);
+        if ($contentColumnIndex === false) {
+            $contentColumnIndex = 4;
+        }
+
+        $extraContentIndexes = [];
+        for ($i = 2; ; $i++) {
+            $idx = array_search("Nội dung {$i}", $headers, true);
+            if ($idx === false) {
+                break;
+            }
+            $extraContentIndexes[] = $idx;
+        }
+
+        $expectedColumnCount = count($headers);
+        $formattedRows = [];
+
+        foreach ($rows as $row) {
+            $content = (string) ($row[$contentColumnIndex] ?? '');
+            $chunks = [];
+            $contentLength = mb_strlen($content, 'UTF-8');
+
+            for ($offset = 0; $offset < $contentLength; $offset += self::CSV_CELL_CHARACTER_LIMIT) {
+                $chunks[] = mb_substr(
+                    $content,
+                    $offset,
+                    self::CSV_CELL_CHARACTER_LIMIT,
+                    'UTF-8'
+                );
+            }
+
+            if ($chunks === []) {
+                $chunks = [''];
+            }
+
+            $row[$contentColumnIndex] = $chunks[0];
+            $formattedRow = array_pad($row, $expectedColumnCount, '');
+
+            foreach ($extraContentIndexes as $chunkOffset => $colIdx) {
+                $formattedRow[$colIdx] = $chunks[$chunkOffset + 1] ?? '';
+            }
+
+            if (count($chunks) > count($extraContentIndexes) + 1) {
+                $lastColIdx = empty($extraContentIndexes) ? $contentColumnIndex : end($extraContentIndexes);
+                $remainingContent = implode('', array_slice($chunks, count($extraContentIndexes) + 1));
+                $formattedRow[$lastColIdx] .= $remainingContent;
+            }
+
+            $formattedRows[] = array_slice($formattedRow, 0, $expectedColumnCount);
+        }
+
+        return $formattedRows;
     }
 
     private function splitLongContentColumns(array $headers, array $rows): array

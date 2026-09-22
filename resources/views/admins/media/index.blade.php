@@ -185,6 +185,8 @@
                             <option value="200">200 / trang</option>
                             <option value="500">500 / trang</option>
                             <option value="2000">2000 / trang</option>
+                            <option value="5000">5000 / trang</option>
+                            <option value="10000">10000 / trang</option>
                         </select>
 
                         <div class="media-view-switch">
@@ -365,6 +367,7 @@
                 updateBase: @json(url('/admin/media/update')),
                 assign: @json(route('admin.media.assign')),
                 bulkDelete: @json(route('admin.media.bulk-delete')),
+                fastDeleteScope: @json(route('admin.media.fast-delete-scope')),
                 cleanup: @json(route('admin.media.cleanup')),
                 targets: @json(route('admin.media.targets')),
             },

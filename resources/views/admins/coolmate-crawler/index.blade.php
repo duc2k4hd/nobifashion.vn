@@ -30,14 +30,29 @@
                         name="post_urls"
                         class="form-control"
                         rows="10"
-                        maxlength="500000"
                         placeholder="Mỗi dòng một URL bài viết, ví dụ:&#10;https://www.coolmate.me/blog/cach-phoi-do-nam&#10;https://www.coolmate.me/blog/ao-thun-nam-dep"
                         required
                     ></textarea>
                     <small class="form-text text-muted">
                         Mỗi dòng một URL thuộc <code>coolmate.me</code> hoặc <code>www.coolmate.me</code>.
-                        Tối đa 1.000 URL mỗi lần; URL trùng hoặc đã crawl thành công trước đó sẽ tự động được bỏ qua.
+                        URL trùng hoặc đã crawl thành công trước đó sẽ tự động được bỏ qua.
                     </small>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input
+                        class="form-check-input"
+                        type="checkbox"
+                        id="coolmate_download_main_image"
+                        name="download_main_image"
+                        value="1"
+                    >
+                    <label class="form-check-label fw-semibold" for="coolmate_download_main_image">
+                        Tải ảnh đại diện chính (main image) về máy
+                    </label>
+                    <div class="form-text">
+                        Mặc định <strong>tắt</strong> để tăng tốc độ cào tối đa (chỉ lưu URL ảnh gốc vào CSV). Bật lên nếu muốn tải file ảnh đại diện về <code>storage/app/tmp/coolmate/main</code>.
+                    </div>
                 </div>
 
                 <div class="form-check mb-4">
@@ -100,21 +115,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const postUrls = document.getElementById('coolmate_post_urls').value.trim();
         const recrawlExisting = document.getElementById('coolmate_recrawl_existing').checked;
+        const downloadMainImage = document.getElementById('coolmate_download_main_image').checked;
         if (!postUrls) {
             alert('Vui lòng nhập ít nhất một URL bài viết Coolmate!');
-            return;
-        }
-
-        const postUrlCount = postUrls.split(/\r\n|\r|\n/).filter(url => url.trim() !== '').length;
-        if (postUrlCount > 1000) {
-            alert('Mỗi lần chỉ được crawl tối đa 1.000 URL bài viết Coolmate.');
             return;
         }
 
         btn.disabled = true;
         spinner.classList.remove('d-none');
         resultCard.style.display = 'block';
-        resultContent.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div><p class="mt-2">Đang crawl song song, tải ảnh và tạo file CSV...</p></div>';
+        resultContent.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div><p class="mt-2">Đang crawl song song, xử lý dữ liệu và tạo file CSV...</p></div>';
 
         try {
             const response = await fetch('{{ route("admin.coolmate-crawler.crawl") }}', {
@@ -126,7 +136,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({
                     post_urls: postUrls,
-                    recrawl_existing: recrawlExisting
+                    recrawl_existing: recrawlExisting,
+                    download_main_image: downloadMainImage
                 })
             });
 
@@ -292,6 +303,7 @@ function coolmateValidationMessage(data) {
 function coolmateClearForm() {
     if (confirm('Bạn có chắc muốn xóa tất cả nội dung?')) {
         document.getElementById('coolmate_post_urls').value = '';
+        document.getElementById('coolmate_download_main_image').checked = false;
         document.getElementById('coolmate_recrawl_existing').checked = false;
         document.getElementById('coolmateResultCard').style.display = 'none';
         document.getElementById('coolmateResultContent').innerHTML = '';

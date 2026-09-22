@@ -11,8 +11,6 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class CoolmateCrawlerController extends Controller
 {
-    private const MAX_URLS_PER_CRAWL = 1000;
-
     public function __construct(
         protected CoolmateCrawlerService $crawlerService
     ) {
@@ -33,8 +31,9 @@ class CoolmateCrawlerController extends Controller
     public function crawl(Request $request): JsonResponse
     {
         $payload = $request->validate([
-            'post_urls' => 'required|string|max:500000',
+            'post_urls' => 'required|string',
             'recrawl_existing' => 'sometimes|boolean',
+            'download_main_image' => 'sometimes|boolean',
         ]);
 
         $postUrls = array_values(array_filter(
@@ -52,17 +51,11 @@ class CoolmateCrawlerController extends Controller
             ], 422);
         }
 
-        if (count($postUrls) > self::MAX_URLS_PER_CRAWL) {
-            return $this->jsonResponse([
-                'success' => false,
-                'message' => 'Mỗi lần chỉ được crawl tối đa 1.000 URL bài viết Coolmate.',
-            ], 422);
-        }
-
         try {
             $results = $this->crawlerService->crawlPostsToCsv(
                 $postUrls,
-                (bool) ($payload['recrawl_existing'] ?? false)
+                (bool) ($payload['recrawl_existing'] ?? false),
+                (bool) ($payload['download_main_image'] ?? false)
             );
 
             if (

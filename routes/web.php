@@ -414,6 +414,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/update/{id}', [AdminMediaController::class, 'update'])->name('update');
             Route::post('/delete/{id}', AdminMediaDeleteController::class)->name('delete');
             Route::post('/bulk-delete', [AdminMediaController::class, 'bulkDelete'])->name('bulk-delete');
+            Route::post('/fast-delete-scope', [AdminMediaController::class, 'fastDeleteScope'])->name('fast-delete-scope');
             Route::post('/cleanup', [AdminMediaController::class, 'cleanup'])->name('cleanup');
             Route::post('/assign-to-model', AdminMediaAssignController::class)->name('assign');
             

@@ -158,7 +158,7 @@ class MediaScannerService
             'q' => trim((string) ($filters['q'] ?? '')),
             'sort' => $filters['sort'] ?? 'created_at',
             'direction' => strtolower($filters['direction'] ?? 'desc') === 'asc' ? 'asc' : 'desc',
-            'per_page' => min(max((int) ($filters['per_page'] ?? 50), 12), 2000),
+            'per_page' => min(max((int) ($filters['per_page'] ?? 50), 12), 10000),
             'page' => max((int) ($filters['page'] ?? 1), 1),
         ];
     }

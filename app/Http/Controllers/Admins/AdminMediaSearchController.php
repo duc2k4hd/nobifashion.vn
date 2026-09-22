@@ -18,7 +18,7 @@ class AdminMediaSearchController extends Controller
             'sort' => 'nullable|in:created_at,file_name,entity_id,size',
             'direction' => 'nullable|in:asc,desc',
             'page' => 'nullable|integer|min:1',
-            'per_page' => 'nullable|integer|min:12|max:2000',
+            'per_page' => 'nullable|integer|min:12|max:10000',
         ]);
 
         $results = $scanner->search($validated);

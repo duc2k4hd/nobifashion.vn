@@ -55,12 +55,12 @@
             <p class="text-muted mb-0">Theo dõi, lọc và xuất bản nội dung như một mini CMS.</p>
         </div>
         <div class="d-flex gap-2">
-            <button id="btnExportCSV" class="btn btn-outline-success">
+            <button type="button" id="btnOpenExportModal" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#exportCsvModal">
                 <i class="fas fa-file-download me-1"></i> Xuất CSV
             </button>
-            <a href="{{ route('admin.posts.import-excel') }}" class="btn btn-outline-info">
+            <button type="button" id="btnOpenImportModal" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#importCsvModal">
                 <i class="fas fa-file-upload me-1"></i> Nhập CSV/Excel
-            </a>
+            </button>
             <label class="btn btn-danger mb-0" style="cursor:pointer;" title="Xóa bài viết từ file .txt chứa ID (1 ID/dòng)">
                 <i class="fas fa-trash-alt me-1"></i> Xóa từ TXT
                 <input type="file" id="btnDeleteFromTxt" accept=".txt" style="display:none">
@@ -370,6 +370,220 @@
             {{ $posts->links('pagination::bootstrap-5') }}
         </div>
     </div>
+
+    <!-- Modal Xuất CSV -->
+    <div class="modal fade" id="exportCsvModal" tabindex="-1" aria-labelledby="exportCsvModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+                <div class="modal-header border-0 pb-0 pt-4 px-4">
+                    <h5 class="modal-title fw-bold" id="exportCsvModalLabel">
+                        <i class="fas fa-file-download text-success me-2"></i> Tùy chọn Xuất dữ liệu Bài viết ra CSV
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- Phạm vi xuất -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-uppercase small text-muted">1. Phạm vi bài viết cần xuất</label>
+                        <div class="d-flex flex-wrap gap-3 p-3 bg-light rounded-3 border">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="exportScope" id="scopeAll" value="all" checked>
+                                <label class="form-check-label fw-semibold" for="scopeAll">
+                                    <i class="fas fa-globe text-primary me-1"></i> Tất cả bài viết trong hệ thống
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="exportScope" id="scopeFilter" value="filter">
+                                <label class="form-check-label fw-semibold" for="scopeFilter">
+                                    <i class="fas fa-filter text-info me-1"></i> Theo bộ lọc tìm kiếm hiện tại trên trang
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chọn cột xuất -->
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <label class="form-label fw-bold text-uppercase small text-muted mb-0">2. Chọn các cột cần xuất</label>
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" id="btnExportSelectAll" class="btn btn-outline-secondary py-0">Chọn tất cả</button>
+                                <button type="button" id="btnExportDeselectAll" class="btn btn-outline-secondary py-0">Bỏ chọn</button>
+                                <button type="button" id="btnExportDefaultCols" class="btn btn-outline-primary py-0">Mặc định</button>
+                            </div>
+                        </div>
+                        <div class="p-3 bg-light rounded-3 border">
+                            <div class="row g-2" id="exportColumnsGrid">
+                                @php
+                                    $allExportCols = [
+                                        ['key' => 'ID', 'label' => 'ID bài viết', 'default' => true],
+                                        ['key' => 'Tiêu đề', 'label' => 'Tiêu đề', 'default' => true],
+                                        ['key' => 'Slug', 'label' => 'Slug (Đường dẫn)', 'default' => true],
+                                        ['key' => 'Danh mục (Slug)', 'label' => 'Danh mục (Slug)', 'default' => false],
+                                        ['key' => 'Nội dung', 'label' => 'Nội dung HTML (Content)', 'default' => true],
+                                        ['key' => 'Tóm tắt', 'label' => 'Tóm tắt / Excerpt', 'default' => false],
+                                        ['key' => 'Thumbnail URL', 'label' => 'Ảnh Thumbnail', 'default' => false],
+                                        ['key' => 'Alt ảnh', 'label' => 'Alt Text ảnh', 'default' => false],
+                                        ['key' => 'Trạng thái', 'label' => 'Trạng thái', 'default' => false],
+                                        ['key' => 'Nổi bật', 'label' => 'Nổi bật (1/0)', 'default' => false],
+                                        ['key' => 'Tags (phẩy)', 'label' => 'Tags (ngăn cách phẩy)', 'default' => false],
+                                        ['key' => 'Meta Title', 'label' => 'SEO Meta Title', 'default' => false],
+                                        ['key' => 'Meta Description', 'label' => 'SEO Meta Description', 'default' => false],
+                                        ['key' => 'Meta Keywords', 'label' => 'SEO Meta Keywords', 'default' => false],
+                                        ['key' => 'Meta Canonical', 'label' => 'SEO Canonical URL', 'default' => false],
+                                        ['key' => 'Tác giả (Email)', 'label' => 'Tác giả (Email)', 'default' => false],
+                                        ['key' => 'Ngày xuất bản', 'label' => 'Ngày xuất bản', 'default' => false],
+                                    ];
+                                @endphp
+                                @foreach ($allExportCols as $col)
+                                    <div class="col-md-4 col-sm-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input export-col-check" type="checkbox" value="{{ $col['key'] }}" id="expCol_{{ $loop->index }}" {{ $col['default'] ? 'checked' : '' }} data-default="{{ $col['default'] ? '1' : '0' }}">
+                                            <label class="form-check-label small" for="expCol_{{ $loop->index }}">
+                                                {{ $col['label'] }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0 pb-4 px-4">
+                    <button type="button" class="btn btn-light rounded-3 px-4" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" id="btnConfirmExport" class="btn btn-success rounded-3 px-4 fw-bold">
+                        <i class="fas fa-file-download me-1"></i> Tải File CSV
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Nhập CSV/Excel -->
+    <div class="modal fade" id="importCsvModal" tabindex="-1" aria-labelledby="importCsvModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+                <div class="modal-header border-0 pb-0 pt-4 px-4">
+                    <h5 class="modal-title fw-bold" id="importCsvModalLabel">
+                        <i class="fas fa-file-upload text-info me-2"></i> Nhập bài viết từ CSV/Excel (Batch Ultra Fast)
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-4">
+                        <!-- Cột trái: Chọn file & chọn cột -->
+                        <div class="col-lg-6">
+                            <!-- Dropzone chọn file -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold text-uppercase small text-muted">1. Chọn file CSV / Excel</label>
+                                <div id="modalImportDropZone" class="border-2 border-dashed rounded-3 p-4 text-center transition-all" style="background: #f8fafc; border-color: #cbd5e1; cursor: pointer;">
+                                    <input type="file" id="modalImportFileInput" class="d-none" accept=".csv, .xlsx, .xls">
+                                    <div id="modalImportDropContent">
+                                        <i class="fas fa-cloud-upload-alt text-primary fa-2x mb-2"></i>
+                                        <p class="mb-1 fw-semibold small text-dark">Kéo thả file CSV/Excel vào đây hoặc nhấn để chọn</p>
+                                        <span class="text-muted" style="font-size: 0.75rem;">Hỗ trợ .csv, .xlsx, .xls</span>
+                                    </div>
+                                    <div id="modalImportFileInfo" class="d-none text-start p-2 bg-white rounded shadow-sm">
+                                        <div class="d-flex align-items-center justify-content-between">
+                                            <div class="d-flex align-items-center overflow-hidden">
+                                                <i class="fas fa-file-csv text-success fa-2x me-2"></i>
+                                                <div class="text-truncate">
+                                                    <div id="modalImportFileName" class="fw-bold small text-truncate">file.csv</div>
+                                                    <div id="modalImportFileSize" class="text-muted" style="font-size: 0.75rem;">0 KB</div>
+                                                </div>
+                                            </div>
+                                            <button type="button" id="btnChangeImportFile" class="btn btn-sm btn-outline-secondary py-0">Đổi file</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Quy tắc khớp bài viết -->
+                            <div class="alert alert-info py-2 px-3 mb-3 small border-0" style="background: #f0f9ff; border-left: 4px solid #0284c7 !important;">
+                                <div class="fw-bold mb-1 text-primary"><i class="fas fa-shield-alt me-1"></i> Quy tắc khớp bài viết thông minh:</div>
+                                <ul class="mb-0 ps-3">
+                                    <li><strong>Có ID:</strong> Bắt buộc là cập nhật bài viết theo ID. (Báo lỗi nếu ID không tồn tại trên hệ thống).</li>
+                                    <li><strong>Không có ID:</strong> Khớp theo <code>Slug</code> (hoặc tự sinh Slug từ Tiêu đề). Nếu Slug đã có -> Cập nhật; nếu chưa có -> Tạo bài mới.</li>
+                                </ul>
+                            </div>
+
+                            <!-- Chọn cột nhập vào (hiển thị khi đã load file) -->
+                            <div id="importColumnsContainer" class="d-none">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label class="form-label fw-bold text-uppercase small text-muted mb-0">2. Chọn các cột cần nhập vào</label>
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="button" id="btnImportSelectAllCols" class="btn btn-outline-secondary py-0">Chọn hết</button>
+                                        <button type="button" id="btnImportDeselectAllCols" class="btn btn-outline-secondary py-0">Bỏ hết</button>
+                                        <button type="button" id="btnImportDefaultCols" class="btn btn-outline-primary py-0">Mặc định</button>
+                                    </div>
+                                </div>
+                                <div class="p-3 bg-light rounded-3 border" style="max-height: 200px; overflow-y: auto;">
+                                    <div class="row g-2" id="importColumnsList">
+                                        <!-- Render dynamic columns here -->
+                                    </div>
+                                </div>
+                                <div class="text-muted small mt-1 fst-italic">* Những cột bạn bỏ chọn sẽ được giữ nguyên dữ liệu cũ đối với bài viết cập nhật.</div>
+                            </div>
+                        </div>
+
+                        <!-- Cột phải: Tiến trình & Log -->
+                        <div class="col-lg-6">
+                            <label class="form-label fw-bold text-uppercase small text-muted">3. Trạng thái & Tiến trình xử lý</label>
+                            
+                            <!-- Thống kê 3 ô -->
+                            <div class="row g-2 mb-3">
+                                <div class="col-4">
+                                    <div class="p-2 text-center rounded bg-light border">
+                                        <div class="text-muted small" style="font-size: 0.75rem;">Tổng số</div>
+                                        <div id="modalStatTotal" class="h5 fw-bold mb-0 text-dark">0</div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="p-2 text-center rounded" style="background: #ecfdf5; border: 1px dashed #10b981;">
+                                        <div class="text-success small" style="font-size: 0.75rem;">Thành công</div>
+                                        <div id="modalStatSuccess" class="h5 fw-bold mb-0 text-success">0</div>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="p-2 text-center rounded" style="background: #fef2f2; border: 1px dashed #ef4444;">
+                                        <div class="text-danger small" style="font-size: 0.75rem;">Lỗi</div>
+                                        <div id="modalStatError" class="h5 fw-bold mb-0 text-danger">0</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Progress Bar -->
+                            <div class="mb-3 d-none" id="modalProgressArea">
+                                <div class="d-flex justify-content-between mb-1 small fw-bold">
+                                    <span id="modalProgressText">Đang xử lý: 0/0</span>
+                                    <span id="modalPercentText">0%</span>
+                                </div>
+                                <div class="progress rounded-pill" style="height: 10px;">
+                                    <div id="modalProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" style="width: 0%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Activity Log -->
+                            <div class="rounded-3 bg-dark overflow-hidden">
+                                <div class="d-flex justify-content-between align-items-center px-3 py-1 bg-secondary text-white" style="font-size: 0.75rem;">
+                                    <span class="fw-bold">NHẬT KÝ TIẾN TRÌNH</span>
+                                    <span id="modalCurrentStatus" class="opacity-75">Sẵn sàng...</span>
+                                </div>
+                                <div id="modalImportLog" class="p-2 font-monospace text-white-50 small overflow-auto" style="height: 200px; font-size: 0.8rem; background: #0f172a;">
+                                    <div>> Vui lòng chọn file CSV/Excel để bắt đầu...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0 pb-4 px-4">
+                    <button type="button" class="btn btn-light rounded-3 px-4" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" id="btnStartImportBatch" class="btn btn-primary rounded-3 px-4 fw-bold" disabled>
+                        <i class="fas fa-rocket me-1"></i> Bắt đầu Nhập Dữ Liệu
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
@@ -392,43 +606,371 @@
                 });
             }
 
-            const exportButton = document.getElementById('btnExportCSV');
-            if (!exportButton) {
-                return;
+            // ==========================================
+            // LOGIC XUẤT CSV VỚI POPUP CHỌN CỘT
+            // ==========================================
+            const exportModalEl = document.getElementById('exportCsvModal');
+            const btnConfirmExport = document.getElementById('btnConfirmExport');
+            const btnExportSelectAll = document.getElementById('btnExportSelectAll');
+            const btnExportDeselectAll = document.getElementById('btnExportDeselectAll');
+            const btnExportDefaultCols = document.getElementById('btnExportDefaultCols');
+            const exportColChecks = document.querySelectorAll('.export-col-check');
+
+            if (btnExportSelectAll) {
+                btnExportSelectAll.addEventListener('click', () => {
+                    exportColChecks.forEach(cb => cb.checked = true);
+                });
+            }
+            if (btnExportDeselectAll) {
+                btnExportDeselectAll.addEventListener('click', () => {
+                    exportColChecks.forEach(cb => cb.checked = false);
+                });
+            }
+            if (btnExportDefaultCols) {
+                btnExportDefaultCols.addEventListener('click', () => {
+                    exportColChecks.forEach(cb => cb.checked = cb.dataset.default === '1');
+                });
             }
 
-            exportButton.addEventListener('click', async function () {
-                const originalContent = this.innerHTML;
-                this.disabled = true;
-                this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Đang xuất CSV...';
-
-                try {
-                    const response = await fetch("{{ route('admin.posts.export-data') }}");
-                    const result = await response.json();
-
-                    if (!result.success) {
-                        alert('Lỗi: ' + (result.message || 'Không thể lấy dữ liệu'));
+            if (btnConfirmExport) {
+                btnConfirmExport.addEventListener('click', async function () {
+                    const selectedCols = Array.from(document.querySelectorAll('.export-col-check:checked')).map(cb => cb.value);
+                    if (selectedCols.length === 0) {
+                        alert('Vui lòng chọn ít nhất một cột để xuất CSV.');
                         return;
                     }
 
-                    const worksheet = XLSX.utils.json_to_sheet(result.data);
-                    const workbook = XLSX.utils.book_new();
-                    XLSX.utils.book_append_sheet(workbook, worksheet, 'Posts');
+                    const originalContent = this.innerHTML;
+                    this.disabled = true;
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Đang xuất dữ liệu...';
 
-                    const date = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
-                    XLSX.writeFile(workbook, `posts_export_${date}.csv`, { bookType: 'csv' });
+                    try {
+                        const scope = document.querySelector('input[name="exportScope"]:checked')?.value || 'all';
+                        const params = new URLSearchParams();
+
+                        selectedCols.forEach(col => params.append('columns[]', col));
+
+                        if (scope === 'filter') {
+                            const filterForm = document.querySelector('.posts-filters form');
+                            if (filterForm) {
+                                const formData = new FormData(filterForm);
+                                for (const [key, val] of formData.entries()) {
+                                    if (val && key !== 'page') {
+                                        params.append(key, val);
+                                    }
+                                }
+                            }
+                        }
+
+                        const response = await fetch("{{ route('admin.posts.export-data') }}?" + params.toString());
+                        const result = await response.json();
+
+                        if (!result.success) {
+                            alert('Lỗi: ' + (result.message || 'Không thể lấy dữ liệu'));
+                            return;
+                        }
+
+                        if (!result.data || result.data.length === 0) {
+                            alert('Không có dữ liệu bài viết nào phù hợp để xuất.');
+                            return;
+                        }
+
+                        const worksheet = XLSX.utils.json_to_sheet(result.data, { header: selectedCols });
+                        const workbook = XLSX.utils.book_new();
+                        XLSX.utils.book_append_sheet(workbook, worksheet, 'Posts');
+
+                        const date = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+                        XLSX.writeFile(workbook, `posts_export_${date}.csv`, { bookType: 'csv' });
+
+                        // Đóng modal
+                        const modalInstance = bootstrap.Modal.getInstance(exportModalEl);
+                        if (modalInstance) {
+                            modalInstance.hide();
+                        }
+
+                        if (window.Toast) {
+                            Toast.fire({ icon: 'success', title: `Đã xuất ${result.total || result.data.length} bài viết thành công!` });
+                        }
+                    } catch (error) {
+                        console.error(error);
+                        alert('Lỗi hệ thống khi xuất CSV: ' + error.message);
+                    } finally {
+                        this.disabled = false;
+                        this.innerHTML = originalContent;
+                    }
+                });
+            }
+
+            // ==========================================
+            // LOGIC NHẬP CSV VỚI POPUP CHỌN CỘT & BATCH
+            // ==========================================
+            const importDropZone = document.getElementById('modalImportDropZone');
+            const importFileInput = document.getElementById('modalImportFileInput');
+            const importDropContent = document.getElementById('modalImportDropContent');
+            const importFileInfo = document.getElementById('modalImportFileInfo');
+            const importFileName = document.getElementById('modalImportFileName');
+            const importFileSize = document.getElementById('modalImportFileSize');
+            const btnChangeImportFile = document.getElementById('btnChangeImportFile');
+
+            const importColumnsContainer = document.getElementById('importColumnsContainer');
+            const importColumnsList = document.getElementById('importColumnsList');
+            const btnImportSelectAllCols = document.getElementById('btnImportSelectAllCols');
+            const btnImportDeselectAllCols = document.getElementById('btnImportDeselectAllCols');
+            const btnImportDefaultCols = document.getElementById('btnImportDefaultCols');
+
+            const modalStatTotal = document.getElementById('modalStatTotal');
+            const modalStatSuccess = document.getElementById('modalStatSuccess');
+            const modalStatError = document.getElementById('modalStatError');
+            const modalProgressArea = document.getElementById('modalProgressArea');
+            const modalProgressBar = document.getElementById('modalProgressBar');
+            const modalProgressText = document.getElementById('modalProgressText');
+            const modalPercentText = document.getElementById('modalPercentText');
+            const modalCurrentStatus = document.getElementById('modalCurrentStatus');
+            const modalImportLog = document.getElementById('modalImportLog');
+            const btnStartImportBatch = document.getElementById('btnStartImportBatch');
+
+            let importJsonData = [];
+            const IMPORT_BATCH_SIZE = 50;
+
+            const addImportLog = (msg, type = 'info') => {
+                const colorClass = type === 'success' ? 'text-success' : (type === 'error' ? 'text-danger' : (type === 'warn' ? 'text-warning' : 'text-white-50'));
+                const div = document.createElement('div');
+                div.className = `mb-1 ${colorClass}`;
+                div.innerHTML = `<span class="opacity-50">></span> [${new Date().toLocaleTimeString()}] ${msg}`;
+                modalImportLog.appendChild(div);
+                modalImportLog.scrollTop = modalImportLog.scrollHeight;
+            };
+
+            const updateImportProgress = (current, total) => {
+                const percent = total > 0 ? Math.round((current / total) * 100) : 0;
+                modalProgressBar.style.width = `${percent}%`;
+                modalProgressText.innerText = `Đang xử lý: ${current}/${total}`;
+                modalPercentText.innerText = `${percent}%`;
+            };
+
+            if (importDropZone && importFileInput) {
+                importDropZone.addEventListener('click', (e) => {
+                    if (e.target !== btnChangeImportFile) {
+                        importFileInput.click();
+                    }
+                });
+
+                if (btnChangeImportFile) {
+                    btnChangeImportFile.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        importFileInput.click();
+                    });
+                }
+
+                importDropZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    importDropZone.style.borderColor = '#3b82f6';
+                    importDropZone.style.background = '#eff6ff';
+                });
+
+                importDropZone.addEventListener('dragleave', () => {
+                    importDropZone.style.borderColor = '#cbd5e1';
+                    importDropZone.style.background = '#f8fafc';
+                });
+
+                importDropZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    importDropZone.style.borderColor = '#cbd5e1';
+                    importDropZone.style.background = '#f8fafc';
+                    if (e.dataTransfer.files.length) {
+                        handleSelectedImportFile(e.dataTransfer.files[0]);
+                    }
+                });
+
+                importFileInput.addEventListener('change', (e) => {
+                    if (e.target.files.length) {
+                        handleSelectedImportFile(e.target.files[0]);
+                    }
+                });
+            }
+
+            function handleSelectedImportFile(file) {
+                if (!file.name.match(/\.(csv|xlsx|xls)$/i)) {
+                    alert('Định dạng tệp không hợp lệ. Vui lòng chọn tệp có đuôi .csv, .xlsx hoặc .xls');
+                    return;
+                }
+
+                importFileName.innerText = file.name;
+                importFileSize.innerText = `${Math.round(file.size / 1024)} KB`;
+                importFileInfo.classList.remove('d-none');
+                importDropContent.classList.add('d-none');
+
+                modalCurrentStatus.innerText = 'Đang phân tích tệp...';
+                addImportLog(`Đang đọc tệp: ${file.name} (${Math.round(file.size / 1024)} KB)...`, 'info');
+
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheetName = workbook.SheetNames[0];
+                        const worksheet = workbook.Sheets[firstSheetName];
+
+                        importJsonData = XLSX.utils.sheet_to_json(worksheet);
+                        const rawHeaderRows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        const detectedHeaders = (rawHeaderRows && rawHeaderRows.length > 0) ? rawHeaderRows[0] : [];
+
+                        modalStatTotal.innerText = importJsonData.length;
+                        modalStatSuccess.innerText = '0';
+                        modalStatError.innerText = '0';
+
+                        if (importJsonData.length === 0) {
+                            addImportLog('Tệp không có dữ liệu bài viết hợp lệ.', 'error');
+                            btnStartImportBatch.disabled = true;
+                            importColumnsContainer.classList.add('d-none');
+                            return;
+                        }
+
+                        // Render danh sách checkbox các cột tìm thấy (Mặc định: ID, Tiêu đề, Slug, Content/Nội dung)
+                        importColumnsList.innerHTML = '';
+                        detectedHeaders.forEach((colName, idx) => {
+                            if (!colName || String(colName).trim() === '') return;
+                            const trimmedName = String(colName).trim();
+                            const lowerName = trimmedName.toLowerCase();
+                            const isDefaultCol = (
+                                lowerName === 'id' ||
+                                lowerName === 'tiêu đề' || lowerName === 'tieu de' || lowerName === 'title' ||
+                                lowerName === 'slug' ||
+                                lowerName.startsWith('nội dung') || lowerName.startsWith('noi dung') || lowerName.startsWith('content')
+                            );
+
+                            const colDiv = document.createElement('div');
+                            colDiv.className = 'col-sm-6';
+                            colDiv.innerHTML = `
+                                <div class="form-check">
+                                    <input class="form-check-input import-col-check" type="checkbox" value="${trimmedName}" id="impCol_${idx}" ${isDefaultCol ? 'checked' : ''} data-default="${isDefaultCol ? '1' : '0'}">
+                                    <label class="form-check-label small text-truncate" for="impCol_${idx}" title="${trimmedName}">
+                                        ${trimmedName}
+                                    </label>
+                                </div>
+                            `;
+                            importColumnsList.appendChild(colDiv);
+                        });
+
+                        importColumnsContainer.classList.remove('d-none');
+                        btnStartImportBatch.disabled = false;
+                        modalCurrentStatus.innerText = `Đã sẵn sàng (${importJsonData.length} bài)`;
+                        addImportLog(`Đọc tệp thành công! Tìm thấy ${importJsonData.length} dòng và ${detectedHeaders.length} cột.`, 'success');
+                    } catch (err) {
+                        console.error(err);
+                        addImportLog('Lỗi khi đọc file: ' + err.message, 'error');
+                        modalCurrentStatus.innerText = 'Lỗi đọc tệp';
+                        btnStartImportBatch.disabled = true;
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            }
+
+            if (btnImportSelectAllCols) {
+                btnImportSelectAllCols.addEventListener('click', () => {
+                    document.querySelectorAll('.import-col-check').forEach(cb => cb.checked = true);
+                });
+            }
+            if (btnImportDeselectAllCols) {
+                btnImportDeselectAllCols.addEventListener('click', () => {
+                    document.querySelectorAll('.import-col-check').forEach(cb => cb.checked = false);
+                });
+            }
+            if (btnImportDefaultCols) {
+                btnImportDefaultCols.addEventListener('click', () => {
+                    document.querySelectorAll('.import-col-check').forEach(cb => {
+                        cb.checked = cb.dataset.default === '1';
+                    });
+                });
+            }
+
+            if (btnStartImportBatch) {
+                btnStartImportBatch.addEventListener('click', async () => {
+                    if (!importJsonData.length) return;
+
+                    const selectedCols = Array.from(document.querySelectorAll('.import-col-check:checked')).map(cb => cb.value);
+                    if (selectedCols.length === 0) {
+                        alert('Vui lòng chọn ít nhất một cột cần nhập vào hệ thống.');
+                        return;
+                    }
+
+                    btnStartImportBatch.disabled = true;
+                    btnStartImportBatch.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> ĐANG NHẬP DỮ LIỆU...';
+                    modalProgressArea.classList.remove('d-none');
+                    modalCurrentStatus.innerText = 'Đang xử lý các mẻ batch...';
+
+                    let processedCount = 0;
+                    let successCount = 0;
+                    let errorCount = 0;
+
+                    addImportLog(`Bắt đầu nhập ${importJsonData.length} bài viết (mỗi mẻ ${IMPORT_BATCH_SIZE} bài)...`, 'info');
+
+                    for (let i = 0; i < importJsonData.length; i += IMPORT_BATCH_SIZE) {
+                        const chunk = importJsonData.slice(i, i + IMPORT_BATCH_SIZE);
+                        const batchIndex = Math.floor(i / IMPORT_BATCH_SIZE) + 1;
+                        const totalBatches = Math.ceil(importJsonData.length / IMPORT_BATCH_SIZE);
+
+                        addImportLog(`Đang gửi mẻ ${batchIndex}/${totalBatches} (${chunk.length} bài)...`, 'info');
+
+                        try {
+                            const response = await fetch("{{ route('admin.posts.import-batch') }}", {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': "{{ csrf_token() }}",
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify({
+                                    items: chunk,
+                                    selected_columns: selectedCols
+                                })
+                            });
+
+                            const result = await response.json();
+
+                            if (result.success) {
+                                processedCount += chunk.length;
+                                successCount += (result.success_count || 0);
+
+                                if (result.errors && result.errors.length) {
+                                    errorCount += result.errors.length;
+                                    result.errors.forEach(err => addImportLog(`⚠️ ${err}`, 'error'));
+                                }
+
+                                modalStatSuccess.innerText = successCount;
+                                modalStatError.innerText = errorCount;
+                                updateImportProgress(processedCount, importJsonData.length);
+                            } else {
+                                throw new Error(result.message || 'Lỗi xử lý từ máy chủ');
+                            }
+                        } catch (err) {
+                            console.error(err);
+                            addImportLog(`Lỗi tại mẻ ${batchIndex}: ${err.message}`, 'error');
+                            errorCount += chunk.length;
+                            modalStatError.innerText = errorCount;
+                        }
+                    }
+
+                    modalCurrentStatus.innerText = 'Hoàn tất!';
+                    addImportLog(`🎉 Quá trình nhập hoàn tất! Thành công: ${successCount}, Lỗi: ${errorCount}`, 'success');
+                    btnStartImportBatch.innerHTML = '<i class="fas fa-check me-2"></i> HOÀN TẤT NHẬP DỮ LIỆU';
+                    btnStartImportBatch.classList.remove('btn-primary');
+                    btnStartImportBatch.classList.add('btn-success');
 
                     if (window.Toast) {
-                        Toast.fire({ icon: 'success', title: 'Đã xuất CSV thành công' });
+                        Toast.fire({
+                            icon: errorCount === 0 ? 'success' : 'warning',
+                            title: `Đã nhập xong: ${successCount} thành công, ${errorCount} lỗi.`
+                        });
                     }
-                } catch (error) {
-                    console.error(error);
-                    alert('Lỗi hệ thống khi xuất CSV: ' + error.message);
-                } finally {
-                    this.disabled = false;
-                    this.innerHTML = originalContent;
-                }
-            });
+
+                    setTimeout(() => {
+                        if (confirm('Quá trình nhập dữ liệu đã hoàn tất! Bạn có muốn làm mới trang để xem danh sách bài viết cập nhật không?')) {
+                            window.location.reload();
+                        }
+                    }, 1000);
+                });
+            }
 
             // Handle Checkboxes for Bulk Delete
             const checkAll = document.getElementById('checkAll');
