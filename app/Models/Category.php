@@ -111,10 +111,6 @@ class Category extends Model
         return Product::whereJsonContains('category_ids', $this->id);
     }
 
-    public function posts()
-    {
-        return $this->hasMany(Post::class, 'category_id');
-    }
 
     // ------------------------------
     // Scope

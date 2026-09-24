@@ -4,8 +4,8 @@ namespace App\Http\Controllers\Admins;
 
 use App\Http\Controllers\Controller;
 use App\Models\Account;
-use App\Models\Category;
 use App\Models\Post;
+use App\Models\PostCategory;
 use App\Services\PostService;
 use App\Services\SeoService;
 use Illuminate\Http\Request;
@@ -62,7 +62,7 @@ class PostImportExportController extends Controller
 
         // Tối ưu Eager Loading chỉ khi người dùng chọn cột tương ứng
         $withRelations = [];
-        if (empty($selectedColumns) || in_array('Danh mục (Slug)', $selectedColumns, true)) {
+        if (empty($selectedColumns) || in_array('Danh mục (Slug)', $selectedColumns, true) || in_array('Danh mục (Tên)', $selectedColumns, true)) {
             $withRelations[] = 'category';
         }
         if (empty($selectedColumns) || in_array('Tác giả (Email)', $selectedColumns, true)) {
@@ -83,6 +83,7 @@ class PostImportExportController extends Controller
                 'ID' => $post->id,
                 'Tiêu đề' => $post->title,
                 'Slug' => $post->slug,
+                'Danh mục (Tên)' => $post->category?->name ?? '',
                 'Danh mục (Slug)' => $post->category?->slug ?? '',
                 'Nội dung' => $post->content,
                 'Tóm tắt' => $post->excerpt,
@@ -152,6 +153,7 @@ class PostImportExportController extends Controller
         $ids = [];
         $slugs = [];
         $categorySlugs = collect($items)->pluck('Danh mục (Slug)')->filter()->unique()->toArray();
+        $categoryNames = collect($items)->pluck('Danh mục (Tên)')->filter()->unique()->toArray();
         $authorEmails = collect($items)->pluck('Tác giả (Email)')->filter()->unique()->toArray();
 
         foreach ($items as $item) {
@@ -179,8 +181,12 @@ class PostImportExportController extends Controller
             ? Post::with(['tags', 'category'])->whereIn('slug', $slugs)->get()->keyBy('slug')
             : collect();
 
-        $categoriesMap = ! empty($categorySlugs)
-            ? Category::whereIn('slug', $categorySlugs)->get()->keyBy('slug')
+        $categoriesMapBySlug = ! empty($categorySlugs)
+            ? PostCategory::whereIn('slug', $categorySlugs)->get()->keyBy('slug')
+            : collect();
+
+        $categoriesMapByName = ! empty($categoryNames)
+            ? PostCategory::whereIn('name', $categoryNames)->get()->keyBy(fn ($c) => mb_strtolower($c->name))
             : collect();
 
         $accountsMap = ! empty($authorEmails)
@@ -274,12 +280,9 @@ class PostImportExportController extends Controller
                         'created_by' => $post->created_by,
                     ];
 
-                    if ($isColSelected('Danh mục (Slug)') && ! empty($item['Danh mục (Slug)'])) {
-                        $catSlug = trim((string) $item['Danh mục (Slug)']);
-                        $category = $categoriesMap->get($catSlug);
-                        if ($category) {
-                            $payload['category_id'] = $category->id;
-                        }
+                    $catId = $this->resolvePostCategoryId($item, $categoriesMapBySlug, $categoriesMapByName, $isColSelected);
+                    if ($catId !== null) {
+                        $payload['category_id'] = $catId;
                     }
 
                     $currentAuthor = $author;
@@ -362,13 +365,7 @@ class PostImportExportController extends Controller
                             : null,
                     ];
 
-                    if ($isColSelected('Danh mục (Slug)') && ! empty($item['Danh mục (Slug)'])) {
-                        $catSlug = trim((string) $item['Danh mục (Slug)']);
-                        $category = $categoriesMap->get($catSlug);
-                        if ($category) {
-                            $payload['category_id'] = $category->id;
-                        }
-                    }
+                    $payload['category_id'] = $this->resolvePostCategoryId($item, $categoriesMapBySlug, $categoriesMapByName, $isColSelected);
 
                     $currentAuthor = $author;
                     if ($isColSelected('Tác giả (Email)') && ! empty($item['Tác giả (Email)'])) {
@@ -411,5 +408,61 @@ class PostImportExportController extends Controller
         }
 
         return $content;
+    }
+
+    private function resolvePostCategoryId(array $item, &$categoriesMapBySlug, &$categoriesMapByName, callable $isColSelected): ?int
+    {
+        $hasSlugCol = $isColSelected('Danh mục (Slug)');
+        $hasNameCol = $isColSelected('Danh mục (Tên)') || $isColSelected('Danh mục');
+
+        if (! $hasSlugCol && ! $hasNameCol) {
+            return null;
+        }
+
+        $rawCatSlug = trim((string) ($item['Danh mục (Slug)'] ?? ''));
+        $rawCatName = trim((string) ($item['Danh mục (Tên)'] ?? ($item['Danh mục'] ?? '')));
+
+        if ($rawCatSlug === '' && $rawCatName === '') {
+            return null;
+        }
+
+        // Tìm theo slug trước
+        if ($rawCatSlug !== '') {
+            $cat = $categoriesMapBySlug->get($rawCatSlug);
+            if (! $cat) {
+                // Tự động tạo mới PostCategory nếu chưa có
+                $name = $rawCatName !== '' ? $rawCatName : Str::headline($rawCatSlug);
+                $cat = PostCategory::create([
+                    'name' => $name,
+                    'slug' => $rawCatSlug,
+                    'is_active' => true,
+                ]);
+                $categoriesMapBySlug->put($rawCatSlug, $cat);
+                $categoriesMapByName->put(mb_strtolower($cat->name), $cat);
+            }
+
+            return (int) $cat->id;
+        }
+
+        // Tìm theo name
+        if ($rawCatName !== '') {
+            $key = mb_strtolower($rawCatName);
+            $cat = $categoriesMapByName->get($key);
+            if (! $cat) {
+                // Tự động tạo mới PostCategory nếu chưa có
+                $slug = Str::slug($rawCatName);
+                $cat = PostCategory::create([
+                    'name' => $rawCatName,
+                    'slug' => $slug,
+                    'is_active' => true,
+                ]);
+                $categoriesMapBySlug->put($cat->slug, $cat);
+                $categoriesMapByName->put($key, $cat);
+            }
+
+            return (int) $cat->id;
+        }
+
+        return null;
     }
 }

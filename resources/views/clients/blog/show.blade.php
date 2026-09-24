@@ -1404,7 +1404,7 @@
                         <i class="fa-solid fa-angles-right"></i>
                     </li>
                     <li class="breadcrumb-item">
-                        <a href="{{ route('client.blog.index', ['category' => $post->category->slug]) }}">
+                        <a href="{{ route('client.blog.category', $post->category) }}">
                             <span>{{ $post->category->name }}</span>
                         </a>
                     </li>
@@ -1425,10 +1425,17 @@
     <section class="blog-hero-section">
         <div class="hero-container">
             {{-- Category Badge --}}
-            <a href="{{ route('client.blog.index', ['category' => $post->category?->slug]) }}" class="category-badge">
-                <i class="fas fa-bookmark"></i>
-                {{ $post->category?->name ?? 'Bài viết' }}
-            </a>
+            @if ($post->category)
+                <a href="{{ route('client.blog.category', $post->category) }}" class="category-badge">
+                    <i class="fas fa-bookmark"></i>
+                    {{ $post->category->name }}
+                </a>
+            @else
+                <span class="category-badge">
+                    <i class="fas fa-bookmark"></i>
+                    Bài viết
+                </span>
+            @endif
 
             {{-- Title --}}
             <h1 class="hero-title">{{ renderMeta($post->title) }}</h1>

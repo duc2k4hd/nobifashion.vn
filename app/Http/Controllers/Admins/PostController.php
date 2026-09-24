@@ -7,8 +7,8 @@ use App\Http\Requests\Admin\PostAutosaveRequest;
 use App\Http\Requests\Admin\PostStoreRequest;
 use App\Http\Requests\Admin\PostUpdateRequest;
 use App\Models\Account;
-use App\Models\Category;
 use App\Models\Post;
+use App\Models\PostCategory;
 use App\Models\PostRevision;
 use App\Models\Tag;
 use App\Services\Admin\ProgressiveSearchService;
@@ -86,7 +86,7 @@ class PostController extends Controller
             'posts' => $posts,
             'filters' => $request->all(),
             'searchMeta' => $searchMeta,
-            'categories' => Category::orderBy('name')->get(),
+            'categories' => PostCategory::ordered()->get(),
             'tags' => Tag::where('entity_type', Post::class)->select('id', 'name')->distinct('name')->orderBy('name')->get()->unique('name')->values(),
             'authors' => Account::orderBy('name')->get(['id', 'name', 'email']),
             'statusOptions' => [
@@ -114,7 +114,7 @@ class PostController extends Controller
 
         return view('admins.posts.create', [
             'post' => $post,
-            'categories' => Category::orderBy('name')->get(),
+            'categories' => PostCategory::ordered()->get(),
             'tags' => $postOnlyTags, // Chỉ tags của posts
             'postTags' => collect(), // Chưa có tags khi tạo mới
             'mediaImages' => $this->getMediaImages(),
@@ -152,7 +152,7 @@ class PostController extends Controller
         
         return view('admins.posts.edit', [
             'post' => $post,
-            'categories' => Category::orderBy('name')->get(),
+            'categories' => PostCategory::ordered()->get(),
             'tags' => $postOnlyTags, // Chỉ tags của posts
             'postTags' => $postTags, // Tags đã gắn với post này
             'authors' => Account::orderBy('name')->get(['id', 'name', 'email']),

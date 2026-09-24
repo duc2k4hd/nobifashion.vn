@@ -27,7 +27,7 @@ class PostStoreRequest extends FormRequest
             'tag_ids' => ['nullable', 'array'],
             'tag_ids.*' => ['integer', 'exists:tags,id'],
             'tag_names' => ['nullable', 'string', 'max:500'],
-            'category_id' => ['nullable', 'exists:categories,id'],
+            'category_id' => ['nullable', 'exists:post_categories,id'],
             'status' => ['nullable', 'in:draft,pending,published,archived'],
             'is_featured' => ['nullable', 'boolean'],
             'published_at' => ['nullable', 'date'],

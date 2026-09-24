@@ -18,9 +18,14 @@
                     </div>
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <label class="form-label fw-semibold">Danh mục</label>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label fw-semibold mb-0">Danh mục bài viết</label>
+                            <a href="{{ route('admin.post-categories.index') }}" target="_blank" class="small text-decoration-none text-primary">
+                                + Quản lý danh mục
+                            </a>
+                        </div>
                         <select name="category_id" class="form-select">
-                            <option value="">-- Chọn danh mục --</option>
+                            <option value="">-- Chọn danh mục bài viết --</option>
                             @foreach($categories as $category)
                                 <option value="{{ $category->id }}" @selected(old('category_id', $post->category_id ?? '') == $category->id)>
                                     {{ $category->name }}

@@ -478,17 +478,20 @@
             
             <div class="menu-section">Nội Dung</div>
             <div class="menu-group">
-                <div class="menu-group-header {{ request()->routeIs('admin.posts.*') ? 'expanded' : '' }}" data-group="posts">
+                <div class="menu-group-header {{ request()->routeIs('admin.posts.*') || request()->routeIs('admin.post-categories.*') ? 'expanded' : '' }}" data-group="posts">
                     <span class="menu-item-icon">📝</span>
                     <span>Bài viết</span>
                     <span class="menu-arrow">▶</span>
                 </div>
-                <div class="menu-group-items {{ request()->routeIs('admin.posts.*') ? 'expanded' : '' }}" id="posts-group">
+                <div class="menu-group-items {{ request()->routeIs('admin.posts.*') || request()->routeIs('admin.post-categories.*') ? 'expanded' : '' }}" id="posts-group">
                     <a href="{{ route('admin.posts.create') }}" class="menu-item {{ request()->routeIs('admin.posts.create') ? 'active' : '' }}">
                         Thêm bài viết mới
                     </a>
                     <a href="{{ route('admin.posts.index') }}" class="menu-item {{ (request()->routeIs('admin.posts.index') && !request('status') && !request('is_trashed')) || request()->routeIs('admin.posts.edit') || request()->routeIs('admin.posts.show') ? 'active' : '' }}">
                         Tất cả bài viết
+                    </a>
+                    <a href="{{ route('admin.post-categories.index') }}" class="menu-item {{ request()->routeIs('admin.post-categories.*') ? 'active' : '' }}">
+                        Danh mục bài viết
                     </a>
                     <a href="{{ route('admin.posts.index', ['status' => 'published']) }}" class="menu-item {{ request()->routeIs('admin.posts.index') && request('status') === 'published' ? 'active' : '' }}">
                         Đã xuất bản

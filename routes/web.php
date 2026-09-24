@@ -27,6 +27,7 @@ use App\Http\Controllers\Admins\ImportExcelController;
 use App\Http\Controllers\Admins\MediaLibraryController;
 use App\Http\Controllers\Admins\OnoffCrawlerController;
 use App\Http\Controllers\Admins\OrderItemController;
+use App\Http\Controllers\Admins\PostCategoryController;
 use App\Http\Controllers\Admins\PostController as AdminPostController;
 use App\Http\Controllers\Admins\PostImportExportController;
 use App\Http\Controllers\Admins\ProductController;
@@ -289,6 +290,7 @@ Route::prefix('blog')->name('client.blog.')->group(function () {
     Route::get('/', [BlogController::class, 'index'])->name('index');
     Route::get('/search', [BlogController::class, 'searchKeyword'])->name('search.keyword');
     Route::post('/api/search', [BlogController::class, 'searchApi'])->name('search.api')->middleware('throttle:30,1');
+    Route::get('/danh-muc/{category:slug}', [BlogController::class, 'category'])->name('category');
     Route::get('/{slug}', [BlogController::class, 'show'])->name('show');
 });
 
@@ -527,6 +529,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('posts/{post}/revisions', [AdminPostController::class, 'revisions'])->name('posts.revisions');
         Route::post('posts/{post}/autosave', [AdminPostController::class, 'autosave'])->name('posts.autosave');
         Route::post('posts/{post}/revisions/{revisionId}/restore', [AdminPostController::class, 'restoreRevision'])->name('posts.revisions.restore');
+
+        // Danh mục bài viết
+        Route::prefix('post-categories')->name('post-categories.')->group(function () {
+            Route::get('/', [PostCategoryController::class, 'index'])->name('index');
+            Route::post('/', [PostCategoryController::class, 'store'])->name('store');
+            Route::get('/{category}/edit', [PostCategoryController::class, 'edit'])->name('edit');
+            Route::put('/{category}', [PostCategoryController::class, 'update'])->name('update');
+            Route::delete('/{category}', [PostCategoryController::class, 'destroy'])->name('destroy');
+            Route::patch('/{category}/toggle', [PostCategoryController::class, 'toggle'])->name('toggle');
+        });
 
         Route::post('seo/analyze', [AdminSeoController::class, 'analyze'])->name('seo.analyze');
 

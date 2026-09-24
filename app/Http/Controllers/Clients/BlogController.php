@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Clients;
 
 use App\Http\Controllers\Controller;
-use App\Models\Category;
 use App\Models\Comment;
 use App\Models\Post;
+use App\Models\PostCategory;
 use App\Models\Tag;
 use App\Services\PostService;
 use Illuminate\Http\Request;
@@ -20,10 +20,15 @@ class BlogController extends Controller
     {
     }
 
-    public function index(Request $request): View
+    public function index(Request $request): \Illuminate\Http\Response|\Illuminate\Http\RedirectResponse|View
     {
+        // Chuyển hướng 301 chuẩn SEO nếu có query ?category=slug sang URL danh mục chuyên biệt
+        if ($request->filled('category')) {
+            return redirect()->route('client.blog.category', ['category' => $request->query('category')], 301);
+        }
+
         $posts = Post::published()
-            ->with(['author', 'category'])
+            ->with(['author:id,name', 'category:id,name,slug'])
             ->orderByDesc('published_at')
             ->paginate(14)
             ->withQueryString();
@@ -31,14 +36,15 @@ class BlogController extends Controller
         $featuredPosts = Cache::remember('blog:featured', 600, function () {
             return Post::published()
                 ->featured()
-                ->with(['author', 'category'])
+                ->with(['author:id,name', 'category:id,name,slug'])
                 ->latest('published_at')
                 ->take(3)
                 ->get();
         });
 
         $sidebarCategories = Cache::remember('blog:sidebar:categories', 600, function () {
-            return Category::select('id', 'name', 'slug')
+            return PostCategory::active()
+                ->select('id', 'name', 'slug')
                 ->withCount(['posts as posts_count' => fn ($q) => $q->published()])
                 ->orderByDesc('posts_count')
                 ->take(10)
@@ -71,8 +77,86 @@ class BlogController extends Controller
             'recentPosts' => $recentPosts,
             'popularPosts' => $popularPosts,
             'schemaData' => $schemaData,
+            'currentCategory' => null,
         ]);
     }
+
+    public function category(Request $request, PostCategory $category): View
+    {
+        if (!$category->is_active) {
+            abort(404);
+        }
+
+        // Tối ưu trực tiếp bằng B-Tree index posts_category_status_published_idx cực nhanh
+        $posts = Post::published()
+            ->where('category_id', $category->id)
+            ->with(['author:id,name', 'category:id,name,slug'])
+            ->orderByDesc('published_at')
+            ->paginate(14)
+            ->withQueryString();
+
+        $featuredPosts = Cache::remember("blog:category:featured:{$category->id}", 600, function () use ($category) {
+            return Post::published()
+                ->where('category_id', $category->id)
+                ->featured()
+                ->with(['author:id,name', 'category:id,name,slug'])
+                ->latest('published_at')
+                ->take(3)
+                ->get();
+        });
+
+        // Nếu category chưa có bài featured riêng thì fallback bài featured chung
+        if ($featuredPosts->isEmpty()) {
+            $featuredPosts = Cache::remember('blog:featured', 600, function () {
+                return Post::published()
+                    ->featured()
+                    ->with(['author:id,name', 'category:id,name,slug'])
+                    ->latest('published_at')
+                    ->take(3)
+                    ->get();
+            });
+        }
+
+        $sidebarCategories = Cache::remember('blog:sidebar:categories', 600, function () {
+            return PostCategory::active()
+                ->select('id', 'name', 'slug')
+                ->withCount(['posts as posts_count' => fn ($q) => $q->published()])
+                ->orderByDesc('posts_count')
+                ->take(10)
+                ->get();
+        });
+
+        $sidebarTags = Cache::remember('blog:sidebar:tags', 600, fn () => Tag::orderBy('name')->take(20)->get());
+
+        $recentPosts = Cache::remember('blog:recent', 600, function () {
+            return Post::published()
+                ->latest('published_at')
+                ->take(5)
+                ->get(['id', 'title', 'slug', 'published_at']);
+        });
+
+        $popularPosts = Cache::remember('blog:popular', 600, function () {
+            return Post::published()
+                ->orderByDesc('views')
+                ->take(5)
+                ->get(['id', 'title', 'slug', 'views']);
+        });
+
+        $schemaData = $this->buildCategorySchemaData($category, $posts, $featuredPosts, $sidebarCategories);
+
+        return view('clients.blog.index', [
+            'posts' => $posts,
+            'featuredPosts' => $featuredPosts,
+            'sidebarCategories' => $sidebarCategories,
+            'sidebarTags' => $sidebarTags,
+            'recentPosts' => $recentPosts,
+            'popularPosts' => $popularPosts,
+            'schemaData' => $schemaData,
+            'currentCategory' => $category,
+        ]);
+    }
+
+
 
     public function searchApi(Request $request): \Illuminate\Http\JsonResponse
     {
@@ -131,7 +215,7 @@ class BlogController extends Controller
         $words = array_filter(explode(' ', $keyword));
 
         $postsQuery = \App\Models\Post::published()
-            ->with(['author', 'category']);
+            ->with(['author:id,name', 'category:id,name,slug']);
             
         if ($keyword !== '') {
             $postsQuery->where(function ($q) use ($keyword, $words) {
@@ -166,11 +250,11 @@ class BlogController extends Controller
             ->withQueryString();
 
         $featuredPosts = \Illuminate\Support\Facades\Cache::remember('blog:featured', 600, function () {
-            return \App\Models\Post::published()->featured()->with(['author', 'category'])->latest('published_at')->take(3)->get();
+            return \App\Models\Post::published()->featured()->with(['author:id,name', 'category:id,name,slug'])->latest('published_at')->take(3)->get();
         });
 
         $sidebarCategories = \Illuminate\Support\Facades\Cache::remember('blog:sidebar:categories', 600, function () {
-            return \App\Models\Category::select('id', 'name', 'slug')->withCount(['posts as posts_count' => fn ($q) => $q->published()])->orderByDesc('posts_count')->take(10)->get();
+            return PostCategory::active()->select('id', 'name', 'slug')->withCount(['posts as posts_count' => fn ($q) => $q->published()])->orderByDesc('posts_count')->take(10)->get();
         });
 
         $sidebarTags = \Illuminate\Support\Facades\Cache::remember('blog:sidebar:tags', 600, fn () => \App\Models\Tag::orderBy('name')->take(20)->get());
@@ -193,7 +277,7 @@ class BlogController extends Controller
             'recentPosts' => $recentPosts,
             'popularPosts' => $popularPosts,
             'schemaData' => $schemaData,
-            'searchKeyword' => $keyword // Thêm vào để hiển thị view nếu cần
+            'searchKeyword' => $keyword
         ]);
     }
 
@@ -244,7 +328,8 @@ class BlogController extends Controller
         [$contentWithAnchors, $toc] = $this->buildTocContent($post->content ?? '');
 
         $sidebarCategories = Cache::remember('blog:sidebar:categories', 600, function () {
-            return Category::select('id', 'name', 'slug')
+            return PostCategory::active()
+                ->select('id', 'name', 'slug')
                 ->withCount(['posts as posts_count' => fn ($q) => $q->published()])
                 ->orderByDesc('posts_count')
                 ->take(10)
@@ -440,6 +525,91 @@ class BlogController extends Controller
         return $schemas;
     }
 
+    protected function buildCategorySchemaData(PostCategory $category, $posts, $featuredPosts, $sidebarCategories): array
+    {
+        $settings = \Illuminate\Support\Facades\View::shared('settings') ?? \App\Models\Setting::first();
+        $siteUrl = $settings->site_url ?? config('app.url');
+        $siteName = $settings->site_name ?? config('app.name');
+        $siteLogo = $settings->site_logo ? asset('clients/assets/img/business/' . $settings->site_logo) : ($settings->site_logo ?? asset('clients/assets/img/business/logo.png'));
+        $catUrl = route('client.blog.category', $category);
+
+        $schemas = [];
+
+        // 1. Organization Schema
+        $schemas[] = [
+            '@context' => 'https://schema.org',
+            '@type' => 'Organization',
+            'name' => $siteName,
+            'url' => $siteUrl,
+            'logo' => [
+                '@type' => 'ImageObject',
+                'url' => $siteLogo,
+                'width' => 180,
+                'height' => 55,
+            ],
+        ];
+
+        // 2. BreadcrumbList Schema
+        $schemas[] = [
+            '@context' => 'https://schema.org',
+            '@type' => 'BreadcrumbList',
+            'itemListElement' => [
+                [
+                    '@type' => 'ListItem',
+                    'position' => 1,
+                    'name' => 'Trang chủ',
+                    'item' => $siteUrl,
+                ],
+                [
+                    '@type' => 'ListItem',
+                    'position' => 2,
+                    'name' => 'Blog',
+                    'item' => route('client.blog.index'),
+                ],
+                [
+                    '@type' => 'ListItem',
+                    'position' => 3,
+                    'name' => $category->name,
+                    'item' => $catUrl,
+                ],
+            ],
+        ];
+
+        // 3. CollectionPage Schema
+        $schemas[] = [
+            '@context' => 'https://schema.org',
+            '@type' => 'CollectionPage',
+            'name' => $category->meta_title ?: ($category->name . ' - Blog ' . $siteName),
+            'description' => $category->meta_description ?: ($category->description ?: 'Tổng hợp bài viết chủ đề ' . $category->name),
+            'url' => $catUrl,
+            'mainEntity' => [
+                '@type' => 'ItemList',
+                'numberOfItems' => $posts->total(),
+                'itemListElement' => $posts->map(function ($post, $index) use ($siteName, $siteLogo) {
+                    return [
+                        '@type' => 'ListItem',
+                        'position' => $index + 1,
+                        'item' => [
+                            '@type' => 'BlogPosting',
+                            '@id' => route('client.blog.show', $post),
+                            'headline' => $post->title,
+                            'url' => route('client.blog.show', $post),
+                            'image' => $post->thumbnail ? asset($post->thumbnail) : null,
+                            'datePublished' => optional($post->published_at)->toIso8601String(),
+                            'dateModified' => optional($post->updated_at)->toIso8601String(),
+                            'author' => [
+                                '@type' => 'Person',
+                                'name' => $post->author?->name ?? $siteName,
+                            ],
+                        ],
+                    ];
+                })->values()->all(),
+            ],
+        ];
+
+        return $schemas;
+    }
+
     protected function buildSchemaData(Post $post, Collection $tags, Collection $comments): array
     {
         $settings = \Illuminate\Support\Facades\View::shared('settings') ?? \App\Models\Setting::first();
@@ -498,7 +668,7 @@ class BlogController extends Controller
                 '@type' => 'ListItem',
                 'position' => 3,
                 'name' => $post->category->name,
-                'item' => route('client.blog.index', ['category' => $post->category->slug]),
+                'item' => route('client.blog.category', $post->category),
             ];
         }
 

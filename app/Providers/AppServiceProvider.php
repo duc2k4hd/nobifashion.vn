@@ -80,6 +80,7 @@ class AppServiceProvider extends ServiceProvider
             'post' => \App\Models\Post::class,
             'product' => \App\Models\Product::class,
             'category' => \App\Models\Category::class,
+            'post_category' => \App\Models\PostCategory::class,
         ]);
     }
 }

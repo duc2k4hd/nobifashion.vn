@@ -1,13 +1,13 @@
 @extends('clients.layouts.master')
 
-@section('title', 'Blog & Tin tức thời trang | ' . config('app.name'))
+@section('title', (isset($currentCategory) && $currentCategory ? ($currentCategory->meta_title ?: ($currentCategory->name . ' - Blog thời trang')) : 'Blog & Tin tức thời trang') . ' | ' . config('app.name'))
 
 @section('head')
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <meta name="description"
-        content="Chia sẻ kinh nghiệm phối đồ, xu hướng thời trang và các câu chuyện thương hiệu tại {{ config('app.name') }}.">
-    <link rel="canonical" href="{{ route('client.blog.index') }}">
+        content="{{ isset($currentCategory) && $currentCategory ? ($currentCategory->meta_description ?: ($currentCategory->description ?: 'Chia sẻ kinh nghiệm, xu hướng thời trang về ' . $currentCategory->name)) : 'Chia sẻ kinh nghiệm phối đồ, xu hướng thời trang và các câu chuyện thương hiệu tại ' . config('app.name') . '.' }}">
+    <link rel="canonical" href="{{ isset($currentCategory) && $currentCategory ? route('client.blog.category', $currentCategory) : route('client.blog.index') }}">
 
     <style>
         /* Tổng thể trang */
@@ -193,15 +193,33 @@
                         <span>Trang chủ</span>
                     </a>
                 </li>
-                <li class="breadcrumb-separator">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <polyline points="9 18 15 12 9 6"></polyline>
-                    </svg>
-                </li>
-                <li class="breadcrumb-item active" aria-current="page">
-                    <span>Blog</span>
-                </li>
+                @if (isset($currentCategory) && $currentCategory)
+                    <li class="breadcrumb-separator">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a href="{{ route('client.blog.index') }}">Blog</a>
+                    </li>
+                    <li class="breadcrumb-separator">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        <span>{{ $currentCategory->name }}</span>
+                    </li>
+                @else
+                    <li class="breadcrumb-separator">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">
+                        <span>Blog</span>
+                    </li>
+                @endif
             </ol>
         </nav>
 
@@ -209,12 +227,20 @@
         <div class="blog-hero">
             <div class="row align-items-center">
                 <div class="col-lg-8">
-                    <p class="text-uppercase text-muted small mb-1">Blog thời trang</p>
-                    <h1 class="h3 fw-bold mb-2">Khám phá bí quyết phối đồ & phong cách sống hiện đại</h1>
-                    <p class="text-muted small mb-0">
-                        Tổng hợp kiến thức SEO, cảm hứng thời trang và câu chuyện thương hiệu được đội ngũ
-                        {{ config('app.name') }} biên tập mỗi ngày.
-                    </p>
+                    @if (isset($currentCategory) && $currentCategory)
+                        <p class="text-uppercase text-primary fw-semibold small mb-1">📁 Chủ đề bài viết</p>
+                        <h1 class="h3 fw-bold mb-2">{{ $currentCategory->name }}</h1>
+                        <p class="text-muted small mb-0">
+                            {{ $currentCategory->description ?: 'Tổng hợp các bài viết hay, hữu ích và xu hướng mới nhất thuộc chủ đề ' . $currentCategory->name . '.' }}
+                        </p>
+                    @else
+                        <p class="text-uppercase text-muted small mb-1">Blog thời trang</p>
+                        <h1 class="h3 fw-bold mb-2">Khám phá bí quyết phối đồ & phong cách sống hiện đại</h1>
+                        <p class="text-muted small mb-0">
+                            Tổng hợp kiến thức SEO, cảm hứng thời trang và câu chuyện thương hiệu được đội ngũ
+                            {{ config('app.name') }} biên tập mỗi ngày.
+                        </p>
+                    @endif
                 </div>
 
                 <div class="col-lg-4 mt-3 mt-lg-0">
@@ -291,8 +317,14 @@
                                     onerror="this.onerror=null; this.src='{{ asset('clients/assets/img/clothes/no-image.webp') }}';">
 
                                 <div class="card-body">
-                                    <div class="d-flex gap-2 tiny text-muted mb-1">
-                                        <span>{{ $post->category?->name ?? 'Tin tức' }}</span> •
+                                    <div class="d-flex gap-2 tiny text-muted mb-1 align-items-center">
+                                        @if($post->category)
+                                            <a href="{{ route('client.blog.category', $post->category) }}" class="text-decoration-none text-primary fw-semibold">
+                                                {{ $post->category->name }}
+                                            </a>
+                                        @else
+                                            <span>Tin tức</span>
+                                        @endif •
                                         <span>{{ optional($post->published_at)->format('d/m/Y') }}</span>
                                     </div>
 
@@ -337,9 +369,12 @@
                     <h5 class="fw-bold mb-2">Danh mục nổi bật</h5>
                     <ul class="list-unstyled mb-0">
                         @foreach ($sidebarCategories as $category)
-                            <li class="d-flex justify-content-between small">
-                                <span>{{ $category->name }}</span>
-                                <span class="text-muted">{{ $category->posts_count }}</span>
+                            <li class="d-flex justify-content-between small align-items-center">
+                                <a href="{{ route('client.blog.category', $category) }}" 
+                                   class="text-decoration-none text-dark hover-primary {{ (isset($currentCategory) && $currentCategory && $currentCategory->id === $category->id) ? 'fw-bold text-primary' : '' }}">
+                                    {{ $category->name }}
+                                </a>
+                                <span class="badge bg-light text-secondary rounded-pill">{{ number_format($category->posts_count) }}</span>
                             </li>
                         @endforeach
                     </ul>

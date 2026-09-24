@@ -104,7 +104,7 @@ class Post extends Model
 
     public function category(): BelongsTo
     {
-        return $this->belongsTo(Category::class);
+        return $this->belongsTo(PostCategory::class, 'category_id');
     }
 
     public function revisions(): HasMany

@@ -264,7 +264,15 @@
                                     @endphp
                                     <div class="small text-muted">Tags: {{ $tagNames ?: '—' }}</div>
                                 </td>
-                                <td>{{ $post->category?->name ?? '—' }}</td>
+                                <td>
+                                    @if($post->category)
+                                        <a href="{{ route('admin.posts.index', ['category_id' => $post->category->id]) }}" class="badge bg-light text-primary border text-decoration-none">
+                                            📁 {{ $post->category->name }}
+                                        </a>
+                                    @else
+                                        <span class="text-muted small">—</span>
+                                    @endif
+                                </td>
                                 <td>
                                     @if($post->trashed())
                                         <span class="badge bg-danger">🗑 Đã xóa mềm</span>
@@ -418,6 +426,7 @@
                                         ['key' => 'ID', 'label' => 'ID bài viết', 'default' => true],
                                         ['key' => 'Tiêu đề', 'label' => 'Tiêu đề', 'default' => true],
                                         ['key' => 'Slug', 'label' => 'Slug (Đường dẫn)', 'default' => true],
+                                        ['key' => 'Danh mục (Tên)', 'label' => 'Danh mục (Tên)', 'default' => true],
                                         ['key' => 'Danh mục (Slug)', 'label' => 'Danh mục (Slug)', 'default' => false],
                                         ['key' => 'Nội dung', 'label' => 'Nội dung HTML (Content)', 'default' => true],
                                         ['key' => 'Tóm tắt', 'label' => 'Tóm tắt / Excerpt', 'default' => false],

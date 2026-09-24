@@ -294,6 +294,26 @@ class SitemapService
                 ];
             }
 
+            // Bổ sung danh mục bài viết vào sitemap
+            $postCategories = \App\Models\PostCategory::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->get();
+
+            foreach ($postCategories as $postCat) {
+                $loc = route('client.blog.category', $postCat);
+                if ($this->isUrlExcluded($loc)) {
+                    continue;
+                }
+
+                $urls[] = [
+                    'loc' => $loc,
+                    'lastmod' => optional($postCat->updated_at)->toAtomString(),
+                    'changefreq' => 'weekly',
+                    'priority' => '0.7',
+                ];
+            }
+
             return $this->buildUrlSet($urls);
         });
     }
