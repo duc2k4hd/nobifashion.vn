@@ -20,7 +20,7 @@ return new class extends Migration
                 $table->string('slug')->unique();
                 $table->text('description')->nullable();
                 $table->text('image')->nullable();
-                $table->foreignId('parent_id')->nullable()->constrained('post_categories')->nullOnDelete();
+                $table->unsignedBigInteger('parent_id')->nullable()->index();
                 $table->string('meta_title')->nullable();
                 $table->text('meta_description')->nullable();
                 $table->string('meta_keywords')->nullable();
@@ -29,6 +29,13 @@ return new class extends Migration
                 $table->unsignedInteger('sort_order')->default(0)->index();
                 $table->timestamps();
             });
+
+            try {
+                Schema::table('post_categories', function (Blueprint $table) {
+                    $table->foreign('parent_id')->references('id')->on('post_categories')->nullOnDelete();
+                });
+            } catch (\Throwable $e) {
+            }
         }
 
         // 2. Di chuyển dữ liệu danh mục mà các bài viết hiện tại đang trỏ tới (bảo toàn ID)
@@ -81,28 +88,34 @@ return new class extends Migration
 
         // 3. Đổi Foreign Key trên bảng posts trỏ sang post_categories(id)
         if (Schema::hasTable('posts') && Schema::hasColumn('posts', 'category_id')) {
-            Schema::table('posts', function (Blueprint $table) {
-                // Drop foreign key cũ trỏ sang categories
-                try {
+            // Drop foreign key cũ trỏ sang categories nếu có
+            try {
+                Schema::table('posts', function (Blueprint $table) {
                     $table->dropForeign(['category_id']);
-                } catch (\Throwable $e) {
-                    // Foreign key có thể đã bị drop hoặc có tên khác
-                }
-            });
+                });
+            } catch (\Throwable $e) {
+                // Foreign key không tồn tại trên MyISAM hoặc đã bị drop trước đó
+            }
 
-            Schema::table('posts', function (Blueprint $table) {
-                // Đảm bảo có foreign key trỏ sang post_categories
-                $table->foreign('category_id')
-                    ->references('id')
-                    ->on('post_categories')
-                    ->nullOnDelete();
+            // Đảm bảo có foreign key trỏ sang post_categories nếu CSDL hỗ trợ
+            try {
+                Schema::table('posts', function (Blueprint $table) {
+                    $table->foreign('category_id')
+                        ->references('id')
+                        ->on('post_categories')
+                        ->nullOnDelete();
+                });
+            } catch (\Throwable $e) {
+                // CSDL không hỗ trợ foreign key (MyISAM), index category_id vẫn đảm bảo tốc độ cao
+            }
 
-                // Composite index tăng tốc truy vấn danh mục bài viết cho hàng trăm nghìn bài
-                try {
+            // Composite index tăng tốc truy vấn danh mục bài viết cho hàng trăm nghìn bài
+            try {
+                Schema::table('posts', function (Blueprint $table) {
                     $table->index(['category_id', 'status', 'published_at'], 'posts_category_status_published_idx');
-                } catch (\Throwable $e) {
-                }
-            });
+                });
+            } catch (\Throwable $e) {
+            }
         }
     }
 
@@ -112,22 +125,26 @@ return new class extends Migration
     public function down(): void
     {
         if (Schema::hasTable('posts') && Schema::hasColumn('posts', 'category_id')) {
-            Schema::table('posts', function (Blueprint $table) {
-                try {
+            try {
+                Schema::table('posts', function (Blueprint $table) {
                     $table->dropIndex('posts_category_status_published_idx');
-                } catch (\Throwable $e) {
-                }
+                });
+            } catch (\Throwable $e) {
+            }
 
-                try {
+            try {
+                Schema::table('posts', function (Blueprint $table) {
                     $table->dropForeign(['category_id']);
-                } catch (\Throwable $e) {
-                }
-                
-                try {
+                });
+            } catch (\Throwable $e) {
+            }
+
+            try {
+                Schema::table('posts', function (Blueprint $table) {
                     $table->foreign('category_id')->references('id')->on('categories')->nullOnDelete();
-                } catch (\Throwable $e) {
-                }
-            });
+                });
+            } catch (\Throwable $e) {
+            }
         }
 
         Schema::dropIfExists('post_categories');
