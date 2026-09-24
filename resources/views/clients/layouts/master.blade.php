@@ -28,6 +28,7 @@
         @include('clients.templates.footer')
     </div>
     @include('clients.templates.notice')
+    @include('clients.templates.bottom_nav')
     @include('clients.templates.chat')
     @include('clients.templates.js')
     @yield('foot')

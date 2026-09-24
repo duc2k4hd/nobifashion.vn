@@ -21,10 +21,10 @@
       <div class="nobifashion_home_header_actions">
         <button class="nobifashion_home_search_trigger" type="button" data-nobifashion-open="search"
           aria-label="Tìm kiếm sản phẩm" aria-controls="nobifashion_home_search" aria-expanded="false">
-          <span>Bạn đang tìm sản phẩm gì?</span>
-          <svg class="nobifashion_home_icon" viewbox="0 0 24 24" aria-hidden="true">
-            <circle cx="10.8" cy="10.8" r="6.8"></circle>
-            <path d="m16 16 5 5"></path>
+          <span>Tìm kiếm...</span>
+          <svg class="nobifashion_home_icon nobifashion_home_search_icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7.5"></circle>
+            <path d="m16.5 16.5 4.5 4.5"></path>
           </svg>
         </button>
         <button class="nobifashion_home_icon_button" type="button" aria-label="Yêu thích"

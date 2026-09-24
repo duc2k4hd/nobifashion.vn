@@ -266,32 +266,63 @@ svg.nobifashion_home_icon_solid,
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    width: 360px;
+    width: 290px;
     min-width: 0;
-    height: 38px;
-    margin: 0 12px 0 32px;
-    padding: 0 14px 0 16px;
-    border: 1px solid #dadada;
-    border-radius: 999px;
-    background: #fffffff2;
-    color: #666 !important;
+    height: 40px;
+    margin: 0 12px 0 24px;
+    padding: 0 18px 0 20px;
+    border: 1.5px solid #d9d9d9 !important;
+    border-radius: 9999px !important;
+    background: #ffffff !important;
+    color: #8c8c8c !important;
     text-align: left;
     cursor: pointer;
+    box-shadow: none !important;
     transition:
         border-color 0.2s ease,
-        background 0.2s ease;
+        background 0.2s ease,
+        box-shadow 0.2s ease;
+    padding: 5px 10px !important;
 }
 
 .nobifashion_home_search_trigger:hover {
-    border-color: #999;
-    background: #ffffff;
+    border-color: #a8a8a8 !important;
+    background: #ffffff !important;
+}
+
+.nobifashion_home_search_trigger:focus-visible {
+    outline: none !important;
+    border-color: #666666 !important;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.05) !important;
 }
 
 .nobifashion_home_search_trigger span {
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    font-size: 14px;
+    font-size: 14px !important;
+    font-weight: 400 !important;
+    color: #8c8c8c !important;
+    letter-spacing: -0.1px;
+}
+
+.nobifashion_home_search_trigger svg,
+.nobifashion_home_search_trigger .nobifashion_home_icon {
+    width: 19px !important;
+    height: 19px !important;
+    stroke: #475569 !important;
+    color: #475569 !important;
+    stroke-width: 1.8 !important;
+    flex-shrink: 0;
+    transition:
+        transform 0.2s ease,
+        stroke 0.2s ease;
+}
+
+.nobifashion_home_search_trigger:hover svg,
+.nobifashion_home_search_trigger:hover .nobifashion_home_icon {
+    stroke: #1e293b !important;
+    transform: scale(1.05);
 }
 
 /* ==========================================================================
@@ -592,6 +623,13 @@ svg.nobifashion_home_icon_solid,
     font-weight: 500;
 }
 
+.nobifashion_home_search_input:focus,
+.nobifashion_home_search_input:focus-visible {
+    outline: none !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
 .nobifashion_home_search_input::-webkit-search-cancel-button {
     -webkit-appearance: none;
 }
@@ -888,12 +926,16 @@ svg.nobifashion_home_icon_solid,
     }
 
     .nobifashion_home_logo {
-        flex-basis: 63px;
+        flex-basis: auto;
+        max-width: 135px;
     }
 
     .nobifashion_home_logo img {
-        width: 63px;
-        height: 28px;
+        width: auto;
+        height: 38px;
+        max-height: 38px;
+        max-width: 130px;
+        object-fit: contain;
     }
 
     .nobifashion_home_search_trigger {
@@ -902,9 +944,10 @@ svg.nobifashion_home_icon_solid,
         min-width: 44px;
         padding: 10px;
         margin: 0;
-        background: transparent;
+        background: transparent !important;
         color: inherit !important;
-        border: 0;
+        border: 0 !important;
+        border-radius: 0 !important;
         justify-content: center;
     }
 

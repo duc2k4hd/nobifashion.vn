@@ -15,3 +15,4 @@
 <!-- ✅ Load các CSS phụ không cần preload -->
 <link rel="stylesheet" href="{{ asset('clients/assets/css/footer.css') }}?v={{ env('APP_VERSION') }}">
 <link rel="stylesheet" href="{{ asset('clients/assets/css/call_to_action.css') }}?v={{ env('APP_VERSION') }}">
+<link rel="stylesheet" href="{{ asset('clients/assets/css/customer_chat.css') }}?v={{ env('APP_VERSION') }}">

@@ -140,6 +140,13 @@
     font-size: 0.9rem;
 }
 
+.nobifashion_footer_content_newsletter_form input[type="email"]:focus,
+.nobifashion_footer_content_newsletter_form input[type="email"]:focus-visible {
+    outline: none !important;
+    border-color: #000000;
+    box-shadow: none !important;
+}
+
 .nobifashion_footer_content_newsletter_form button {
     background-color: #000000;
     color: #ffffff;

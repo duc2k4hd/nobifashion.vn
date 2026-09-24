@@ -46,7 +46,10 @@ class Product extends Model
 
     protected static function buildDefaultCanonical(string $slug): string
     {
-        $siteUrl = \App\Models\Setting::where('key', 'site_url')->value('value');
+        $siteUrl = null;
+        try {
+            $siteUrl = \App\Models\Setting::where('key', 'site_url')->value('value');
+        } catch (\Throwable) {}
 
         return $siteUrl
             ? rtrim($siteUrl, '/') . '/san-pham/' . $slug

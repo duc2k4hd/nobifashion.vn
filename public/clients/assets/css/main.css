@@ -1,7 +1,7 @@
 :root {
-    --primary-color: #ff3366;
-    --secondary-color: #ff99aa;
-    --support-color: #3bb77e;
+    --primary-color: #3d3d3d;
+    --secondary-color: #666666;
+    --support-color: #ffd2d2;
     --background-color: #fff5f7;
     --text-color-light: white;
     --text-color-dark: #232629;
@@ -39,6 +39,33 @@
     font-size: 16px;
     font-family: var(--font-family);
     box-sizing: border-box;
+}
+
+/* ==========================================================================
+   RESET OUTLINE & FOCUS RING TOÀN HỆ THỐNG
+   Loại bỏ hoàn toàn viền đen mặc định của trình duyệt khi focus vào các ô nhập liệu
+   ========================================================================== */
+input,
+textarea,
+select,
+button,
+[tabindex] {
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent;
+}
+
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus,
+select:focus-visible,
+button:focus,
+button:focus-visible,
+[tabindex]:focus,
+[tabindex]:focus-visible {
+    outline: none !important;
+    outline-offset: 0 !important;
 }
 
 html::-webkit-scrollbar,
@@ -109,12 +136,13 @@ strong {
     justify-content: center;
     width: 40px;
     height: 40px;
-    border: 1px solid #ef4444;
+    border: 1px solid var(--secondary-color, #666666);
     border-radius: 50%;
     background: #fff;
     cursor: pointer;
     transition: all 0.2s ease;
     padding: 0;
+    color: var(--primary-color, #3d3d3d);
 }
 .nobifashion_fav_btn .heart {
     width: 18px;
@@ -131,7 +159,7 @@ strong {
     width: 9px;
     height: 14px;
     background: transparent;
-    border: 2px solid #ef4444;
+    border: 2px solid var(--primary-color, #3d3d3d);
     border-top-left-radius: 9px;
     border-top-right-radius: 9px;
     border-bottom: none;
@@ -145,16 +173,20 @@ strong {
 }
 .nobifashion_fav_btn.active {
     background: white;
-    border-color: #ef4444;
+    border-color: var(--primary-color, #3d3d3d);
+    color: var(--primary-color, #3d3d3d);
 }
 .nobifashion_fav_btn.active .heart:before,
 .nobifashion_fav_btn.active .heart:after {
-    background: #ef4444;
-    border-color: #ef4444;
+    background: var(--primary-color, #3d3d3d);
+    border-color: var(--primary-color, #3d3d3d);
 }
 .nobifashion_fav_btn svg {
     width: 30px !important;
     height: 30px !important;
+}
+.nobifashion_fav_btn svg path {
+    fill: currentColor;
 }
 input:disabled {
     opacity: 0.4 !important;

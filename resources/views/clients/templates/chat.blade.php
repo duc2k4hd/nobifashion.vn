@@ -1,5 +1,6 @@
 <!-- Chat -->
 <section>
+    <!-- Cụm nút liên hệ góc phải -->
     <div class="nobifashion_chat">
 
         <!-- Nút cuộn lên đầu trang -->
@@ -34,12 +35,67 @@
             </svg>
         </a>
 
-        <!-- Facebook -->
-        <a href="{{ $settings->facebook_link ?? '' }}" target="_blank" class="nobifashion_chat_facebook">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512">
-                <path
-                    d="M320 0c17.7 0 32 14.3 32 32l0 64 120 0c39.8 0 72 32.2 72 72l0 272c0 39.8-32.2 72-72 72l-304 0c-39.8 0-72-32.2-72-72l0-272c0-39.8 32.2-72 72-72l120 0 0-64c0-17.7 14.3-32 32-32zM208 384c-8.8 0-16 7.2-16 16s7.2 16 16 16l32 0c8.8 0 16-7.2 16-16s-7.2-16-16-16l-32 0zm96 0c-8.8 0-16 7.2-16 16s7.2 16 16 16l32 0c8.8 0 16-7.2 16-16s-7.2-16-16-16l-32 0zm96 0c-8.8 0-16 7.2-16 16s7.2 16 16 16l32 0c8.8 0 16-7.2 16-16s-7.2-16-16-16l-32 0zM264 256a40 40 0 1 0 -80 0 40 40 0 1 0 80 0zm152 40a40 40 0 1 0 0-80 40 40 0 1 0 0 80zM48 224l16 0 0 192-16 0c-26.5 0-48-21.5-48-48l0-96c0-26.5 21.5-48 48-48zm544 0c26.5 0 48 21.5 48 48l0 96c0 26.5-21.5 48-48 48l-16 0 0-192 16 0z" />
+        <!-- Chat Trợ lý AI (Thay thế nút Facebook) -->
+        <button type="button" id="nobiChatLauncherBtn" class="nobifashion_chat_ai" aria-label="Mở cửa sổ chat hỗ trợ Nobi Fashion">
+            <!-- Icon chat mở -->
+            <svg class="nobi-chat-icon-open" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M12 2C6.477 2 2 6.142 2 11.25c0 2.578 1.157 4.908 3.033 6.559-.193 1.258-.783 2.85-1.85 4.103a.75.75 0 0 0 .755 1.238c2.46-.37 4.544-1.393 5.679-2.189.76.185 1.562.289 2.383.289 5.523 0 10-4.142 10-9.25S17.523 2 12 2zm0 15c-.714 0-1.408-.088-2.067-.253a.75.75 0 0 0-.585.087c-.89.593-2.392 1.34-4.14 1.705.65-.92 1.07-1.99 1.232-2.923a.75.75 0 0 0-.256-.667C4.62 13.568 3.5 11.758 3.5 11.25 3.5 7.245 7.306 3.5 12 3.5s8.5 3.745 8.5 7.75-3.806 7.75-8.5 7.75z"/>
             </svg>
-        </a>
+            <!-- Icon đóng -->
+            <svg class="nobi-chat-icon-close" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M18.3 5.71a1 1 0 0 0-1.41 0L12 10.59 7.11 5.7a1 1 0 0 0-1.41 1.42L10.59 12 5.7 16.89a1 1 0 1 0 1.41 1.41L12 13.41l4.89 4.89a1 1 0 0 0 1.41-1.41L13.41 12l4.89-4.89a1 1 0 0 0 0-1.4z"/>
+            </svg>
+            <span class="nobi-chat-online-badge" title="Tư vấn viên đang trực tuyến"></span>
+        </button>
+    </div>
+
+    <!-- Cửa sổ Chat Popup (Bung mở từ góc trái) -->
+    <div id="nobiChatPopup" class="nobi-chat-popup" role="dialog" aria-modal="true" aria-label="Cửa sổ trò chuyện CSKH Nobi Fashion">
+        <!-- Header -->
+        <div class="nobi-chat-header">
+            <div class="nobi-chat-header-profile">
+                <div class="nobi-chat-avatar-wrap">
+                    <img width="100%" height="100%" src="{{asset('/clients/assets/img/business/'. $settings->site_favicon)}}" alt="Nobi Fashion">
+                </div>
+                <div class="nobi-chat-header-info">
+                    <h4>Nobi Fashion</h4>
+                    <div class="nobi-chat-header-status">
+                        <span class="nobi-chat-status-dot"></span> Đang trực tuyến
+                    </div>
+                </div>
+            </div>
+            <div class="nobi-chat-header-actions">
+                <button type="button" id="nobiChatBtnClear" class="nobi-chat-btn-action" title="Xóa lịch sử cuộc trò chuyện">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                    </svg>
+                </button>
+                <button type="button" id="nobiChatBtnClose" class="nobi-chat-btn-action" title="Thu nhỏ">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Body: Khung tin nhắn -->
+        <div id="nobiChatBody" class="nobi-chat-body">
+            <!-- Tin nhắn sẽ được nạp động từ LocalStorage hoặc API -->
+        </div>
+
+        <!-- Footer: Khung nhập tin nhắn -->
+        <div class="nobi-chat-footer">
+            <div class="nobi-chat-input-row">
+                <input type="text" id="nobiChatInput" class="nobi-chat-input" placeholder="Hỏi Nobi Fashion bất cứ điều gì..." maxlength="1000" autocomplete="off">
+                <button type="button" id="nobiChatBtnSend" class="nobi-chat-btn-send" title="Gửi câu hỏi" aria-label="Gửi">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="nobi-chat-footer-brand">
+                Nobi Fashion AI Assistant • Hỗ trợ 24/7
+            </div>
+        </div>
     </div>
 </section>

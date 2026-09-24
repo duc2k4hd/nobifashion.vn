@@ -656,7 +656,7 @@ img.nobifashion_single_info_images_main_image.nobifashion_single_image_clickable
     display: inline-flex;
     align-items: center;
     height: 44px;
-    border: 1.5px solid #ddd1c7;
+    border: 1.5px solid var(--secondary-color, #666666);
     border-radius: 4px;
     background: #fff;
     overflow: hidden;
@@ -668,26 +668,28 @@ img.nobifashion_single_info_images_main_image.nobifashion_single_image_clickable
     height: 100%;
     border: 0;
     background: transparent;
-    color: #594943;
+    color: var(--primary-color, #3d3d3d);
     font-size: 18px;
     cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
 }
 
 .nobifashion_single_info_specifications_actions_btn:hover {
-    background: #f8f1ec;
+    background: rgba(61, 61, 61, 0.08);
+    color: var(--primary-color, #3d3d3d);
 }
 
 .nobifashion_single_info_qty_value {
     min-width: 38px;
     height: 100%;
-    border-left: 1px solid #ece2d7;
-    border-right: 1px solid #ece2d7;
+    border-left: 1px solid rgba(102, 102, 102, 0.25);
+    border-right: 1px solid rgba(102, 102, 102, 0.25);
     display: inline-flex;
     align-items: center;
     justify-content: center;
     font-size: 14px;
     font-weight: 700;
-    color: #241b17;
+    color: var(--primary-color, #3d3d3d);
 }
 
 .nobifashion_single_info_action_primary {
@@ -709,30 +711,32 @@ img.nobifashion_single_info_images_main_image.nobifashion_single_image_clickable
     letter-spacing: 0.4px;
     text-transform: uppercase;
     cursor: pointer;
-    transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+    transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
 }
 
 .nobifashion_single_info_add_cart {
     flex: 1;
-    border: 2px solid #e5252a;
+    border: 2px solid var(--primary-color, #3d3d3d);
     background: #fff;
-    color: #e5252a;
+    color: var(--primary-color, #3d3d3d);
 }
 
 .nobifashion_single_info_add_cart:hover {
-    background: #fff2f1;
+    background: rgba(61, 61, 61, 0.06);
+    border-color: var(--primary-color, #3d3d3d);
+    color: var(--primary-color, #3d3d3d);
 }
 
 .nobifashion_single_info_buy_now {
     width: 100%;
     flex: 1;
     border: 0;
-    background: #e5252a;
+    background: var(--primary-color, #3d3d3d);
     color: #fff;
 }
 
 .nobifashion_single_info_buy_now:hover {
-    background: #c51f24;
+    background: var(--secondary-color, #666666);
 }
 
 .nobifashion_single_info_buy_group {
@@ -789,13 +793,15 @@ img.nobifashion_single_info_images_main_image.nobifashion_single_image_clickable
 .nobifashion_single_info_favorite_btn {
     width: 44px;
     height: 44px;
-    border: 1px solid #e3d8ce;
-    border-radius: 4px;
+    border: 1.5px solid var(--secondary-color, #666666);
+    border-radius: 50%;
     background: #fff;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     padding: 0;
+    color: var(--primary-color, #3d3d3d);
+    transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.18s ease;
 }
 
 .nobifashion_single_info_favorite_btn svg {
@@ -803,20 +809,30 @@ img.nobifashion_single_info_images_main_image.nobifashion_single_image_clickable
     height: 22px;
 }
 
+.nobifashion_single_info_favorite_btn svg path {
+    fill: var(--primary-color, #3d3d3d);
+}
+
+.nobifashion_single_info_favorite_btn:hover {
+    border-color: var(--primary-color, #3d3d3d);
+    background: rgba(61, 61, 61, 0.06);
+}
+
 .nobifashion_single_info_stock {
-    border: 1.5px solid #1a73e8;
+    border: 1.5px solid var(--secondary-color, #666666);
     border-radius: 6px;
     overflow: hidden;
 }
 
 .nobifashion_single_info_stock_bar_wrap {
     position: relative;
-    height: 24px;
+    height: 26px;
+    background: #f0f0f0;
 }
 
 .nobifashion_single_info_stock_bar {
     height: 100%;
-    background: linear-gradient(90deg, #1a73e8 0%, #4a90e2 100%);
+    background: linear-gradient(90deg, var(--primary-color, #3d3d3d) 0%, var(--secondary-color, #666666) 100%);
     border-radius: 0 4px 4px 0;
     transition: width 0.2s ease;
 }
@@ -828,13 +844,15 @@ img.nobifashion_single_info_images_main_image.nobifashion_single_image_clickable
     transform: translateY(-50%);
     font-size: 11px;
     font-weight: 700;
-    color: #1a4f9f;
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    z-index: 2;
 }
 
 .nobifashion_single_info_stock_note {
     padding: 6px 10px;
     font-size: 11.5px;
-    color: #cf2328;
+    color: var(--primary-color, #3d3d3d);
     font-weight: 600;
     background: #fff;
 }
