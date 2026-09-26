@@ -50,6 +50,20 @@ class MediaAssignmentService
 
     public function delete(string $source, string $id, bool $deletePhysical = true): bool
     {
+        // Nếu ID thuộc bảng images, xóa trực tiếp bản ghi trong bảng images
+        if (is_numeric($id) && DB::table('images')->where('id', (int) $id)->exists()) {
+            $image = Image::find((int) $id);
+            if ($image) {
+                if ($deletePhysical && $image->path) {
+                    $abs = public_path($image->path);
+                    if ($abs && is_file($abs)) {
+                        @unlink($abs);
+                    }
+                }
+                return (bool) $image->delete();
+            }
+        }
+
         return match ($source) {
             'product_image' => $this->deleteProductImage((int) $id, $deletePhysical),
             'post_thumbnail' => $this->clearPostThumbnail((int) $id, $deletePhysical),
@@ -144,7 +158,7 @@ class MediaAssignmentService
                 } else {
                     $failedCount++;
                 }
-            } elseif ($source === 'product_image' || $source === 'library_image') {
+            } elseif (in_array($source, ['product_image', 'library_image', 'post_thumbnail', 'category_image', 'banner_desktop', 'banner_mobile', 'profile_avatar', 'profile_sub_avatar'], true)) {
                 if ($id) {
                     $imageIds[] = (int) $id;
                 } else {
@@ -675,12 +689,12 @@ class MediaAssignmentService
     {
         $image = Image::findOrFail($imageId);
 
-        if ($this->isImageReferencedInPostContent($image)) {
-            throw new \DomainException('Ảnh đang được dùng trong nội dung bài viết, không thể xóa trực tiếp.');
-        }
+        $path = $image->path ?: $image->url;
+        $abs = $path ? public_path($path) : null;
+        $fileExists = $abs && is_file($abs);
 
-        if ($deletePhysical) {
-            $this->deleteManagedPath($image->path ?: $image->url);
+        if ($deletePhysical && $fileExists) {
+            $this->deleteManagedPath($path);
         }
 
         return (bool) $image->delete();

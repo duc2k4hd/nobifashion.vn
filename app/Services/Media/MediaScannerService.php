@@ -381,13 +381,17 @@ class MediaScannerService
         $estimatedSize = (int) Image::query()->sum('size');
         $inUse = max($total - $external - $unassigned, 0);
 
+        $missing = Image::query()->where(function ($q) {
+            $q->whereNull('size')->orWhere('size', 0);
+        })->count();
+
         return [
             'library_items' => $total,
             'tracked_records' => $total,
             'physical_files' => $physicalFiles,
             'in_use' => $inUse,
             'orphan_files' => 0,
-            'missing_files' => 0,
+            'missing_files' => $missing,
             'unassigned_records' => $unassigned,
             'external_files' => $external,
             'estimated_size' => $this->files->formatBytes($estimatedSize),
@@ -395,7 +399,7 @@ class MediaScannerService
                 'all' => $total,
                 'in_use' => $inUse,
                 'orphan_file' => 0,
-                'missing_file' => 0,
+                'missing_file' => $missing,
                 'unassigned_record' => $unassigned,
                 'external' => $external,
                 'shared_file' => $shared,
@@ -813,12 +817,12 @@ class MediaScannerService
     {
         return match (true) {
             $entityType === 'product' => ['type' => 'product_image', 'source' => 'product_image', 'id' => (string) $image->id],
-            $entityType === 'post' => ['type' => 'post_thumbnail', 'source' => 'post_thumbnail', 'id' => (string) $entityId],
-            $entityType === 'category' => ['type' => 'category_image', 'source' => 'category_image', 'id' => (string) $entityId],
-            $entityType === 'banner' && $image->role === 'mobile' => ['type' => 'banner_mobile', 'source' => 'banner_mobile', 'id' => (string) $entityId],
-            $entityType === 'banner' => ['type' => 'banner_desktop', 'source' => 'banner_desktop', 'id' => (string) $entityId],
-            $entityType === 'profile' && $image->role === 'sub_avatar' => ['type' => 'profile_sub_avatar', 'source' => 'profile_sub_avatar', 'id' => (string) $entityId],
-            $entityType === 'profile' => ['type' => 'profile_avatar', 'source' => 'profile_avatar', 'id' => (string) $entityId],
+            $entityType === 'post' => ['type' => 'post_thumbnail', 'source' => 'post_thumbnail', 'id' => (string) $image->id],
+            $entityType === 'category' => ['type' => 'category_image', 'source' => 'category_image', 'id' => (string) $image->id],
+            $entityType === 'banner' && $image->role === 'mobile' => ['type' => 'banner_mobile', 'source' => 'banner_mobile', 'id' => (string) $image->id],
+            $entityType === 'banner' => ['type' => 'banner_desktop', 'source' => 'banner_desktop', 'id' => (string) $image->id],
+            $entityType === 'profile' && $image->role === 'sub_avatar' => ['type' => 'profile_sub_avatar', 'source' => 'profile_sub_avatar', 'id' => (string) $image->id],
+            $entityType === 'profile' => ['type' => 'profile_avatar', 'source' => 'profile_avatar', 'id' => (string) $image->id],
             default => ['type' => 'library_image', 'source' => 'library_image', 'id' => (string) $image->id],
         };
     }

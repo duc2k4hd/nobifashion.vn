@@ -190,4 +190,58 @@ class AdminMediaController extends Controller
 
         return response()->json($summary);
     }
+
+    /**
+     * Lấy thống kê tổng quan trước khi chạy đồng bộ ảnh bài viết
+     */
+    public function syncPostsOverview(\App\Services\Media\PostMediaSyncService $syncService)
+    {
+        return response()->json([
+            'success' => true,
+            'data' => $syncService->getSyncOverview(),
+        ]);
+    }
+
+    /**
+     * Bước 1: Quét và nạp các file ảnh vật lý từ clients/assets/img/posts vào media library
+     */
+    public function syncPostsIndexFiles(\App\Services\Media\PostMediaSyncService $syncService)
+    {
+        $result = $syncService->indexPhysicalFiles();
+
+        return response()->json($result);
+    }
+
+    /**
+     * Bước 2: Quét batch bài viết, đối soát và gán ảnh vào bài viết tương ứng
+     */
+    public function syncPostsProcessChunk(Request $request, \App\Services\Media\PostMediaSyncService $syncService)
+    {
+        $validated = $request->validate([
+            'offset' => 'nullable|integer|min:0',
+            'limit' => 'nullable|integer|min:10|max:1000',
+            'auto_register_missing' => 'nullable|boolean',
+            'update_meta' => 'nullable|boolean',
+        ]);
+
+        $offset = (int) ($validated['offset'] ?? 0);
+        $limit = (int) ($validated['limit'] ?? 100);
+
+        $result = $syncService->syncPostsChunk($offset, $limit, [
+            'update_meta' => (bool) ($validated['update_meta'] ?? true),
+        ]);
+
+        return response()->json(array_merge(['success' => true], $result));
+    }
+
+    /**
+     * Dọn dẹp tất cả các bản ghi ảnh thiếu file vật lý trong bảng images
+     */
+    public function syncPostsCleanupGhostImages(\App\Services\Media\PostMediaSyncService $syncService)
+    {
+        $result = $syncService->cleanupGhostImages(10000);
+
+        return response()->json($result);
+    }
 }
+

@@ -42,6 +42,8 @@
                 gridRenderSignature: '',
                 isLoading: false,
                 isDeleting: false,
+                isSyncingPosts: false,
+                shouldStopSyncPosts: false,
                 uiLockDepth: 0,
             };
 
@@ -153,6 +155,29 @@
                 loadingProgressBar: document.getElementById('mediaLoadingProgressBar'),
                 toast: document.getElementById('mediaToast'),
                 statsGrid: document.getElementById('mediaStatsGrid'),
+                syncPostsBtn: document.getElementById('mediaSyncPostsBtn'),
+                syncPostsModal: document.getElementById('mediaSyncPostsModal'),
+                syncPostsBackdrop: document.getElementById('mediaSyncPostsBackdrop'),
+                closeSyncPostsXBtn: document.getElementById('mediaCloseSyncPostsXBtn'),
+                closeSyncPostsBtn: document.getElementById('mediaCloseSyncPostsBtn'),
+                startSyncPostsBtn: document.getElementById('mediaStartSyncPostsBtn'),
+                stopSyncPostsBtn: document.getElementById('mediaStopSyncPostsBtn'),
+                syncOptionIndexFiles: document.getElementById('syncOptionIndexFiles'),
+                syncOptionAutoRegister: document.getElementById('syncOptionAutoRegister'),
+                syncOptionUpdateMeta: document.getElementById('syncOptionUpdateMeta'),
+                syncOptionBatchSize: document.getElementById('syncOptionBatchSize'),
+                syncProgressContainer: document.getElementById('syncProgressContainer'),
+                syncProgressBar: document.getElementById('syncProgressBar'),
+                syncProgressPercent: document.getElementById('syncProgressPercent'),
+                syncProgressStatusText: document.getElementById('syncProgressStatusText'),
+                syncProgressProcessedPosts: document.getElementById('syncProgressProcessedPosts'),
+                syncProgressAssignedImages: document.getElementById('syncProgressAssignedImages'),
+                syncProgressCreatedImages: document.getElementById('syncProgressCreatedImages'),
+                syncStatTotalPosts: document.getElementById('syncStatTotalPosts'),
+                syncStatPhysicalFiles: document.getElementById('syncStatPhysicalFiles'),
+                syncStatAssignedImages: document.getElementById('syncStatAssignedImages'),
+                syncStatUnassignedImages: document.getElementById('syncStatUnassignedImages'),
+                cleanupGhostsBtn: document.getElementById('mediaCleanupGhostsBtn'),
             };
         }
 
@@ -352,6 +377,13 @@
             this.elements.deleteBtn?.addEventListener('click', () => this.handleDeleteCurrent());
             this.elements.assignForm?.addEventListener('submit', (event) => this.handleAssign(event));
             this.elements.assignTargetType?.addEventListener('change', () => this.loadAssignTargets('', { lockUi: true }));
+            this.elements.syncPostsBtn?.addEventListener('click', () => this.openSyncPostsModal());
+            this.elements.closeSyncPostsXBtn?.addEventListener('click', () => this.closeSyncPostsModal());
+            this.elements.closeSyncPostsBtn?.addEventListener('click', () => this.closeSyncPostsModal());
+            this.elements.syncPostsBackdrop?.addEventListener('click', () => this.closeSyncPostsModal());
+            this.elements.startSyncPostsBtn?.addEventListener('click', () => this.startSyncPostsProcess());
+            this.elements.stopSyncPostsBtn?.addEventListener('click', () => this.stopSyncPostsProcess());
+            this.elements.cleanupGhostsBtn?.addEventListener('click', () => this.runCleanupGhosts());
         }
 
         resolveToggleFilterValue(currentValue, clickedValue) {
@@ -1478,6 +1510,285 @@
                 this.showToast(error.message || 'Không thể dọn dẹp media.', 'error');
             } finally {
                 this.unlockUi();
+            }
+        }
+
+        async openSyncPostsModal() {
+            if (!this.elements.syncPostsModal) {
+                return;
+            }
+
+            this.elements.syncPostsModal.hidden = false;
+            if (this.elements.syncProgressContainer) this.elements.syncProgressContainer.style.display = 'none';
+            if (this.elements.syncProgressBar) this.elements.syncProgressBar.style.width = '0%';
+            if (this.elements.syncProgressPercent) this.elements.syncProgressPercent.textContent = '0%';
+            if (this.elements.syncProgressProcessedPosts) this.elements.syncProgressProcessedPosts.textContent = '0';
+            if (this.elements.syncProgressAssignedImages) this.elements.syncProgressAssignedImages.textContent = '0';
+
+            await this.fetchSyncOverview();
+        }
+
+        closeSyncPostsModal() {
+            if (this.state.isSyncingPosts) {
+                const confirmed = window.confirm('Quá trình đồng bộ đang chạy. Bạn có chắc chắn muốn dừng và đóng lại?');
+                if (!confirmed) {
+                    return;
+                }
+                this.stopSyncPostsProcess();
+            }
+
+            if (this.elements.syncPostsModal) {
+                this.elements.syncPostsModal.hidden = true;
+            }
+        }
+
+        async fetchSyncOverview() {
+            if (!this.routes.syncPostsOverview) {
+                return;
+            }
+
+            try {
+                if (this.elements.syncStatTotalPosts) this.elements.syncStatTotalPosts.textContent = '...';
+                if (this.elements.syncStatPhysicalFiles) this.elements.syncStatPhysicalFiles.textContent = '...';
+                if (this.elements.syncStatAssignedImages) this.elements.syncStatAssignedImages.textContent = '...';
+                if (this.elements.syncStatUnassignedImages) this.elements.syncStatUnassignedImages.textContent = '...';
+
+                const response = await fetch(this.routes.syncPostsOverview, {
+                    headers: { Accept: 'application/json' },
+                });
+                const res = await response.json();
+                if (res.success && res.data) {
+                    const d = res.data;
+                    if (this.elements.syncStatTotalPosts) this.elements.syncStatTotalPosts.textContent = Number(d.total_posts || 0).toLocaleString();
+                    if (this.elements.syncStatPhysicalFiles) this.elements.syncStatPhysicalFiles.textContent = Number(d.physical_files_count || 0).toLocaleString();
+                    if (this.elements.syncStatAssignedImages) this.elements.syncStatAssignedImages.textContent = Number(d.assigned_post_images || 0).toLocaleString();
+                    if (this.elements.syncStatUnassignedImages) this.elements.syncStatUnassignedImages.textContent = Number(d.unassigned_post_images || 0).toLocaleString();
+                }
+            } catch (error) {
+                console.warn('Không thể lấy thống kê tổng quan:', error);
+            }
+        }
+
+        setSyncModalBusy(isBusy) {
+            this.state.isSyncingPosts = isBusy;
+            if (this.elements.startSyncPostsBtn) this.elements.startSyncPostsBtn.disabled = isBusy;
+            if (this.elements.stopSyncPostsBtn) this.elements.stopSyncPostsBtn.style.display = isBusy ? 'inline-flex' : 'none';
+            if (this.elements.closeSyncPostsBtn) this.elements.closeSyncPostsBtn.disabled = isBusy;
+            if (this.elements.closeSyncPostsXBtn) this.elements.closeSyncPostsXBtn.disabled = isBusy;
+            if (this.elements.cleanupGhostsBtn) this.elements.cleanupGhostsBtn.disabled = isBusy;
+            if (this.elements.syncOptionUpdateMeta) this.elements.syncOptionUpdateMeta.disabled = isBusy;
+            if (this.elements.syncOptionBatchSize) this.elements.syncOptionBatchSize.disabled = isBusy;
+        }
+
+        stopSyncPostsProcess() {
+            this.state.shouldStopSyncPosts = true;
+            if (this.elements.syncProgressStatusText) {
+                this.elements.syncProgressStatusText.textContent = 'Đang dừng tiến trình... Vui lòng đợi nốt batch hiện tại.';
+            }
+            if (this.elements.stopSyncPostsBtn) {
+                this.elements.stopSyncPostsBtn.disabled = true;
+                this.elements.stopSyncPostsBtn.textContent = 'Đang dừng...';
+            }
+        }
+
+        async runCleanupGhosts() {
+            if (!confirm('Bạn có chắc chắn muốn xóa tất cả các bản ghi ảnh rác (thiếu file vật lý trên ổ cứng) không? Thao tác này sẽ xóa các bản ghi media bị lỗi file.')) {
+                return;
+            }
+
+            if (!this.routes.syncPostsCleanupGhosts) {
+                this.showToast('Không tìm thấy đường dẫn dọn dẹp ảnh rác.', 'error');
+                return;
+            }
+
+            this.setSyncModalBusy(true);
+            if (this.elements.syncProgressContainer) {
+                this.elements.syncProgressContainer.style.display = 'block';
+            }
+            if (this.elements.syncProgressBar) {
+                this.elements.syncProgressBar.style.width = '10%';
+            }
+            if (this.elements.syncProgressPercent) {
+                this.elements.syncProgressPercent.textContent = '...';
+            }
+            if (this.elements.syncProgressStatusText) {
+                this.elements.syncProgressStatusText.textContent = 'Đang quét và xóa các bản ghi ảnh thiếu file...';
+            }
+
+            let totalDeleted = 0;
+            try {
+                let hasMore = true;
+                while (hasMore) {
+                    const resp = await fetch(this.routes.syncPostsCleanupGhosts, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': this.csrfToken,
+                        },
+                    });
+
+                    if (!resp.ok) {
+                        throw new Error('Lỗi khi dọn dẹp ảnh rác từ máy chủ.');
+                    }
+
+                    const data = await resp.json();
+                    const deleted = data.deleted || 0;
+                    totalDeleted += deleted;
+
+                    if (this.elements.syncProgressStatusText) {
+                        this.elements.syncProgressStatusText.textContent = `Đang xóa... Đã dọn dẹp ${totalDeleted.toLocaleString()} bản ghi thiếu file.`;
+                    }
+
+                    hasMore = Boolean(data.has_more) && deleted > 0;
+                }
+
+                if (this.elements.syncProgressBar) this.elements.syncProgressBar.style.width = '100%';
+                if (this.elements.syncProgressPercent) this.elements.syncProgressPercent.textContent = '100%';
+                if (this.elements.syncProgressStatusText) {
+                    this.elements.syncProgressStatusText.textContent = `Hoàn tất! Đã dọn dẹp thành công ${totalDeleted.toLocaleString()} bản ghi ảnh thiếu file.`;
+                }
+
+                this.showToast(`Đã dọn dẹp thành công ${totalDeleted.toLocaleString()} ảnh thiếu file!`, 'success');
+
+                await this.fetchSyncOverview();
+                await this.fetchItems({ lockUi: false });
+            } catch (err) {
+                console.error('Lỗi khi dọn dẹp ảnh thiếu file:', err);
+                this.showToast(err.message || 'Lỗi khi dọn dẹp ảnh thiếu file.', 'error');
+            } finally {
+                this.setSyncModalBusy(false);
+            }
+        }
+
+        async startSyncPostsProcess() {
+            if (this.state.isSyncingPosts) {
+                return;
+            }
+
+            this.state.shouldStopSyncPosts = false;
+            this.setSyncModalBusy(true);
+
+            if (this.elements.stopSyncPostsBtn) {
+                this.elements.stopSyncPostsBtn.disabled = false;
+                this.elements.stopSyncPostsBtn.textContent = 'Dừng lại';
+            }
+
+            if (this.elements.syncProgressContainer) {
+                this.elements.syncProgressContainer.style.display = 'block';
+            }
+
+            const updateMeta = this.elements.syncOptionUpdateMeta?.checked ?? true;
+            const batchSize = parseInt(this.elements.syncOptionBatchSize?.value || '100', 10);
+
+            let totalAssigned = 0;
+            let totalProcessedPosts = 0;
+            let totalDetected = 0;
+
+            try {
+                // Lấy tổng số bài viết để tính %
+                let totalPosts = 0;
+                try {
+                    const ovResp = await fetch(this.routes.syncPostsOverview, {
+                        headers: { Accept: 'application/json' },
+                    });
+                    const ovData = await ovResp.json();
+                    totalPosts = parseInt(ovData?.data?.total_posts || 0, 10);
+                } catch (e) {
+                    totalPosts = 0;
+                }
+
+                if (this.elements.syncProgressStatusText) {
+                    this.elements.syncProgressStatusText.textContent = 'Đang quét nội dung bài viết và đối soát gán ảnh có sẵn trong Media...';
+                }
+
+                let offset = 0;
+                let finished = false;
+
+                while (!finished && !this.state.shouldStopSyncPosts) {
+                    const startNum = offset + 1;
+                    const endNum = totalPosts > 0 ? Math.min(offset + batchSize, totalPosts) : (offset + batchSize);
+                    
+                    if (this.elements.syncProgressStatusText) {
+                        this.elements.syncProgressStatusText.textContent = `Đang xử lý bài viết ${startNum} - ${endNum} ${totalPosts > 0 ? '/ ' + totalPosts : ''}...`;
+                    }
+
+                    const chunkResp = await fetch(this.routes.syncPostsProcessChunk, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'X-CSRF-TOKEN': this.csrfToken,
+                        },
+                        body: JSON.stringify({
+                            offset: offset,
+                            limit: batchSize,
+                            update_meta: updateMeta,
+                        }),
+                    });
+
+                    if (!chunkResp.ok) {
+                        const errPayload = await chunkResp.json().catch(() => ({}));
+                        throw new Error(errPayload.message || 'Lỗi khi xử lý batch bài viết.');
+                    }
+
+                    const chunkResult = await chunkResp.json();
+
+                    const processed = chunkResult.processed_posts || 0;
+                    totalProcessedPosts += processed;
+                    totalDetected += chunkResult.images_detected || 0;
+                    totalAssigned += chunkResult.images_assigned || 0;
+
+                    // Cập nhật UI counters
+                    if (this.elements.syncProgressProcessedPosts) {
+                        this.elements.syncProgressProcessedPosts.textContent = totalProcessedPosts.toLocaleString();
+                    }
+                    if (this.elements.syncProgressAssignedImages) {
+                        this.elements.syncProgressAssignedImages.textContent = totalAssigned.toLocaleString();
+                    }
+
+                    // Cập nhật progress bar
+                    if (totalPosts > 0) {
+                        const pct = Math.min(100, Math.round((totalProcessedPosts / totalPosts) * 100));
+                        this.elements.syncProgressBar.style.width = pct + '%';
+                        this.elements.syncProgressPercent.textContent = pct + '%';
+                    }
+
+                    if (chunkResult.finished || processed === 0) {
+                        finished = true;
+                    } else {
+                        offset = chunkResult.next_offset || (offset + batchSize);
+                    }
+                }
+
+                // Kết thúc
+                this.elements.syncProgressBar.style.width = '100%';
+                this.elements.syncProgressPercent.textContent = '100%';
+
+                if (this.state.shouldStopSyncPosts) {
+                    if (this.elements.syncProgressStatusText) {
+                        this.elements.syncProgressStatusText.textContent = `Đã tạm dừng! Đã quét ${totalProcessedPosts} bài viết, gán ${totalAssigned} ảnh.`;
+                    }
+                    this.showToast(`Đã dừng: Quét được ${totalProcessedPosts} bài viết, gán ${totalAssigned} ảnh.`, 'warning');
+                } else {
+                    if (this.elements.syncProgressStatusText) {
+                        this.elements.syncProgressStatusText.textContent = `Hoàn tất! Đã quét ${totalProcessedPosts} bài viết, gán thành công ${totalAssigned} ảnh có sẵn trong Media!`;
+                    }
+                    this.showToast(`Hoàn tất đồng bộ: Đã gán ${totalAssigned} ảnh vào đúng bài viết!`, 'success');
+                }
+
+                // Cập nhật lại thông số tổng quan và nạp lại danh sách media
+                await this.fetchSyncOverview();
+                await this.fetchItems({ lockUi: false });
+
+            } catch (err) {
+                console.error('Lỗi đồng bộ ảnh bài viết:', err);
+                this.showToast(err.message || 'Lỗi trong quá trình đồng bộ.', 'error');
+                if (this.elements.syncProgressStatusText) {
+                    this.elements.syncProgressStatusText.textContent = 'Gặp lỗi: ' + (err.message || 'Không thể tiếp tục.');
+                }
+            } finally {
+                this.setSyncModalBusy(false);
             }
         }
 

@@ -20,6 +20,12 @@
                 </p>
             </div>
             <div class="media-page-actions">
+                <button type="button" class="media-btn media-btn-secondary" id="mediaSyncPostsBtn" title="Quét toàn bộ ảnh trong bài viết và tự động gán đối tượng">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; vertical-align: -2px;">
+                        <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+                    </svg>
+                    Đồng bộ ảnh bài viết
+                </button>
                 <button type="button" class="media-btn media-btn-secondary" id="mediaRefreshBtn">Quét lại dữ liệu</button>
                 <button type="button" class="media-btn media-btn-secondary" id="mediaCleanupBtn">Dọn file lỗi</button>
                 <button type="button" class="media-btn media-btn-primary" id="mediaToggleUploadBtn">Tải ảnh mới</button>
@@ -339,6 +345,111 @@
     </div>
 
     <div class="media-toast" id="mediaToast" hidden></div>
+
+    <!-- Modal Đồng bộ & Gán ảnh bài viết -->
+    <div class="media-modal" id="mediaSyncPostsModal" hidden>
+        <div class="media-modal__backdrop" id="mediaSyncPostsBackdrop"></div>
+        <div class="media-modal__dialog" style="max-width: 720px; height: auto; max-height: 90vh; overflow-y: auto;">
+            <div class="media-modal__header">
+                <div>
+                    <p class="media-modal__eyebrow">Tối ưu & Tự động hóa</p>
+                    <h2 style="font-size: 20px;">Đồng bộ & Gán ảnh bài viết</h2>
+                    <p class="media-modal__description" style="font-size: 13px;">
+                        Quét toàn bộ ảnh trong nội dung HTML và thumbnail bài viết, tự động đối soát theo tên file / link ảnh và gán vào bài viết tương ứng với tốc độ cao.
+                    </p>
+                </div>
+                <button type="button" class="media-panel-close" id="mediaCloseSyncPostsXBtn" aria-label="Đóng">×</button>
+            </div>
+
+            <div class="media-modal__body" style="display: flex; flex-direction: column; gap: 16px; padding: 10px 0;">
+                <!-- Thống kê trước khi chạy -->
+                <div class="media-stats-grid" style="grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 0;">
+                    <div class="media-stat-card" style="padding: 10px 14px;">
+                        <span class="media-stat-label" style="font-size: 11px;">Tổng bài viết</span>
+                        <strong class="media-stat-value" id="syncStatTotalPosts" style="font-size: 18px;">-</strong>
+                    </div>
+                    <div class="media-stat-card" style="padding: 10px 14px;">
+                        <span class="media-stat-label" style="font-size: 11px;">File vật lý (posts)</span>
+                        <strong class="media-stat-value" id="syncStatPhysicalFiles" style="font-size: 18px;">-</strong>
+                    </div>
+                    <div class="media-stat-card media-stat-success" style="padding: 10px 14px;">
+                        <span class="media-stat-label" style="font-size: 11px;">Ảnh đã gán bài</span>
+                        <strong class="media-stat-value" id="syncStatAssignedImages" style="font-size: 18px;">-</strong>
+                    </div>
+                    <div class="media-stat-card media-stat-warning" style="padding: 10px 14px;">
+                        <span class="media-stat-label" style="font-size: 11px;">Ảnh chưa gán</span>
+                        <strong class="media-stat-value" id="syncStatUnassignedImages" style="font-size: 18px;">-</strong>
+                    </div>
+                </div>
+
+                <!-- Thiết lập đồng bộ -->
+                <div style="background: #ffffff; border: 1px solid var(--media-border); border-radius: 12px; padding: 16px;">
+                    <h4 style="margin: 0 0 12px; font-size: 14px; font-weight: 600;">Cấu hình đồng bộ</h4>
+                    <div style="display: flex; flex-direction: column; gap: 10px; font-size: 13px;">
+                        <div style="padding: 10px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; color: #166534; font-size: 12px; line-height: 1.5;">
+                            ✓ <strong>Quy tắc an toàn:</strong> Chỉ quét bài viết và gán đối tượng cho <strong>ảnh thật đã có sẵn trong bảng Media</strong>. Ảnh trong bài viết nếu chưa có trong Media sẽ <strong>bỏ qua hoàn toàn</strong>, tuyệt đối không tự tạo thêm hàng mới.
+                        </div>
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                            <input type="checkbox" id="syncOptionUpdateMeta" checked>
+                            <span>Cập nhật <strong>Alt text</strong> và <strong>Tiêu đề</strong> từ thẻ &lt;img&gt; nếu ảnh đang để trống</span>
+                        </label>
+                        <div style="display: flex; align-items: center; gap: 12px; margin-top: 6px;">
+                            <label for="syncOptionBatchSize" style="font-weight: 500;">Batch size (Số bài viết / lượt):</label>
+                            <select id="syncOptionBatchSize" style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--media-border);">
+                                <option value="50">50 bài / lượt</option>
+                                <option value="100" selected>100 bài / lượt (Khuyến nghị)</option>
+                                <option value="200">200 bài / lượt</option>
+                                <option value="500">500 bài / lượt (Siêu tốc)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Khu vực tiến trình chạy -->
+                <div id="syncProgressContainer" style="display: none; background: #ffffff; border: 1px solid var(--media-border); border-radius: 12px; padding: 16px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <strong id="syncProgressStatusText" style="font-size: 13px; color: var(--media-primary);">Đang chuẩn bị...</strong>
+                        <span id="syncProgressPercent" style="font-size: 14px; font-weight: 700;">0%</span>
+                    </div>
+                    <div style="height: 10px; background: #e2e8f0; border-radius: 999px; overflow: hidden; margin-bottom: 12px;">
+                        <div id="syncProgressBar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #2271b1, #00a32a); border-radius: 999px; transition: width 0.3s ease;"></div>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 12px; text-align: center; color: var(--media-text-soft);">
+                        <div style="background: var(--media-panel-soft); padding: 8px; border-radius: 8px;">
+                            <span>Bài viết đã quét:</span><br>
+                            <strong id="syncProgressProcessedPosts" style="font-size: 14px; color: var(--media-text);">0</strong>
+                        </div>
+                        <div style="background: var(--media-panel-soft); padding: 8px; border-radius: 8px;">
+                            <span>Ảnh media đã gán bài:</span><br>
+                            <strong id="syncProgressAssignedImages" style="font-size: 14px; color: var(--media-success);">0</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="media-modal__actions" style="border-top: 1px solid var(--media-border); padding-top: 14px; display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <button type="button" class="media-btn media-btn-danger" id="mediaCleanupGhostsBtn" title="Xóa các bản ghi ảnh rác thiếu file vật lý">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px; vertical-align: -2px;">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                        Xóa sạch ảnh thiếu file
+                    </button>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="media-btn media-btn-secondary" id="mediaCloseSyncPostsBtn">Đóng</button>
+                    <button type="button" class="media-btn media-btn-danger" id="mediaStopSyncPostsBtn" style="display: none;">Dừng lại</button>
+                    <button type="button" class="media-btn media-btn-primary" id="mediaStartSyncPostsBtn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px; vertical-align: -2px;">
+                            <polygon points="5 3 19 12 5 21 5 3"/>
+                        </svg>
+                        Bắt đầu đồng bộ
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
@@ -370,6 +481,10 @@
                 fastDeleteScope: @json(route('admin.media.fast-delete-scope')),
                 cleanup: @json(route('admin.media.cleanup')),
                 targets: @json(route('admin.media.targets')),
+                syncPostsOverview: @json(route('admin.media.sync-posts.overview')),
+                syncPostsIndexFiles: @json(route('admin.media.sync-posts.index-files')),
+                syncPostsProcessChunk: @json(route('admin.media.sync-posts.process-chunk')),
+                syncPostsCleanupGhosts: @json(route('admin.media.sync-posts.cleanup-ghosts')),
             },
             initialState: {
                 items: @json($initialMedia),
@@ -378,5 +493,5 @@
             },
         };
     </script>
-    <script src="{{ asset('admins/js/media-manager.js') }}?v={{ env('APP_VERSION') }}"></script>
+    <script src="{{ asset('admins/js/media-manager.js') }}?v={{ env('APP_VERSION') }}.{{ @filemtime(public_path('admins/js/media-manager.js')) }}"></script>
 @endpush

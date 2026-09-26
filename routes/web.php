@@ -454,6 +454,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/fast-delete-scope', [AdminMediaController::class, 'fastDeleteScope'])->name('fast-delete-scope');
             Route::post('/cleanup', [AdminMediaController::class, 'cleanup'])->name('cleanup');
             Route::post('/assign-to-model', AdminMediaAssignController::class)->name('assign');
+            Route::get('/sync-posts/overview', [AdminMediaController::class, 'syncPostsOverview'])->name('sync-posts.overview');
+            Route::post('/sync-posts/index-files', [AdminMediaController::class, 'syncPostsIndexFiles'])->name('sync-posts.index-files');
+            Route::post('/sync-posts/process-chunk', [AdminMediaController::class, 'syncPostsProcessChunk'])->name('sync-posts.process-chunk');
+            Route::post('/sync-posts/cleanup-ghosts', [AdminMediaController::class, 'syncPostsCleanupGhostImages'])->name('sync-posts.cleanup-ghosts');
 
             // Media Library routes (WordPress-style)
             Route::get('/library', [MediaLibraryController::class, 'index'])->name('library.index');
