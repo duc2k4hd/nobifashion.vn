@@ -1,13 +1,15 @@
 @extends('clients.layouts.master')
 
-@section('title', (isset($currentCategory) && $currentCategory ? ($currentCategory->meta_title ?: ($currentCategory->name . ' - Blog thời trang')) : 'Blog & Tin tức thời trang') . ' | ' . config('app.name'))
+@section('title', (isset($currentCategory) && $currentCategory ? ($currentCategory->meta_title ?: $currentCategory->name
+    . ' - Xu hướng & Phong cách') : 'Tin tức, Xu hướng & Phong cách sống') . ' | ' . config('app.name'))
 
 @section('head')
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <meta name="description"
-        content="{{ isset($currentCategory) && $currentCategory ? ($currentCategory->meta_description ?: ($currentCategory->description ?: 'Chia sẻ kinh nghiệm, xu hướng thời trang về ' . $currentCategory->name)) : 'Chia sẻ kinh nghiệm phối đồ, xu hướng thời trang và các câu chuyện thương hiệu tại ' . config('app.name') . '.' }}">
-    <link rel="canonical" href="{{ isset($currentCategory) && $currentCategory ? route('client.blog.category', $currentCategory) : route('client.blog.index') }}">
+        content="{{ isset($currentCategory) && $currentCategory ? ($currentCategory->meta_description ?: ($currentCategory->description ?: 'Tổng hợp các bài viết và thông tin mới nhất về ' . $currentCategory->name . ' tại ' . config('app.name') . '.')) : 'Cập nhật xu hướng thời trang mới nhất, cẩm nang phối đồ và chia sẻ hữu ích về phong cách sống tại ' . config('app.name') . '.' }}">
+    <link rel="canonical"
+        href="{{ isset($currentCategory) && $currentCategory ? route('client.blog.category', $currentCategory) : route('client.blog.index') }}">
 
     <style>
         /* Tổng thể trang */
@@ -65,6 +67,19 @@
         }
 
         /* Sidebar */
+        .blog-sidebar {
+            position: static;
+        }
+
+        @media (min-width: 992px) {
+            .blog-sidebar {
+                position: sticky;
+                top: 90px;
+                align-self: flex-start;
+                z-index: 10;
+            }
+        }
+
         .blog-sidebar .card {
             border: 1px solid #e5e7eb;
             border-radius: 12px;
@@ -160,10 +175,100 @@
             align-items: center;
         }
 
-        .breadcrumb-separator svg {
-            width: 14px;
-            height: 14px;
-            stroke-width: 2.5px;
+        /* Blog Pagination */
+        .blog-pagination-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 36px;
+            margin-bottom: 24px;
+        }
+
+        .blog-pagination-nav {
+            display: inline-block;
+        }
+
+        .blog-pagination-list {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .blog-pagination-list .page-item {
+            display: inline-flex;
+        }
+
+        .blog-pagination-list .page-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 38px;
+            height: 38px;
+            padding: 0 12px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+
+        .blog-pagination-list .page-link:hover {
+            color: #111827;
+            background: #f9fafb;
+            border-color: #d1d5db;
+        }
+
+        .blog-pagination-list .page-item.active .page-link {
+            color: #ffffff;
+            background: #111827;
+            border-color: #111827;
+            font-weight: 600;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+        }
+
+        .blog-pagination-list .page-item.disabled .page-link {
+            color: #d1d5db;
+            background: #fdfdfd;
+            border-color: #f3f4f6;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .blog-pagination-list .page-item.dots .page-link {
+            border: none;
+            background: transparent;
+            min-width: 24px;
+            padding: 0 4px;
+            color: #9ca3af;
+            font-weight: 600;
+        }
+
+        @media (max-width: 576px) {
+            .blog-pagination-wrapper {
+                margin-top: 24px;
+                margin-bottom: 16px;
+            }
+
+            .blog-pagination-list {
+                gap: 4px;
+            }
+
+            .blog-pagination-list .page-link {
+                min-width: 32px;
+                height: 32px;
+                padding: 0 8px;
+                font-size: 13px;
+                border-radius: 6px;
+            }
         }
     </style>
 @endsection
@@ -195,15 +300,17 @@
                 </li>
                 @if (isset($currentCategory) && $currentCategory)
                     <li class="breadcrumb-separator">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                            stroke-linejoin="round">
                             <polyline points="9 18 15 12 9 6"></polyline>
                         </svg>
                     </li>
                     <li class="breadcrumb-item">
-                        <a href="{{ route('client.blog.index') }}">Blog</a>
+                        <a href="{{ route('client.blog.index') }}">Tin tức</a>
                     </li>
                     <li class="breadcrumb-separator">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                            stroke-linejoin="round">
                             <polyline points="9 18 15 12 9 6"></polyline>
                         </svg>
                     </li>
@@ -212,12 +319,13 @@
                     </li>
                 @else
                     <li class="breadcrumb-separator">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                            stroke-linejoin="round">
                             <polyline points="9 18 15 12 9 6"></polyline>
                         </svg>
                     </li>
                     <li class="breadcrumb-item active" aria-current="page">
-                        <span>Blog</span>
+                        <span>Tin tức</span>
                     </li>
                 @endif
             </ol>
@@ -228,17 +336,17 @@
             <div class="row align-items-center">
                 <div class="col-lg-8">
                     @if (isset($currentCategory) && $currentCategory)
-                        <p class="text-uppercase text-primary fw-semibold small mb-1">📁 Chủ đề bài viết</p>
+                        <p class="text-uppercase text-primary fw-semibold small mb-1">CHUYÊN MỤC</p>
                         <h1 class="h3 fw-bold mb-2">{{ $currentCategory->name }}</h1>
                         <p class="text-muted small mb-0">
-                            {{ $currentCategory->description ?: 'Tổng hợp các bài viết hay, hữu ích và xu hướng mới nhất thuộc chủ đề ' . $currentCategory->name . '.' }}
+                            {{ $currentCategory->description ?: 'Tổng hợp các bài viết và thông tin mới nhất thuộc chuyên mục ' . $currentCategory->name . '.' }}
                         </p>
                     @else
-                        <p class="text-uppercase text-muted small mb-1">Blog thời trang</p>
-                        <h1 class="h3 fw-bold mb-2">Khám phá bí quyết phối đồ & phong cách sống hiện đại</h1>
+                        <p class="text-uppercase text-muted small mb-1">CHUYÊN TRANG PHONG CÁCH</p>
+                        <h1 class="h3 fw-bold mb-2">Định hình phong cách & Cảm hứng sống hiện đại</h1>
                         <p class="text-muted small mb-0">
-                            Tổng hợp kiến thức SEO, cảm hứng thời trang và câu chuyện thương hiệu được đội ngũ
-                            {{ config('app.name') }} biên tập mỗi ngày.
+                            Khám phá những xu hướng thời trang đương đại, cẩm nang phối đồ tinh tế và câu chuyện phong cách
+                            sống được tuyển chọn bởi {{ config('app.name') }}.
                         </p>
                     @endif
                 </div>
@@ -247,7 +355,7 @@
                     <div class="d-flex justify-content-lg-end gap-3">
                         <div>
                             <div class="fw-bold">{{ number_format($featuredPosts->count()) }}</div>
-                            <span class="text-muted tiny">Bài nổi bật</span>
+                            <span class="text-muted tiny">Tuyển chọn</span>
                         </div>
                         <div>
                             <div class="fw-bold">{{ number_format($posts->total()) }}</div>
@@ -255,7 +363,7 @@
                         </div>
                         <div>
                             <div class="fw-bold">{{ number_format($sidebarCategories->count()) }}</div>
-                            <span class="text-muted tiny">Chủ đề</span>
+                            <span class="text-muted tiny">Chuyên mục</span>
                         </div>
                     </div>
                 </div>
@@ -305,7 +413,8 @@
             <!-- MAIN POSTS -->
             <div class="col-lg-8">
                 @if (isset($searchKeyword) && $searchKeyword !== '')
-                    <h4 class="mb-4">Kết quả tìm kiếm cho: <strong>"{{ $searchKeyword }}"</strong> ({{ $posts->total() }}
+                    <h4 class="mb-4">Kết quả tìm kiếm cho: <strong>"{{ $searchKeyword }}"</strong>
+                        ({{ $posts->total() }}
                         bài viết)</h4>
                 @endif
                 <div class="row g-3">
@@ -318,8 +427,9 @@
 
                                 <div class="card-body">
                                     <div class="d-flex gap-2 tiny text-muted mb-1 align-items-center">
-                                        @if($post->category)
-                                            <a href="{{ route('client.blog.category', $post->category) }}" class="text-decoration-none text-primary fw-semibold">
+                                        @if ($post->category)
+                                            <a href="{{ route('client.blog.category', $post->category) }}"
+                                                class="text-decoration-none text-primary fw-semibold">
                                                 {{ $post->category->name }}
                                             </a>
                                         @else
@@ -356,8 +466,27 @@
                     @endforelse
                 </div>
 
-                <div class="mt-3">
-                    {{ $posts->links('pagination::bootstrap-5') }}
+                <div class="blog-pagination-wrapper">
+                    {{ $posts->onEachSide(1)->links('pagination.blog') }}
+                </div>
+
+                <div class="blog-category-editorial-note"
+                    style="margin-top: 35px; padding: 18px 20px; background: #f8f8f8; border-left: 3px solid #222; font-size: 14px; line-height: 1.7; color: #555;">
+                    <strong style="display: block; margin-bottom: 6px; color: #222;">
+                        Về nội dung trong chuyên mục
+                    </strong>
+
+                    <p style="margin: 0;">
+                        Các bài viết tại Nobi Fashion được xây dựng thông qua quá trình tìm hiểu,
+                        tổng hợp, tham khảo, đối chiếu và biên tập từ nhiều nguồn thông tin khác nhau.
+                        Chúng tôi luôn cố gắng cung cấp nội dung hữu ích và cập nhật cho người đọc.
+                        Nếu bạn phát hiện thông tin chưa chính xác hoặc cần được bổ sung, vui lòng
+                        liên hệ với Nobi Fashion để chúng tôi kiểm tra và cập nhật.
+                        <a href="{{ route('client.policy.editorial') }}"
+                            style="color: #222; font-weight: 600; text-decoration: underline;">
+                            Xem nguyên tắc biên tập và chính sách đính chính
+                        </a>.
+                    </p>
                 </div>
             </div>
 
@@ -370,11 +499,12 @@
                     <ul class="list-unstyled mb-0">
                         @foreach ($sidebarCategories as $category)
                             <li class="d-flex justify-content-between small align-items-center">
-                                <a href="{{ route('client.blog.category', $category) }}" 
-                                   class="text-decoration-none text-dark hover-primary {{ (isset($currentCategory) && $currentCategory && $currentCategory->id === $category->id) ? 'fw-bold text-primary' : '' }}">
+                                <a href="{{ route('client.blog.category', $category) }}"
+                                    class="text-decoration-none text-dark hover-primary {{ isset($currentCategory) && $currentCategory && $currentCategory->id === $category->id ? 'fw-bold text-primary' : '' }}">
                                     {{ $category->name }}
                                 </a>
-                                <span class="badge bg-light text-secondary rounded-pill">{{ number_format($category->posts_count) }}</span>
+                                <span
+                                    class="badge bg-light text-secondary rounded-pill">{{ number_format($category->posts_count) }}</span>
                             </li>
                         @endforeach
                     </ul>

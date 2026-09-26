@@ -1,8 +1,14 @@
+@php
+    $isBlog = request()->is('blog') || request()->is('blog/*');
+@endphp
 <dialog class="nobifashion_home_dialog" id="nobifashion_home_search"
-    aria-labelledby="nobifashion_home_search_title">
+    aria-labelledby="nobifashion_home_search_title"
+    data-search-mode="{{ $isBlog ? 'blog' : 'product' }}">
     <div class="nobifashion_home_dialog_shell">
         <div class="nobifashion_home_dialog_header nobifashion_home_container">
-            <h2 class="nobifashion_home_dialog_title" id="nobifashion_home_search_title">Tìm kiếm sản phẩm</h2>
+            <h2 class="nobifashion_home_dialog_title" id="nobifashion_home_search_title">
+                {{ $isBlog ? 'Tìm kiếm bài viết' : 'Tìm kiếm sản phẩm' }}
+            </h2>
             <button class="nobifashion_home_icon_button nobifashion_modal_close_btn" type="button" aria-label="Đóng" data-nobifashion-close
                 autofocus>
                 <svg class="nobifashion_home_icon" viewbox="0 0 24 24" aria-hidden="true">
@@ -12,14 +18,21 @@
         </div>
         <div class="nobifashion_home_dialog_content nobifashion_home_container">
             <form class="nobifashion_home_search_form" id="nobifashion_home_search_form"
-                action="{{ route('client.product.shop.search.keyword') }}" method="get" role="search">
+                action="{{ $isBlog ? route('client.blog.search.keyword') : route('client.product.shop.search.keyword') }}" 
+                method="get" role="search"
+                data-search-mode="{{ $isBlog ? 'blog' : 'product' }}"
+                data-search-api="{{ $isBlog ? route('client.blog.search.api') : '/shop/search' }}">
                 <svg class="nobifashion_home_icon" viewbox="0 0 24 24" aria-hidden="true">
                     <circle cx="10.8" cy="10.8" r="6.8"></circle>
                     <path d="m16 16 5 5"></path>
                 </svg>
-                <label class="nobifashion_home_sr_only" for="nobifashion_home_search_input">Bạn đang tìm sản phẩm gì?</label>
+                <label class="nobifashion_home_sr_only" for="nobifashion_home_search_input">
+                    {{ $isBlog ? 'Bạn đang tìm bài viết gì?' : 'Bạn đang tìm sản phẩm gì?' }}
+                </label>
                 <input class="nobifashion_home_search_input" id="nobifashion_home_search_input" name="keyword"
-                    type="search" placeholder="Nhập tên sản phẩm, mã SKU, danh mục..." autocomplete="off" maxlength="100">
+                    type="search" 
+                    placeholder="{{ $isBlog ? 'Nhập tiêu đề bài viết, chủ đề, mẹo hay...' : 'Nhập tên sản phẩm, mã SKU, danh mục...' }}" 
+                    autocomplete="off" maxlength="100">
                 <button class="nobifashion_home_icon_button" type="button" aria-label="Xóa từ khóa"
                     id="nobifashion_home_search_clear" hidden>
                     <svg class="nobifashion_home_icon" viewbox="0 0 24 24" aria-hidden="true">
@@ -35,10 +48,13 @@
             <div class="nobifashion_home_search_history" id="nobifashion_home_search_history"></div>
             <p class="nobifashion_home_search_status" id="nobifashion_home_search_status" role="status"
                 aria-live="polite">
-                Tìm theo tên sản phẩm hoặc danh mục.</p>
+                {{ $isBlog ? 'Tìm theo tiêu đề bài viết hoặc chuyên mục.' : 'Tìm theo tên sản phẩm hoặc danh mục.' }}
+            </p>
             <ul class="nobifashion_home_search_list" id="nobifashion_home_search_results"></ul>
             <a class="nobifashion_home_search_more" id="nobifashion_home_search_more"
-                href="{{ route('client.product.shop.search.keyword') }}" hidden>Xem tất cả kết quả tìm kiếm →</a>
+                href="{{ $isBlog ? route('client.blog.search.keyword') : route('client.product.shop.search.keyword') }}" hidden>
+                {{ $isBlog ? 'Xem tất cả kết quả bài viết →' : 'Xem tất cả kết quả tìm kiếm →' }}
+            </a>
         </div>
     </div>
 </dialog>

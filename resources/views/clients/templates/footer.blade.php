@@ -1,4 +1,4 @@
-@if ($settings->is_demo == true)
+@if (!empty($settings->is_demo))
     <div
         style="
     position: fixed;
@@ -80,35 +80,46 @@
 <footer class="nobifashion_footer">
     <div class="nobifashion_footer_content">
         <div class="nobifashion_footer_content_business">
-            <img loading="lazy" width="180px" height="55px" src="{{ asset('clients/assets/img/business/' . $settings->site_logo ?? '' ) }}"
-                alt="Shop {{ renderMeta($settings->subname ?? '' ) }}" title="Shop {{ renderMeta($settings->site_name ?? '' ) }}">
-            <h6 class="nobifashion_footer_content_business_title">{{ renderMeta($settings->site_name ?? '' ) }}</h6>
-            <p class="nobifashion_footer_content_business_desc">Chúng tôi cung cấp các sản phẩm chất lượng với giá cả
-                hợp lý.</p>
-            <p class="nobifashion_footer_content_business_address"><strong>Địa chỉ</strong>: {{ $settings->contact_address ?? ''  }}</p>
+            <img loading="lazy" width="180px" height="55px" src="{{ asset('clients/assets/img/business/' . (($settings->site_logo ?? null) ?: 'nobifashion-logo.png') ) }}"
+                alt="Shop {{ renderMeta(($settings->subname ?? null) ?: 'Đang cập nhật...') }}" title="Shop {{ renderMeta(($settings->site_name ?? null) ?: 'Đang cập nhật...') }}">
+            <h6 class="nobifashion_footer_content_business_title">{{ renderMeta(($settings->site_name ?? null) ?: 'Đang cập nhật...') }}</h6>
+            <p class="nobifashion_footer_content_business_desc">{{ renderMeta(($settings->site_description ?? null) ?: 'Đang cập nhật...') }}</p>
+            <p class="nobifashion_footer_content_business_address"><strong>Địa chỉ</strong>: {{ ($settings->contact_address ?? null) ?: 'Đang cập nhật...' }}</p>
             <p class="nobifashion_footer_content_business_phone"><strong>Điện thoại</strong>:
-                {{ preg_replace('/^(\d{4})(\d{3})(\d{3})$/', '$1.$2.$3', preg_replace('/\D/', '', $settings->contact_phone ?? '' )) }}
+                @if (!empty($settings->contact_phone))
+                    <a href="tel:{{ $settings->contact_phone }}">{{ preg_replace('/^(\d{4})(\d{3})(\d{3})$/', '$1.$2.$3', preg_replace('/\D/', '', $settings->contact_phone)) }}</a>
+                @else
+                    Đang cập nhật...
+                @endif
             </p>
-            <p class="nobifashion_footer_content_business_email"><strong>Email</strong>: {{ $settings->contact_email ?? ''  }}</p>
-            <p class="nobifashion_footer_content_business_hours"><strong>Giờ làm việc</strong>: 8:00 - 17:00 từ thứ 2 đến thứ 7</p>
+            <p class="nobifashion_footer_content_business_email"><strong>Email</strong>:
+                @if (!empty($settings->contact_email))
+                    <a href="mailto:{{ $settings->contact_email }}">{{ $settings->contact_email }}</a>
+                @else
+                    Đang cập nhật...
+                @endif
+            </p>
+            <p class="nobifashion_footer_content_business_hours"><strong>Giờ làm việc</strong>: {{ ($settings->business_hours ?? null) ?: 'Đang cập nhật...' }}</p>
             <div class="nobifashion_footer_content_business_socials">
-                @if ($settings->facebook_link)
-                    <a href="{{ $settings->facebook_link ?? ''  }}"><img loading="lazy"
+                @if (!empty($settings->facebook_link))
+                    <a href="{{ $settings->facebook_link }}" target="_blank" rel="noopener noreferrer"><img loading="lazy"
                             src="{{ asset('clients/assets/img/icon/icon-facebook.webp') }}" alt="Facebook"></a>
                 @endif
-                @if ($settings->instagram_link)
-                    <a href="{{ $settings->instagram_link ?? ''  }}"><img loading="lazy"
+                @if (!empty($settings->instagram_link))
+                    <a href="{{ $settings->instagram_link }}" target="_blank" rel="noopener noreferrer"><img loading="lazy"
                             src="{{ asset('clients/assets/img/icon/icon-Instagram.png') }}" alt="Instagram"></a>
                 @endif
-                @if ($settings->twitter_link)
-                    <a href="{{ $settings->twitter_link ?? ''  }}"><img loading="lazy"
+                @if (!empty($settings->twitter_link))
+                    <a href="{{ $settings->twitter_link }}" target="_blank" rel="noopener noreferrer"><img loading="lazy"
                             src="{{ asset('clients/assets/img/icon/icon-twitter.webp') }}" alt="Twitter"></a>
                 @endif
             </div>
-            <a href="{{ $settings->bo_cong_thuong ?? ''  }}">
-                <img loading="lazy" style="object-fit: cover; height: 68px;" src="{{ asset('clients/assets/img/business/setting-bo_cong_thuong-1757497818.webp') }}"
-                    alt="Bộ công thương">
-            </a>
+            @if (!empty($settings->bo_cong_thuong))
+                <a href="{{ $settings->bo_cong_thuong }}" target="_blank" rel="noopener noreferrer">
+                    <img loading="lazy" style="object-fit: cover; height: 68px;" src="{{ asset('clients/assets/img/business/setting-bo_cong_thuong-1757497818.webp') }}"
+                        alt="Bộ công thương">
+                </a>
+            @endif
         </div>
 
         <div class="nobifashion_footer_content_company">
@@ -124,7 +135,10 @@
                 <a href="{{ route('client.policy.payment') }}">Chính sách thanh toán</a>
                 <a href="{{ route('client.policy.privacy') }}">Chính sách bảo mật thông tin</a>
                 <a href="{{ route('client.policy.privacy') }}">Chính sách bảo mật dữ liệu</a>
-                <a style="position: relative;" href="{!! $settings->dmca ?? ''  !!}" title="DMCA.com Protection Status" class="dmca-badge"> <img style="position: relative; object-fit: cover; max-width: 150px; height: auto;" loading="lazy" src ="{!! $settings->dmca_logo ?? ''  !!}"  alt="DMCA.com Protection Status" /></a>  <script defer src="https://images.dmca.com/Badges/DMCABadgeHelper.min.js"> </script>
+                <a href="{{ route('client.policy.editorial') }}">Chính sách biên tập và đính chính thông tin</a>
+                @if (!empty($settings->dmca))
+                    <a style="position: relative;" href="{!! $settings->dmca !!}" target="_blank" rel="noopener noreferrer" title="DMCA.com Protection Status" class="dmca-badge"> <img style="position: relative; object-fit: cover; max-width: 150px; height: auto;" loading="lazy" src ="{!! ($settings->dmca_logo ?? null) ?: asset('clients/assets/img/other/DMCA.webp') !!}"  alt="DMCA.com Protection Status" /></a>  <script defer src="https://images.dmca.com/Badges/DMCABadgeHelper.min.js"> </script>
+                @endif
                 <a style="position: relative;" href="{{ route('client.policy.sale') }}">
                     <img loading="lazy" style="position: relative; object-fit: cover; max-width: 90%;" src="{{ asset('clients/assets/img/other/sales-policy.png') }}" alt="Chính sách bán hàng được chứng nhận">
                 </a>
@@ -203,8 +217,8 @@
     </div>
     <hr>
     <div class="nobifashion_footer_bottom">
-        <p>{!! Blade::render($settings->copyright ?? '' ) !!}</p>
-        <p>Thiết kế bởi <a href="https://www.facebook.com/ducnobi2004">Đức Nobi ❤️</a></p>
-        <p>MST: {{ $settings->site_tax_code ?? ''  }}</p>
+        <p>{!! !empty($settings->copyright) ? Blade::render($settings->copyright) : 'Đang cập nhật...' !!}</p>
+        <p>Thiết kế bởi <a href="{{ ($settings->facebook_link ?? null) ?: 'https://www.facebook.com/ducnobi2004' }}" target="_blank" rel="noopener noreferrer">Đức Nobi</a></p>
+        <p>MST: {{ ($settings->site_tax_code ?? null) ?: 'Đang cập nhật...' }}</p>
     </div>
 </footer>

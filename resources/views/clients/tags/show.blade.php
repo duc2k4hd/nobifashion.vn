@@ -50,7 +50,7 @@
         <nav aria-label="breadcrumb" class="mb-4">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{{ route('client.home.index') }}">Trang chủ</a></li>
-                <li class="breadcrumb-item"><a href="{{ route('client.blog.index') }}">Blog</a></li>
+                <li class="breadcrumb-item"><a href="{{ route('client.blog.index') }}">Tin tức</a></li>
                 <li class="breadcrumb-item active" aria-current="page">Tag: {{ $tag->name }}</li>
             </ol>
         </nav>

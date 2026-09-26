@@ -262,6 +262,10 @@ Route::get('/chinh-sach-thanh-toan', function () {
     return view('clients.pages.policy.payment');
 })->name('client.policy.payment');
 
+Route::get('/chinh-sach-bien-tap', function () {
+    return view('clients.pages.policy.editorial');
+})->name('client.policy.editorial');
+
 Route::get('/gioi-thieu', function () {
     $productNew = Product::active()->with('primaryImage')->orderBy('created_at', 'desc')->inRandomOrder()->limit(9)->get() ?? [];
 
@@ -289,7 +293,7 @@ Route::post('/product/phone-request', [ContactController::class, 'sendPhoneReque
 Route::prefix('blog')->name('client.blog.')->group(function () {
     Route::get('/', [BlogController::class, 'index'])->name('index');
     Route::get('/search', [BlogController::class, 'searchKeyword'])->name('search.keyword');
-    Route::post('/api/search', [BlogController::class, 'searchApi'])->name('search.api')->middleware('throttle:30,1');
+    Route::match(['get', 'post'], '/api/search', [BlogController::class, 'searchApi'])->name('search.api')->middleware('throttle:60,1');
     Route::get('/category/{category:slug}', [BlogController::class, 'category'])->name('category');
     Route::get('/{slug}', [BlogController::class, 'show'])->name('show');
 });

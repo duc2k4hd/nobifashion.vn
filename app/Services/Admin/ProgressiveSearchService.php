@@ -8,6 +8,14 @@ use Illuminate\Support\Str;
 class ProgressiveSearchService
 {
     /**
+     * Escape các ký tự đặc biệt của LIKE SQL (%, _, \)
+     */
+    protected function escapeLike(string $value): string
+    {
+        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $value);
+    }
+
+    /**
      * @param  array<int, string>  $primaryColumns
      * @param  array<int, string>  $secondaryColumns
      * @return array{
@@ -19,9 +27,9 @@ class ProgressiveSearchService
      */
     public function apply(Builder $query, ?string $keyword, array $primaryColumns, array $secondaryColumns = []): array
     {
-        $normalizedKeyword = $this->normalizeKeyword($keyword);
+        $rawKeyword = trim(preg_replace('/\s+/u', ' ', (string) $keyword));
 
-        if ($normalizedKeyword === '') {
+        if ($rawKeyword === '') {
             return [
                 'query' => $query,
                 'mode' => null,
@@ -30,108 +38,173 @@ class ProgressiveSearchService
             ];
         }
 
+        $allColumns = array_merge($primaryColumns, $secondaryColumns);
+        $lowerRaw = mb_strtolower($rawKeyword, 'UTF-8');
+
+        // =========================================================================
+        // TẦNG 1: CỤM TỪ ĐẦY ĐỦ (FULL PHRASE) - HỖ TRỢ KÝ TỰ ĐẶC BIỆT
+        // =========================================================================
+
+        // 1.1 Khớp chính xác cụm từ nguyên bản (giữ nguyên ký tự đặc biệt như :, ,, -, &, +, [], (), v.v.)
+        $escapedRaw = $this->escapeLike($lowerRaw);
         $strictQuery = clone $query;
-        $this->applyPhraseWhere($strictQuery, $normalizedKeyword, [...$primaryColumns, ...$secondaryColumns]);
+        $this->applyPhraseWhere($strictQuery, $escapedRaw, $allColumns);
 
         if ($strictQuery->exists()) {
-            $this->applyPhraseWhere($query, $normalizedKeyword, [...$primaryColumns, ...$secondaryColumns]);
-            $this->applyPhraseOrdering($query, $normalizedKeyword, $primaryColumns, $secondaryColumns);
+            $this->applyPhraseWhere($query, $escapedRaw, $allColumns);
+            $this->applyPhraseOrdering($query, $escapedRaw, $primaryColumns, $secondaryColumns);
 
             return [
                 'query' => $query,
                 'mode' => 'exact_phrase',
-                'keyword' => $normalizedKeyword,
-                'segments' => [$normalizedKeyword],
+                'keyword' => $rawKeyword,
+                'segments' => [$rawKeyword],
             ];
         }
 
-        $segments = $this->buildSegments($normalizedKeyword);
+        // 1.2 Khớp các từ theo đúng thứ tự (khoảng cách giữa các từ có thể là ký tự đặc biệt bất kỳ hoặc khoảng trắng)
+        $words = $this->extractWords($lowerRaw);
 
-        if ($segments === []) {
-            $this->applyPhraseWhere($query, $normalizedKeyword, [...$primaryColumns, ...$secondaryColumns]);
-            $this->applyPhraseOrdering($query, $normalizedKeyword, $primaryColumns, $secondaryColumns);
+        if (count($words) >= 2) {
+            $orderedPattern = '%' . implode('%', array_map([$this, 'escapeLike'], $words)) . '%';
+            $orderedQuery = clone $query;
+            $this->applyPatternWhere($orderedQuery, $orderedPattern, $allColumns);
 
+            if ($orderedQuery->exists()) {
+                $this->applyPatternWhere($query, $orderedPattern, $allColumns);
+                $this->applyPhraseOrdering($query, $escapedRaw, $primaryColumns, $secondaryColumns);
+
+                return [
+                    'query' => $query,
+                    'mode' => 'exact_phrase',
+                    'keyword' => $rawKeyword,
+                    'segments' => [$rawKeyword],
+                ];
+            }
+        }
+
+        // =========================================================================
+        // TẦNG 2 & 3: CỤM TỪ TÁCH NGẮN HƠN (SUB-PHRASES) VÀ CUỐI CÙNG LÀ TỪNG CHỮ
+        // =========================================================================
+        
+        $subPhrases = $this->buildSubPhrases($words);
+        $singleWords = array_values(array_unique(array_filter($words, fn ($w) => mb_strlen($w, 'UTF-8') >= 2)));
+
+        // Nếu không có từ nào hợp lệ, fallback tìm chuỗi nguyên bản
+        if (empty($subPhrases) && empty($singleWords)) {
+            $this->applyPhraseWhere($query, $escapedRaw, $allColumns);
             return [
                 'query' => $query,
                 'mode' => 'exact_phrase',
-                'keyword' => $normalizedKeyword,
-                'segments' => [$normalizedKeyword],
+                'keyword' => $rawKeyword,
+                'segments' => [$rawKeyword],
             ];
         }
 
-        $this->applySegmentsWhere($query, $segments, [...$primaryColumns, ...$secondaryColumns]);
-        $this->applySegmentOrdering($query, $normalizedKeyword, $segments, $primaryColumns, $secondaryColumns);
+        // Áp dụng điều kiện lọc: Khớp bất kỳ từ đơn lẻ nào
+        $this->applyProgressiveWhere($query, $singleWords, $allColumns);
+
+        // Áp dụng xếp hạng theo mức độ liên quan: Cụm dài > Cụm ngắn > Nhiều từ > Ít từ
+        $this->applyProgressiveOrdering($query, $subPhrases, $singleWords, $primaryColumns, $secondaryColumns);
+
+        // Danh sách segments đại diện để hiển thị trên giao diện (lấy các cụm dài nhất đến ngắn)
+        $displaySegments = array_slice(array_merge($subPhrases, $singleWords), 0, 15);
 
         return [
             'query' => $query,
             'mode' => 'progressive',
-            'keyword' => $normalizedKeyword,
-            'segments' => $segments,
+            'keyword' => $rawKeyword,
+            'segments' => $displaySegments,
         ];
     }
 
+    /**
+     * Tách chuỗi thành các từ đơn lẻ (hỗ trợ Unicode tiếng Việt và số)
+     *
+     * @return array<int, string>
+     */
+    public function extractWords(string $text): array
+    {
+        preg_match_all('/[\p{L}\p{N}]+/u', $text, $matches);
+        return $matches[0] ?? [];
+    }
+
+    /**
+     * Tạo các cụm từ con liên tiếp từ dài xuống ngắn (N-1 từ xuống 2 từ)
+     *
+     * @param  array<int, string>  $words
+     * @return array<int, string>
+     */
+    public function buildSubPhrases(array $words, int $maxPhrases = 30): array
+    {
+        $totalWords = count($words);
+        if ($totalWords < 2) {
+            return [];
+        }
+
+        $phrases = [];
+        $seen = [];
+
+        // Duyệt độ dài từ (total - 1) xuống đến 2 từ
+        $maxLen = min($totalWords - 1, 6);
+        for ($len = $maxLen; $len >= 2; $len--) {
+            for ($i = 0; $i <= $totalWords - $len; $i++) {
+                $phrase = implode(' ', array_slice($words, $i, $len));
+                if (!isset($seen[$phrase])) {
+                    $seen[$phrase] = true;
+                    $phrases[] = $phrase;
+                    if (count($phrases) >= $maxPhrases) {
+                        return $phrases;
+                    }
+                }
+            }
+        }
+
+        return $phrases;
+    }
+
+    /**
+     * Giữ lại hàm chuẩn hóa tương thích ngược
+     */
     public function normalizeKeyword(?string $keyword): string
     {
         $keyword = Str::lower(Str::squish((string) $keyword));
-
         if ($keyword === '') {
             return '';
         }
 
-        preg_match_all('/[\p{L}\p{N}]+/u', $keyword, $matches);
-
-        return trim(implode(' ', $matches[0] ?? []));
+        $words = $this->extractWords($keyword);
+        return trim(implode(' ', $words));
     }
 
     /**
-     * Tạo các cụm tìm kiếm liên tiếp từ dài xuống ngắn để fallback gần đúng.
+     * Giữ lại hàm tương thích ngược
      *
      * @return array<int, string>
      */
     public function buildSegments(string $keyword, int $maxSegments = 15): array
     {
-        $normalizedKeyword = $this->normalizeKeyword($keyword);
-        $tokens = preg_split('/\s+/u', $normalizedKeyword, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $words = $this->extractWords(mb_strtolower($keyword, 'UTF-8'));
+        $subPhrases = $this->buildSubPhrases($words, $maxSegments);
+        $singleWords = array_values(array_unique(array_filter($words, fn ($w) => mb_strlen($w, 'UTF-8') >= 2)));
 
-        if ($tokens === []) {
-            return [];
-        }
-
-        $segments = [];
-        $seen = [];
-        $tokenCount = count($tokens);
-
-        for ($size = $tokenCount; $size >= 1; $size--) {
-            for ($offset = 0; $offset <= $tokenCount - $size; $offset++) {
-                $segment = implode(' ', array_slice($tokens, $offset, $size));
-
-                if ($size === 1 && mb_strlen($segment) < 2) {
-                    continue;
-                }
-
-                if (isset($seen[$segment])) {
-                    continue;
-                }
-
-                $segments[] = $segment;
-                $seen[$segment] = true;
-
-                if (count($segments) >= $maxSegments) {
-                    return $segments;
-                }
-            }
-        }
-
-        return $segments;
+        return array_slice(array_merge($subPhrases, $singleWords), 0, $maxSegments);
     }
 
     /**
      * @param  array<int, string>  $columns
      */
-    protected function applyPhraseWhere(Builder $query, string $keyword, array $columns): void
+    protected function applyPhraseWhere(Builder $query, string $escapedKeyword, array $columns): void
     {
-        $pattern = '%' . $keyword . '%';
+        $pattern = '%' . $escapedKeyword . '%';
+        $this->applyPatternWhere($query, $pattern, $columns);
+    }
 
+    /**
+     * @param  array<int, string>  $columns
+     */
+    protected function applyPatternWhere(Builder $query, string $pattern, array $columns): void
+    {
         $query->where(function (Builder $where) use ($columns, $pattern) {
             foreach ($columns as $index => $column) {
                 $method = $index === 0 ? 'whereRaw' : 'orWhereRaw';
@@ -141,67 +214,102 @@ class ProgressiveSearchService
     }
 
     /**
+     * Áp dụng WHERE lọc theo các từ khóa đơn lẻ (siêu nhanh và bao hàm toàn bộ cụm từ)
+     *
+     * @param  array<int, string>  $singleWords
      * @param  array<int, string>  $columns
      */
-    protected function applySegmentsWhere(Builder $query, array $segments, array $columns): void
+    protected function applyProgressiveWhere(Builder $query, array $singleWords, array $columns): void
     {
-        $query->where(function (Builder $where) use ($segments, $columns) {
-            $firstCondition = true;
+        $query->where(function (Builder $where) use ($singleWords, $columns) {
+            $isFirst = true;
 
-            foreach ($segments as $segment) {
-                $pattern = '%' . $segment . '%';
-
+            foreach ($singleWords as $word) {
+                $pattern = '%' . $this->escapeLike($word) . '%';
                 foreach ($columns as $column) {
-                    $method = $firstCondition ? 'whereRaw' : 'orWhereRaw';
+                    $method = $isFirst ? 'whereRaw' : 'orWhereRaw';
                     $where->{$method}($this->likeExpression($column), [$pattern]);
-                    $firstCondition = false;
+                    $isFirst = false;
                 }
             }
         });
     }
 
     /**
+     * Xếp hạng khi khớp Exact Phrase
+     *
      * @param  array<int, string>  $primaryColumns
      * @param  array<int, string>  $secondaryColumns
      */
-    protected function applyPhraseOrdering(Builder $query, string $keyword, array $primaryColumns, array $secondaryColumns): void
+    protected function applyPhraseOrdering(Builder $query, string $escapedKeyword, array $primaryColumns, array $secondaryColumns): void
     {
-        [$scoreSql, $bindings] = $this->buildPhraseScoreSql($keyword, $primaryColumns, $secondaryColumns);
-        $query->orderByRaw($scoreSql . ' DESC', $bindings);
+        [$scoreSql, $bindings] = $this->buildPhraseScoreSql($escapedKeyword, $primaryColumns, $secondaryColumns);
+        $query->orderByRaw($scoreSql . ' DESC');
+        foreach ($bindings as $b) {
+            $query->addBinding($b, 'order');
+        }
     }
 
     /**
+     * Xếp hạng khi ở chế độ Progressive (Cụm dài > Cụm ngắn > Nhiều từ > Ít từ)
+     *
+     * @param  array<int, string>  $subPhrases
+     * @param  array<int, string>  $singleWords
      * @param  array<int, string>  $primaryColumns
      * @param  array<int, string>  $secondaryColumns
-     * @param  array<int, string>  $segments
      */
-    protected function applySegmentOrdering(
+    protected function applyProgressiveOrdering(
         Builder $query,
-        string $keyword,
-        array $segments,
+        array $subPhrases,
+        array $singleWords,
         array $primaryColumns,
         array $secondaryColumns
     ): void {
-        [$phraseScoreSql, $phraseBindings] = $this->buildPhraseScoreSql(
-            $keyword,
-            $primaryColumns,
-            $secondaryColumns,
-            [
-                'primary_exact' => 800,
-                'primary_prefix' => 540,
-                'primary_contains' => 320,
-                'secondary_exact' => 360,
-                'secondary_prefix' => 260,
-                'secondary_contains' => 180,
-            ]
-        );
+        $conditions = [];
+        $bindings = [];
 
-        [$segmentScoreSql, $segmentBindings] = $this->buildSegmentScoreSql($segments, $primaryColumns, $secondaryColumns);
+        // 1. Điểm cho cụm từ con: Cụm càng dài điểm càng cao
+        foreach ($subPhrases as $phrase) {
+            $wordCount = substr_count($phrase, ' ') + 1;
+            $primaryWeight = $wordCount * 120; // 5 từ = 600đ, 4 từ = 480đ, 3 từ = 360đ, 2 từ = 240đ
+            $secondaryWeight = (int) ($primaryWeight * 0.45);
+            $pattern = '%' . $this->escapeLike($phrase) . '%';
 
-        $query->orderByRaw(
-            '(' . $phraseScoreSql . ' + ' . $segmentScoreSql . ') DESC',
-            [...$phraseBindings, ...$segmentBindings]
-        );
+            foreach ($primaryColumns as $column) {
+                $conditions[] = 'CASE WHEN ' . $this->likeExpression($column) . ' THEN ' . $primaryWeight . ' ELSE 0 END';
+                $bindings[] = $pattern;
+            }
+
+            foreach ($secondaryColumns as $column) {
+                $conditions[] = 'CASE WHEN ' . $this->likeExpression($column) . ' THEN ' . $secondaryWeight . ' ELSE 0 END';
+                $bindings[] = $pattern;
+            }
+        }
+
+        // 2. Điểm cho từng từ đơn lẻ: Khớp càng nhiều từ thì tổng điểm càng cao
+        foreach ($singleWords as $word) {
+            $primaryWeight = 30 + min(25, mb_strlen($word, 'UTF-8') * 3);
+            $secondaryWeight = 15;
+            $pattern = '%' . $this->escapeLike($word) . '%';
+
+            foreach ($primaryColumns as $column) {
+                $conditions[] = 'CASE WHEN ' . $this->likeExpression($column) . ' THEN ' . $primaryWeight . ' ELSE 0 END';
+                $bindings[] = $pattern;
+            }
+
+            foreach ($secondaryColumns as $column) {
+                $conditions[] = 'CASE WHEN ' . $this->likeExpression($column) . ' THEN ' . $secondaryWeight . ' ELSE 0 END';
+                $bindings[] = $pattern;
+            }
+        }
+
+        if (!empty($conditions)) {
+            $scoreSql = '(' . implode(' + ', $conditions) . ') DESC';
+            $query->orderByRaw($scoreSql);
+            foreach ($bindings as $b) {
+                $query->addBinding($b, 'order');
+            }
+        }
     }
 
     /**
@@ -210,82 +318,40 @@ class ProgressiveSearchService
      * @return array{0: string, 1: array<int, string>}
      */
     protected function buildPhraseScoreSql(
-        string $keyword,
+        string $escapedKeyword,
         array $primaryColumns,
-        array $secondaryColumns,
-        array $weights = []
+        array $secondaryColumns
     ): array {
-        $weights = array_merge([
-            'primary_exact' => 1800,
-            'primary_prefix' => 1250,
-            'primary_contains' => 900,
-            'secondary_exact' => 700,
-            'secondary_prefix' => 500,
-            'secondary_contains' => 320,
-        ], $weights);
-
         $conditions = [];
         $bindings = [];
 
-        $exact = $keyword;
-        $prefix = $keyword . '%';
-        $contains = '%' . $keyword . '%';
+        $exact = $escapedKeyword;
+        $prefix = $escapedKeyword . '%';
+        $contains = '%' . $escapedKeyword . '%';
 
         foreach ($primaryColumns as $column) {
-            $conditions[] = 'CASE WHEN ' . $this->comparisonExpression($column, '=') . ' THEN ' . (int) $weights['primary_exact'] . ' ELSE 0 END';
+            $conditions[] = 'CASE WHEN ' . $this->comparisonExpression($column, '=') . ' THEN 1800 ELSE 0 END';
             $bindings[] = $exact;
 
-            $conditions[] = 'CASE WHEN ' . $this->comparisonExpression($column, 'LIKE') . ' THEN ' . (int) $weights['primary_prefix'] . ' ELSE 0 END';
+            $conditions[] = 'CASE WHEN ' . $this->comparisonExpression($column, 'LIKE') . ' THEN 1250 ELSE 0 END';
             $bindings[] = $prefix;
 
-            $conditions[] = 'CASE WHEN ' . $this->comparisonExpression($column, 'LIKE') . ' THEN ' . (int) $weights['primary_contains'] . ' ELSE 0 END';
+            $conditions[] = 'CASE WHEN ' . $this->comparisonExpression($column, 'LIKE') . ' THEN 900 ELSE 0 END';
             $bindings[] = $contains;
         }
 
         foreach ($secondaryColumns as $column) {
-            $conditions[] = 'CASE WHEN ' . $this->comparisonExpression($column, '=') . ' THEN ' . (int) $weights['secondary_exact'] . ' ELSE 0 END';
+            $conditions[] = 'CASE WHEN ' . $this->comparisonExpression($column, '=') . ' THEN 700 ELSE 0 END';
             $bindings[] = $exact;
 
-            $conditions[] = 'CASE WHEN ' . $this->comparisonExpression($column, 'LIKE') . ' THEN ' . (int) $weights['secondary_prefix'] . ' ELSE 0 END';
+            $conditions[] = 'CASE WHEN ' . $this->comparisonExpression($column, 'LIKE') . ' THEN 500 ELSE 0 END';
             $bindings[] = $prefix;
 
-            $conditions[] = 'CASE WHEN ' . $this->comparisonExpression($column, 'LIKE') . ' THEN ' . (int) $weights['secondary_contains'] . ' ELSE 0 END';
+            $conditions[] = 'CASE WHEN ' . $this->comparisonExpression($column, 'LIKE') . ' THEN 320 ELSE 0 END';
             $bindings[] = $contains;
         }
 
-        return [implode(' + ', $conditions), $bindings];
-    }
-
-    /**
-     * @param  array<int, string>  $segments
-     * @param  array<int, string>  $primaryColumns
-     * @param  array<int, string>  $secondaryColumns
-     * @return array{0: string, 1: array<int, string>}
-     */
-    protected function buildSegmentScoreSql(array $segments, array $primaryColumns, array $secondaryColumns): array
-    {
-        $conditions = [];
-        $bindings = [];
-
-        foreach ($segments as $index => $segment) {
-            $wordCount = substr_count($segment, ' ') + 1;
-            $baseWeight = max(60, ($wordCount * 140) - ($index * 8));
-            $primaryWeight = $baseWeight + min(120, mb_strlen($segment) * 3);
-            $secondaryWeight = (int) floor($primaryWeight * 0.45);
-            $pattern = '%' . $segment . '%';
-
-            foreach ($primaryColumns as $column) {
-                $conditions[] = 'CASE WHEN ' . $this->comparisonExpression($column, 'LIKE') . ' THEN ' . $primaryWeight . ' ELSE 0 END';
-                $bindings[] = $pattern;
-            }
-
-            foreach ($secondaryColumns as $column) {
-                $conditions[] = 'CASE WHEN ' . $this->comparisonExpression($column, 'LIKE') . ' THEN ' . $secondaryWeight . ' ELSE 0 END';
-                $bindings[] = $pattern;
-            }
-        }
-
-        return [implode(' + ', $conditions), $bindings];
+        return ['(' . implode(' + ', $conditions) . ')', $bindings];
     }
 
     protected function likeExpression(string $column): string

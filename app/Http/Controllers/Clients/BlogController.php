@@ -169,7 +169,8 @@ class BlogController extends Controller
         $words = array_filter(explode(' ', $keyword));
 
         $posts = \App\Models\Post::published()
-            ->select('id', 'title', 'slug', 'thumbnail')
+            ->select('id', 'title', 'slug', 'thumbnail', 'category_id', 'published_at')
+            ->with(['category:id,name,slug'])
             ->where(function ($q) use ($keyword, $words) {
                 // Ưu tiên cụm từ chính xác trước
                 $q->where('title', 'LIKE', "%{$keyword}%")
@@ -202,8 +203,22 @@ class BlogController extends Controller
             ->get();
 
         $posts->transform(function ($post) {
-            $post->title = renderMeta($post->title);
-            return $post;
+            $thumbnailUrl = '/clients/assets/img/clothes/no-image.webp';
+            if ($post->thumbnail) {
+                $thumbnailUrl = str_starts_with($post->thumbnail, 'http')
+                    ? $post->thumbnail
+                    : (str_starts_with($post->thumbnail, 'clients/') ? '/' . ltrim($post->thumbnail, '/') : '/clients/assets/img/posts/' . ltrim($post->thumbnail, '/'));
+            }
+            return [
+                'id' => $post->id,
+                'title' => renderMeta($post->title),
+                'name' => renderMeta($post->title),
+                'slug' => $post->slug,
+                'url' => route('client.blog.show', $post->slug),
+                'thumbnail_url' => $thumbnailUrl,
+                'category_name' => $post->category ? $post->category->name : 'Blog',
+                'published_at' => $post->published_at ? $post->published_at->format('d/m/Y') : '',
+            ];
         });
 
         return response()->json($posts);
@@ -289,31 +304,15 @@ class BlogController extends Controller
             return view('clients.pages.errors.404');
         }
 
-        $post->load(['author', 'category', 'tags']);
+        $post->load(['author.profile', 'category', 'tags']);
         $this->postService->incrementViews($post, $request);
 
         // Lấy tags từ polymorphic relationship
         $tags = $post->tags()->active()->get();
 
-        // Lấy 5 bài trước và 5 bài sau (dựa trên published_at)
-        $relatedPosts = Cache::remember("blog:related:{$post->id}:v2", 3600, function () use ($post) {
-            $before = Post::published()
-                ->where('published_at', '<=', $post->published_at)
-                ->where('id', '!=', $post->id)
-                ->orderByDesc('published_at')
-                ->take(5)
-                ->get();
-
-            $after = Post::published()
-                ->where('published_at', '>=', $post->published_at)
-                ->where('id', '!=', $post->id)
-                ->orderBy('published_at')
-                ->take(5)
-                ->get();
-
-            // Gộp lại: 5 bài mới hơn (đảo ngược lại cho đúng thứ tự thời gian) + 5 bài cũ hơn
-            // Dùng unique('id') để loại bỏ bài trùng nếu có cùng thời gian xuất bản
-            return $after->reverse()->concat($before)->unique('id')->values();
+        // Lấy 3 bài trước và 3 bài sau cùng danh mục (tự động bù bài nếu một bên thiếu, tối ưu index cực nhanh)
+        $relatedPosts = Cache::remember("blog:related:{$post->id}:v3", 3600, function () use ($post) {
+            return $this->getRelatedPosts($post, 3);
         });
 
         // 20 bài random và cache mỗi bài
@@ -697,7 +696,7 @@ class BlogController extends Controller
             'dateModified' => optional($post->updated_at)->toIso8601String(),
             'author' => [
                 '@type' => 'Person',
-                'name' => $post->author?->name ?? $siteName,
+                'name' => $post->author?->displayName() ?? $siteName,
                 'url' => $siteUrl,
             ],
             'publisher' => [
@@ -783,6 +782,74 @@ class BlogController extends Controller
         $schemas[] = $articleSchema;
 
         return $schemas;
+    }
+
+    /**
+     * Lấy bài viết liên quan cùng danh mục: 3 bài trước và 3 bài sau của bài viết hiện tại.
+     * Nếu không đủ trước hoặc sau thì tự động bù từ phía còn lại để đạt tối đa 6 bài.
+     * Tối ưu cực nhanh: Chỉ SELECT đúng cột cần dùng, tận dụng 100% composite index (category_id, status, published_at).
+     */
+    protected function getRelatedPosts(Post $post, int $limitPerSide = 3): \Illuminate\Support\Collection
+    {
+        $maxTotal = $limitPerSide * 2;
+        $fields = ['id', 'title', 'slug', 'thumbnail', 'published_at', 'category_id'];
+        $categoryId = $post->category_id;
+
+        // Base query tối ưu trên index posts_category_status_published_idx
+        $baseQuery = fn () => Post::published()
+            ->select($fields)
+            ->when(
+                $categoryId,
+                fn ($q) => $q->where('category_id', $categoryId),
+                fn ($q) => $q->whereNull('category_id')
+            );
+
+        // Lấy tối đa $maxTotal bài cũ hơn (trước bài hiện tại)
+        $before = $baseQuery()
+            ->where(function ($q) use ($post) {
+                $q->where('published_at', '<', $post->published_at)
+                  ->orWhere(function ($sub) use ($post) {
+                      $sub->where('published_at', '=', $post->published_at)
+                          ->where('id', '<', $post->id);
+                  });
+            })
+            ->orderByDesc('published_at')
+            ->orderByDesc('id')
+            ->take($maxTotal)
+            ->get();
+
+        // Lấy tối đa $maxTotal bài mới hơn (sau bài hiện tại)
+        $after = $baseQuery()
+            ->where(function ($q) use ($post) {
+                $q->where('published_at', '>', $post->published_at)
+                  ->orWhere(function ($sub) use ($post) {
+                      $sub->where('published_at', '=', $post->published_at)
+                          ->where('id', '>', $post->id);
+                  });
+            })
+            ->orderBy('published_at', 'asc')
+            ->orderBy('id', 'asc')
+            ->take($maxTotal)
+            ->get();
+
+        $beforeCount = $before->count();
+        $afterCount = $after->count();
+
+        $takeAfter = $limitPerSide;
+        $takeBefore = $limitPerSide;
+
+        // Thuật toán bù trừ thông minh nếu một trong hai phía thiếu bài
+        if ($beforeCount < $limitPerSide) {
+            $takeAfter = min($afterCount, $maxTotal - $beforeCount);
+        } elseif ($afterCount < $limitPerSide) {
+            $takeBefore = min($beforeCount, $maxTotal - $afterCount);
+        }
+
+        $selectedAfter = $after->take($takeAfter);
+        $selectedBefore = $before->take($takeBefore);
+
+        // Ghép thứ tự thời gian chuẩn: Bài mới hơn xếp trên (đảo ngược asc thành desc) + bài cũ hơn
+        return $selectedAfter->reverse()->concat($selectedBefore)->values();
     }
 }
 

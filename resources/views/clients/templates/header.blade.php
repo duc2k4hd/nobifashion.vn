@@ -1,5 +1,6 @@
 @php
     $isHomePage = request()->is('/');
+    $isBlog = request()->is('blog') || request()->is('blog/*');
 @endphp
 <header class="nobifashion_home_header {{ !$isHomePage ? 'nobifashion_header_inner_page' : '' }}" id="nobifashion_home_header" data-tone="{{ $isHomePage ? 'dark' : 'light' }}">
     <div class="nobifashion_home_container nobifashion_home_header_inner">
@@ -11,8 +12,8 @@
         @if(isset($categories) && $categories->isNotEmpty())
             @foreach($categories->take(5) as $cat)
                 <a class="nobifashion_home_tab" 
-                   href="/{{ $cat->slug }}" 
-                   @if(request()->is($cat->slug)) aria-current="page" @endif>
+                   href="{{ route('client.product.category.index', $cat->slug) }}" 
+                   @if(request()->is('category/' . $cat->slug)) aria-current="page" @endif>
                     {{ $cat->name }}
                 </a>
             @endforeach
@@ -20,8 +21,8 @@
       </nav>
       <div class="nobifashion_home_header_actions">
         <button class="nobifashion_home_search_trigger" type="button" data-nobifashion-open="search"
-          aria-label="Tìm kiếm sản phẩm" aria-controls="nobifashion_home_search" aria-expanded="false">
-          <span>Tìm kiếm...</span>
+          aria-label="{{ $isBlog ? 'Tìm kiếm bài viết' : 'Tìm kiếm sản phẩm' }}" aria-controls="nobifashion_home_search" aria-expanded="false">
+          <span>{{ $isBlog ? 'Tìm bài viết...' : 'Tìm kiếm...' }}</span>
           <svg class="nobifashion_home_icon nobifashion_home_search_icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="11" cy="11" r="7.5"></circle>
             <path d="m16.5 16.5 4.5 4.5"></path>

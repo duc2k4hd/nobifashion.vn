@@ -1,700 +1,928 @@
 @extends('clients.layouts.master')
 
-@section('title', 'Liên hệ NOBI FASHION - Thời trang Việt Nam | ' . renderMeta($settings->site_name ??
-    $settings->subname))
+@section('title', 'Liên Hệ NOBI FASHION – Tư Vấn Size & Chăm Sóc Khách Hàng Tận Tâm')
 
 @section('head')
     <meta name="robots" content="follow, index, max-snippet:-1, max-video-preview:-1, max-image-preview:large" />
+    <meta name="keywords" content="{{ $settings->seo_keywords ?? 'liên hệ NOBI FASHION, chăm sóc khách hàng nobi fashion, shop thời trang Hải Phòng, hotline nobi fashion, tư vấn size nobi' }}">
+    <meta name="description" content="Trung tâm chăm sóc khách hàng {{ ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'NOBI FASHION') }}. Kết nối trực tiếp để được tư vấn chọn size chuẩn dáng, hỗ trợ đơn hàng và đổi trả nhanh chóng. Hotline: {{ ($settings->contact_phone ?? null) ?: 'Đang cập nhật...' }}.">
+    <link rel="canonical" href="{{ route('client.page.contact') }}">
 
-    <meta name="keywords"
-        content="{{ $settings->seo_keywords ?? 'liên hệ NOBI FASHION, thời trang nam, áo polo, áo sơ mi, quần kaki, shop thời trang Việt Nam, gentzone' }}">
-
-    <meta name="description"
-        content="{{ renderMeta($settings->site_description) ?? 'Liên hệ NOBI FASHION để được tư vấn thời trang nam hiện đại, lịch lãm và năng động. Hỗ trợ đặt hàng, đổi size, giao hàng toàn quốc nhanh chóng.' }}">
-
-    <meta http-equiv="date" content="{{ \Carbon\Carbon::now()->format('d/m/y') }}" />
-
-    {{-- ✅ Open Graph --}}
-    <meta property="og:title" content="{{ renderMeta('Liên hệ NOBI FASHION - Thời trang Việt Nam') }}">
-    <meta property="og:description"
-        content="{{ renderMeta('Liên hệ NOBI FASHION để được hỗ trợ tư vấn, mua hàng và đổi trả nhanh chóng trên toàn quốc. Phong cách hiện đại – Chất lượng Việt Nam.') }}">
-    <meta property="og:url" content="{{ url()->current() }}">
-    <meta property="og:image"
-        content="{{ asset('clients/assets/img/business/' . ($settings->site_banner ?: $settings->site_logo ?? 'logo-nobi-fashion.png')) }}">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="{{ renderMeta('Liên hệ NOBI FASHION - Thời trang Việt Nam') }}">
+    {{-- Open Graph --}}
+    <meta property="og:title" content="Liên Hệ NOBI FASHION – Tư Vấn Size & Chăm Sóc Khách Hàng Tận Tâm">
+    <meta property="og:description" content="Trung tâm chăm sóc khách hàng {{ ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'NOBI FASHION') }}. Kết nối trực tiếp để được tư vấn chọn size chuẩn dáng, hỗ trợ đơn hàng và đổi trả nhanh chóng.">
+    <meta property="og:url" content="{{ route('client.page.contact') }}">
     <meta property="og:type" content="website">
-    <meta property="og:site_name" content="{{ renderMeta('NOBI FASHION') }}">
+    <meta property="og:image" content="{{ asset('clients/assets/img/business/' . (($settings->site_banner ?? null) ?: (($settings->site_logo ?? null) ?: 'banner.webp'))) }}">
+    <meta property="og:site_name" content="{{ renderMeta(($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'Đang cập nhật...')) }}">
     <meta property="og:locale" content="vi_VN">
 
-    {{-- ✅ Twitter Card --}}
+    {{-- Twitter Card --}}
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{{ renderMeta('Liên hệ NOBI FASHION - Thời trang Việt Nam') }}">
-    <meta name="twitter:description"
-        content="{{ renderMeta('Hỗ trợ khách hàng NOBI FASHION 24/7. Giao hàng nhanh, đổi trả linh hoạt, tư vấn thời trang tận tâm.') }}">
-    <meta name="twitter:image"
-        content="{{ asset('clients/assets/img/business/' . ($settings->site_banner ?: $settings->site_logo ?? 'logo-nobi-fashion.png')) }}">
-    <meta name="twitter:creator" content="{{ renderMeta('NOBI FASHION') }}">
-
-    {{-- ✅ Canonical & Hreflang --}}
-    <link rel="canonical" href="{{ route('client.page.contact') }}">
-    <link rel="alternate" hreflang="vi" href="{{ route('client.page.contact') }}">
-    <link rel="alternate" hreflang="x-default" href="{{ route('client.page.contact') }}">
+    <meta name="twitter:title" content="Liên Hệ NOBI FASHION – Tư Vấn Size & Chăm Sóc Khách Hàng Tận Tâm">
+    <meta name="twitter:description" content="Trung tâm chăm sóc khách hàng {{ ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'NOBI FASHION') }}. Kết nối trực tiếp để được tư vấn chọn size chuẩn dáng, hỗ trợ đơn hàng và đổi trả nhanh chóng.">
+    <meta name="twitter:image" content="{{ asset('clients/assets/img/business/' . (($settings->site_banner ?? null) ?: (($settings->site_logo ?? null) ?: 'banner.webp'))) }}">
 @endsection
 
-@section('content')
-    <section class="contact-hero">
-        <div class="contact-hero__content">
-            <p class="hero-eyebrow">NOBI FASHION CARE</p>
-            <h1 class="hero-title">Kết nối với chúng tôi</h1>
-            <p class="hero-subtitle">Đội ngũ Stylist và CSKH luôn sẵn sàng đồng hành cùng bạn trong mọi hành trình mua sắm – từ tư vấn phong cách, lựa chọn size chuẩn đến hỗ trợ bảo hành đổi trả.</p>
-            <div class="hero-actions">
-                <a href="tel:{{ $settings->contact_phone ?? '' }}" class="hero-btn primary">Gọi ngay {{ $settings->contact_phone ?? '' }}</a>
-                <a href="mailto:{{ $settings->contact_email ?? '' }}" class="hero-btn ghost">Gửi email</a>
-            </div>
-            <div class="hero-stats">
-                <div class="hero-stat-card">
-                    <span class="label">Khách hàng hài lòng</span>
-                    <strong>98%</strong>
-                </div>
-                <div class="hero-stat-card">
-                    <span class="label">Thời gian phản hồi</span>
-                    <strong>< 15 phút</strong>
-                </div>
-                <div class="hero-stat-card">
-                    <span class="label">Chi nhánh toàn quốc</span>
-                    <strong>12+</strong>
-                </div>
-            </div>
-        </div>
-        <div class="contact-hero__card">
-            <div class="badge">Độc quyền khách hàng thân thiết</div>
-            <div class="card-content">
-                <h3>Chuyên viên cá nhân</h3>
-                <p>Đặt lịch tư vấn 1-1 cùng stylist để chọn tủ đồ chuẩn xu hướng.</p>
-                <ul>
-                    <li>Miễn phí đo size online</li>
-                    <li>Ưu tiên xử lý & giao nhận</li>
-                    <li>Quà tặng sinh nhật riêng</li>
-                </ul>
-                <button type="button" class="hero-btn secondary">Đặt lịch ngay</button>
-            </div>
-        </div>
-    </section>
+@section('schema')
+    @php
+        $siteUrl = config('app.url') ?? url('/');
+        $logoUrl = asset('clients/assets/img/business/' . ($settings->site_logo ?? 'nobifashion-logo.png'));
+        $socialLinks = array_values(array_filter([
+            $settings->facebook_link ?? null,
+            $settings->instagram_link ?? null,
+            $settings->tiktok_link ?? null,
+        ]));
 
-    <section class="contact-core">
-        <div class="contact-info">
-            <div class="info-card glass">
-                <div class="info-header">
-                    <span>🌐 Trụ sở chính</span>
-                    <small>Hoạt động 8h00 - 22h00</small>
-                </div>
-                <p class="info-value">{{ $settings->contact_address ?? 'Đang cập nhật' }}</p>
-                <div class="info-divider"></div>
-                <div class="info-stats">
-                    <div>
-                        <span>Hotline</span>
-                        <strong><a href="tel:{{ $settings->contact_phone ?? '' }}">{{ $settings->contact_phone ?? '' }}</a></strong>
-                    </div>
-                    <div>
-                        <span>Email</span>
-                        <strong><a href="mailto:{{ $settings->contact_email ?? '' }}">{{ $settings->contact_form_recipient ?? '' }}</a></strong>
-                    </div>
-                </div>
-            </div>
+        $schemaContactPage = [
+            '@context' => 'https://schema.org',
+            '@type' => 'ContactPage',
+            '@id' => route('client.page.contact') . '#webpage',
+            'url' => route('client.page.contact'),
+            'name' => 'Liên Hệ NOBI FASHION – Tư Vấn Size & Chăm Sóc Khách Hàng Tận Tâm',
+            'description' => 'Trung tâm chăm sóc khách hàng NOBI FASHION. Tư vấn chọn size, chính sách mua sắm và hỗ trợ đơn hàng.',
+            'inLanguage' => 'vi-VN',
+            'breadcrumb' => [
+                '@type' => 'BreadcrumbList',
+                'itemListElement' => [
+                    [
+                        '@type' => 'ListItem',
+                        'position' => 1,
+                        'name' => 'Trang chủ',
+                        'item' => route('client.home.index')
+                    ],
+                    [
+                        '@type' => 'ListItem',
+                        'position' => 2,
+                        'name' => 'Liên hệ',
+                        'item' => route('client.page.contact')
+                    ]
+                ]
+            ],
+            'mainEntity' => [
+                '@type' => ['ClothingStore', 'Organization'],
+                '@id' => $siteUrl . '#organization',
+                'name' => ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'Đang cập nhật...'),
+                'alternateName' => ($settings->subname ?? null) ?: (($settings->site_name ?? null) ?: 'Đang cập nhật...'),
+                'url' => $siteUrl,
+                'logo' => $logoUrl,
+                'image' => asset('clients/assets/img/business/' . ($settings->site_banner ?? 'banner.webp')),
+                'telephone' => ($settings->contact_phone ?? null) ?: 'Đang cập nhật...',
+                'email' => ($settings->contact_email ?? null) ?: 'Đang cập nhật...',
+                'taxID' => ($settings->site_tax_code ?? null) ?: 'Đang cập nhật...',
+                'priceRange' => '$$',
+                'address' => [
+                    '@type' => 'PostalAddress',
+                    'streetAddress' => ($settings->contact_address ?? null) ?: 'Đang cập nhật...',
+                    'addressLocality' => ($settings->city ?? null) ?: 'Đang cập nhật...',
+                    'addressRegion' => ($settings->city ?? null) ?: 'Đang cập nhật...',
+                    'postalCode' => ($settings->postalCode ?? null) ?: 'Đang cập nhật...',
+                    'addressCountry' => 'VN'
+                ],
+                'geo' => [
+                    '@type' => 'GeoCoordinates',
+                    'latitude' => (float) (($settings->latitude ?? null) ?: 20.82989),
+                    'longitude' => (float) (($settings->longitude ?? null) ?: 106.67608)
+                ],
+                'openingHoursSpecification' => [
+                    [
+                        '@type' => 'OpeningHoursSpecification',
+                        'dayOfWeek' => ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+                        'opens' => '08:30',
+                        'closes' => '21:30'
+                    ]
+                ],
+                'contactPoint' => [
+                    [
+                        '@type' => 'ContactPoint',
+                        'telephone' => ($settings->contact_phone ?? null) ?: 'Đang cập nhật...',
+                        'contactType' => 'customer service',
+                        'areaServed' => 'VN',
+                        'availableLanguage' => ['Vietnamese']
+                    ]
+                ],
+                'sameAs' => $socialLinks
+            ]
+        ];
+    @endphp
+    <script type="application/ld+json">
+        {!! json_encode($schemaContactPage, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) !!}
+    </script>
+@endsection
 
-            <div class="info-card">
-                <h3>Kênh hỗ trợ ưu tiên</h3>
-                <div class="info-channels">
-                    <a href="{{ $settings?->facebook_link ?? '#' }}" target="_blank" class="channel">
-                        <span>Facebook Concierge</span>
-                        <small>Phản hồi dưới 5 phút</small>
-                    </a>
-                    <a href="{{ $settings?->tiktok_link ?? '#' }}" target="_blank" class="channel">
-                        <span>TikTok Live Support</span>
-                        <small>Livestream hàng ngày</small>
-                    </a>
-                    <a href="{{ $settings?->telegram_link ?? '#' }}" target="_blank" class="channel">
-                        <span>Telegram VIP</span>
-                        <small>Chốt đơn siêu tốc</small>
-                    </a>
-                    <a href="{{ $settings?->instagram_link ?? '#' }}" target="_blank" class="channel">
-                        <span>Instagram DM</span>
-                        <small>Stylist trực tuyến</small>
-                    </a>
-                </div>
-            </div>
-
-            <div class="info-card gradient">
-                <div>
-                    <p class="eyebrow">Dịch vụ cao cấp</p>
-                    <h3>Bảo hành & đổi trả 30 ngày</h3>
-                    <p class="muted">Sẵn sàng đổi size, chỉnh sửa dáng hoặc hoàn tiền trong vòng 30 ngày với mọi đơn hàng chính hãng.</p>
-                </div>
-                <ul class="bullet-list">
-                    <li>Miễn phí thu hồi tại nhà</li>
-                    <li>Cập nhật tiến trình qua SMS/Email</li>
-                    <li>Đội ngũ kiểm định chất lượng riêng</li>
-                </ul>
-            </div>
-        </div>
-
-        <div class="contact-form-wrapper">
-            <div class="form-header">
-                <p class="eyebrow">Gửi yêu cầu</p>
-                <h3>Giải quyết trong một lần liên hệ</h3>
-                <p>Điền thông tin chi tiết, chúng tôi sẽ phản hồi qua email và gọi xác nhận ngay khi cần.</p>
-            </div>
-            <form id="contact-form" action="{{ route('client.contact.store') }}" method="POST" enctype="multipart/form-data">
-                @csrf
-                <div id="contact-form-message" class="form-alert" style="display:none;"></div>
-
-                <div class="form-grid">
-                    <label class="form-field">
-                        <span>Họ và tên *</span>
-                        <input type="text" id="name" name="name" placeholder="Nguyễn Minh Đức" required>
-                    </label>
-                    <label class="form-field">
-                        <span>Email *</span>
-                        <input type="email" id="email" name="email" placeholder="email@yourdomain.com" required>
-                    </label>
-                </div>
-
-                <div class="form-grid">
-                    <label class="form-field">
-                        <span>Số điện thoại</span>
-                        <input type="tel" id="phone" name="phone" placeholder="(+84) 090 xxx xxxx">
-                    </label>
-                    <label class="form-field">
-                        <span>Chủ đề *</span>
-                        <input type="text" id="subject" name="subject" placeholder="Cần tư vấn phối đồ công sở" required>
-                    </label>
-                </div>
-
-                <label class="form-field">
-                    <span>Nội dung *</span>
-                    <textarea id="message" name="message" rows="5" placeholder="Hãy chia sẻ điều bạn cần hỗ trợ..." minlength="10" required></textarea>
-                    <small>Tối thiểu 10 ký tự. Bạn có thể đính kèm thêm ảnh mô tả ở dưới.</small>
-                </label>
-
-                <label class="form-field file-field">
-                    <span>File đính kèm (tùy chọn)</span>
-                    <input type="file" id="attachment" name="attachment" accept=".jpg,.jpeg,.png,.gif,.pdf,.doc,.docx,.xls,.xlsx">
-                    <small>Hỗ trợ jpg, png, pdf, doc, xlsx. Tối đa 10MB</small>
-                </label>
-
-                <button type="submit" class="hero-btn primary full" id="contact-submit-btn">
-                    <span id="contact-submit-text">Gửi yêu cầu</span>
-                    <span id="contact-submit-loading" style="display:none;">Đang gửi...</span>
-                </button>
-            </form>
-        </div>
-    </section>
-
-    <section class="contact-support">
-        <div class="support-card">
-            <h4>Đơn hàng & vận chuyển</h4>
-            <p>Kiểm tra trạng thái GHN, đổi địa chỉ giao, yêu cầu đóng gói quà tặng.</p>
-            <a href="{{ route('client.order.track') ?? '#' }}">Tra cứu đơn hàng</a>
-        </div>
-        <div class="support-card">
-            <h4>Stylist cá nhân</h4>
-            <p>Nhận lookbook độc quyền và gợi ý outfit theo vóc dáng, lịch trình.</p>
-            <a href="tel:{{ $settings->contact_phone ?? '' }}">Đặt lịch 1-1</a>
-        </div>
-        <div class="support-card">
-            <h4>Doanh nghiệp & quà tặng</h4>
-            <p>Ưu đãi may đo đồng phục, combo quà tặng đối tác, khắc tên thương hiệu.</p>
-            <a href="mailto:{{ $settings->contact_email ?? '' }}">Nhận báo giá</a>
-        </div>
-    </section>
-
-    <section class="contact-map">
-        <div class="map-info">
-            <p class="eyebrow">Showroom Flagship</p>
-            <h3>Trải nghiệm thử đồ tại studio</h3>
-            <p>Đặt lịch trước để được chuẩn bị phòng thử riêng, đồ uống chào đón và photographer hỗ trợ ghi lại khoảnh khắc.</p>
-            <ul>
-                <li>✔ Bãi đỗ xe miễn phí</li>
-                <li>✔ Wi-Fi & minibar</li>
-                <li>✔ Giữ đồ sửa chữa tại chỗ</li>
-            </ul>
-        </div>
-        <div class="map-frame">
-            <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4010.734289061049!2d106.68005187555318!3d20.82730938077215!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x314a707bf0c0c6b3%3A0x270e1b278f753cae!2zNTk1LzEgUC4gVGhpw6puIEzDtGksIFThu5UgRHAgU-G7kSAzMCwgTMOqIENow6JuLCBI4bqjaSBQaMOybmcsIFZp4buHdCBOYW0!5e1!3m2!1svi!2s!4v1762164701486!5m2!1svi!2s"
-                allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-        </div>
-    </section>
-
-    <div class="contact-product">
-        @include('clients.templates.product_new')
-    </div>
-
+@push('styles')
     <style>
         :root {
-            --contact-bg: #05070f;
-            --contact-card: rgba(255, 255, 255, 0.08);
-            --contact-border: rgba(255, 255, 255, 0.15);
+            --ct-bg-page: #f8fafc;
+            --ct-card-bg: #ffffff;
+            --ct-text-main: #1e293b;
+            --ct-text-muted: #64748b;
+            --ct-border: #e2e8f0;
+            --ct-dark: #0f172a;
+            --ct-accent: #e11d48;
         }
 
-        .contact-hero {
-            width: 92%;
-            margin: 40px auto 0;
-            padding: 48px;
-            border-radius: 32px;
-            display: grid;
-            grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
-            gap: 32px;
-            background: radial-gradient(circle at top, rgba(0, 161, 155, 0.2), transparent),
-                linear-gradient(135deg, #05070f, #0c1021 60%, #0f172a);
-            color: #fff;
+        .contact-page {
+            max-width: 1200px;
+            margin: 20px auto 60px;
+            padding: 0 16px;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: var(--ct-text-main);
         }
 
-        .contact-hero__content .hero-eyebrow {
-            letter-spacing: 0.35em;
-            font-size: 12px;
-            opacity: 0.8;
+        /* Breadcrumb */
+        .contact-breadcrumb {
+            margin-bottom: 24px;
         }
 
-        .hero-title {
-            font-size: clamp(36px, 4vw, 52px);
-            margin: 12px 0;
-        }
-
-        .hero-subtitle {
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 18px;
-            max-width: 580px;
-        }
-
-        .hero-actions {
+        .contact-breadcrumb ol {
             display: flex;
-            gap: 16px;
-            margin: 24px 0 32px;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            list-style: none !important;
+            padding: 0;
+            margin: 0;
+            font-size: 13px;
         }
 
-        .hero-btn {
+        .contact-breadcrumb li {
+            display: inline-flex !important;
+            align-items: center;
+            gap: 8px;
+            color: var(--ct-text-muted);
+        }
+
+        .contact-breadcrumb a {
+            color: var(--ct-text-muted);
+            text-decoration: none !important;
+            transition: color 0.2s ease;
+        }
+
+        .contact-breadcrumb a:hover {
+            color: var(--ct-dark);
+        }
+
+        .contact-breadcrumb li.active {
+            color: var(--ct-dark);
+            font-weight: 600;
+        }
+
+        .contact-breadcrumb .separator {
+            font-size: 10px;
+            color: #cbd5e1;
+        }
+
+        /* Header Hero */
+        .contact-header {
+            text-align: center;
+            max-width: 760px;
+            margin: 0 auto 36px;
+        }
+
+        .contact-eyebrow {
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--ct-dark);
+            background: #f1f5f9;
+            padding: 6px 14px;
+            border-radius: 999px;
+            margin-bottom: 12px;
+            border: 1px solid var(--ct-border);
+        }
+
+        .contact-title {
+            font-size: clamp(26px, 4vw, 36px);
+            font-weight: 800;
+            color: var(--ct-dark);
+            margin: 0 0 14px;
+            letter-spacing: -0.02em;
+            line-height: 1.3;
+        }
+
+        .contact-desc {
+            font-size: 15.5px;
+            line-height: 1.7;
+            color: var(--ct-text-muted);
+            margin: 0;
+        }
+
+        /* Quick Contact Cards */
+        .quick-contact-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 16px;
+            margin-bottom: 36px;
+        }
+
+        .quick-card {
+            background: var(--ct-card-bg);
+            border: 1px solid var(--ct-border);
+            border-radius: 14px;
+            padding: 22px 20px;
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            text-decoration: none !important;
+            color: inherit !important;
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+        }
+
+        .quick-card:hover {
+            border-color: #cbd5e1;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+        }
+
+        .quick-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--ct-dark);
+            flex-shrink: 0;
+        }
+
+        .quick-info span {
+            display: block;
+            font-size: 12.5px;
+            color: var(--ct-text-muted);
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+
+        .quick-info strong {
+            display: block;
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--ct-dark);
+            line-height: 1.4;
+        }
+
+        .quick-info small {
+            display: block;
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        /* Main Section: 2 Columns */
+        .contact-main-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+            gap: 32px;
+            margin-bottom: 48px;
+        }
+
+        /* Left Side: Business Info & Commitments */
+        .contact-info-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .info-box {
+            background: var(--ct-card-bg);
+            border: 1px solid var(--ct-border);
+            border-radius: 16px;
+            padding: 26px 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+        }
+
+        .info-box-title {
+            font-size: 17px;
+            font-weight: 700;
+            color: var(--ct-dark);
+            margin: 0 0 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-detail-list {
+            list-style: none !important;
+            padding: 0;
+            margin: 0;
+        }
+
+        .info-detail-list li {
+            display: flex !important;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px dashed #f1f5f9;
+            font-size: 14.5px;
+            line-height: 1.6;
+        }
+
+        .info-detail-list li:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .info-detail-list li:first-child {
+            padding-top: 0;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #334155;
+            min-width: 110px;
+            flex-shrink: 0;
+        }
+
+        .info-text {
+            color: #475569;
+        }
+
+        .info-text a {
+            color: var(--ct-dark);
+            text-decoration: underline !important;
+            font-weight: 600;
+        }
+
+        /* Commitments Grid */
+        .commitments-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .commitment-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 14px;
+        }
+
+        .commitment-card strong {
+            display: block;
+            font-size: 13.5px;
+            font-weight: 700;
+            color: var(--ct-dark);
+            margin-bottom: 4px;
+        }
+
+        .commitment-card p {
+            font-size: 12px;
+            color: var(--ct-text-muted);
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        /* Social Channels */
+        .social-channel-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 6px;
+        }
+
+        .social-channel-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--ct-dark) !important;
+            background: #f1f5f9;
+            border: 1px solid var(--ct-border);
+            text-decoration: none !important;
+            transition: all 0.2s;
+        }
+
+        .social-channel-btn:hover {
+            background: #e2e8f0;
+            border-color: #cbd5e1;
+        }
+
+        /* Right Side: Contact Form */
+        .contact-form-panel {
+            background: var(--ct-card-bg);
+            border: 1px solid var(--ct-border);
+            border-radius: 20px;
+            padding: 34px 32px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+        }
+
+        .form-header-box {
+            margin-bottom: 24px;
+        }
+
+        .form-header-box h2 {
+            font-size: 22px;
+            font-weight: 800;
+            color: var(--ct-dark);
+            margin: 0 0 8px;
+        }
+
+        .form-header-box p {
+            font-size: 14.5px;
+            color: var(--ct-text-muted);
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .contact-form {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .form-group label {
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #334155;
+        }
+
+        .form-group label .required {
+            color: var(--ct-accent);
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 11px 14px;
+            font-size: 14.5px;
+            font-family: inherit;
+            color: #1e293b;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            box-sizing: border-box;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            border-color: var(--ct-dark);
+            box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.08);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .file-upload-box {
+            position: relative;
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            border-radius: 8px;
+            padding: 12px 14px;
+            font-size: 13px;
+            color: var(--ct-text-muted);
+        }
+
+        .file-upload-box input[type="file"] {
+            font-size: 13px;
+            color: #475569;
+        }
+
+        .form-alert {
+            padding: 14px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 16px;
+        }
+
+        .submit-btn {
+            background: var(--ct-dark);
+            color: #ffffff;
+            font-size: 15px;
+            font-weight: 600;
+            padding: 14px 28px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            border-radius: 999px;
-            padding: 14px 24px;
-            font-weight: 600;
-            transition: 0.3s;
-            border: 1px solid transparent;
-        }
-
-        .hero-btn.primary {
-            background: linear-gradient(90deg, #00a19b, #00e0d3);
-            color: #041014;
-        }
-
-        .hero-btn.secondary {
-            background: #fff;
-            color: #041014;
-        }
-
-        .hero-btn.ghost {
-            border-color: rgba(255, 255, 255, 0.4);
-            color: #fff;
-        }
-
-        .hero-btn.full {
             width: 100%;
         }
 
-        .hero-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25);
+        .submit-btn:hover {
+            background: #1e293b;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(15, 23, 42, 0.15);
         }
 
-        .hero-stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 16px;
+        .submit-btn:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
         }
 
-        .hero-stat-card {
-            padding: 18px;
-            border-radius: 18px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            background: rgba(255, 255, 255, 0.04);
-            backdrop-filter: blur(10px);
-        }
-
-        .hero-stat-card .label {
-            font-size: 13px;
-            opacity: 0.8;
-        }
-
-        .hero-stat-card strong {
-            display: block;
-            margin-top: 8px;
-            font-size: 22px;
-        }
-
-        .contact-hero__card {
-            background: rgba(15, 23, 42, 0.75);
-            border-radius: 28px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 32px;
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .contact-hero__card::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle at top right, rgba(0, 224, 211, 0.35), transparent 45%);
-            pointer-events: none;
-        }
-
-        .contact-hero__card .badge {
-            width: fit-content;
-            padding: 6px 14px;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.1);
-            font-size: 13px;
-            font-weight: 600;
-            letter-spacing: 0.1em;
-        }
-
-        .contact-hero__card .card-content {
-            position: relative;
-            z-index: 1;
-        }
-
-        .contact-hero__card ul {
-            list-style: none;
-            padding: 0;
-            margin: 16px 0;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .contact-hero__card ul li::before {
-            content: "•";
-            margin-right: 8px;
-            color: #00e0d3;
-        }
-
-        .contact-core {
-            width: 92%;
-            margin: 40px auto;
-            display: grid;
-            grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-            gap: 32px;
-        }
-
-        .contact-info {
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-        }
-
-        .info-card {
-            padding: 28px;
-            border-radius: 24px;
-            border: 1px solid rgba(15, 23, 42, 0.08);
-            background: #fff;
-            box-shadow: 0 15px 40px rgba(15, 23, 42, 0.08);
-        }
-
-        .glass {
-            background: linear-gradient(135deg, rgba(0, 161, 155, 0.08), rgba(15, 23, 42, 0.05));
-            border-color: rgba(0, 161, 155, 0.15);
-        }
-
-        .gradient {
-            background: linear-gradient(135deg, #06162a, #0a2c3f);
-            color: #dff8ff;
-            border-color: rgba(255, 255, 255, 0.08);
-        }
-
-        .info-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 14px;
-            color: #4b5563;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-        }
-
-        .info-value {
-            font-size: 22px;
-            font-weight: 600;
-            margin: 14px 0;
-        }
-
-        .info-divider {
-            border-bottom: 1px dashed rgba(15, 23, 42, 0.2);
-            margin: 20px 0;
-        }
-
-        .info-stats {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 16px;
-        }
-
-        .info-stats strong a {
-            color: inherit;
-            text-decoration: none;
-        }
-
-        .info-channels {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 12px;
-        }
-
-        .channel {
-            display: block;
-            padding: 14px 16px;
-            border-radius: 16px;
-            border: 1px solid rgba(15, 23, 42, 0.08);
-            background: rgba(0, 161, 155, 0.05);
-            color: inherit;
-            text-decoration: none;
-            transition: 0.3s;
-        }
-
-        .channel:hover {
-            border-color: #00a19b;
-            transform: translateY(-2px);
-        }
-
-        .bullet-list {
-            list-style: none;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .bullet-list li::before {
-            content: "✔";
-            margin-right: 10px;
-            color: #00e0d3;
-        }
-
-        .contact-form-wrapper {
-            background: #fff;
-            border-radius: 32px;
-            padding: 36px;
-            box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .contact-form-wrapper::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, rgba(0, 161, 155, 0.08), rgba(255, 255, 255, 0));
-            pointer-events: none;
-        }
-
-        .contact-form-wrapper form {
-            position: relative;
-            z-index: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
-        }
-
-        .form-header .eyebrow {
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-            font-size: 12px;
-            color: #00a19b;
-        }
-
-        .form-header h3 {
-            margin: 8px 0;
-            font-size: 28px;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 18px;
-        }
-
-        .form-field {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            font-size: 14px;
-            color: #374151;
-        }
-
-        .form-field input,
-        .form-field textarea,
-        .form-field input[type="file"] {
-            border-radius: 14px;
-            border: 1px solid rgba(55, 65, 81, 0.2);
-            padding: 12px 14px;
-            font-size: 15px;
-            transition: border 0.2s, box-shadow 0.2s;
-        }
-
-        .form-field input:focus,
-        .form-field textarea:focus,
-        .form-field input[type="file"]:focus {
-            border-color: #00a19b;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(0, 161, 155, 0.15);
-        }
-
-        .file-field input[type="file"] {
-            padding: 10px;
-            background: rgba(15, 23, 42, 0.02);
-        }
-
-        .form-alert {
-            padding: 12px 16px;
-            border-radius: 12px;
-            font-size: 14px;
-        }
-
-        .contact-support {
-            width: 92%;
-            margin: 30px auto;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 20px;
-        }
-
-        .support-card {
-            padding: 24px;
+        /* Map Section */
+        .contact-map-section {
+            background: var(--ct-card-bg);
+            border: 1px solid var(--ct-border);
             border-radius: 20px;
-            background: #fff;
-            border: 1px solid rgba(15, 23, 42, 0.08);
-            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+            padding: 28px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+            margin-bottom: 48px;
         }
 
-        .support-card a {
-            margin-top: 12px;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            text-decoration: none;
-            color: #00a19b;
-            font-weight: 600;
-        }
-
-        .contact-map {
-            width: 92%;
-            margin: 40px auto 60px;
-            display: grid;
-            grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
-            gap: 32px;
-            align-items: stretch;
-        }
-
-        .map-info {
-            background: #06162a;
-            color: #f3fbff;
-            border-radius: 28px;
-            padding: 32px;
+        .map-header {
+            margin-bottom: 20px;
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
             gap: 12px;
         }
 
-        .map-info ul {
-            list-style: none;
-            padding: 0;
+        .map-header h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--ct-dark);
             margin: 0;
             display: flex;
-            flex-direction: column;
-            gap: 6px;
+            align-items: center;
+            gap: 8px;
         }
 
-        .map-frame {
-            border-radius: 28px;
+        .map-header p {
+            font-size: 14px;
+            color: var(--ct-text-muted);
+            margin: 0;
+        }
+
+        .map-container {
+            width: 100%;
+            height: 400px;
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 25px 50px rgba(15, 23, 42, 0.2);
+            border: 1px solid var(--ct-border);
+            background: #e2e8f0;
         }
 
-        .map-frame iframe {
+        .map-container iframe {
             width: 100%;
             height: 100%;
-            min-height: 320px;
             border: 0;
         }
 
-        .contact-product {
-            width: 92%;
-            margin: 30px auto 60px;
-        }
-
-        @media (max-width: 1024px) {
-            .contact-hero,
-            .contact-core,
-            .contact-map {
+        @media (max-width: 991px) {
+            .contact-main-grid {
                 grid-template-columns: 1fr;
+                gap: 24px;
             }
 
-            .hero-actions {
-                flex-direction: column;
-                align-items: flex-start;
+            .contact-form-panel {
+                padding: 26px 20px;
+            }
+
+            .commitments-grid {
+                grid-template-columns: 1fr;
             }
         }
 
-        @media (max-width: 768px) {
-            .contact-hero,
-            .contact-core,
-            .contact-support,
-            .contact-map,
-            .contact-product {
-                width: 94%;
-            }
-
-            .contact-hero {
-                padding: 32px 20px;
-            }
-
-            .form-grid {
+        @media (max-width: 640px) {
+            .form-row {
                 grid-template-columns: 1fr;
+                gap: 14px;
+            }
+
+            .contact-map-section {
+                padding: 20px 16px;
+            }
+
+            .map-container {
+                height: 300px;
             }
         }
     </style>
-@endsection
+@endpush
 
-@section('foot')
+@section('content')
+    <div class="contact-page">
+
+        {{-- Breadcrumb --}}
+        <nav aria-label="breadcrumb" class="contact-breadcrumb">
+            <ol>
+                <li>
+                    <a href="{{ route('client.home.index') }}">Trang chủ</a>
+                    <span class="separator">/</span>
+                </li>
+                <li class="active" aria-current="page">Liên hệ</li>
+            </ol>
+        </nav>
+
+        {{-- Header Hero --}}
+        <header class="contact-header">
+            <span class="contact-eyebrow">Dịch Vụ Khách Hàng • NOBI FASHION</span>
+            <h1 class="contact-title">Liên hệ & Hỗ trợ</h1>
+            <p class="contact-desc">
+                Đội ngũ NOBI FASHION luôn sẵn lòng đồng hành cùng bạn. Dù là tư vấn lựa chọn size số, giải đáp thắc mắc về đơn hàng hay trao đổi hợp tác kinh doanh, chúng tôi sẽ phản hồi nhanh chóng và tận tâm nhất.
+            </p>
+        </header>
+
+        {{-- 4 Thẻ Liên Hệ Nhanh --}}
+        <div class="quick-contact-grid">
+            <a href="{{ !empty($settings->contact_phone) ? 'tel:' . $settings->contact_phone : 'javascript:void(0);' }}" class="quick-card">
+                <div class="quick-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                </div>
+                <div class="quick-info">
+                    <span>Hotline tư vấn</span>
+                    <strong>{{ ($settings->contact_phone ?? null) ?: 'Đang cập nhật...' }}</strong>
+                    <small>{{ ($settings->business_hours ?? null) ?: 'Đang cập nhật...' }}</small>
+                </div>
+            </a>
+
+            @php
+                $zaloNum = ($settings->contact_zalo ?? null) ?: ($settings->contact_phone ?? null);
+            @endphp
+            <a href="{{ !empty($zaloNum) ? 'https://zalo.me/' . preg_replace('/[^0-9]/', '', $zaloNum) : 'javascript:void(0);' }}" target="_blank" rel="noopener noreferrer" class="quick-card">
+                <div class="quick-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                </div>
+                <div class="quick-info">
+                    <span>Chat Zalo</span>
+                    <strong>{{ $zaloNum ?: 'Đang cập nhật...' }}</strong>
+                    <small>Hỗ trợ trực tiếp online</small>
+                </div>
+            </a>
+
+            <a href="{{ !empty($settings->contact_email) ? 'mailto:' . $settings->contact_email : 'javascript:void(0);' }}" class="quick-card">
+                <div class="quick-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                </div>
+                <div class="quick-info">
+                    <span>Email hỗ trợ</span>
+                    <strong>{{ ($settings->contact_email ?? null) ?: 'Đang cập nhật...' }}</strong>
+                    <small>Phản hồi trong 24 giờ</small>
+                </div>
+            </a>
+
+            <div class="quick-card">
+                <div class="quick-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                </div>
+                <div class="quick-info">
+                    <span>Địa chỉ cửa hàng</span>
+                    <strong>{{ ($settings->city ?? null) ?: (($settings->district ?? null) ?: 'Đang cập nhật...') }}</strong>
+                    <small>{{ ($settings->contact_address ?? null) ?: 'Đang cập nhật...' }}</small>
+                </div>
+            </div>
+        </div>
+
+        {{-- Main Section: 2 Columns --}}
+        <div class="contact-main-grid">
+
+            {{-- Cột Trái: Thông tin chính thức & Cam kết dịch vụ --}}
+            <div class="contact-info-panel">
+
+                {{-- Box Thông tin doanh nghiệp --}}
+                <div class="info-box">
+                    <h3 class="info-box-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                        Thông Tin Doanh Nghiệp
+                    </h3>
+
+                    <ul class="info-detail-list">
+                        <li>
+                            <span class="info-label">Đơn vị:</span>
+                            <span class="info-text"><strong>{{ ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'Đang cập nhật...') }}</strong></span>
+                        </li>
+                        <li>
+                            <span class="info-label">Mã số thuế:</span>
+                            <span class="info-text">{{ ($settings->site_tax_code ?? null) ?: 'Đang cập nhật...' }}</span>
+                        </li>
+                        <li>
+                            <span class="info-label">Trụ sở chính:</span>
+                            <span class="info-text">{{ ($settings->contact_address ?? null) ?: 'Đang cập nhật...' }}</span>
+                        </li>
+                        <li>
+                            <span class="info-label">Hotline:</span>
+                            <span class="info-text">
+                                @if(!empty($settings->contact_phone))
+                                    <a href="tel:{{ $settings->contact_phone }}">{{ $settings->contact_phone }}</a>
+                                @else
+                                    Đang cập nhật...
+                                @endif
+                            </span>
+                        </li>
+                        <li>
+                            <span class="info-label">Email CSKH:</span>
+                            <span class="info-text">
+                                @if(!empty($settings->contact_email))
+                                    <a href="mailto:{{ $settings->contact_email }}">{{ $settings->contact_email }}</a>
+                                @else
+                                    Đang cập nhật...
+                                @endif
+                            </span>
+                        </li>
+                        <li>
+                            <span class="info-label">Giờ phục vụ:</span>
+                            <span class="info-text">{{ ($settings->business_hours ?? null) ?: 'Đang cập nhật...' }}</span>
+                        </li>
+                    </ul>
+                </div>
+
+                {{-- Box Cam kết dịch vụ thực tế --}}
+                <div class="info-box">
+                    <h3 class="info-box-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                        Cam Kết Dịch Vụ
+                    </h3>
+
+                    <div class="commitments-grid">
+                        <div class="commitment-card">
+                            <strong>👕 Tư vấn size chuẩn</strong>
+                            <p>Tư vấn số đo, form dáng chuẩn xác trước khi chốt đơn.</p>
+                        </div>
+                        <div class="commitment-card">
+                            <strong>📦 Đồng kiểm khi nhận</strong>
+                            <p>Kiểm tra chất lượng sản phẩm thực tế trước khi thanh toán.</p>
+                        </div>
+                        <div class="commitment-card">
+                            <strong>🔄 Đổi size thuận tiện</strong>
+                            <p>Hỗ trợ đổi size linh hoạt nếu chưa vừa vặn với vóc dáng.</p>
+                        </div>
+                        <div class="commitment-card">
+                            <strong>🤝 May đo & Đơn sỉ</strong>
+                            <p>Ưu đãi may đo đồng phục và chiết khấu hấp dẫn cho đối tác.</p>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Kênh kết nối mạng xã hội --}}
+                <div class="info-box">
+                    <h3 class="info-box-title">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+                        Kênh Kết Nối Chính Thức
+                    </h3>
+
+                    <div class="social-channel-group">
+                        @if(!empty($settings->facebook_link))
+                            <a href="{{ $settings->facebook_link }}" target="_blank" rel="noopener noreferrer" class="social-channel-btn">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"></path></svg>
+                                Facebook
+                            </a>
+                        @endif
+
+                        @if(!empty($zaloNum))
+                            <a href="https://zalo.me/{{ preg_replace('/[^0-9]/', '', $zaloNum) }}" target="_blank" rel="noopener noreferrer" class="social-channel-btn">
+                                Zalo Official
+                            </a>
+                        @endif
+
+                        @if(!empty($settings->instagram_link))
+                            <a href="{{ $settings->instagram_link }}" target="_blank" rel="noopener noreferrer" class="social-channel-btn">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                                Instagram
+                            </a>
+                        @endif
+
+                        @if(!empty($settings->tiktok_link))
+                            <a href="{{ $settings->tiktok_link }}" target="_blank" rel="noopener noreferrer" class="social-channel-btn">
+                                TikTok
+                            </a>
+                        @endif
+                    </div>
+                </div>
+
+            </div>
+
+            {{-- Cột Phải: Form Gửi Thông Điệp --}}
+            <div class="contact-form-panel">
+                <div class="form-header-box">
+                    <h2>Gửi Thông Điệp Cho Chúng Tôi</h2>
+                    <p>Hãy chia sẻ nhu cầu, thắc mắc hoặc yêu cầu hỗ trợ của bạn. Đội ngũ CSKH Nobi Fashion sẽ phản hồi trong thời gian sớm nhất.</p>
+                </div>
+
+                <form id="contact-form" action="{{ route('client.contact.store') }}" method="POST" enctype="multipart/form-data" class="contact-form">
+                    @csrf
+
+                    <div id="contact-form-message" class="form-alert" style="display:none;"></div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="name">Họ và tên <span class="required">*</span></label>
+                            <input type="text" id="name" name="name" class="form-input" placeholder="Ví dụ: Nguyễn Văn A" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Số điện thoại <span class="required">*</span></label>
+                            <input type="tel" id="phone" name="phone" class="form-input" placeholder="Ví dụ: 0987 654 321" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="email">Địa chỉ Email <span class="required">*</span></label>
+                            <input type="email" id="email" name="email" class="form-input" placeholder="email@example.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="subject">Chủ đề cần hỗ trợ <span class="required">*</span></label>
+                            <input type="text" id="subject" name="subject" class="form-input" placeholder="Tư vấn size, đơn hàng, bảo hành..." required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="message">Nội dung chi tiết <span class="required">*</span></label>
+                        <textarea id="message" name="message" class="form-textarea" placeholder="Vui lòng mô tả chi tiết yêu cầu của bạn (mã đơn hàng, số đo chiều cao cân nặng, hoặc nội dung cần giải đáp)..." minlength="10" required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="attachment">Tệp đính kèm (Ảnh sản phẩm / hóa đơn nếu có)</label>
+                        <div class="file-upload-box">
+                            <input type="file" id="attachment" name="attachment" accept=".jpg,.jpeg,.png,.webp,.pdf,.doc,.docx">
+                            <div style="font-size: 11.5px; color: #94a3b8; margin-top: 4px;">Hỗ trợ ảnh định dạng JPG, PNG, WEBP, PDF (Tối đa 10MB)</div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="submit-btn" id="contact-submit-btn">
+                        <span id="contact-submit-text">Gửi Yêu Cầu Liên Hệ</span>
+                        <span id="contact-submit-loading" style="display:none;">Đang gửi thông tin...</span>
+                    </button>
+                </form>
+            </div>
+
+        </div>
+
+        {{-- Khu Vực Bản Đồ Google Maps --}}
+        <section class="contact-map-section">
+            <div class="map-header">
+                <div>
+                    <h3>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                        Vị Trí Cửa Hàng & Trụ Sở {{ ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'Đang cập nhật...') }}
+                    </h3>
+                    <p>{{ ($settings->contact_address ?? null) ?: 'Đang cập nhật...' }}</p>
+                </div>
+                @if(!empty($settings->contact_address))
+                    <a href="https://maps.google.com/?q={{ urlencode($settings->contact_address) }}" target="_blank" rel="noopener noreferrer" class="social-channel-btn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
+                        Mở trong Google Maps
+                    </a>
+                @endif
+            </div>
+
+            <div class="map-container">
+                <iframe
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4010.6654359851395!2d106.67608087555321!3d20.829894880770134!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x314a707e662ec17b%3A0x6a8ab8c6fc7ccd75!2zTmfDtSA1MTIgRHVvbmcgVGhpw6puIEzDtGksIEFuIEJpw6puLCBI4bqjaSBQaMOybmcsIFZp4buHdCBOYW0!5e1!3m2!1svi!2s!4v1790407588827!5m2!1svi!2s"
+                    allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Bản đồ chỉ dẫn địa chỉ NOBI FASHION"></iframe>
+            </div>
+        </section>
+
+        {{-- Gợi Ý Sản Phẩm Mới --}}
+        @if (isset($productNew) && count($productNew) > 0)
+            <div class="contact-product" style="margin-top: 40px;">
+                @include('clients.templates.product_new')
+            </div>
+        @endif
+
+    </div>
+
+    {{-- Script AJAX xử lý Contact Form an toàn & mượt mà --}}
     <script>
-        // Xử lý form liên hệ
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener('DOMContentLoaded', function() {
             const contactForm = document.getElementById('contact-form');
-            const messageDiv = document.getElementById('contact-form-message');
-            const submitBtn = document.getElementById('contact-submit-btn');
-            const submitText = document.getElementById('contact-submit-text');
-            const submitLoading = document.getElementById('contact-submit-loading');
-
             if (contactForm) {
                 contactForm.addEventListener('submit', async function(e) {
                     e.preventDefault();
 
-                    // Disable button
+                    const submitBtn = document.getElementById('contact-submit-btn');
+                    const submitText = document.getElementById('contact-submit-text');
+                    const submitLoading = document.getElementById('contact-submit-loading');
+                    const messageDiv = document.getElementById('contact-form-message');
+
+                    // Disable button & show spinner
                     submitBtn.disabled = true;
                     submitText.style.display = 'none';
                     submitLoading.style.display = 'inline';
-
-                    // Hide previous messages
                     messageDiv.style.display = 'none';
 
-                    // Get form data
                     const formData = new FormData(contactForm);
 
                     try {
@@ -707,140 +935,41 @@
                         });
 
                         const data = await response.json();
-
-                        // Show message
                         messageDiv.style.display = 'block';
-                        
+
                         if (data.success) {
-                            messageDiv.style.background = '#d1fae5';
+                            messageDiv.style.background = '#ecfdf5';
                             messageDiv.style.color = '#065f46';
-                            messageDiv.style.border = '1px solid #10b981';
-                            messageDiv.innerHTML = '<strong>✓ Thành công!</strong> ' + (data.message || 'Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi sớm nhất có thể.');
-                            
-                            // Reset form
+                            messageDiv.style.border = '1px solid #a7f3d0';
+                            messageDiv.innerHTML = '<strong>✓ Gửi thành công!</strong> ' + (data.message || 'Cảm ơn bạn đã liên hệ! Chúng tôi sẽ phản hồi trong thời gian sớm nhất.');
                             contactForm.reset();
                         } else {
-                            messageDiv.style.background = '#fee2e2';
+                            messageDiv.style.background = '#fef2f2';
                             messageDiv.style.color = '#991b1b';
-                            messageDiv.style.border = '1px solid #ef4444';
-                            
-                            // Hiển thị lỗi validation nếu có
-                            let errorMessage = data.message || 'Có lỗi xảy ra. Vui lòng thử lại sau.';
+                            messageDiv.style.border = '1px solid #fecaca';
+
+                            let errorMessage = data.message || 'Có lỗi xảy ra. Vui lòng kiểm tra lại thông tin.';
                             if (data.errors) {
                                 const errorList = Object.values(data.errors).flat().join('<br>');
-                                errorMessage = '<strong>✗ Lỗi:</strong><br>' + errorList;
+                                errorMessage = '<strong>✗ Vui lòng kiểm tra các mục sau:</strong><br>' + errorList;
                             }
                             messageDiv.innerHTML = errorMessage;
                         }
                     } catch (error) {
                         messageDiv.style.display = 'block';
-                        messageDiv.style.background = '#fee2e2';
+                        messageDiv.style.background = '#fef2f2';
                         messageDiv.style.color = '#991b1b';
-                        messageDiv.style.border = '1px solid #ef4444';
-                        messageDiv.textContent = 'Có lỗi xảy ra. Vui lòng thử lại sau.';
+                        messageDiv.style.border = '1px solid #fecaca';
+                        messageDiv.textContent = 'Không thể gửi biểu mẫu vào lúc này. Vui lòng liên hệ trực tiếp hotline ' + '{{ ($settings->contact_phone ?? null) ?: "Đang cập nhật..." }}' + '.';
                         console.error('Contact form error:', error);
                     } finally {
-                        // Re-enable button
                         submitBtn.disabled = false;
                         submitText.style.display = 'inline';
                         submitLoading.style.display = 'none';
-
-                        // Scroll to message
                         messageDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                     }
                 });
             }
-        });
-
-        document.addEventListener("DOMContentLoaded", function() {
-
-            // Tạo container tuyết rơi
-            const snowContainer = document.createElement("div");
-            snowContainer.id = "snow-container";
-
-            // Style không ảnh hưởng trang
-            snowContainer.style.position = "fixed";
-            snowContainer.style.top = "0";
-            snowContainer.style.left = "0";
-            snowContainer.style.width = "100%";
-            snowContainer.style.height = "100%";
-            snowContainer.style.pointerEvents = "none"; // KHÔNG chặn cuộn
-            snowContainer.style.zIndex = "1";
-            snowContainer.style.overflow = "hidden";
-
-            document.body.appendChild(snowContainer);
-
-            const snowCount = 60;
-
-            const svgSnow = `
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="#ffffff">
-                    <path d="M344.1 56C344.1 42.7 333.4 32 320.1 32C306.8 32 296.1 42.7 296.1 56L296.1 134.1L273.1 111.1C263.7 101.7 
-                    248.5 101.7 239.2 111.1C229.9 120.5 229.8 135.7 239.2 145L296.2 202L296.2 278.5L230 240.3L209.1 162.5C205.7 149.7 
-                    192.5 142.1 179.7 145.5C166.9 148.9 159.2 162 162.7 174.8L171.1 206.3L103.5 167.3C92 160.6 77.3 164.5 70.7 176C64.1 
-                    187.5 68 202.2 79.5 208.8L147.1 247.8L115.6 256.2C102.8 259.6 95.2 272.8 98.6 285.6C102 298.4 115.2 306 128 302.6L205.8 
-                    281.7L272 319.9L205.8 358.1L128 337.2C115.2 333.8 102 341.4 98.6 354.2C95.2 367 102.8 380.2 115.6 383.6L147.1 
-                    392L79.5 431C68 437.8 64.1 452.5 70.7 464C77.3 475.5 92 479.4 103.5 472.8L171.1 433.8L162.7 465.3C159.3 478.1 
-                    166.9 491.3 179.7 494.7C192.5 498.1 205.7 490.5 209.1 477.7L230 399.9L296.2 361.7L296.2 438.2L239.2 495.2C229.8 
-                    504.6 229.8 519.8 239.2 529.1C248.6 538.4 263.8 538.5 273.1 529.1L296.1 506.1L296.1 584.2C296.1 597.5 306.8 608.2 
-                    320.1 608.2C333.4 608.2 344.1 597.5 344.1 584.2L344.1 506.1L367.1 529.1C376.5 538.5 391.7 538.5 401 529.1C410.3 
-                    519.7 410.4 504.5 401 495.2L344 438.2L344 361.7L410.2 399.9L431.1 477.7C434.5 490.5 447.7 498.1 460.5 494.7C473.3 
-                    491.3 480.9 478.1 477.5 465.3L469.1 433.8L536.7 472.8C548.2 479.4 562.9 475.5 569.5 464C576.1 452.5 572.2 437.8 
-                    560.7 431.2L493.1 392.2L524.6 383.8C537.4 380.4 545 367.2 541.6 354.4C538.2 341.6 525 334 512.2 337.4L434.4 
-                    358.3L368.2 320.1L434.4 281.9L512.2 302.8C525 306.2 538.2 298.6 541.6 285.8C545 273 537.4 259.8 524.6 256.4L493.1 
-                    248L560.7 209C572.2 202.4 576.1 187.7 569.5 176.2C562.9 164.7 548.2 160.8 536.7 167.4L469.1 206.4L477.5 174.9C480.9 
-                    162.1 473.3 148.9 460.5 145.5C447.7 142.1 434.5 149.7 431.1 162.5L410.2 240.3L344 278.5L344 202L401 145C410.4 
-                    135.6 410.4 120.4 401 111.1C391.6 101.8 376.4 101.7 367.1 111.1L344.1 134.1L344.1 56z"/>
-                </svg>
-            `;
-
-            function createSnowflake() {
-                const wrapper = document.createElement("div");
-                wrapper.innerHTML = svgSnow;
-
-                const snow = wrapper.firstElementChild;
-
-                // kích thước ngẫu nhiên
-                const size = Math.random() * 20 + 15;
-                snow.style.width = size + "px";
-                snow.style.height = size + "px";
-                snow.style.position = "absolute";
-                snow.style.top = "-50px";
-                snow.style.left = Math.random() * window.innerWidth + "px";
-                snow.style.opacity = (Math.random() * 0.6 + 0.3).toString();
-                snow.style.transform = `rotate(${Math.random() * 360}deg)`;
-                snow.style.fill = "#faffff";
-
-                // animation
-                const fallDuration = Math.random() * 7 + 6;
-                const spinDuration = fallDuration * 1.8;
-                const delay = Math.random() * 3;
-
-                snow.style.animation = `
-                    fall ${fallDuration}s linear ${delay}s infinite,
-                    spin ${spinDuration}s linear infinite
-                `;
-
-                snowContainer.appendChild(snow);
-            }
-
-            for (let i = 0; i < snowCount; i++) {
-                createSnowflake();
-            }
-
-            const style = document.createElement("style");
-            style.innerHTML = `
-                @keyframes fall {
-                    0% {
-                        transform: translateY(-10px) translateX(0);
-                        opacity: 1;
-                    }
-                    100% {
-                        transform: translateY(${window.innerHeight + 50}px) translateX(-200px);
-                        opacity: 0.4;
-                    }
-                }
-            `;
-            document.head.appendChild(style);
         });
     </script>
 @endsection

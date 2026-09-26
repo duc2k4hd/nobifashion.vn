@@ -6,8 +6,8 @@
     @push('styles')
         <style>
             /* =========================================
-                   ROOT VARIABLES - Clean & Minimal
-                   ========================================= */
+                           ROOT VARIABLES - Clean & Minimal
+                           ========================================= */
             :root {
                 --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                 --text-primary: #111827;
@@ -168,6 +168,10 @@
                 cursor: pointer;
             }
 
+            #blog-content-section {
+                scroll-margin-top: 80px;
+            }
+
             .btn-share {
                 width: 36px;
                 height: 36px;
@@ -210,7 +214,7 @@
                 background: #f9fafb;
                 border: 1px solid var(--border);
                 border-radius: 12px;
-                padding: 16px;
+                padding: 5px 2px;
                 margin-bottom: 20px;
             }
 
@@ -238,12 +242,11 @@
             }
 
             /* =========================================
-                   MODERN ARTICLE WRAPPER STYLING
-                   ========================================= */
+                           MODERN ARTICLE WRAPPER STYLING
+                           ========================================= */
             .article-wrapper {
                 font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
                 color: #1a1a1a !important;
-                line-height: 1.8 !important;
                 word-wrap: break-word !important;
             }
 
@@ -312,7 +315,6 @@
 
             /* Paragraphs & Text */
             .article-wrapper p {
-                margin-bottom: 1.5rem !important;
                 font-size: 1rem !important;
                 color: #374151 !important;
             }
@@ -390,7 +392,7 @@
                 max-width: 100% !important;
                 height: auto !important;
                 display: block !important;
-                margin: 2.5rem auto !important;
+                margin: 10px auto !important;
                 border-radius: 12px !important;
                 box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
                 transition: transform 0.3s ease !important;
@@ -623,6 +625,114 @@
                 margin-left: 16px;
             }
 
+            /* Mobile Table of Contents (TOC) - Tối giản, gọn gàng, không chấm/gạch */
+            .article-wrapper .mobile-toc {
+                background: #f8fafc;
+                border: 1px solid #e2e8f0;
+                border-radius: 10px;
+                padding: 10px 14px;
+                margin-bottom: 18px;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+            }
+
+            .article-wrapper .mobile-toc-header {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding-bottom: 6px;
+                margin-bottom: 6px;
+                border-bottom: 1px solid #edf2f7;
+            }
+
+            .article-wrapper .mobile-toc-title {
+                font-size: 13.5px;
+                font-weight: 700;
+                color: #0f172a;
+                display: flex;
+                align-items: center;
+            }
+
+            .article-wrapper .mobile-toc-title i {
+                color: var(--primary-color, #ff3366);
+                font-size: 13px;
+            }
+
+            .article-wrapper .mobile-toc ul,
+            .article-wrapper .mobile-toc-list {
+                list-style: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                display: flex;
+                flex-direction: column;
+                gap: 1px;
+                max-height: 320px;
+                overflow-y: auto;
+                scrollbar-width: thin;
+            }
+
+            /* Triệt tiêu hoàn toàn chấm tròn ::before mặc định của bài viết */
+            .article-wrapper .mobile-toc ul li::before,
+            .article-wrapper .mobile-toc li::before {
+                content: none !important;
+                display: none !important;
+                width: 0 !important;
+                margin: 0 !important;
+            }
+
+            .article-wrapper .mobile-toc-item {
+                list-style: none !important;
+                margin: 0 !important;
+                margin-bottom: 2px !important;
+                padding: 0 !important;
+            }
+
+            .article-wrapper .mobile-toc-link {
+                display: block !important;
+                text-decoration: none !important;
+                border-bottom: none !important;
+                border-radius: 4px;
+                transition: background 0.15s ease, color 0.15s ease !important;
+            }
+
+            /* Phân cấp Mục lớn H2 */
+            .article-wrapper .mobile-toc-item.is-h2 {
+                margin-top: 5px !important;
+            }
+
+            .article-wrapper .mobile-toc-item.is-h2:first-child {
+                margin-top: 0 !important;
+            }
+
+            .article-wrapper .mobile-toc-item.is-h2 .mobile-toc-link {
+                padding: 2px 4px !important;
+                color: #1e293b !important;
+                font-size: 12px !important;
+                font-weight: 600 !important;
+                line-height: 1.4 !important;
+            }
+
+            /* Phân cấp Mục con H3 - Thụt lề nhẹ, không gạch, không chấm */
+            .article-wrapper .mobile-toc-item.is-h3 {
+                margin-left: 14px !important;
+                border-left: none !important;
+                padding-left: 0 !important;
+            }
+
+            .article-wrapper .mobile-toc-item.is-h3 .mobile-toc-link {
+                padding: 2px 4px !important;
+                color: #64748b !important;
+                font-size: 11.5px !important;
+                font-weight: 400 !important;
+                line-height: 1.4 !important;
+            }
+
+            .article-wrapper .mobile-toc-link:hover,
+            .article-wrapper .mobile-toc-link:active {
+                background: #f1f5f9 !important;
+                color: var(--primary-color, #ff3366) !important;
+                border-bottom: none !important;
+            }
+
             .sidebar-widget {
                 background: var(--bg-primary);
                 border: 1px solid var(--border);
@@ -732,7 +842,7 @@
 
             @media (max-width: 768px) {
                 .hero-container {
-                    padding: 0 12px;
+                    padding: 0 5px;
                 }
 
                 .hero-title {
@@ -740,7 +850,7 @@
                 }
 
                 .content-container {
-                    padding: 0 12px;
+                    padding: 0 5px;
                 }
 
                 .article-wrapper {
@@ -1015,23 +1125,77 @@
             @media (max-width: 768px) {
                 .blog-breadcrumb {
                     padding: 10px 0;
+                    background: #fdfdfd;
+                    border-bottom: 1px solid #f1f5f9;
                 }
 
-                .breadcrumb-list * {
-                    font-size: 10px;
+                .breadcrumb-list {
+                    display: flex;
+                    align-items: center;
+                    flex-wrap: nowrap;
+                    overflow-x: auto;
+                    -webkit-overflow-scrolling: touch;
+                    scrollbar-width: none;
+                    gap: 8px;
+                    padding: 2px 0;
                 }
 
-                .breadcrumb-item a,
-                .breadcrumb-item.active span {
-                    font-size: 8px;
+                .breadcrumb-list::-webkit-scrollbar {
+                    display: none;
+                }
+
+                .breadcrumb-item {
+                    flex-shrink: 0;
+                    display: inline-flex;
+                    align-items: center;
+                }
+
+                .breadcrumb-item a {
+                    font-size: 13px !important;
+                    font-weight: 500;
+                    color: #4b5563;
+                    white-space: nowrap;
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 5px;
                 }
 
                 .breadcrumb-item a i {
-                    font-size: 8px;
+                    font-size: 12px !important;
+                    color: #6b7280;
+                }
+
+                .breadcrumb-item a:hover {
+                    color: var(--primary-color, #ff3366);
                 }
 
                 .breadcrumb-separator {
-                    font-size: 8px;
+                    color: #cbd5e1 !important;
+                    font-size: 10px !important;
+                    display: inline-flex;
+                    align-items: center;
+                    flex-shrink: 0;
+                    margin: 0;
+                }
+
+                .breadcrumb-separator i {
+                    font-size: 10px !important;
+                    margin: 0;
+                }
+
+                .breadcrumb-item.active {
+                    flex-shrink: 0;
+                    max-width: 200px;
+                }
+
+                .breadcrumb-item.active span {
+                    font-size: 13px !important;
+                    font-weight: 600;
+                    color: #1e293b;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    display: block;
                 }
 
                 .comments-section {
@@ -1278,7 +1442,7 @@
                 } catch (error) {
                     console.error(error);
                     listEl.innerHTML =
-                    '<div class="no-comments text-danger">Không thể tải bình luận.</div>';
+                        '<div class="no-comments text-danger">Không thể tải bình luận.</div>';
                 } finally {
                     isLoading = false;
                 }
@@ -1396,7 +1560,7 @@
                 </li>
                 <li class="breadcrumb-item">
                     <a href="{{ route('client.blog.index') }}">
-                        <span>Blog</span>
+                        <span>Tin tức</span>
                     </a>
                 </li>
                 @if ($post->category)
@@ -1444,7 +1608,7 @@
             <div class="hero-meta">
                 <div class="hero-meta-item">
                     <i class="fas fa-user-circle"></i>
-                    <span>{{ $post->author?->name ?? 'Team Nobi Fashion' }}</span>
+                    <span>{{ $post->author?->displayName() ?? 'Team Nobi Fashion' }}</span>
                 </div>
                 <div class="hero-meta-item">
                     <i class="far fa-calendar-alt"></i>
@@ -1463,7 +1627,7 @@
             {{-- Action Buttons --}}
             <div class="hero-actions">
                 <button class="btn-read-now"
-                    onclick="document.getElementById('article-content').scrollIntoView({behavior: 'smooth'})">
+                    onclick="const el = document.getElementById('blog-content-section'); if (el) { const y = el.getBoundingClientRect().top + (window.pageYOffset || window.scrollY || document.documentElement.scrollTop) - 110; window.scrollTo({ top: y, behavior: 'smooth' }); }">
                     <span>Bắt đầu đọc</span>
                     <i class="fas fa-arrow-down"></i>
                 </button>
@@ -1508,7 +1672,7 @@
     {{-- ========================================= --}}
     {{-- MAIN CONTENT SECTION --}}
     {{-- ========================================= --}}
-    <section class="blog-content-section">
+    <section id="blog-content-section" class="blog-content-section">
         <div class="content-container">
 
             {{-- LEFT: ARTICLE CONTENT --}}
@@ -1517,11 +1681,17 @@
                 {{-- Mobile TOC --}}
                 @if ($toc->isNotEmpty())
                     <div class="mobile-toc d-lg-none">
-                        <div class="mobile-toc-title">📑 Mục lục bài viết</div>
-                        <ul>
+                        <div class="mobile-toc-header">
+                            <span class="mobile-toc-title">
+                                <i class="fas fa-list-ol me-2"></i>Mục lục bài viết
+                            </span>
+                        </div>
+                        <ul class="mobile-toc-list">
                             @foreach ($toc as $item)
-                                <li class="{{ $item['tag'] === 'h3' ? 'ms-3' : '' }}">
-                                    <a href="#{{ $item['id'] }}">{{ renderMeta($item['label']) }}</a>
+                                <li class="mobile-toc-item {{ $item['tag'] === 'h3' ? 'is-h3' : 'is-h2' }}">
+                                    <a href="#{{ $item['id'] }}" class="mobile-toc-link">
+                                        {{ renderMeta($item['label']) }}
+                                    </a>
                                 </li>
                             @endforeach
                         </ul>
@@ -1616,6 +1786,20 @@
                         </form>
                     </div>
                 </section>
+
+                <div class="blog-editorial-note"
+                    style="margin-top: 35px; padding: 18px 20px; background: #f8f8f8; border-left: 3px solid #222; font-size: 14px; line-height: 1.7; color: #555;">
+                    <strong style="display: block; margin-bottom: 6px; color: #222;">Về nội dung bài viết</strong>
+                    <p style="margin: 0;">
+                        Nội dung trên Nobi Fashion được đội ngũ biên tập tổng hợp, tham khảo, đối chiếu và biên tập từ nhiều
+                        nguồn thông tin khác nhau nhằm cung cấp kiến thức hữu ích cho người đọc. Nếu bạn phát hiện thông tin
+                        chưa chính xác, đã lỗi thời hoặc cần được đính chính, vui lòng để lại bình luận hoặc liên hệ trực
+                        tiếp với Nobi Fashion để chúng tôi kiểm tra và cập nhật.
+                        <a href="{{ route('client.policy.editorial') }}"
+                            style="color: #ff0000; font-weight: 600; text-decoration: underline;">Xem nguyên tắc biên tập của
+                            Nobi Fashion</a>.
+                    </p>
+                </div>
             </article>
 
             {{-- RIGHT: SIDEBAR --}}

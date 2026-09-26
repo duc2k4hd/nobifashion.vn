@@ -177,6 +177,7 @@
     returnFocus = trigger || document.activeElement;
     if (name === "wishlist") renderWishlist();
     if (name === "search") {
+      history = storage.read(isBlogSearch() ? "blog_search_history" : "search_history", []).slice(0, 8);
       renderSearchHistory();
       renderSearchResults();
     }
@@ -249,13 +250,23 @@
   });
 
   // --- SEARCH DIALOG MANAGEMENT (LIVE SEARCH & AJAX) ---
+  const isBlogSearch = () => {
+    const dialog = get("search");
+    if (dialog && dialog.dataset.searchMode) {
+      return dialog.dataset.searchMode === "blog";
+    }
+    const path = window.location.pathname;
+    return path === "/blog" || path.startsWith("/blog/");
+  };
+
   function rememberSearch(term) {
     if (!term) return;
+    const historyKey = isBlogSearch() ? "blog_search_history" : "search_history";
     history = [
       term,
       ...history.filter((value) => normalize(value) !== normalize(term)),
     ].slice(0, 8);
-    storage.write("search_history", history);
+    storage.write(historyKey, history);
   }
 
   function renderSearchHistory() {
@@ -285,8 +296,16 @@
     const searchStatus = get("search_status");
     if (!list) return;
 
+    const isBlog = isBlogSearch();
+    const searchForm = get("search_form");
+    const defaultApi = isBlog ? "/blog/api/search" : "/shop/search";
+    const apiEndpoint = (searchForm && searchForm.dataset.searchApi) ? searchForm.dataset.searchApi : defaultApi;
+    const finalUrl = apiEndpoint.includes("?")
+      ? `${apiEndpoint}&keyword=${encodeURIComponent(query)}`
+      : `${apiEndpoint}?keyword=${encodeURIComponent(query)}`;
+
     try {
-      const res = await fetch(`/shop/search?keyword=${encodeURIComponent(query)}`, {
+      const res = await fetch(finalUrl, {
         headers: {
           "Accept": "application/json",
           "X-Requested-With": "XMLHttpRequest",
@@ -300,35 +319,62 @@
         if (searchStatus) {
           searchStatus.textContent = `${data.length} kết quả phù hợp cho “${query}”`;
         }
-        data.forEach((prod) => {
+        data.forEach((itemData) => {
           const item = document.createElement("li");
           const link = document.createElement("a");
           link.className = `${prefix}search_result`;
-          link.href = `/san-pham/${prod.slug}`;
           link.addEventListener("click", () => rememberSearch(query));
 
-          const img = document.createElement("img");
-          const imgUrl = prod.primary_image ? prod.primary_image.url : "";
-          img.src = imgUrl ? (imgUrl.startsWith("http") ? imgUrl : `/clients/assets/img/clothes/${imgUrl}`) : "/clients/assets/img/clothes/no-image.webp";
-          img.alt = prod.name || "";
+          if (isBlog) {
+            link.href = itemData.url || `/blog/${itemData.slug}`;
 
-          const copy = document.createElement("span");
-          const nameSpan = document.createElement("span");
-          nameSpan.className = `${prefix}result_name`;
-          nameSpan.textContent = prod.name;
+            const img = document.createElement("img");
+            img.src = itemData.thumbnail_url || "/clients/assets/img/clothes/no-image.webp";
+            img.alt = itemData.title || "";
+            img.loading = "lazy";
 
-          const priceSpan = document.createElement("span");
-          priceSpan.className = `${prefix}result_detail`;
-          priceSpan.textContent = formatMoney(prod.sale_price || prod.price);
+            const copy = document.createElement("span");
+            const titleSpan = document.createElement("span");
+            titleSpan.className = `${prefix}result_name`;
+            titleSpan.textContent = itemData.title || itemData.name;
 
-          copy.append(nameSpan, priceSpan);
-          link.append(img, copy);
+            const categorySpan = document.createElement("span");
+            categorySpan.className = `${prefix}result_detail`;
+            categorySpan.style.cssText = "color: #ff3366; font-size: 12px; font-weight: 500;";
+            categorySpan.textContent = itemData.category_name ? `${itemData.category_name} • ${itemData.published_at || 'Bài viết'}` : "Bài viết Blog";
+
+            copy.append(titleSpan, categorySpan);
+            link.append(img, copy);
+          } else {
+            link.href = `/san-pham/${itemData.slug}`;
+
+            const img = document.createElement("img");
+            const imgUrl = itemData.primary_image ? itemData.primary_image.url : "";
+            img.src = imgUrl ? (imgUrl.startsWith("http") ? imgUrl : `/clients/assets/img/clothes/${imgUrl}`) : "/clients/assets/img/clothes/no-image.webp";
+            img.alt = itemData.name || "";
+            img.loading = "lazy";
+
+            const copy = document.createElement("span");
+            const nameSpan = document.createElement("span");
+            nameSpan.className = `${prefix}result_name`;
+            nameSpan.textContent = itemData.name;
+
+            const priceSpan = document.createElement("span");
+            priceSpan.className = `${prefix}result_detail`;
+            priceSpan.textContent = formatMoney(itemData.sale_price || itemData.price);
+
+            copy.append(nameSpan, priceSpan);
+            link.append(img, copy);
+          }
+
           item.append(link);
           list.append(item);
         });
       } else {
         if (searchStatus) {
-          searchStatus.textContent = `Không tìm thấy sản phẩm nào cho “${query}”. Nhấn Enter để xem kết quả chi tiết.`;
+          searchStatus.textContent = isBlog
+            ? `Không tìm thấy bài viết nào cho “${query}”. Nhấn Enter để xem kết quả chi tiết.`
+            : `Không tìm thấy sản phẩm nào cho “${query}”. Nhấn Enter để xem kết quả chi tiết.`;
         }
       }
     } catch (e) {}
@@ -363,7 +409,9 @@
       if (list) list.replaceChildren();
       const searchStatus = get("search_status");
       if (searchStatus) {
-        searchStatus.textContent = "Tìm theo tên sản phẩm hoặc danh mục.";
+        searchStatus.textContent = isBlogSearch()
+          ? "Tìm theo tiêu đề bài viết hoặc chủ đề blog."
+          : "Tìm theo tên sản phẩm hoặc danh mục.";
       }
     }
   }
