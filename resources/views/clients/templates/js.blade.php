@@ -1,4 +1,4 @@
-<script src="{{ asset('clients/assets/js/main.js') }}?v={{ env('APP_VERSION') }}"></script>
+<script defer src="{{ asset('clients/assets/js/main.js') }}?v={{ env('APP_VERSION') }}"></script>
 <script defer src="{{ asset('clients/assets/js/header.js') }}?v={{ env('APP_VERSION') }}"></script>
 <script defer src="{{ asset('clients/assets/js/customer_chat.js') }}?v={{ env('APP_VERSION') }}"></script>
 

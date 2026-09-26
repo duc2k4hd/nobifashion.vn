@@ -13,7 +13,6 @@
     @include('clients.templates.css')
     @yield('schema')
     @include('clients.templates.head')
-    @stack('styles')
     <title>@yield('title')</title>
 </head>
 
@@ -23,7 +22,9 @@
         @include('clients.pages.loading.index')
         @include('clients.templates.header')
 
-        @yield('content')
+        <main id="main-content" role="main">
+            @yield('content')
+        </main>
 
         @include('clients.templates.footer')
     </div>
@@ -32,6 +33,7 @@
     @include('clients.templates.chat')
     @include('clients.templates.js')
     @yield('foot')
+    {!! $settings->google_tag_header ?? $settings->google_analytics ?? '' !!}
 </body>
 
 </html>

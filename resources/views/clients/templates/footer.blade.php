@@ -80,9 +80,18 @@
 <footer class="nobifashion_footer">
     <div class="nobifashion_footer_content">
         <div class="nobifashion_footer_content_business">
-            <img loading="lazy" width="180px" height="55px" src="{{ asset('clients/assets/img/business/' . (($settings->site_logo ?? null) ?: 'nobifashion-logo.png') ) }}"
-                alt="Shop {{ renderMeta(($settings->subname ?? null) ?: 'Đang cập nhật...') }}" title="Shop {{ renderMeta(($settings->site_name ?? null) ?: 'Đang cập nhật...') }}">
-            <h6 class="nobifashion_footer_content_business_title">{{ renderMeta(($settings->site_name ?? null) ?: 'Đang cập nhật...') }}</h6>
+            @php
+                $footerLogoFile = (($settings->site_logo ?? null) ?: 'nobifashion-logo.png');
+                $footerLogoWebp = pathinfo($footerLogoFile, PATHINFO_FILENAME) . '.webp';
+            @endphp
+            <picture>
+                @if(file_exists(public_path('clients/assets/img/business/' . $footerLogoWebp)))
+                    <source srcset="{{ asset('clients/assets/img/business/' . $footerLogoWebp) }}" type="image/webp">
+                @endif
+                <img loading="lazy" width="180" height="55" src="{{ asset('clients/assets/img/business/' . $footerLogoFile) }}"
+                    alt="Shop {{ renderMeta(($settings->subname ?? null) ?: 'Đang cập nhật...') }}" title="Shop {{ renderMeta(($settings->site_name ?? null) ?: 'Đang cập nhật...') }}">
+            </picture>
+            <p class="nobifashion_footer_content_business_title">{{ renderMeta(($settings->site_name ?? null) ?: 'Đang cập nhật...') }}</p>
             <p class="nobifashion_footer_content_business_desc">{{ renderMeta(($settings->site_description ?? null) ?: 'Đang cập nhật...') }}</p>
             <p class="nobifashion_footer_content_business_address"><strong>Địa chỉ</strong>: {{ ($settings->contact_address ?? null) ?: 'Đang cập nhật...' }}</p>
             <p class="nobifashion_footer_content_business_phone"><strong>Điện thoại</strong>:
@@ -175,7 +184,7 @@
                     {{ route('client.profile.index') }}
                 @else
                 @endauth">Thông tin thanh toán</a>
-                <a href="{{ route('client.blog.index') }}">Tin tức</a>
+                <a href="{{ route('client.blog.index') }}">Nobi Blog</a>
                 {{-- <img loading="lazy" width="50%" src="{{ asset('clients/assets/img/other/tai-khoan-da-xac-thuc.png') }}" alt="Chính sách bán hàng được chứng nhận"> --}}
             </div>
         </div>
@@ -210,7 +219,7 @@
                 <a href="{{ route('client.policy.privacy') }}">Hướng dẫn bảo mật thông tin</a>
                 <a href="{{ route('client.policy.privacy') }}">Hướng dẫn bảo mật dữ liệu</a>
                 <a href="{{ route('client.sitemap.html') }}">🗺️ Sitemap</a>
-                <img loading="lazy" width="100%" src="{{ asset('clients/assets/img/other/footer_trustbadge.jpg') }}"
+                <img loading="lazy" width="240" height="35" style="max-width: 100%; height: auto; object-fit: contain;" src="{{ asset('clients/assets/img/other/footer_trustbadge.jpg') }}"
                     alt="Các phương thức thanh toán được tin cậy bởi Nobifashion.vn">
             </div>
         </div>

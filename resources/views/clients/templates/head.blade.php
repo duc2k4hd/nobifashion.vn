@@ -19,5 +19,3 @@
 <meta http-equiv="X-XSS-Protection" content="1; mode=block">
 <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
 <meta name='dmca-site-verification' content='MFBmVDJ4N2sybDVocEJZUzZCaTlPQT090' />
-
-{!! $settings->google_tag_header ?? $settings->google_analytics ?? '' !!}

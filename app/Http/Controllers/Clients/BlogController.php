@@ -462,7 +462,7 @@ class BlogController extends Controller
         $schemas[] = [
             '@context' => 'https://schema.org',
             '@type' => 'CollectionPage',
-            'name' => 'Blog & Tin tức thời trang',
+            'name' => 'Nobi Blog - Xu hướng thời trang & Phong cách sống',
             'description' => 'Chia sẻ kinh nghiệm phối đồ, xu hướng thời trang và các câu chuyện thương hiệu',
             'url' => route('client.blog.index'),
             'mainEntity' => [
@@ -714,7 +714,7 @@ class BlogController extends Controller
                 '@type' => 'WebPage',
                 '@id' => route('client.blog.show', $post),
             ],
-            'articleSection' => $post->category?->name ?? 'Tin tức',
+            'articleSection' => $post->category?->name ?? 'Nobi Blog',
             'inLanguage' => 'vi-VN',
         ];
 

@@ -4,9 +4,18 @@
 @endphp
 <header class="nobifashion_home_header {{ !$isHomePage ? 'nobifashion_header_inner_page' : '' }}" id="nobifashion_home_header" data-tone="{{ $isHomePage ? 'dark' : 'light' }}">
     <div class="nobifashion_home_container nobifashion_home_header_inner">
-      <a class="nobifashion_home_logo" href="/" aria-label="Trang chủ UNIQLO">
-        <img width="auto" height="60px" src="{{ asset('clients/assets/img/business/' . $settings->site_logo ?? '' ) }}"
-                alt="Shop {{ renderMeta($settings->subname ?? '' ) }}" title="Shop {{ renderMeta($settings->site_name ?? '' ) }}">
+      <a class="nobifashion_home_logo" href="/" aria-label="Trang chủ Nobi Fashion">
+        @php
+            $logoFile = $settings->site_logo ?? 'nobifashion-logo.png';
+            $logoWebp = pathinfo($logoFile, PATHINFO_FILENAME) . '.webp';
+        @endphp
+        <picture>
+            @if(file_exists(public_path('clients/assets/img/business/' . $logoWebp)))
+                <source srcset="{{ asset('clients/assets/img/business/' . $logoWebp) }}" type="image/webp">
+            @endif
+            <img width="180" height="60" style="height: 60px; width: auto; max-width: 180px; object-fit: contain;" src="{{ asset('clients/assets/img/business/' . $logoFile) }}"
+                alt="Shop {{ renderMeta($settings->subname ?? 'Nobi Fashion' ) }}" title="Shop {{ renderMeta($settings->site_name ?? 'Nobi Fashion' ) }}">
+        </picture>
       </a>
       <nav class="nobifashion_home_tabs nobifashion_home_desktop_tabs" aria-label="Đối tượng mua sắm">
         @if(isset($categories) && $categories->isNotEmpty())

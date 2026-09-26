@@ -1,277 +1,18 @@
 @extends('clients.layouts.master')
 
 @section('title', (isset($currentCategory) && $currentCategory ? ($currentCategory->meta_title ?: $currentCategory->name
-    . ' - Xu hướng & Phong cách') : 'Tin tức, Xu hướng & Phong cách sống') . ' | ' . config('app.name'))
+    . ' - Xu hướng & Phong cách') : 'Nobi Blog, Xu hướng & Phong cách sống') . ' | ' . config('app.name'))
 
 @section('head')
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet"
-        integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
     <meta name="description"
         content="{{ isset($currentCategory) && $currentCategory ? ($currentCategory->meta_description ?: ($currentCategory->description ?: 'Tổng hợp các bài viết và thông tin mới nhất về ' . $currentCategory->name . ' tại ' . config('app.name') . '.')) : 'Cập nhật xu hướng thời trang mới nhất, cẩm nang phối đồ và chia sẻ hữu ích về phong cách sống tại ' . config('app.name') . '.' }}">
     <link rel="canonical"
         href="{{ isset($currentCategory) && $currentCategory ? route('client.blog.category', $currentCategory) : route('client.blog.index') }}">
-
-    <style>
-        /* Tổng thể trang */
-        .blog-page {
-            max-width: 1200px;
-        }
-
-        /* Hero */
-        .blog-hero {
-            background: #fafafa;
-            border-radius: 16px;
-            padding: 28px 32px;
-            margin-bottom: 24px;
-            border: 1px solid #eee;
-        }
-
-        .nobifashion_header_main_nav_links {
-            height: 20px !important;
-        }
-
-        /* Featured */
-        .blog-featured .card {
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            overflow: hidden;
-            transition: 0.2s ease;
-        }
-
-        .blog-featured .card:hover {
-            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
-            transform: translateY(-3px);
-        }
-
-        /* Bài viết */
-        .blog-card {
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            overflow: hidden;
-            transition: 0.2s;
-            background: #fff;
-        }
-
-        .blog-card:hover {
-            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.07);
-            transform: translateY(-3px);
-        }
-
-        .blog-card img {
-            height: 230px;
-            width: 100%;
-        }
-
-        .blog-card .card-body {
-            padding: 16px 18px;
-        }
-
-        /* Sidebar */
-        .blog-sidebar {
-            position: static;
-        }
-
-        @media (min-width: 992px) {
-            .blog-sidebar {
-                position: sticky;
-                top: 90px;
-                align-self: flex-start;
-                z-index: 10;
-            }
-        }
-
-        .blog-sidebar .card {
-            border: 1px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 14px 18px;
-        }
-
-        .blog-sidebar h5 {
-            font-size: 16px;
-            font-weight: 700;
-        }
-
-        /* Tag */
-        .blog-tag {
-            display: inline-block;
-            background: #f3f4f6;
-            color: #111827;
-            padding: 3px 10px;
-            margin: 4px 6px 0 0;
-            border-radius: 999px;
-            font-size: 12px;
-        }
-
-        /* List trong sidebar */
-        .blog-sidebar ul li {
-            padding: 6px 0;
-            border-bottom: 1px solid #f1f1f1;
-        }
-
-        .blog-sidebar ul li:last-child {
-            border-bottom: none;
-        }
-
-        .tiny {
-            font-size: 11px;
-        }
-
-        /* Breadcrumb */
-        .blog-breadcrumb {
-            margin-bottom: 20px;
-            background: #fdfdfd;
-            padding: 10px 20px;
-            border-radius: 50px;
-            display: inline-block;
-            border: 1px solid #eee;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
-        }
-
-        .breadcrumb-list {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            flex-wrap: wrap;
-        }
-
-        .breadcrumb-item {
-            display: flex;
-            align-items: center;
-        }
-
-        .breadcrumb-item a {
-            color: #666;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: 500;
-            transition: color 0.3s ease;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .breadcrumb-item a:hover {
-            color: var(--primary-color, #ff3366);
-        }
-
-        .breadcrumb-item a svg {
-            width: 16px;
-            height: 16px;
-            stroke-width: 2px;
-        }
-
-        .breadcrumb-item.active span {
-            color: var(--primary-color, #ff3366);
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        .breadcrumb-separator {
-            color: #ccc;
-            display: flex;
-            align-items: center;
-        }
-
-        /* Blog Pagination */
-        .blog-pagination-wrapper {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-top: 36px;
-            margin-bottom: 24px;
-        }
-
-        .blog-pagination-nav {
-            display: inline-block;
-        }
-
-        .blog-pagination-list {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            list-style: none;
-            padding: 0;
-            margin: 0;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .blog-pagination-list .page-item {
-            display: inline-flex;
-        }
-
-        .blog-pagination-list .page-link {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 38px;
-            height: 38px;
-            padding: 0 12px;
-            font-size: 14px;
-            font-weight: 500;
-            color: #374151;
-            background: #ffffff;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            text-decoration: none;
-            transition: all 0.2s ease;
-            user-select: none;
-        }
-
-        .blog-pagination-list .page-link:hover {
-            color: #111827;
-            background: #f9fafb;
-            border-color: #d1d5db;
-        }
-
-        .blog-pagination-list .page-item.active .page-link {
-            color: #ffffff;
-            background: #111827;
-            border-color: #111827;
-            font-weight: 600;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
-        }
-
-        .blog-pagination-list .page-item.disabled .page-link {
-            color: #d1d5db;
-            background: #fdfdfd;
-            border-color: #f3f4f6;
-            cursor: not-allowed;
-            pointer-events: none;
-        }
-
-        .blog-pagination-list .page-item.dots .page-link {
-            border: none;
-            background: transparent;
-            min-width: 24px;
-            padding: 0 4px;
-            color: #9ca3af;
-            font-weight: 600;
-        }
-
-        @media (max-width: 576px) {
-            .blog-pagination-wrapper {
-                margin-top: 24px;
-                margin-bottom: 16px;
-            }
-
-            .blog-pagination-list {
-                gap: 4px;
-            }
-
-            .blog-pagination-list .page-link {
-                min-width: 32px;
-                height: 32px;
-                padding: 0 8px;
-                font-size: 13px;
-                border-radius: 6px;
-            }
-        }
-    </style>
 @endsection
+
+@push('styles')
+    <link rel="stylesheet" href="{{ asset('clients/assets/css/blog.css?v=' . env('APP_VERSION')) }}">
+@endpush
 
 @section('schema')
     @if (isset($schemaData) && is_array($schemaData))
@@ -284,11 +25,11 @@
 @endsection
 
 @section('content')
-    <section class="container py-4 blog-page">
+    <section class="nobifashion_blog_container">
         {{-- Breadcrumb --}}
-        <nav aria-label="breadcrumb" class="blog-breadcrumb mb-3">
-            <ol class="breadcrumb-list">
-                <li class="breadcrumb-item">
+        <nav aria-label="breadcrumb" class="nobifashion_blog_breadcrumb">
+            <ol class="nobifashion_blog_breadcrumb_list">
+                <li class="nobifashion_blog_breadcrumb_item">
                     <a href="{{ route('client.home.index') }}">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
                             stroke-linejoin="round">
@@ -299,191 +40,149 @@
                     </a>
                 </li>
                 @if (isset($currentCategory) && $currentCategory)
-                    <li class="breadcrumb-separator">
+                    <li class="nobifashion_blog_breadcrumb_separator">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
                             stroke-linejoin="round">
                             <polyline points="9 18 15 12 9 6"></polyline>
                         </svg>
                     </li>
-                    <li class="breadcrumb-item">
-                        <a href="{{ route('client.blog.index') }}">Tin tức</a>
+                    <li class="nobifashion_blog_breadcrumb_item">
+                        <a href="{{ route('client.blog.index') }}">Nobi Blog</a>
                     </li>
-                    <li class="breadcrumb-separator">
+                    <li class="nobifashion_blog_breadcrumb_separator">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
                             stroke-linejoin="round">
                             <polyline points="9 18 15 12 9 6"></polyline>
                         </svg>
                     </li>
-                    <li class="breadcrumb-item active" aria-current="page">
+                    <li class="nobifashion_blog_breadcrumb_item active" aria-current="page">
                         <span>{{ $currentCategory->name }}</span>
                     </li>
                 @else
-                    <li class="breadcrumb-separator">
+                    <li class="nobifashion_blog_breadcrumb_separator">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
                             stroke-linejoin="round">
                             <polyline points="9 18 15 12 9 6"></polyline>
                         </svg>
                     </li>
-                    <li class="breadcrumb-item active" aria-current="page">
-                        <span>Tin tức</span>
+                    <li class="nobifashion_blog_breadcrumb_item active" aria-current="page">
+                        <span>Nobi Blog</span>
                     </li>
                 @endif
             </ol>
         </nav>
 
         <!-- HERO -->
-        <div class="blog-hero">
-            <div class="row align-items-center">
-                <div class="col-lg-8">
+        <div class="nobifashion_blog_hero">
+            <div class="nobifashion_blog_hero_inner">
+                <div class="nobifashion_blog_hero_main">
                     @if (isset($currentCategory) && $currentCategory)
-                        <p class="text-uppercase text-primary fw-semibold small mb-1">CHUYÊN MỤC</p>
-                        <h1 class="h3 fw-bold mb-2">{{ $currentCategory->name }}</h1>
-                        <p class="text-muted small mb-0">
+                        <p class="nobifashion_blog_hero_tag">CHUYÊN MỤC</p>
+                        <h1 class="nobifashion_blog_hero_title">{{ $currentCategory->name }}</h1>
+                        <p class="nobifashion_blog_hero_desc">
                             {{ $currentCategory->description ?: 'Tổng hợp các bài viết và thông tin mới nhất thuộc chuyên mục ' . $currentCategory->name . '.' }}
                         </p>
                     @else
-                        <p class="text-uppercase text-muted small mb-1">CHUYÊN TRANG PHONG CÁCH</p>
-                        <h1 class="h3 fw-bold mb-2">Định hình phong cách & Cảm hứng sống hiện đại</h1>
-                        <p class="text-muted small mb-0">
+                        <p class="nobifashion_blog_hero_tag muted">CHUYÊN TRANG PHONG CÁCH</p>
+                        <h1 class="nobifashion_blog_hero_title">Định hình phong cách & Cảm hứng sống hiện đại</h1>
+                        <p class="nobifashion_blog_hero_desc">
                             Khám phá những xu hướng thời trang đương đại, cẩm nang phối đồ tinh tế và câu chuyện phong cách
                             sống được tuyển chọn bởi {{ config('app.name') }}.
                         </p>
                     @endif
                 </div>
 
-                <div class="col-lg-4 mt-3 mt-lg-0">
-                    <div class="d-flex justify-content-lg-end gap-3">
+                <div class="nobifashion_blog_hero_stats_col">
+                    <div class="nobifashion_blog_hero_stats">
                         <div>
-                            <div class="fw-bold">{{ number_format($featuredPosts->count()) }}</div>
-                            <span class="text-muted tiny">Tuyển chọn</span>
+                            <div class="nobifashion_blog_stat_number">{{ number_format($featuredPosts->count()) }}</div>
+                            <span class="nobifashion_blog_stat_label">Tuyển chọn</span>
                         </div>
                         <div>
-                            <div class="fw-bold">{{ number_format($posts->total()) }}</div>
-                            <span class="text-muted tiny">Bài viết</span>
+                            <div class="nobifashion_blog_stat_number">{{ number_format($posts->total()) }}</div>
+                            <span class="nobifashion_blog_stat_label">Bài viết</span>
                         </div>
                         <div>
-                            <div class="fw-bold">{{ number_format($sidebarCategories->count()) }}</div>
-                            <span class="text-muted tiny">Chuyên mục</span>
+                            <div class="nobifashion_blog_stat_number">{{ number_format($sidebarCategories->count()) }}</div>
+                            <span class="nobifashion_blog_stat_label">Chuyên mục</span>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- FEATURED -->
-        {{-- @if ($featuredPosts->isNotEmpty())
-        <section class="blog-featured mb-4">
-            <h2 class="h5 fw-bold mb-3">Bài viết nổi bật</h2>
-            <div class="row g-3">
-                @foreach ($featuredPosts as $featured)
-                    <div class="col-md-4">
-                        <article class="card h-100">
-                            @if ($featured->thumbnail)
-                            <img src="{{ asset($featured->thumbnail) }}" alt="{{ $featured->thumbnail_alt_text ?? $featured->title }}"
-                                loading="lazy">
-                            @endif
+        <div class="nobifashion_blog_layout">
+            <!-- MAIN POSTS -->
+            <div class="nobifashion_blog_content_area">
+                @if (isset($searchKeyword) && $searchKeyword !== '')
+                    <h2 class="nobifashion_blog_search_title">
+                        Kết quả tìm kiếm cho: <strong>"{{ $searchKeyword }}"</strong> ({{ $posts->total() }} bài viết)
+                    </h2>
+                @endif
 
-                            <div class="card-body">
-                                <span class="badge bg-light text-dark rounded-pill mb-2 small">
-                                    {{ $featured->category?->name ?? 'Tin tức' }}
-                                </span>
+                <div class="nobifashion_blog_grid">
+                    @forelse($posts as $post)
+                        <article class="nobifashion_blog_card">
+                            <div class="nobifashion_blog_card_thumb_wrap">
+                                <img src="{{ $post->thumbnail ? asset('clients/assets/img/posts/' . $post->thumbnail) : asset('clients/assets/img/clothes/no-image.webp') }}"
+                                    alt="{{ renderMeta($post->thumbnail_alt_text ?? $post->title) }}"
+                                    class="nobifashion_blog_card_thumb"
+                                    width="400" height="230"
+                                    loading="lazy"
+                                    onerror="this.onerror=null; this.src='{{ asset('clients/assets/img/clothes/no-image.webp') }}';">
+                            </div>
 
-                                <h3 class="h6 fw-bold mb-2">
-                                    <a href="{{ route('client.blog.show', $featured) }}"
-                                        class="text-dark text-decoration-none">
-                                        {{ renderMeta($featured->title) }}
+                            <div class="nobifashion_blog_card_body">
+                                <div class="nobifashion_blog_card_meta">
+                                    @if ($post->category)
+                                        <a href="{{ route('client.blog.category', $post->category) }}"
+                                            class="nobifashion_blog_card_cat">
+                                            {{ $post->category->name }}
+                                        </a>
+                                    @else
+                                        <span>Nobi Blog</span>
+                                    @endif
+                                    <span>•</span>
+                                    <span>{{ optional($post->published_at)->format('d/m/Y') }}</span>
+                                </div>
+
+                                <h3 class="nobifashion_blog_card_title">
+                                    <a href="{{ route('client.blog.show', $post) }}">
+                                        {{ renderMeta($post->title) }}
                                     </a>
                                 </h3>
 
-                                <p class="text-muted tiny">{{ renderMeta($featured->excerpt_text) }}</p>
+                                <p class="nobifashion_blog_card_excerpt">{{ renderMeta($post->excerpt_text) }}</p>
 
-                                <div class="d-flex justify-content-between tiny text-muted">
-                                    <span>{{ optional($featured->published_at)->format('d/m/Y') }}</span>
-                                    <span>{{ number_format($featured->views) }} xem</span>
+                                <div class="nobifashion_blog_card_footer">
+                                    <span>{{ number_format($post->views) }} xem</span>
+                                    <a href="{{ route('client.blog.show', $post) }}"
+                                        class="nobifashion_blog_card_btn">
+                                        Đọc tiếp
+                                    </a>
                                 </div>
                             </div>
                         </article>
-                    </div>
-                @endforeach
-            </div>
-        </section>
-    @endif --}}
-
-        <div class="row g-4">
-            <!-- MAIN POSTS -->
-            <div class="col-lg-8">
-                @if (isset($searchKeyword) && $searchKeyword !== '')
-                    <h4 class="mb-4">Kết quả tìm kiếm cho: <strong>"{{ $searchKeyword }}"</strong>
-                        ({{ $posts->total() }}
-                        bài viết)</h4>
-                @endif
-                <div class="row g-3">
-                    @forelse($posts as $post)
-                        <div class="col-md-6">
-                            <article class="blog-card h-100">
-                                <img src="{{ $post->thumbnail ? asset('clients/assets/img/posts/' . $post->thumbnail) : asset('clients/assets/img/clothes/no-image.webp') }}"
-                                    alt="{{ renderMeta($post->thumbnail_alt_text ?? $post->title) }}" loading="lazy"
-                                    onerror="this.onerror=null; this.src='{{ asset('clients/assets/img/clothes/no-image.webp') }}';">
-
-                                <div class="card-body">
-                                    <div class="d-flex gap-2 tiny text-muted mb-1 align-items-center">
-                                        @if ($post->category)
-                                            <a href="{{ route('client.blog.category', $post->category) }}"
-                                                class="text-decoration-none text-primary fw-semibold">
-                                                {{ $post->category->name }}
-                                            </a>
-                                        @else
-                                            <span>Tin tức</span>
-                                        @endif •
-                                        <span>{{ optional($post->published_at)->format('d/m/Y') }}</span>
-                                    </div>
-
-                                    <h3 class="h6 fw-bold mb-2">
-                                        <a href="{{ route('client.blog.show', $post) }}"
-                                            class="text-dark text-decoration-none">
-                                            {{ renderMeta($post->title) }}
-                                        </a>
-                                    </h3>
-
-                                    <p class="text-muted tiny mb-2">{{ renderMeta($post->excerpt_text) }}</p>
-
-                                    <div class="d-flex justify-content-between align-items-center tiny text-muted">
-                                        <span>{{ number_format($post->views) }} xem</span>
-                                        <a href="{{ route('client.blog.show', $post) }}"
-                                            class="btn btn-sm btn-outline-dark">
-                                            Đọc tiếp
-                                        </a>
-                                    </div>
-                                </div>
-                            </article>
-                        </div>
                     @empty
-                        <div class="col-12">
-                            <div class="alert alert-light border text-center">
-                                Chưa có bài viết nào.
-                            </div>
+                        <div class="nobifashion_blog_empty_alert">
+                            Chưa có bài viết nào.
                         </div>
                     @endforelse
                 </div>
 
-                <div class="blog-pagination-wrapper">
+                <div class="nobifashion_blog_pagination_wrapper">
                     {{ $posts->onEachSide(1)->links('pagination.blog') }}
                 </div>
 
-                <div class="blog-category-editorial-note"
-                    style="margin-top: 35px; padding: 18px 20px; background: #f8f8f8; border-left: 3px solid #222; font-size: 14px; line-height: 1.7; color: #555;">
-                    <strong style="display: block; margin-bottom: 6px; color: #222;">
-                        Về nội dung trong chuyên mục
-                    </strong>
-
-                    <p style="margin: 0;">
+                <div class="nobifashion_blog_editorial_note">
+                    <strong>Về nội dung trong chuyên mục</strong>
+                    <p>
                         Các bài viết tại Nobi Fashion được xây dựng thông qua quá trình tìm hiểu,
                         tổng hợp, tham khảo, đối chiếu và biên tập từ nhiều nguồn thông tin khác nhau.
                         Chúng tôi luôn cố gắng cung cấp nội dung hữu ích và cập nhật cho người đọc.
                         Nếu bạn phát hiện thông tin chưa chính xác hoặc cần được bổ sung, vui lòng
                         liên hệ với Nobi Fashion để chúng tôi kiểm tra và cập nhật.
-                        <a href="{{ route('client.policy.editorial') }}"
-                            style="color: #222; font-weight: 600; text-decoration: underline;">
+                        <a href="{{ route('client.policy.editorial') }}">
                             Xem nguyên tắc biên tập và chính sách đính chính
                         </a>.
                     </p>
@@ -491,67 +190,80 @@
             </div>
 
             <!-- SIDEBAR -->
-            <aside class="col-lg-4 blog-sidebar">
-
+            <aside class="nobifashion_blog_sidebar">
                 <!-- Categories -->
-                <div class="card mb-3">
-                    <h5 class="fw-bold mb-2">Danh mục nổi bật</h5>
-                    <ul class="list-unstyled mb-0">
+                <div class="nobifashion_blog_sidebar_widget">
+                    <h3 class="nobifashion_blog_widget_title">Danh mục nổi bật</h3>
+                    <ul class="nobifashion_blog_category_list">
                         @foreach ($sidebarCategories as $category)
-                            <li class="d-flex justify-content-between small align-items-center">
+                            <li class="nobifashion_blog_category_item">
                                 <a href="{{ route('client.blog.category', $category) }}"
-                                    class="text-decoration-none text-dark hover-primary {{ isset($currentCategory) && $currentCategory && $currentCategory->id === $category->id ? 'fw-bold text-primary' : '' }}">
+                                    class="nobifashion_blog_category_link {{ isset($currentCategory) && $currentCategory && $currentCategory->id === $category->id ? 'active' : '' }}">
                                     {{ $category->name }}
                                 </a>
-                                <span
-                                    class="badge bg-light text-secondary rounded-pill">{{ number_format($category->posts_count) }}</span>
+                                <span class="nobifashion_blog_category_count">
+                                    {{ number_format($category->posts_count) }}
+                                </span>
                             </li>
                         @endforeach
                     </ul>
                 </div>
 
                 <!-- Tags -->
-                <div class="card mb-3">
-                    <h5 class="fw-bold mb-2">Hashtag nổi bật</h5>
-                    @foreach ($sidebarTags as $tag)
-                        <span class="blog-tag">#{{ $tag->name }}</span>
-                    @endforeach
-                </div>
+                @if ($sidebarTags->isNotEmpty())
+                    <div class="nobifashion_blog_sidebar_widget">
+                        <h3 class="nobifashion_blog_widget_title">Hashtag nổi bật</h3>
+                        <div class="nobifashion_blog_tag_cloud">
+                            @foreach ($sidebarTags as $tag)
+                                <a href="{{ route('client.blog.index', ['tag' => $tag->slug]) }}"
+                                    class="nobifashion_blog_tag">
+                                    #{{ $tag->name }}
+                                </a>
+                            @endforeach
+                        </div>
+                    </div>
+                @endif
 
                 <!-- Recent Posts -->
-                <div class="card mb-3">
-                    <h5 class="fw-bold mb-2">Bài viết mới</h5>
-                    <ul class="list-unstyled mb-0">
-                        @foreach ($recentPosts as $recent)
-                            <li class="mb-2">
-                                <a href="{{ route('client.blog.show', $recent) }}"
-                                    class="text-dark small text-decoration-none">
-                                    {{ renderMeta($recent->title) }}
-                                </a>
-                                <div class="text-muted tiny">{{ optional($recent->published_at)->format('d/m') }}</div>
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
+                @if ($recentPosts->isNotEmpty())
+                    <div class="nobifashion_blog_sidebar_widget">
+                        <h3 class="nobifashion_blog_widget_title">Bài viết mới</h3>
+                        <ul class="nobifashion_blog_post_mini_list">
+                            @foreach ($recentPosts as $recent)
+                                <li class="nobifashion_blog_post_mini_item">
+                                    <a href="{{ route('client.blog.show', $recent) }}"
+                                        class="nobifashion_blog_post_mini_link">
+                                        {{ renderMeta($recent->title) }}
+                                    </a>
+                                    <div class="nobifashion_blog_post_mini_meta">
+                                        {{ optional($recent->published_at)->format('d/m') }}
+                                    </div>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
 
                 <!-- Popular -->
-                <div class="card">
-                    <h5 class="fw-bold mb-2">Heatmap lượt xem</h5>
-                    <ul class="list-unstyled mb-0">
-                        @foreach ($popularPosts as $popular)
-                            <li class="mb-2">
-                                <a href="{{ route('client.blog.show', $popular) }}"
-                                    class="text-dark small text-decoration-none">
-                                    {{ renderMeta($popular->title) }}
-                                </a>
-                                <div class="text-muted tiny">{{ number_format($popular->views) }} views</div>
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
-
+                @if ($popularPosts->isNotEmpty())
+                    <div class="nobifashion_blog_sidebar_widget">
+                        <h3 class="nobifashion_blog_widget_title">Heatmap lượt xem</h3>
+                        <ul class="nobifashion_blog_post_mini_list">
+                            @foreach ($popularPosts as $popular)
+                                <li class="nobifashion_blog_post_mini_item">
+                                    <a href="{{ route('client.blog.show', $popular) }}"
+                                        class="nobifashion_blog_post_mini_link">
+                                        {{ renderMeta($popular->title) }}
+                                    </a>
+                                    <div class="nobifashion_blog_post_mini_meta">
+                                        {{ number_format($popular->views) }} views
+                                    </div>
+                                </li>
+                            @endforeach
+                        </ul>
+                    </div>
+                @endif
             </aside>
         </div>
-
     </section>
 @endsection

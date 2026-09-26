@@ -525,33 +525,38 @@
   });
 
   // --- SCROLL VISIBILITY FOR BACK TO TOP ---
+  let backToTopTicking = false;
   function handleBackToTopScroll() {
-    const backToTopElems = all(".nobifashion_back_to_top, #nobifashion_home_back_top");
-    const isScrolledPast500 = window.scrollY > 500;
+    if (backToTopTicking) return;
+    backToTopTicking = true;
+    window.requestAnimationFrame(() => {
+      const isScrolledPast500 = window.scrollY > 500;
+      const backToTopElems = all(".nobifashion_back_to_top, #nobifashion_home_back_top");
 
-    backToTopElems.forEach((el) => {
-      if (isScrolledPast500) {
-        if (!el.classList.contains("is-visible")) {
-          el.classList.remove("is-hiding");
-          el.classList.add("is-visible");
+      backToTopElems.forEach((el) => {
+        if (isScrolledPast500) {
+          if (!el.classList.contains("is-visible")) {
+            el.classList.remove("is-hiding");
+            el.classList.add("is-visible");
+          }
+        } else {
+          if (el.classList.contains("is-visible")) {
+            el.classList.remove("is-visible");
+            el.classList.add("is-hiding");
+            el.addEventListener(
+              "animationend",
+              () => {
+                el.classList.remove("is-hiding");
+              },
+              { once: true }
+            );
+          }
         }
-      } else {
-        if (el.classList.contains("is-visible")) {
-          el.classList.remove("is-visible");
-          el.classList.add("is-hiding");
-          el.addEventListener(
-            "animationend",
-            () => {
-              el.classList.remove("is-hiding");
-            },
-            { once: true }
-          );
-        }
-      }
+      });
+      backToTopTicking = false;
     });
   }
   window.addEventListener("scroll", handleBackToTopScroll, { passive: true });
-  handleBackToTopScroll();
 
   // --- DRAG TO SCROLL (KÉO TRƯỢT BẰNG CHUỘT VÀ TAY) ---
   function enableDragToScroll(el) {
@@ -607,11 +612,15 @@
   }
 
   // Init
-  document.addEventListener("DOMContentLoaded", () => {
+  function initHeader() {
     updateWishlistBadge();
     handleBackToTopScroll();
     initDragScroll();
-  });
-  updateWishlistBadge();
-  initDragScroll();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initHeader, { once: true });
+  } else {
+    initHeader();
+  }
 })();
