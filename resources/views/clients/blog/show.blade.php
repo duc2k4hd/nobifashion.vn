@@ -122,11 +122,14 @@
                 display: flex;
                 flex-wrap: wrap;
                 gap: 16px;
-                font-size: 13px;
                 color: var(--text-muted);
                 margin-bottom: 16px;
                 padding-bottom: 12px;
                 border-bottom: 1px solid var(--border);
+            }
+
+            .hero-meta * {
+                font-size: 13px;
             }
 
             .hero-meta-item {
@@ -258,8 +261,6 @@
                 color: #111827 !important;
                 font-weight: 700 !important;
                 line-height: 1.3 !important;
-                margin-top: 1.5rem !important;
-                margin-bottom: 0.75rem !important;
             }
 
             .article-wrapper h1 strong,
@@ -399,7 +400,7 @@
             }
 
             .article-wrapper figure {
-                margin: 2.5rem auto !important;
+                margin: 1.5rem auto !important;
                 text-align: center !important;
                 width: fit-content !important;
             }
@@ -411,13 +412,16 @@
             }
 
             .article-wrapper figcaption {
-                font-size: 0.95rem !important;
                 color: #6b7280 !important;
                 background-color: #ededed !important;
                 font-style: italic !important;
                 padding: 10px !important;
                 border-bottom-left-radius: 12px !important;
                 border-bottom-right-radius: 12px !important;
+            }
+
+            .article-wrapper figcaption em {
+                font-size: 0.8rem !important;
             }
 
             /* Tables */
@@ -830,6 +834,14 @@
                     grid-template-columns: 1fr;
                     gap: 20px;
                 }
+                
+                .blog-content-section {
+                    padding: 0;
+                }
+
+                .blog-hero-section {
+                    padding: 10px 0;
+                }
 
                 .sidebar {
                     position: static;
@@ -837,6 +849,10 @@
 
                 .sidebar-toc {
                     display: none;
+                }
+                
+                .category-badge {
+                    margin-bottom: 0;
                 }
             }
 
@@ -862,103 +878,197 @@
 
         <style>
             .comments-section {
-                margin-top: 32px;
-                padding: 20px;
+                margin-top: 18px;
+                padding: 12px 14px;
                 border-radius: 12px;
-                background: var(--bg-primary);
+                background: #ffffff;
                 border: 1px solid var(--border);
+                box-shadow: 0 1px 6px rgba(0, 0, 0, 0.02);
             }
 
             .comments-header {
                 display: flex;
                 justify-content: space-between;
-                align-items: baseline;
-                margin-bottom: 16px;
+                align-items: center;
+                flex-wrap: wrap;
+                gap: 8px;
+                margin-bottom: 8px;
+                padding-bottom: 8px;
+                border-bottom: 1px solid #f1f5f9;
+            }
+
+            .comments-header-left {
+                display: flex;
+                align-items: center;
+                gap: 8px;
             }
 
             .comments-title {
-                font-size: 18px;
+                font-size: 15px;
                 font-weight: 700;
+                color: #0f172a;
                 margin: 0;
             }
 
-            .comments-counter {
-                font-size: 13px;
-                color: var(--text-muted);
+            .comments-badge {
+                font-size: 11.5px;
+                font-weight: 700;
+                background: #f1f5f9;
+                color: #475569;
+                padding: 2px 7px;
+                border-radius: 999px;
+                border: 1px solid #e2e8f0;
             }
 
             .comment-info-note {
-                font-size: 12px;
-                color: var(--text-muted);
-                margin-bottom: 16px;
+                display: inline-flex;
+                align-items: center;
+                gap: 5px;
+                font-size: 11px;
+                color: #64748b;
+                margin: 0;
             }
 
+            /* Comment Form Card */
             .comment-form-card {
-                border: 1px solid var(--border);
-                border-radius: 12px;
-                padding: 16px;
-                margin-top: 20px;
-                background: #f9fafb;
+                border: 1px solid #e2e8f0;
+                border-radius: 10px;
+                padding: 10px 12px;
+                margin-top: 10px;
+                background: #f8fafc;
             }
 
-            .comment-form-card h4 {
-                font-size: 16px;
-                margin-bottom: 12px;
+            .comment-form-head {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 8px;
+            }
+
+            .comment-form-head h4 {
+                font-size: 13.5px;
                 font-weight: 700;
+                color: #0f172a;
+                margin: 0;
             }
 
-            .comment-form-card .form-group {
-                margin-bottom: 12px;
+            .comment-form-privacy {
+                font-size: 11px;
+                color: #94a3b8;
             }
 
-            .comment-form-card label {
-                font-weight: 600;
-                font-size: 13px;
-                margin-bottom: 6px;
+            .comment-guest-row {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+                margin-bottom: 8px;
+            }
+
+            .comment-input-wrap input,
+            .comment-textarea-wrap textarea {
+                width: 100%;
+                border: 1px solid #cbd5e1;
+                border-radius: 6px;
+                padding: 6px 10px;
+                font-size: 12.5px;
+                background: #ffffff;
+                color: #0f172a;
+                outline: none;
+                transition: all 0.2s ease;
+                box-sizing: border-box;
+            }
+
+            .comment-input-wrap input:focus,
+            .comment-textarea-wrap textarea:focus {
+                border-color: #0f172a;
+                box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.08);
+            }
+
+            .comment-textarea-wrap {
+                margin-bottom: 8px;
+            }
+
+            .comment-textarea-wrap textarea {
+                min-height: 52px;
+                resize: vertical;
+                line-height: 1.45;
                 display: block;
             }
 
-            .comment-form-card input,
-            .comment-form-card textarea {
-                width: 100%;
-                border: 1px solid var(--border);
-                border-radius: 8px;
-                padding: 10px 12px;
-                font-size: 14px;
-                background: white;
+            .comment-form-actions {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                gap: 10px;
             }
 
-            .comment-form-card textarea {
-                min-height: 100px;
-                resize: vertical;
+            .comment-form-hint {
+                font-size: 11px;
+                color: #94a3b8;
             }
 
             .comment-submit-btn {
-                background: var(--text-primary);
-                color: white;
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                background: #0f172a;
+                color: #ffffff;
                 border: none;
-                border-radius: 20px;
-                padding: 10px 20px;
+                border-radius: 6px;
+                padding: 6px 14px;
                 font-weight: 600;
-                font-size: 14px;
+                font-size: 12px;
                 cursor: pointer;
+                transition: all 0.2s ease;
+                flex-shrink: 0;
+            }
+
+            .comment-submit-btn:hover {
+                background: #1e293b;
+                box-shadow: 0 2px 8px rgba(15, 23, 42, 0.12);
+                transform: translateY(-1px);
+            }
+
+            .reply-wrapper {
+                margin-bottom: 6px;
+            }
+
+            .reply-indicator {
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                padding: 3px 8px;
+                border-radius: 6px;
+                background: #fee2e2;
+                color: #991b1b;
+                font-size: 11px;
+            }
+
+            .reply-indicator button {
+                background: transparent;
+                border: none;
+                color: #b91c1c;
+                cursor: pointer;
+                font-weight: 700;
+                padding: 0 2px;
+                font-size: 11px;
             }
 
             .comments-list {
                 display: flex;
                 flex-direction: column;
-                gap: 16px;
+                gap: 10px;
             }
 
             .comment-card {
-                padding: 16px;
-                border-radius: 12px;
+                padding: 10px 12px;
+                border-radius: 10px;
                 border: 1px solid var(--border);
                 background: white;
             }
 
             .comment-card.reply {
-                margin-left: 32px;
+                margin-left: 20px;
             }
 
             .comment-author {
@@ -981,21 +1091,107 @@
                 font-size: 14px;
             }
 
+            /* Rating Stars Picker */
+            .comment-rating-group {
+                margin-bottom: 8px;
+                padding: 0;
+            }
+
+            .rating-stars-wrapper {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                flex-wrap: wrap;
+            }
+
+            .rating-label {
+                font-size: 12px;
+                font-weight: 600;
+                color: #475569;
+                user-select: none;
+            }
+
+            .stars-picker {
+                display: inline-flex;
+                align-items: center;
+                gap: 3px;
+            }
+
+            .stars-picker .star-btn {
+                background: transparent;
+                border: none;
+                padding: 1px 2px;
+                font-size: 17px;
+                color: #cbd5e1;
+                cursor: pointer;
+                transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275), color 0.15s ease;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                line-height: 1;
+            }
+
+            .stars-picker .star-btn:hover {
+                transform: scale(1.22);
+            }
+
+            .stars-picker .star-btn.hovered,
+            .stars-picker .star-btn.active {
+                color: #f59e0b;
+            }
+
+            .stars-picker .star-btn.active {
+                filter: drop-shadow(0 1px 2px rgba(245, 158, 11, 0.35));
+            }
+
+            .rating-feedback {
+                font-size: 11.5px;
+                font-weight: 600;
+                color: #d97706;
+                transition: opacity 0.2s ease;
+            }
+
+            @keyframes ratingShake {
+                0%, 100% { transform: translateX(0); }
+                20%, 60% { transform: translateX(-4px); }
+                40%, 80% { transform: translateX(4px); }
+            }
+
+            .comment-rating-group.has-error {
+                animation: ratingShake 0.4s ease;
+            }
+
+            .comment-rating-group.has-error .rating-label {
+                color: #dc2626 !important;
+            }
+
             .comment-meta {
                 font-size: 12px;
                 color: var(--text-muted);
             }
 
             .comment-rating {
-                display: flex;
+                display: inline-flex;
                 align-items: center;
                 gap: 2px;
-                margin-top: 4px;
-                font-size: 12px;
+                margin-top: 2px;
+                font-size: 11px;
+            }
+
+            .comment-rating .star {
+                color: #cbd5e1;
+                font-size: 11px;
             }
 
             .comment-rating .star.filled {
-                color: #fbbf24;
+                color: #f59e0b;
+            }
+
+            .comment-rating .rating-text {
+                font-size: 11px;
+                color: #64748b;
+                margin-left: 4px;
+                font-weight: 600;
             }
 
             .comment-content {
@@ -1021,25 +1217,26 @@
 
             .no-comments {
                 text-align: center;
-                padding: 24px 0;
+                padding: 8px 0;
+                font-size: 12.5px;
                 color: var(--text-muted);
             }
 
             .load-more-comments {
                 display: block;
-                margin: 16px auto 0;
+                margin: 12px auto 0;
                 border: 1px solid var(--border);
                 border-radius: 20px;
-                padding: 8px 20px;
+                padding: 6px 16px;
                 background: white;
                 font-weight: 600;
-                font-size: 13px;
+                font-size: 12px;
                 cursor: pointer;
             }
 
             .comment-status-message {
-                margin-top: 8px;
-                font-size: 13px;
+                margin-top: 6px;
+                font-size: 12px;
             }
 
             .comment-status-message.success {
@@ -1053,18 +1250,25 @@
             .reply-indicator {
                 display: inline-flex;
                 align-items: center;
-                gap: 8px;
-                padding: 6px 10px;
-                border-radius: 12px;
+                gap: 6px;
+                padding: 4px 8px;
+                border-radius: 6px;
                 background: #fef2f2;
                 color: #b91c1c;
-                font-size: 12px;
-                margin-bottom: 8px;
+                font-size: 11px;
+                margin-bottom: 6px;
+            }
+
+            .comments-pagination:empty {
+                display: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                border: none !important;
             }
 
             .comments-pagination {
-                margin-top: 20px;
-                padding-top: 20px;
+                margin-top: 10px;
+                padding-top: 10px;
                 border-top: 1px solid var(--border);
             }
 
@@ -1120,13 +1324,39 @@
             .social-share-group {
                 display: flex;
                 gap: 10px;
+                align-items: center;
+            }
+
+            div#article-content * {
+                line-height: 1.7 !important;
             }
 
             @media (max-width: 768px) {
                 .blog-breadcrumb {
-                    padding: 10px 0;
+                    padding: 5px 0;
                     background: #fdfdfd;
                     border-bottom: 1px solid #f1f5f9;
+                }
+
+                div#article-content * {
+                    line-height: 1.6 !important;
+                }
+
+                .hero-actions {
+                    justify-content: center;
+                    margin-top: 10px;
+                }
+
+                .hero-meta {
+                    margin-bottom: 0;
+                }
+
+                .article-wrapper figcaption em {
+                    font-size: 0.8rem !important;
+                }
+
+                .article-wrapper figure {
+                    margin: 10px 0 !important;
                 }
 
                 .breadcrumb-list {
@@ -1199,11 +1429,31 @@
                 }
 
                 .comments-section {
-                    padding: 16px;
+                    padding: 10px 12px;
+                    margin-top: 14px;
+                }
+
+                .comment-form-card {
+                    padding: 8px 10px;
+                }
+
+                .comment-guest-row {
+                    grid-template-columns: 1fr;
+                }
+
+                .comment-form-actions {
+                    flex-direction: column;
+                    align-items: flex-start;
+                    gap: 8px;
+                }
+
+                .comment-submit-btn {
+                    width: 100%;
+                    justify-content: center;
                 }
 
                 .comment-card.reply {
-                    margin-left: 16px;
+                    margin-left: 14px;
                 }
 
                 .comment-pagination-buttons {
@@ -1272,6 +1522,62 @@
             const replyToName = document.getElementById('reply-to-name');
             const cancelReplyBtn = document.getElementById('cancel-reply');
 
+            // Rating Stars
+            const ratingGroup = document.getElementById('comment-rating-group');
+            const ratingInput = document.getElementById('comment-rating-input');
+            const starsPicker = document.getElementById('stars-picker');
+            const ratingFeedback = document.getElementById('rating-feedback');
+            const starBtns = starsPicker ? starsPicker.querySelectorAll('.star-btn') : [];
+
+            const ratingLabels = {
+                1: 'Rất tệ (1★)',
+                2: 'Tệ (2★)',
+                3: 'Bình thường (3★)',
+                4: 'Hài lòng (4★)',
+                5: 'Tuyệt vời (5★)'
+            };
+
+            const updateStarDisplay = (hoverValue = 0) => {
+                const currentVal = hoverValue || parseInt(ratingInput?.value, 10) || 0;
+                starBtns.forEach(btn => {
+                    const starVal = parseInt(btn.dataset.rating, 10);
+                    if (hoverValue > 0) {
+                        btn.classList.toggle('hovered', starVal <= hoverValue);
+                    } else {
+                        btn.classList.remove('hovered');
+                        btn.classList.toggle('active', starVal <= currentVal);
+                    }
+                });
+
+                if (hoverValue > 0) {
+                    if (ratingFeedback) ratingFeedback.textContent = ratingLabels[hoverValue] || '';
+                } else if (currentVal > 0) {
+                    if (ratingFeedback) ratingFeedback.textContent = ratingLabels[currentVal] || '';
+                } else {
+                    if (ratingFeedback) ratingFeedback.textContent = '';
+                }
+            };
+
+            starBtns.forEach(btn => {
+                btn.addEventListener('mouseenter', () => {
+                    const rating = parseInt(btn.dataset.rating, 10);
+                    updateStarDisplay(rating);
+                });
+
+                btn.addEventListener('click', () => {
+                    const rating = parseInt(btn.dataset.rating, 10);
+                    if (ratingInput) ratingInput.value = rating;
+                    if (ratingGroup) ratingGroup.classList.remove('has-error');
+                    updateStarDisplay();
+                });
+            });
+
+            if (starsPicker) {
+                starsPicker.addEventListener('mouseleave', () => {
+                    updateStarDisplay(0);
+                });
+            }
+
             const config = {
                 commentableId: parseInt(section.dataset.commentableId, 10),
                 commentableType: section.dataset.commentableType,
@@ -1305,11 +1611,9 @@
                 const rating = Number(comment.rating) || 0;
                 const ratingStars = rating > 0 ?
                     `<div class="comment-rating" aria-label="Đánh giá ${rating} sao">
-                            ${Array.from({ length: 5 }).map((_, i) => ` <
-                    span class = "star ${i < rating ? 'filled' : ''}" > ★ < /span>
-                `).join('')}
-                            <span class="rating-text">${rating}/5</span>
-                       </div>`: '';
+                        ${Array.from({ length: 5 }).map((_, i) => `<span class="star ${i < rating ? 'filled' : ''}"><i class="fa-solid fa-star"></i></span>`).join('')}
+                        <span class="rating-text">${rating}/5</span>
+                    </div>` : '';
                 const avatarText = sanitize(authorName).charAt(0).toUpperCase();
 
                 wrapper.innerHTML = `
@@ -1493,6 +1797,20 @@
                 // Honeypot chống bot
                 if (form.website?.value) return;
 
+                // Bắt buộc chọn số sao đánh giá (từ 1 đến 5 sao)
+                const ratingVal = parseInt(ratingInput?.value || '0', 10);
+                if (!ratingVal || ratingVal < 1 || ratingVal > 5) {
+                    if (ratingGroup) {
+                        ratingGroup.classList.add('has-error');
+                        ratingGroup.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'nearest'
+                        });
+                    }
+                    showCustomToast("Vui lòng chọn số sao đánh giá (1-5 sao) cho bài viết!", "warning");
+                    return;
+                }
+
                 const formData = new FormData(form);
                 formData.append('commentable_id', config.commentableId);
                 formData.append('commentable_type', config.commentableType);
@@ -1514,6 +1832,8 @@
 
                     // Reset form
                     form.reset();
+                    if (ratingInput) ratingInput.value = '';
+                    updateStarDisplay(0);
                     parentInput.value = '';
                     replyIndicator.style.display = 'none';
 
@@ -1739,48 +2059,69 @@
                 <section class="comments-section" id="comments-section" data-commentable-id="{{ $post->id }}"
                     data-commentable-type="{{ \App\Models\Post::class }}">
                     <div class="comments-header">
-                        <h3 class="comments-title">Bình luận</h3>
-                        <span class="comments-counter"><span id="comments-count">{{ $commentsCount }}</span> bình
-                            luận</span>
+                        <div class="comments-header-left">
+                            <h3 class="comments-title">Bình luận</h3>
+                            <span class="comments-badge"><span id="comments-count">{{ $commentsCount }}</span></span>
+                        </div>
+                        <span class="comment-info-note">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                            Duyệt trước khi hiển thị công khai
+                        </span>
                     </div>
-                    <p class="comment-info-note">Chỉ bình luận đã được duyệt mới hiển thị công khai. Vui lòng chia sẻ thông
-                        tin hữu ích và lịch sự.</p>
 
                     <div id="comments-list" class="comments-list"></div>
                     <div id="comments-pagination" class="comments-pagination"></div>
 
                     <div class="comment-form-card" id="comment-form-card">
-                        <h4>Để lại bình luận</h4>
-                        <p class="comment-info-note">
-                            Bình luận của bạn sẽ được hiển thị sau khi được kiểm duyệt. Vui lòng tuân thủ nguyên tắc bình
-                            luận để cùng xây dựng một cộng đồng văn minh, tích cực và tôn trọng lẫn nhau.
-                        </p>
+                        <div class="comment-form-head">
+                            <h4>Để lại bình luận</h4>
+                            <span class="comment-form-privacy">Bảo mật thông tin 100%</span>
+                        </div>
                         <form id="comment-form">
                             @csrf
                             @guest
-                                <div class="form-group">
-                                    <label>Họ tên *</label>
-                                    <input type="text" name="guest_name" placeholder="Nguyễn Văn A" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>Email *</label>
-                                    <input type="email" name="guest_email" placeholder="email@example.com" required>
+                                <div class="comment-guest-row">
+                                    <div class="comment-input-wrap">
+                                        <input type="text" name="guest_name" placeholder="Họ và tên của bạn *" required>
+                                    </div>
+                                    <div class="comment-input-wrap">
+                                        <input type="email" name="guest_email" placeholder="Email nhận phản hồi *" required>
+                                    </div>
                                 </div>
                             @endguest
-                            <div class="form-group reply-wrapper" id="reply-indicator" style="display:none;">
+                            <div class="reply-wrapper" id="reply-indicator" style="display:none;">
                                 <span class="reply-indicator">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 14 4 9 9 4"></polyline><path d="M20 20v-7a4 4 0 0 0-4-4H4"></path></svg>
                                     Đang trả lời <strong id="reply-to-name"></strong>
-                                    <button type="button" id="cancel-reply" style="color:#b91c1c;">Hủy</button>
+                                    <button type="button" id="cancel-reply" title="Hủy trả lời">✕</button>
                                 </span>
                             </div>
-                            <div class="form-group">
-                                <label>Nội dung *</label>
-                                <textarea name="content" placeholder="Chia sẻ suy nghĩ của bạn..." required></textarea>
+                            {{-- Rating Stars Selection --}}
+                            <div class="comment-rating-group" id="comment-rating-group">
+                                <div class="rating-stars-wrapper">
+                                    <span class="rating-label">Đánh giá: <span style="color:#ef4444;">*</span></span>
+                                    <div class="stars-picker" id="stars-picker" role="radiogroup" aria-label="Chọn số sao đánh giá">
+                                        <input type="hidden" name="rating" id="comment-rating-input" value="">
+                                        <button type="button" class="star-btn" data-rating="1" title="1 sao - Rất tệ" aria-label="1 sao"><i class="fa-solid fa-star"></i></button>
+                                        <button type="button" class="star-btn" data-rating="2" title="2 sao - Tệ" aria-label="2 sao"><i class="fa-solid fa-star"></i></button>
+                                        <button type="button" class="star-btn" data-rating="3" title="3 sao - Bình thường" aria-label="3 sao"><i class="fa-solid fa-star"></i></button>
+                                        <button type="button" class="star-btn" data-rating="4" title="4 sao - Hài lòng" aria-label="4 sao"><i class="fa-solid fa-star"></i></button>
+                                        <button type="button" class="star-btn" data-rating="5" title="5 sao - Tuyệt vời" aria-label="5 sao"><i class="fa-solid fa-star"></i></button>
+                                    </div>
+                                    <span class="rating-feedback" id="rating-feedback"></span>
+                                </div>
+                            </div>
+                            <div class="comment-textarea-wrap">
+                                <textarea name="content" placeholder="Chia sẻ suy nghĩ hoặc câu hỏi của bạn về bài viết..." required></textarea>
                             </div>
                             <input type="hidden" name="parent_id" id="comment-parent-id">
                             <input type="text" name="website" autocomplete="off" style="display:none;">
-                            <div class="form-group">
-                                <button type="submit" class="comment-submit-btn">Gửi bình luận</button>
+                            <div class="comment-form-actions">
+                                <span class="comment-form-hint">Vui lòng bình luận văn minh, tôn trọng lẫn nhau.</span>
+                                <button type="submit" class="comment-submit-btn">
+                                    <span>Gửi bình luận</span>
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                                </button>
                             </div>
                             <div class="comment-status-message" id="comment-status-message"></div>
                         </form>

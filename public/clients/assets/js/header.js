@@ -527,12 +527,31 @@
   // --- SCROLL VISIBILITY FOR BACK TO TOP ---
   function handleBackToTopScroll() {
     const backToTopElems = all(".nobifashion_back_to_top, #nobifashion_home_back_top");
-    const isVisible = window.scrollY > 300;
+    const isScrolledPast500 = window.scrollY > 500;
+
     backToTopElems.forEach((el) => {
-      el.style.display = isVisible ? "flex" : "none";
+      if (isScrolledPast500) {
+        if (!el.classList.contains("is-visible")) {
+          el.classList.remove("is-hiding");
+          el.classList.add("is-visible");
+        }
+      } else {
+        if (el.classList.contains("is-visible")) {
+          el.classList.remove("is-visible");
+          el.classList.add("is-hiding");
+          el.addEventListener(
+            "animationend",
+            () => {
+              el.classList.remove("is-hiding");
+            },
+            { once: true }
+          );
+        }
+      }
     });
   }
   window.addEventListener("scroll", handleBackToTopScroll, { passive: true });
+  handleBackToTopScroll();
 
   // --- DRAG TO SCROLL (KÉO TRƯỢT BẰNG CHUỘT VÀ TAY) ---
   function enableDragToScroll(el) {

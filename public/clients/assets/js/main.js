@@ -379,27 +379,18 @@ document
 
 const backToTopBtn = document.querySelector(".nobifashion_back_to_top");
 
-if (backToTopBtn) {
-    window.addEventListener("scroll", () => {
-        if (window.scrollY > 300) {
-            if (backToTopBtn) {
-                backToTopBtn.style.display = "flex";
-            }
-            const orderSummary = document.querySelector(".nobifashion_order_summary");
-            if (orderSummary && orderSummary.classList) {
-                orderSummary.classList.add("shop_haiphonglife_order_summary_fixed");
-            }
+window.addEventListener("scroll", () => {
+    const orderSummary = document.querySelector(".nobifashion_order_summary");
+    if (orderSummary && orderSummary.classList) {
+        if (window.scrollY > 500) {
+            orderSummary.classList.add("shop_haiphonglife_order_summary_fixed");
         } else {
-            if (backToTopBtn) {
-                backToTopBtn.style.display = "none";
-            }
-            const orderSummary = document.querySelector(".nobifashion_order_summary");
-            if (orderSummary && orderSummary.classList) {
-                orderSummary.classList.remove("shop_haiphonglife_order_summary_fixed");
-            }
+            orderSummary.classList.remove("shop_haiphonglife_order_summary_fixed");
         }
-    });
+    }
+}, { passive: true });
 
+if (backToTopBtn) {
     backToTopBtn.addEventListener("click", () => {
         window.scrollTo({ top: 0, behavior: "smooth" });
     });

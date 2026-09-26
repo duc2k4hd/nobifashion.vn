@@ -33,7 +33,7 @@ body:not(.nobifashion_home_page) {
         padding-inline: 12px;
     }
     body:not(.nobifashion_home_page) {
-        padding-top: calc(var(--nobifashion_home_header_height, 64px) + 46px);
+        padding-top: calc(var(--nobifashion_home_header_height, 64px) + 25px);
     }
 }
 
@@ -964,7 +964,9 @@ svg.nobifashion_home_icon_solid,
     }
 
     .nobifashion_home_tab {
-        font-size: 17px;
+        font-size: 13px;
+        padding: 0 0 8px 0;
+        min-height: 0;
     }
 
     .nobifashion_home_dialog_shell {
