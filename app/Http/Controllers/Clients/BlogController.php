@@ -47,7 +47,7 @@ class BlogController extends Controller
                 ->select('id', 'name', 'slug')
                 ->withCount(['posts as posts_count' => fn ($q) => $q->published()])
                 ->orderByDesc('posts_count')
-                ->take(10)
+                ->orderBy('sort_order')
                 ->get();
         });
 
@@ -78,6 +78,7 @@ class BlogController extends Controller
             'popularPosts' => $popularPosts,
             'schemaData' => $schemaData,
             'currentCategory' => null,
+            'category' => null,
         ]);
     }
 
@@ -122,7 +123,7 @@ class BlogController extends Controller
                 ->select('id', 'name', 'slug')
                 ->withCount(['posts as posts_count' => fn ($q) => $q->published()])
                 ->orderByDesc('posts_count')
-                ->take(10)
+                ->orderBy('sort_order')
                 ->get();
         });
 
@@ -153,6 +154,7 @@ class BlogController extends Controller
             'popularPosts' => $popularPosts,
             'schemaData' => $schemaData,
             'currentCategory' => $category,
+            'category' => $category,
         ]);
     }
 
@@ -269,7 +271,7 @@ class BlogController extends Controller
         });
 
         $sidebarCategories = \Illuminate\Support\Facades\Cache::remember('blog:sidebar:categories', 600, function () {
-            return PostCategory::active()->select('id', 'name', 'slug')->withCount(['posts as posts_count' => fn ($q) => $q->published()])->orderByDesc('posts_count')->take(10)->get();
+            return PostCategory::active()->select('id', 'name', 'slug')->withCount(['posts as posts_count' => fn ($q) => $q->published()])->orderByDesc('posts_count')->orderBy('sort_order')->get();
         });
 
         $sidebarTags = \Illuminate\Support\Facades\Cache::remember('blog:sidebar:tags', 600, fn () => \App\Models\Tag::orderBy('name')->take(20)->get());
@@ -302,13 +304,13 @@ class BlogController extends Controller
 
         if (!$post || !$post->isPublished()) {
             // Kiểm tra chuyển hướng 301 chuẩn SEO (Siêu tốc & Chống vòng lặp/link hỏng)
-            $redirectUrl = app(\App\Services\RedirectService::class)->resolveValidRedirect($slug, $request);
+            $redirect = app(\App\Services\RedirectService::class)->resolveRequest($request);
 
-            if ($redirectUrl) {
-                return redirect()->to($redirectUrl, 301);
+            if ($redirect) {
+                return redirect()->to($redirect['url'], $redirect['status_code'] ?? 301);
             }
 
-            return view('clients.pages.errors.404');
+            return response()->view('clients.pages.errors.404', [], 404);
         }
 
         // Chỉ eager load đúng cột cần thiết, không nạp quan hệ thừa

@@ -27,7 +27,12 @@ class ShopController extends Controller
             $category = Category::active()->where('slug', $url)->first();
 
             if (!$category) {
-                return view('clients.pages.errors.404');
+                $redirect = app(\App\Services\RedirectService::class)->resolveRequest($request);
+                if ($redirect) {
+                    return redirect()->to($redirect['url'], $redirect['status_code'] ?? 301);
+                }
+
+                return response()->view('clients.pages.errors.404', [], 404);
             }
 
             // Kiểm tra xem danh mục này có phải là cha hay không

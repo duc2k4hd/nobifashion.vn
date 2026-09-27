@@ -25,7 +25,12 @@ class ProductDetailController extends Controller
                 return redirect()->route('client.product.detail', ['slug' => $finalSlug], 301);
             }
 
-            return view('clients.pages.errors.404');
+            $redirect = app(\App\Services\RedirectService::class)->resolveRequest(request());
+            if ($redirect) {
+                return redirect()->to($redirect['url'], $redirect['status_code'] ?? 301);
+            }
+
+            return response()->view('clients.pages.errors.404', [], 404);
         }
 
         $vouchers = Cache::remember('product-detail:vouchers:v1', now()->addMinutes(10), function () {

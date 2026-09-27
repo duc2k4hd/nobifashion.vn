@@ -31,7 +31,7 @@ class Category extends Model
         static::saving(function ($category) {
             // Luôn cập nhật Canonical URL để đảm bảo độ chính xác
             if ($category->slug) {
-                $siteUrl = \App\Models\Setting::where('key', 'site_url')->value('value');
+                $siteUrl = \Illuminate\Support\Facades\Cache::remember('site_url_setting', 3600, fn () => \App\Models\Setting::where('key', 'site_url')->value('value'));
                 if ($siteUrl) {
                     $category->meta_canonical = rtrim($siteUrl, '/') . '/' . $category->slug;
                 } else {

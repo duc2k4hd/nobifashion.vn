@@ -3,10 +3,6 @@
 @php
     $isEdit = $category->exists;
     $pageTitle = $isEdit ? 'Chỉnh sửa danh mục' : 'Tạo danh mục mới';
-    $metadata = $category->metadata ?? [];
-    if (is_string($metadata)) {
-        $metadata = json_decode($metadata, true) ?? [];
-    }
 @endphp
 
 @section('title', $pageTitle)
@@ -334,11 +330,11 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="order">Thứ tự</label>
-                    <input type="number" name="order" id="order" class="form-control"
-                           value="{{ old('order', $category->order ?? 0) }}" min="0">
+                    <label for="sort_order">Thứ tự</label>
+                    <input type="number" name="sort_order" id="sort_order" class="form-control"
+                           value="{{ old('sort_order', $category->sort_order ?? 0) }}" min="0">
                     <div class="form-help">Số càng nhỏ, hiển thị càng trước</div>
-                    @error('order')
+                    @error('sort_order')
                         <div style="color:#ef4444;font-size:12px;margin-top:4px;">{{ $message }}</div>
                     @enderror
                 </div>
@@ -406,34 +402,34 @@
         </div>
 
         <div class="card">
-            <h3>SEO Meta (Metadata)</h3>
+            <h3>SEO Meta</h3>
             <div class="grid-3">
                 <div class="form-group">
                     <label for="meta_title">Meta Title</label>
-                    <input type="text" name="metadata[meta_title]" id="meta_title" class="form-control"
-                           value="{{ old('metadata.meta_title', $metadata['meta_title'] ?? '') }}" maxlength="255">
+                    <input type="text" name="meta_title" id="meta_title" class="form-control"
+                           value="{{ old('meta_title', $category->meta_title ?? '') }}" maxlength="255">
                     <div class="form-help">Tiêu đề SEO (tối đa 255 ký tự)</div>
                 </div>
                 
                 <div class="form-group">
                     <label for="meta_canonical">Meta Canonical URL</label>
-                    <input type="url" name="metadata[meta_canonical]" id="meta_canonical" class="form-control"
-                           value="{{ old('metadata.meta_canonical', $metadata['meta_canonical'] ?? '') }}"
+                    <input type="url" name="meta_canonical" id="meta_canonical" class="form-control"
+                           value="{{ old('meta_canonical', $category->meta_canonical ?? '') }}"
                            placeholder="https://example.com/..." maxlength="500">
                     <div class="form-help">URL canonical cho SEO</div>
                 </div>
                 
                 <div class="form-group">
                     <label for="meta_keywords">Meta Keywords</label>
-                    <input type="text" name="metadata[meta_keywords]" id="meta_keywords" class="form-control"
-                           value="{{ old('metadata.meta_keywords', $metadata['meta_keywords'] ?? '') }}"
+                    <input type="text" name="meta_keywords" id="meta_keywords" class="form-control"
+                           value="{{ old('meta_keywords', $category->meta_keywords ?? '') }}"
                            placeholder="từ khóa 1, từ khóa 2" maxlength="255">
                     <div class="form-help">Từ khóa SEO (phân cách bằng dấu phẩy)</div>
                 </div>
             </div>
             <div class="form-group">
                 <label for="meta_description">Meta Description</label>
-                <textarea name="metadata[meta_description]" id="meta_description" rows="3" class="form-control" maxlength="500">{{ old('metadata.meta_description', $metadata['meta_description'] ?? '') }}</textarea>
+                <textarea name="meta_description" id="meta_description" rows="3" class="form-control" maxlength="500">{{ old('meta_description', $category->meta_description ?? '') }}</textarea>
                 <div class="form-help">Mô tả SEO (tối đa 500 ký tự)</div>
             </div>
         </div>

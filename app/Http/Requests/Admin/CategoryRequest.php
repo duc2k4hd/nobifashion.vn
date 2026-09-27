@@ -34,6 +34,7 @@ class CategoryRequest extends FormRequest
             'meta_canonical' => ['nullable', 'string', 'max:255'],
             'is_active' => ['nullable', 'boolean'],
             'sort_order' => ['nullable', 'integer', 'min:0'],
+            'delete_image' => ['nullable', 'boolean'],
         ];
     }
 
@@ -42,6 +43,26 @@ class CategoryRequest extends FormRequest
         $data = parent::validated();
 
         $data['is_active'] = (bool)($data['is_active'] ?? true);
+
+        if (!isset($data['sort_order']) && $this->filled('order')) {
+            $data['sort_order'] = (int)$this->input('order');
+        }
+
+        if ($this->has('metadata') && is_array($this->input('metadata'))) {
+            $meta = $this->input('metadata');
+            if (empty($data['meta_title']) && !empty($meta['meta_title'])) {
+                $data['meta_title'] = $meta['meta_title'];
+            }
+            if (empty($data['meta_description']) && !empty($meta['meta_description'])) {
+                $data['meta_description'] = $meta['meta_description'];
+            }
+            if (empty($data['meta_keywords']) && !empty($meta['meta_keywords'])) {
+                $data['meta_keywords'] = $meta['meta_keywords'];
+            }
+            if (empty($data['meta_canonical']) && !empty($meta['meta_canonical'])) {
+                $data['meta_canonical'] = $meta['meta_canonical'];
+            }
+        }
 
         return $data;
     }

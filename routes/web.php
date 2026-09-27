@@ -18,6 +18,7 @@ use App\Http\Controllers\Admins\BrandController;
 use App\Http\Controllers\Admins\CanifaCrawlerController;
 use App\Http\Controllers\Admins\CartItemController;
 use App\Http\Controllers\Admins\CategoryController;
+use App\Http\Controllers\Admins\CategoryImportExportController;
 use App\Http\Controllers\Admins\CommentController;
 use App\Http\Controllers\Admins\CoolmateCrawlerController;
 use App\Http\Controllers\Admins\DashboardController;
@@ -28,6 +29,7 @@ use App\Http\Controllers\Admins\MediaLibraryController;
 use App\Http\Controllers\Admins\OnoffCrawlerController;
 use App\Http\Controllers\Admins\OrderItemController;
 use App\Http\Controllers\Admins\PostCategoryController;
+use App\Http\Controllers\Admins\PostCategoryImportExportController;
 use App\Http\Controllers\Admins\PostController as AdminPostController;
 use App\Http\Controllers\Admins\PostImportExportController;
 use App\Http\Controllers\Admins\ProductController;
@@ -372,6 +374,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/api/parents', [CategoryController::class, 'getParents'])->name('api.parents');
 
             // Standard CRUD routes
+            Route::get('/export', [CategoryImportExportController::class, 'export'])->name('export');
+            Route::get('/export-data', [CategoryImportExportController::class, 'getExportData'])->name('export-data');
+            Route::get('/sample', [CategoryImportExportController::class, 'downloadSample'])->name('sample');
+            Route::get('/import-excel', [CategoryImportExportController::class, 'importForm'])->name('import-excel');
+            Route::post('/import-batch', [CategoryImportExportController::class, 'importBatch'])->name('import-batch');
+
             Route::get('/', [CategoryController::class, 'index'])->name('index');
             Route::get('/create', [CategoryController::class, 'create'])->name('create');
             Route::post('/', [CategoryController::class, 'store'])->name('store');
@@ -529,6 +537,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::resource('posts', AdminPostController::class)->except(['show'])->names('posts');
         Route::post('posts/bulk-destroy', [AdminPostController::class, 'bulkDestroy'])->name('posts.bulk-destroy');
+        Route::post('posts/destroy-from-txt', [AdminPostController::class, 'destroyFromTxt'])->name('posts.destroy-from-txt');
         Route::post('posts/{post}/publish', [AdminPostController::class, 'publish'])->name('posts.publish');
         Route::post('posts/{post}/archive', [AdminPostController::class, 'archive'])->name('posts.archive');
         Route::post('posts/{post}/duplicate', [AdminPostController::class, 'duplicate'])->name('posts.duplicate');
@@ -541,6 +550,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Danh mục bài viết
         Route::prefix('post-categories')->name('post-categories.')->group(function () {
+            Route::get('/export', [PostCategoryImportExportController::class, 'export'])->name('export');
+            Route::get('/export-data', [PostCategoryImportExportController::class, 'getExportData'])->name('export-data');
+            Route::get('/sample', [PostCategoryImportExportController::class, 'downloadSample'])->name('sample');
+            Route::post('/import-batch', [PostCategoryImportExportController::class, 'importBatch'])->name('import-batch');
+
             Route::get('/', [PostCategoryController::class, 'index'])->name('index');
             Route::post('/', [PostCategoryController::class, 'store'])->name('store');
             Route::get('/{category}/edit', [PostCategoryController::class, 'edit'])->name('edit');
@@ -548,6 +562,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::delete('/{category}', [PostCategoryController::class, 'destroy'])->name('destroy');
             Route::patch('/{category}/toggle', [PostCategoryController::class, 'toggle'])->name('toggle');
         });
+
+        // Hỗ trợ alias /admin/posts-categories theo thói quen gõ URL
+        Route::get('posts-categories', fn () => redirect()->route('admin.post-categories.index'));
+        Route::get('posts-categories/{any}', fn ($any) => redirect('admin/post-categories/' . $any))->where('any', '.*');
 
         // Quản lý chuyển hướng 301 (Redirects)
         Route::prefix('redirects')->name('redirects.')->group(function () {
@@ -742,7 +760,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
 Route::get('/{slug}', [ShopController::class, 'index'])->name('client.product.category.index');
 
-// Fallback: any unmatched web route → custom 404 view
-Route::fallback(function () {
+// Fallback: any unmatched web route → custom 404 view (kiểm tra chuyển hướng trước khi ra 404)
+Route::fallback(function (\Illuminate\Http\Request $request) {
+    $redirect = app(\App\Services\RedirectService::class)->resolveRequest($request);
+    if ($redirect) {
+        return redirect()->to($redirect['url'], $redirect['status_code'] ?? 301);
+    }
+
     return response()->view('clients.pages.errors.404', [], 404);
 });

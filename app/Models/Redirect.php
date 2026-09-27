@@ -104,10 +104,14 @@ class Redirect extends Model
         if ($url) {
             $hash = self::hashUrl($url);
             Cache::forget("redirect:lookup:{$hash}");
+            Cache::forget("redirect:rule:{$hash}");
+            Cache::forget("redirect:loop:{$hash}");
             Cache::forget("redirect:raw:" . md5(trim($url)));
         }
+        Cache::forget('redirects:active_map');
         Cache::forget('redirects:count:total');
         Cache::forget('redirects:count:active');
+        Cache::forget('admin:redirects:stats');
     }
 
     /**

@@ -7,6 +7,7 @@ use App\Http\Requests\Admin\PostAutosaveRequest;
 use App\Http\Requests\Admin\PostStoreRequest;
 use App\Http\Requests\Admin\PostUpdateRequest;
 use App\Models\Account;
+use App\Models\Image;
 use App\Models\Post;
 use App\Models\PostCategory;
 use App\Models\PostRevision;
@@ -248,6 +249,154 @@ class PostController extends Controller
         }
 
         return back()->with('success', "Đã xóa {$count} bài viết thành công.");
+    }
+
+    /**
+     * Xóa bài viết từ danh sách IDs kèm xóa ảnh đại diện và ảnh trong content
+     * - Chỉ xóa file vật lý nếu không có bài viết nào khác cùng sử dụng ảnh đó
+     * - Cực nhanh: batch query, không load model events
+     */
+    public function destroyFromTxt(Request $request): JsonResponse
+    {
+        $ids = $request->input('ids');
+        if (empty($ids) || !is_array($ids)) {
+            return response()->json(['success' => false, 'message' => 'Không có ID hợp lệ.'], 422);
+        }
+
+        $ids = array_values(array_unique(array_filter(array_map('intval', $ids))));
+        if (empty($ids)) {
+            return response()->json(['success' => false, 'message' => 'Danh sách ID rỗng.'], 422);
+        }
+
+        // Chỉ xử lý theo batch nhỏ để tránh timeout
+        $batchSize = 200;
+        $idsChunk = array_slice($ids, 0, $batchSize);
+
+        try {
+            // 1. Lấy toàn bộ thumbnail paths và content của các bài viết sẽ bị xóa
+            $posts = DB::table('posts')
+                ->whereIn('id', $idsChunk)
+                ->select(['id', 'thumbnail', 'content'])
+                ->get();
+
+            // 2. Thu thập tất cả ảnh thumbnail từ posts sẽ xóa
+            $thumbnailPaths = $posts
+                ->pluck('thumbnail')
+                ->filter()
+                ->map(fn ($t) => 'clients/assets/img/posts/' . ltrim($t, '/'))
+                ->unique()
+                ->values()
+                ->toArray();
+
+            // 3. Thu thập tất cả ảnh trong content (img src)
+            $contentImagePaths = [];
+            foreach ($posts as $post) {
+                if (empty($post->content)) continue;
+                // Tìm src trong thẻ img
+                preg_match_all('/<img[^>]+src=["\']([^"\']+)["\'][^>]*>/i', $post->content, $matches);
+                foreach ($matches[1] ?? [] as $src) {
+                    $src = trim($src);
+                    if (empty($src) || str_starts_with($src, 'data:')) continue;
+                    // Chuẩn hoá về relative path
+                    if (preg_match('~(?:clients/assets/img/|uploads/)(.+)~i', $src, $m)) {
+                        $prefix = str_contains($src, 'clients/assets/img/') ? 'clients/assets/img/' : 'uploads/';
+                        $relative = rtrim(explode('?', $prefix . $m[1])[0], '/');
+                        $contentImagePaths[] = $relative;
+                    } elseif (!str_starts_with($src, 'http')) {
+                        $contentImagePaths[] = ltrim(explode('?', $src)[0], '/');
+                    }
+                }
+            }
+
+            // 4. Hợp nhất danh sách ảnh cần kiểm tra
+            $allImagePaths = array_unique(array_merge($thumbnailPaths, $contentImagePaths));
+
+            // 5. Kiểm tra ảnh nào đang được bài viết KHÁC sử dụng
+            //    (thumbnail của các post KHÔNG trong danh sách xóa)
+            $sharedThumbnails = [];
+            if (!empty($allImagePaths)) {
+                // Lấy basenames để so sánh
+                $basenames = array_unique(array_map('basename', $allImagePaths));
+
+                // Kiểm tra thumbnail trong posts khác
+                $otherUsedThumbnails = DB::table('posts')
+                    ->whereNotIn('id', $idsChunk)
+                    ->whereNotNull('thumbnail')
+                    ->whereIn('thumbnail', array_map('basename', $thumbnailPaths))
+                    ->pluck('thumbnail')
+                    ->map(fn ($t) => basename($t))
+                    ->flip()
+                    ->toArray();
+
+                // Kiểm tra trong bảng images (content images có thể đã được gán)
+                $otherUsedInImages = DB::table('images')
+                    ->where('entity_type', 'post')
+                    ->whereNotIn('entity_id', $idsChunk)
+                    ->whereIn('url', $basenames)
+                    ->pluck('url')
+                    ->map(fn ($u) => basename($u))
+                    ->flip()
+                    ->toArray();
+
+                $sharedThumbnails = array_merge($otherUsedThumbnails, $otherUsedInImages);
+            }
+
+            // 6. Xóa file vật lý (chỉ khi không được bài khác dùng)
+            $deletedFiles = 0;
+            $skippedFiles = 0;
+            foreach ($allImagePaths as $relPath) {
+                $bn = basename($relPath);
+                if (isset($sharedThumbnails[$bn])) {
+                    $skippedFiles++;
+                    continue;
+                }
+                $absPath = public_path($relPath);
+                if (is_file($absPath)) {
+                    @unlink($absPath);
+                    $deletedFiles++;
+                }
+            }
+
+            // 7. Xóa các image records trong bảng images liên kết với posts sẽ xóa
+            DB::table('images')
+                ->where('entity_type', 'post')
+                ->whereIn('entity_id', $idsChunk)
+                ->delete();
+
+            // 8. Xóa dữ liệu liên quan và bài viết cực nhanh (không dùng model events)
+            DB::table('comments')
+                ->where('commentable_type', Post::class)
+                ->whereIn('commentable_id', $idsChunk)
+                ->delete();
+
+            // Tags bài viết được lưu trong bảng tags với entity_type/entity_id
+            DB::table('tags')
+                ->where('entity_type', Post::class)
+                ->whereIn('entity_id', $idsChunk)
+                ->delete();
+
+            DB::table('post_revisions')
+                ->whereIn('post_id', $idsChunk)
+                ->delete();
+
+            $deletedPosts = DB::table('posts')
+                ->whereIn('id', $idsChunk)
+                ->delete();
+
+            return response()->json([
+                'success'        => true,
+                'count'          => $deletedPosts,
+                'deleted_files'  => $deletedFiles,
+                'skipped_files'  => $skippedFiles,
+            ]);
+
+        } catch (\Throwable $e) {
+            report($e);
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi xử lý: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 
     public function restore(int $postId): RedirectResponse

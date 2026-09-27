@@ -71,4 +71,22 @@ class PostCategory extends Model
     {
         return 'slug';
     }
+
+    public function resolveRouteBinding($value, $field = null)
+    {
+        if ($field) {
+            return $this->where($field, $value)->first();
+        }
+
+        // Nếu giá trị là số, ưu tiên tìm theo ID (phù hợp với Admin API / Edit / Toggle / Update)
+        if (is_numeric($value)) {
+            $model = $this->where('id', $value)->first();
+            if ($model) {
+                return $model;
+            }
+        }
+
+        // Mặc định tìm theo slug (phù hợp với Client URL / Web)
+        return $this->where($this->getRouteKeyName(), $value)->first();
+    }
 }

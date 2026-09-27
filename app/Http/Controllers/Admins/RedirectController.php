@@ -241,7 +241,7 @@ class RedirectController extends Controller
         }
 
         $deletedCount = Redirect::whereIn('id', $ids)->delete();
-        Cache::forget('admin:redirects:stats');
+        Redirect::clearRedirectCache();
 
         if ($request->expectsJson()) {
             return response()->json([
@@ -357,7 +357,7 @@ class RedirectController extends Controller
             $insertedCount += count($batchUpserts);
         }
 
-        Cache::forget('admin:redirects:stats');
+        Redirect::clearRedirectCache();
 
         return response()->json([
             'success' => true,

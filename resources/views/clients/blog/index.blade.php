@@ -1,7 +1,7 @@
 @extends('clients.layouts.master')
 
 @section('title', (isset($currentCategory) && $currentCategory ? ($currentCategory->meta_title ?: $currentCategory->name
-    . ' - Xu hướng & Phong cách') : 'Nobi Blog, Xu hướng & Phong cách sống') . ' | ' . config('app.name'))
+    . ' - Xu hướng & Phong cách') : 'Nobi Blog, Xu hướng & Phong cách sống') . ' – ' . config('app.name'))
 
 @section('head')
     <meta name="description"
@@ -80,7 +80,7 @@
                         <p class="nobifashion_blog_hero_tag">CHUYÊN MỤC</p>
                         <h1 class="nobifashion_blog_hero_title">{{ $currentCategory->name }}</h1>
                         <p class="nobifashion_blog_hero_desc">
-                            {{ $currentCategory->description ?: 'Tổng hợp các bài viết và thông tin mới nhất thuộc chuyên mục ' . $currentCategory->name . '.' }}
+                            {{ $currentCategory->meta_description ?: 'Tổng hợp các bài viết và thông tin mới nhất thuộc chuyên mục ' . $currentCategory->name . '.' }}
                         </p>
                     @else
                         <p class="nobifashion_blog_hero_tag muted">CHUYÊN TRANG PHONG CÁCH</p>
@@ -170,9 +170,21 @@
                     @endforelse
                 </div>
 
-                <div class="nobifashion_blog_pagination_wrapper">
-                    {{ $posts->onEachSide(1)->links('pagination.blog') }}
-                </div>
+                @if ($posts->hasPages())
+                    <div class="nobifashion_blog_pagination_wrapper">
+                        {{ $posts->onEachSide(1)->links('pagination.blog') }}
+                    </div>
+                @endif
+
+                @php
+                    $categoryDescription = $currentCategory->description ?? $category->description ?? $description ?? null;
+                @endphp
+
+                @if (!empty($categoryDescription))
+                    <div class="nobifashion_blog_description">
+                        {!! $categoryDescription !!}
+                    </div>
+                @endif
 
                 <div class="nobifashion_blog_editorial_note">
                     <strong>Về nội dung trong chuyên mục</strong>

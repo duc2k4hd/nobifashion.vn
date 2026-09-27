@@ -91,6 +91,35 @@ class CategoryController extends Controller
 
     public function edit(Category $category)
     {
+        $request = request();
+        if ($request->wantsJson() || $request->ajax() || $request->header('Accept') === 'application/json') {
+            $imageUrl = null;
+            if ($category->image) {
+                $imageUrl = str_starts_with($category->image, 'http')
+                    ? $category->image
+                    : asset('clients/assets/img/categories/' . $category->image);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $category->id,
+                    'name' => $category->name,
+                    'slug' => $category->slug,
+                    'parent_id' => $category->parent_id,
+                    'description' => $category->description,
+                    'image' => $imageUrl,
+                    'image_name' => $category->image,
+                    'sort_order' => $category->sort_order ?? 0,
+                    'is_active' => (bool) $category->is_active,
+                    'meta_title' => $category->meta_title ?? '',
+                    'meta_description' => $category->meta_description ?? '',
+                    'meta_keywords' => $category->meta_keywords ?? '',
+                    'meta_canonical' => $category->meta_canonical ?? '',
+                ],
+            ]);
+        }
+
         $parents = $this->getParentCategories($category->id);
 
         return view('admins.categories.form', compact('category', 'parents'));
@@ -104,6 +133,10 @@ class CategoryController extends Controller
             $data['slug'] = Str::slug($data['name']);
         }
 
+        if ($request->boolean('delete_image')) {
+            $this->deleteImageFile($category->image);
+            $data['image'] = null;
+        }
 
         if ($request->hasFile('image')) {
             $this->deleteImageFile($category->image);

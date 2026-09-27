@@ -61,10 +61,9 @@
             <button type="button" id="btnOpenImportModal" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#importCsvModal">
                 <i class="fas fa-file-upload me-1"></i> Nhập CSV/Excel
             </button>
-            <label class="btn btn-danger mb-0" style="cursor:pointer;" title="Xóa bài viết từ file .txt chứa ID (1 ID/dòng)">
+            <button type="button" class="btn btn-danger mb-0" id="btnOpenDeleteFromTxt" data-bs-toggle="modal" data-bs-target="#deleteTxtModal" title="Xóa bài viết hàng loạt theo danh sách ID từ file .txt, kèm xóa ảnh">
                 <i class="fas fa-trash-alt me-1"></i> Xóa từ TXT
-                <input type="file" id="btnDeleteFromTxt" accept=".txt" style="display:none">
-            </label>
+            </button>
             <a href="{{ route('admin.posts.create') }}" class="btn btn-primary">
                 <i class="fas fa-plus me-1"></i> Viết bài mới
             </a>
@@ -622,6 +621,87 @@
             </div>
         </div>
     </div>
+    {{-- MODAL: XÓA BÀI VIẾT TỪ FILE TXT --}}
+    <div class="modal fade" id="deleteTxtModal" tabindex="-1" aria-labelledby="deleteTxtModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg rounded-3">
+                <div class="modal-header" style="background: linear-gradient(135deg,#dc3545,#b02a37); color:#fff;">
+                    <h5 class="modal-title fw-bold" id="deleteTxtModalLabel">
+                        <i class="fas fa-trash-alt me-2"></i> Xóa bài viết hàng loạt từ file .TXT
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body p-4">
+
+                    {{-- Hướng dẫn --}}
+                    <div class="alert alert-warning border-0 rounded-3 mb-4">
+                        <div class="fw-bold mb-2"><i class="fas fa-info-circle me-1"></i> Hướng dẫn sử dụng</div>
+                        <ul class="mb-0 small">
+                            <li>Tạo file <code>.txt</code> với mỗi dòng là <strong>1 ID bài viết</strong> cần xóa. Ví dụ: <code>123</code>, <code>456</code>, ...</li>
+                            <li>Hệ thống sẽ tự động xóa bài viết, <strong>ảnh đại diện</strong> và <strong>ảnh trong nội dung</strong>.</li>
+                            <li class="text-success fw-semibold">Ảnh đang được bài viết khác sử dụng sẽ được giữ lại an toàn.</li>
+                            <li class="text-danger fw-semibold">Hành động này <u>KHÔNG THỂ hoàn tác</u>. Hãy chắc chắn trước khi tiến hành!</li>
+                        </ul>
+                    </div>
+
+                    {{-- Chọn file --}}
+                    <div id="deleteTxtStepUpload">
+                        <label class="form-label fw-semibold">Chọn file .TXT chứa danh sách ID:</label>
+                        <input type="file" class="form-control" id="deleteTxtFileInput" accept=".txt">
+                        <div class="form-text text-muted">Mỗi dòng 1 số ID. Dòng trống và ký tự không phải số sẽ bị bỏ qua tự động.</div>
+
+                        {{-- Preview --}}
+                        <div id="deleteTxtPreview" class="mt-3" style="display:none;">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <span class="badge bg-danger fs-6" id="deleteTxtCountBadge">0 ID</span>
+                                <span class="text-muted small">sẽ bị xóa</span>
+                            </div>
+                            <div class="border rounded-2 p-2 bg-light" style="max-height: 120px; overflow-y:auto; font-family:monospace; font-size:0.8rem;" id="deleteTxtIdList"></div>
+                        </div>
+                    </div>
+
+                    {{-- Tiến trình xử lý --}}
+                    <div id="deleteTxtStepProgress" style="display:none;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-semibold small">Tiến trình xử lý:</span>
+                            <span class="small text-muted" id="deleteTxtProgressText">0 / 0</span>
+                        </div>
+                        <div class="progress mb-3" style="height:12px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-danger" id="deleteTxtProgressBar" style="width:0%"></div>
+                        </div>
+                        <div class="border rounded-2 bg-dark text-light p-3" style="max-height:220px; overflow-y:auto; font-size:0.78rem; font-family:monospace;" id="deleteTxtLog"></div>
+                        <div class="row g-2 mt-2" id="deleteTxtStats">
+                            <div class="col-4">
+                                <div class="text-center p-2 rounded-2" style="background:#198754;color:#fff;">
+                                    <div class="fw-bold fs-5" id="statDeletedPosts">0</div>
+                                    <div class="small">Bài viết đã xóa</div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="text-center p-2 rounded-2" style="background:#0d6efd;color:#fff;">
+                                    <div class="fw-bold fs-5" id="statDeletedFiles">0</div>
+                                    <div class="small">Ảnh đã xóa</div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="text-center p-2 rounded-2" style="background:#6c757d;color:#fff;">
+                                    <div class="fw-bold fs-5" id="statSkippedFiles">0</div>
+                                    <div class="small">Ảnh giữ lại (dùng chung)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="modal-footer border-0 pt-0 pb-4 px-4 gap-2">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal" id="deleteTxtBtnClose">Hủy / Đóng</button>
+                    <button type="button" class="btn btn-danger fw-bold px-4" id="deleteTxtBtnStart" disabled>
+                        <i class="fas fa-trash-alt me-1"></i> Bắt đầu xóa
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 @endsection
 
 @push('scripts')
@@ -1010,7 +1090,9 @@
                 });
             }
 
-            // Handle Checkboxes for Bulk Delete
+            // ================================================
+            // Checkboxes: Chọn tất cả và xóa hàng loạt
+            // ================================================
             const checkAll = document.getElementById('checkAll');
             const itemChecks = document.querySelectorAll('.item-check');
             const btnBulkDelete = document.getElementById('btnBulkDelete');
@@ -1038,71 +1120,197 @@
                 }
             }
 
-            // Handle Delete from TXT
-            const btnDeleteFromTxt = document.getElementById('btnDeleteFromTxt');
-            if (btnDeleteFromTxt) {
-                btnDeleteFromTxt.addEventListener('change', function (e) {
+            // ================================================
+            // MODAL: XÓA TỪ TXT
+            // ================================================
+            const deleteTxtModalEl = document.getElementById('deleteTxtModal');
+            let deleteTxtModal = null;
+            if (deleteTxtModalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                deleteTxtModal = bootstrap.Modal.getOrCreateInstance(deleteTxtModalEl);
+            }
+
+            const deleteTxtFileInput = document.getElementById('deleteTxtFileInput');
+            const deleteTxtPreview = document.getElementById('deleteTxtPreview');
+            const deleteTxtCountBadge = document.getElementById('deleteTxtCountBadge');
+            const deleteTxtIdList = document.getElementById('deleteTxtIdList');
+            const deleteTxtBtnStart = document.getElementById('deleteTxtBtnStart');
+            const deleteTxtBtnClose = document.getElementById('deleteTxtBtnClose');
+            const deleteTxtStepUpload = document.getElementById('deleteTxtStepUpload');
+            const deleteTxtStepProgress = document.getElementById('deleteTxtStepProgress');
+            const deleteTxtProgressBar = document.getElementById('deleteTxtProgressBar');
+            const deleteTxtProgressText = document.getElementById('deleteTxtProgressText');
+            const deleteTxtLog = document.getElementById('deleteTxtLog');
+            const statDeletedPosts = document.getElementById('statDeletedPosts');
+            const statDeletedFiles = document.getElementById('statDeletedFiles');
+            const statSkippedFiles = document.getElementById('statSkippedFiles');
+
+            let parsedIds = [];
+            let isRunning = false;
+
+            function resetDeleteTxtModal() {
+                parsedIds = [];
+                isRunning = false;
+                if (deleteTxtFileInput) deleteTxtFileInput.value = '';
+                if (deleteTxtPreview) deleteTxtPreview.style.display = 'none';
+                if (deleteTxtBtnStart) {
+                    deleteTxtBtnStart.disabled = true;
+                    deleteTxtBtnStart.innerHTML = '<i class="fas fa-trash-alt me-1"></i> Bắt đầu xóa';
+                    deleteTxtBtnStart.classList.remove('btn-success');
+                    deleteTxtBtnStart.classList.add('btn-danger');
+                }
+                if (deleteTxtStepUpload) deleteTxtStepUpload.style.display = '';
+                if (deleteTxtStepProgress) deleteTxtStepProgress.style.display = 'none';
+                if (deleteTxtBtnClose) {
+                    deleteTxtBtnClose.disabled = false;
+                    deleteTxtBtnClose.textContent = 'Hủy / Đóng';
+                    deleteTxtBtnClose.onclick = null;
+                }
+                if (deleteTxtProgressBar) {
+                    deleteTxtProgressBar.style.width = '0%';
+                    deleteTxtProgressBar.classList.add('progress-bar-animated');
+                }
+                if (deleteTxtProgressText) deleteTxtProgressText.textContent = '0 / 0';
+                if (deleteTxtLog) deleteTxtLog.innerHTML = '';
+            }
+
+            if (deleteTxtModalEl) {
+                deleteTxtModalEl.addEventListener('show.bs.modal', function () {
+                    if (!isRunning) {
+                        resetDeleteTxtModal();
+                    }
+                });
+            }
+
+            // Parse file TXT khi chọn
+            if (deleteTxtFileInput) {
+                deleteTxtFileInput.addEventListener('change', function (e) {
                     const file = e.target.files[0];
-                    if (!file) return;
+                    if (!file) {
+                        parsedIds = [];
+                        if (deleteTxtPreview) deleteTxtPreview.style.display = 'none';
+                        if (deleteTxtBtnStart) deleteTxtBtnStart.disabled = true;
+                        return;
+                    }
 
                     const reader = new FileReader();
-                    reader.onload = async function (e) {
-                        const content = e.target.result;
-                        const ids = content.split('\n')
-                            .map(id => id.trim())
-                            .filter(id => id !== '' && !isNaN(id))
-                            .map(id => parseInt(id, 10));
+                    reader.onload = function (ev) {
+                        const lines = ev.target.result.split(/\r?\n/);
+                        parsedIds = lines
+                            .map(l => parseInt(l.trim(), 10))
+                            .filter(n => !isNaN(n) && n > 0);
 
-                        if (ids.length === 0) {
-                            alert('Không tìm thấy ID hợp lệ nào trong file.');
-                            btnDeleteFromTxt.value = '';
-                            return;
+                        parsedIds = [...new Set(parsedIds)];
+
+                        if (deleteTxtCountBadge) deleteTxtCountBadge.textContent = parsedIds.length + ' ID';
+                        if (deleteTxtIdList) {
+                            deleteTxtIdList.textContent = parsedIds.slice(0, 100).join(', ') + (parsedIds.length > 100 ? ' ... (và ' + (parsedIds.length - 100) + ' ID nữa)' : '');
                         }
+                        if (deleteTxtPreview) deleteTxtPreview.style.display = parsedIds.length > 0 ? '' : 'none';
+                        if (deleteTxtBtnStart) deleteTxtBtnStart.disabled = parsedIds.length === 0;
+                    };
+                    reader.readAsText(file, 'UTF-8');
+                });
+            }
 
-                        if (!confirm(`Tìm thấy ${ids.length} ID. Bạn có chắc chắn muốn xóa cực nhanh TẤT CẢ dữ liệu liên quan (trừ ảnh) của các bài viết này? Hành động này KHÔNG THỂ HOÀN TÁC.`)) {
-                            btnDeleteFromTxt.value = '';
-                            return;
-                        }
+            // Logic xóa
+            function addDeleteLog(msg, type = 'info') {
+                if (!deleteTxtLog) return;
+                const colors = { info: '#a8d8ea', success: '#b7e4c7', error: '#f8b4b4', warn: '#ffe69c' };
+                const line = document.createElement('div');
+                line.style.color = colors[type] || '#fff';
+                line.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+                deleteTxtLog.appendChild(line);
+                deleteTxtLog.scrollTop = deleteTxtLog.scrollHeight;
+            }
 
-                        // Xử lý chia batch
-                        const batchSize = 100;
-                        let successCount = 0;
-                        const parentLabel = btnDeleteFromTxt.parentElement;
-                        const originalHTML = parentLabel.innerHTML;
-                        parentLabel.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Đang xóa...';
-                        parentLabel.style.pointerEvents = 'none';
+            if (deleteTxtBtnStart) {
+                deleteTxtBtnStart.addEventListener('click', async function () {
+                    if (isRunning || parsedIds.length === 0) return;
+
+                    if (!confirm('Bạn có chắc chắn muốn xóa VĨNH VIỄN ' + parsedIds.length + ' bài viết và tất cả ảnh của chúng?\nHành động này KHÔNG THỂ hoàn tác!')) {
+                        return;
+                    }
+
+                    isRunning = true;
+                    deleteTxtBtnStart.disabled = true;
+                    deleteTxtBtnStart.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Đang xóa...';
+                    if (deleteTxtBtnClose) deleteTxtBtnClose.disabled = true;
+                    if (deleteTxtStepUpload) deleteTxtStepUpload.style.display = 'none';
+                    if (deleteTxtStepProgress) deleteTxtStepProgress.style.display = '';
+                    if (deleteTxtLog) deleteTxtLog.innerHTML = '';
+                    if (statDeletedPosts) statDeletedPosts.textContent = '0';
+                    if (statDeletedFiles) statDeletedFiles.textContent = '0';
+                    if (statSkippedFiles) statSkippedFiles.textContent = '0';
+
+                    const batchSize = 200;
+                    const totalIds = parsedIds.length;
+                    let processedIds = 0;
+                    let totalDeletedPosts = 0;
+                    let totalDeletedFiles = 0;
+                    let totalSkippedFiles = 0;
+
+                    addDeleteLog('Bắt đầu xóa ' + totalIds + ' bài viết...', 'info');
+
+                    for (let i = 0; i < parsedIds.length; i += batchSize) {
+                        const batch = parsedIds.slice(i, i + batchSize);
+                        const batchNum = Math.floor(i / batchSize) + 1;
+
+                        addDeleteLog('Mẻ ' + batchNum + ': đang gửi ' + batch.length + ' ID...', 'info');
 
                         try {
-                            for (let i = 0; i < ids.length; i += batchSize) {
-                                const batchIds = ids.slice(i, i + batchSize);
-                                const response = await fetch("{{ route('admin.posts.bulk-destroy') }}", {
-                                    method: 'POST',
-                                    headers: {
-                                        'Content-Type': 'application/json',
-                                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                                        'Accept': 'application/json'
-                                    },
-                                    body: JSON.stringify({
-                                        ids: batchIds,
-                                        force_clean: 1
-                                    })
-                                });
-                                const result = await response.json();
-                                if (result.success) {
-                                    successCount += result.count || batchIds.length;
-                                }
+                            const response = await fetch('{{ route('admin.posts.destroy-from-txt') }}', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                    'Accept': 'application/json',
+                                },
+                                body: JSON.stringify({ ids: batch }),
+                            });
+
+                            const result = await response.json();
+
+                            if (result.success) {
+                                processedIds += batch.length;
+                                totalDeletedPosts += result.count || 0;
+                                totalDeletedFiles += result.deleted_files || 0;
+                                totalSkippedFiles += result.skipped_files || 0;
+
+                                if (statDeletedPosts) statDeletedPosts.textContent = totalDeletedPosts;
+                                if (statDeletedFiles) statDeletedFiles.textContent = totalDeletedFiles;
+                                if (statSkippedFiles) statSkippedFiles.textContent = totalSkippedFiles;
+
+                                const pct = Math.min(100, Math.round(processedIds / totalIds * 100));
+                                if (deleteTxtProgressBar) deleteTxtProgressBar.style.width = pct + '%';
+                                if (deleteTxtProgressText) deleteTxtProgressText.textContent = Math.min(processedIds, totalIds) + ' / ' + totalIds;
+
+                                addDeleteLog(
+                                    'Mẻ ' + batchNum + ': ✅ xóa ' + result.count + ' bài, xóa ' + result.deleted_files + ' ảnh, giữ lại ' + result.skipped_files + ' ảnh',
+                                    'success'
+                                );
+                            } else {
+                                addDeleteLog('Mẻ ' + batchNum + ': ⚠️ ' + (result.message || 'Lỗi không xác định'), 'error');
                             }
-                            alert(`Đã xóa sạch thành công ${successCount} bài viết!`);
-                            window.location.reload();
-                        } catch (error) {
-                            console.error(error);
-                            alert('Có lỗi xảy ra trong quá trình xóa: ' + error.message);
-                            window.location.reload();
+                        } catch (err) {
+                            addDeleteLog('Mẻ ' + batchNum + ': ❌ Lỗi mạng: ' + err.message, 'error');
                         }
-                    };
-                    reader.readAsText(file);
+                    }
+
+                    addDeleteLog('Hoàn tất! Tổng: ' + totalDeletedPosts + ' bài đã xóa, ' + totalDeletedFiles + ' ảnh đã xóa, ' + totalSkippedFiles + ' ảnh giữ lại.', 'success');
+
+                    if (deleteTxtProgressBar) deleteTxtProgressBar.classList.remove('progress-bar-animated');
+                    deleteTxtBtnStart.innerHTML = '<i class="fas fa-check me-1"></i> Hoàn tất!';
+                    deleteTxtBtnStart.classList.remove('btn-danger');
+                    deleteTxtBtnStart.classList.add('btn-success');
+                    if (deleteTxtBtnClose) {
+                        deleteTxtBtnClose.disabled = false;
+                        deleteTxtBtnClose.textContent = 'Đóng và làm mới trang';
+                        deleteTxtBtnClose.onclick = function () { window.location.reload(); };
+                    }
+                    isRunning = false;
                 });
             }
         });
     </script>
 @endpush
+
