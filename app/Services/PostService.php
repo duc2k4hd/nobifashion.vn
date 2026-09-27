@@ -124,10 +124,16 @@ class PostService
 
     public function incrementViews(Post $post, Request $request, int $cooldownMinutes = 15): void
     {
+        $userAgent = (string) $request->userAgent();
+        // Bỏ qua bot crawler / Google Lighthouse để không lock bảng posts và không làm chậm PageSpeed
+        if (preg_match('/Lighthouse|PageSpeed|Chrome-Lighthouse|HeadlessChrome|bot|spider|crawl/i', $userAgent)) {
+            return;
+        }
+
         $cacheKey = sprintf(
             'post:view:%s:%s',
             $post->id,
-            sha1($request->ip().'|'.$request->userAgent())
+            sha1($request->ip().'|'.$userAgent)
         );
 
         if (! Cache::has($cacheKey)) {

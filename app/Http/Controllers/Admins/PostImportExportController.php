@@ -39,16 +39,58 @@ class PostImportExportController extends Controller
             $selectedColumns = ['ID', 'Tiêu đề', 'Slug', 'Nội dung'];
         }
 
-        $query = Post::query();
+        $categoryFilter = $request->input('category_id');
+        $isFilteringCategory = $request->has('category_id') && $categoryFilter !== null && $categoryFilter !== '';
 
-        // Lọc theo trạng thái nếu có
-        if ($request->filled('status')) {
-            $query->where('status', $request->input('status'));
+        if ($request->input('status') === 'trashed') {
+            $query = Post::onlyTrashed();
+        } else {
+            $query = Post::query();
+            if ($request->filled('status')) {
+                $query->where('status', $request->input('status'));
+            }
         }
 
-        // Lọc theo danh mục nếu có
-        if ($request->filled('category_id')) {
-            $query->where('category_id', $request->input('category_id'));
+        // Lọc theo danh mục (hỗ trợ cả trường hợp "chưa có danh mục": null, 0 hoặc orphan category)
+        if ($isFilteringCategory) {
+            if ($categoryFilter === 'none' || $categoryFilter === '0' || $categoryFilter === 'uncategorized') {
+                $query->where(function ($sub) {
+                    $sub->whereNull('category_id')
+                        ->orWhere('category_id', 0)
+                        ->orWhereDoesntHave('category');
+                });
+            } else {
+                $query->where('category_id', (int) $categoryFilter);
+            }
+        }
+
+        // Lọc theo tác giả nếu có
+        if ($request->filled('author_id')) {
+            $query->where('created_by', $request->integer('author_id'));
+        }
+
+        // Lọc theo tag nếu có
+        if ($request->filled('tag_id')) {
+            $tagId = $request->integer('tag_id');
+            $query->whereHas('tags', fn ($tagQuery) => $tagQuery->where('tags.id', $tagId));
+        }
+
+        // Lọc thiếu thumbnail
+        if ($request->filled('without_thumbnail')) {
+            $query->whereNull('thumbnail');
+        }
+
+        // Lọc nổi bật
+        if ($request->filled('is_featured')) {
+            $query->where('is_featured', $request->boolean('is_featured'));
+        }
+
+        // Lọc theo ngày xuất bản
+        if ($request->filled('date_from')) {
+            $query->whereDate('published_at', '>=', $request->date('date_from'));
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('published_at', '<=', $request->date('date_to'));
         }
 
         // Lọc theo từ khóa tìm kiếm nếu có
@@ -58,6 +100,18 @@ class PostImportExportController extends Controller
                 $q->where('title', 'like', "%{$search}%")
                     ->orWhere('slug', 'like', "%{$search}%");
             });
+        }
+
+        // Sắp xếp (Hỗ trợ view_asc / view_desc / oldest / newest)
+        $sort = $request->input('sort');
+        if (in_array($sort, ['view_asc', 'views_asc', 'view_az', 'views_az'])) {
+            $query->orderBy('views', 'asc')->orderByDesc('id');
+        } elseif (in_array($sort, ['view_desc', 'views_desc', 'view_za', 'views_za'])) {
+            $query->orderByDesc('views')->orderByDesc('id');
+        } elseif ($sort === 'oldest') {
+            $query->orderBy('id', 'asc');
+        } else {
+            $query->latest('id');
         }
 
         // Tối ưu Eager Loading chỉ khi người dùng chọn cột tương ứng
@@ -76,7 +130,7 @@ class PostImportExportController extends Controller
             $query->with($withRelations);
         }
 
-        $posts = $query->latest('id')->get();
+        $posts = $query->get();
 
         $data = $posts->map(function ($post) use ($selectedColumns) {
             $row = [

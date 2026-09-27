@@ -34,11 +34,24 @@ class PostController extends Controller
 
     public function index(Request $request): View
     {
+        $categoryFilter = $request->input('category_id');
+        $isFilteringCategory = $request->has('category_id') && $categoryFilter !== null && $categoryFilter !== '';
+
         // Nếu lọc bài đã xóa mềm thì dùng onlyTrashed(), ngược lại query bình thường
         if ($request->input('status') === 'trashed') {
             $query = Post::onlyTrashed()
                 ->with(['author.profile', 'category'])
-                ->when($request->filled('category_id'), fn ($q) => $q->where('category_id', $request->integer('category_id')))
+                ->when($isFilteringCategory, function ($q) use ($categoryFilter) {
+                    if ($categoryFilter === 'none' || $categoryFilter === '0' || $categoryFilter === 'uncategorized') {
+                        $q->where(function ($sub) {
+                            $sub->whereNull('category_id')
+                                ->orWhere('category_id', 0)
+                                ->orWhereDoesntHave('category');
+                        });
+                    } else {
+                        $q->where('category_id', (int) $categoryFilter);
+                    }
+                })
                 ->when($request->filled('author_id'), fn ($q) => $q->where('created_by', $request->integer('author_id')))
                 ->when($request->filled('tag_id'), function ($q) use ($request) {
                     $tagId = $request->integer('tag_id');
@@ -49,21 +62,31 @@ class PostController extends Controller
                 ->when($request->filled('date_to'), fn ($q) => $q->whereDate('published_at', '<=', $request->date('date_to')));
         } else {
             $query = Post::query()
-            ->with(['author.profile', 'category'])
-            ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))
-            ->when($request->filled('category_id'), fn ($q) => $q->where('category_id', $request->integer('category_id')))
-            ->when($request->filled('author_id'), fn ($q) => $q->where('created_by', $request->integer('author_id')))
-            ->when($request->filled('tag_id'), function ($q) use ($request) {
-                $tagId = $request->integer('tag_id');
-                // Tìm posts có tag với entity_type = Post::class
-            $q->whereHas('tags', function ($tagQuery) use ($tagId) {
-                $tagQuery->where('tags.id', $tagId);
-            });
-            })
-            ->when($request->filled('is_featured'), fn ($q) => $q->where('is_featured', $request->boolean('is_featured')))
-            ->when($request->filled('without_thumbnail'), fn ($q) => $q->whereNull('thumbnail'))
-            ->when($request->filled('date_from'), fn ($q) => $q->whereDate('published_at', '>=', $request->date('date_from')))
-            ->when($request->filled('date_to'), fn ($q) => $q->whereDate('published_at', '<=', $request->date('date_to')));
+                ->with(['author.profile', 'category'])
+                ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))
+                ->when($isFilteringCategory, function ($q) use ($categoryFilter) {
+                    if ($categoryFilter === 'none' || $categoryFilter === '0' || $categoryFilter === 'uncategorized') {
+                        $q->where(function ($sub) {
+                            $sub->whereNull('category_id')
+                                ->orWhere('category_id', 0)
+                                ->orWhereDoesntHave('category');
+                        });
+                    } else {
+                        $q->where('category_id', (int) $categoryFilter);
+                    }
+                })
+                ->when($request->filled('author_id'), fn ($q) => $q->where('created_by', $request->integer('author_id')))
+                ->when($request->filled('tag_id'), function ($q) use ($request) {
+                    $tagId = $request->integer('tag_id');
+                    // Tìm posts có tag với entity_type = Post::class
+                    $q->whereHas('tags', function ($tagQuery) use ($tagId) {
+                        $tagQuery->where('tags.id', $tagId);
+                    });
+                })
+                ->when($request->filled('is_featured'), fn ($q) => $q->where('is_featured', $request->boolean('is_featured')))
+                ->when($request->filled('without_thumbnail'), fn ($q) => $q->whereNull('thumbnail'))
+                ->when($request->filled('date_from'), fn ($q) => $q->whereDate('published_at', '>=', $request->date('date_from')))
+                ->when($request->filled('date_to'), fn ($q) => $q->whereDate('published_at', '<=', $request->date('date_to')));
         }
 
         $searchMeta = $this->progressiveSearchService->apply(
@@ -73,7 +96,17 @@ class PostController extends Controller
             ['posts.slug']
         );
 
-        $query->orderByDesc(DB::raw('COALESCE(published_at, created_at)'));
+        // Xử lý sắp xếp theo Lượt xem (View AZ: thấp -> cao, View ZA: cao -> thấp) hoặc thời gian
+        $sort = $request->input('sort');
+        if (in_array($sort, ['view_asc', 'views_asc', 'view_az', 'views_az'])) {
+            $query->orderBy('views', 'asc')->orderByDesc('id');
+        } elseif (in_array($sort, ['view_desc', 'views_desc', 'view_za', 'views_za'])) {
+            $query->orderByDesc('views')->orderByDesc('id');
+        } elseif ($sort === 'oldest') {
+            $query->orderBy(DB::raw('COALESCE(published_at, created_at)'), 'asc')->orderBy('id', 'asc');
+        } else {
+            $query->orderByDesc(DB::raw('COALESCE(published_at, created_at)'))->orderByDesc('id');
+        }
 
         $perPage = $request->input('limit', 50);
         if (!in_array((int)$perPage, [50, 100, 300, 1000])) {

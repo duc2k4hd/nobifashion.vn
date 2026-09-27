@@ -5,10 +5,10 @@
    ========================================================================== */
 
 :root {
-    --nobifashion_blog_detail_font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --nobifashion_blog_detail_font: var(--font-family, "Open Sans", sans-serif);
     --nobifashion_blog_detail_primary: #111827;
-    --nobifashion_blog_detail_accent: #ff3366;
-    --nobifashion_blog_detail_accent_hover: #e02454;
+    --nobifashion_blog_detail_accent: #374151;
+    --nobifashion_blog_detail_accent_hover: #111827;
     --nobifashion_blog_detail_blue: #3b82f6;
     --nobifashion_blog_detail_text: #1f2937;
     --nobifashion_blog_detail_text_muted: #6b7280;
@@ -18,6 +18,117 @@
     --nobifashion_blog_detail_radius: 12px;
     --nobifashion_blog_detail_radius_sm: 8px;
     --nobifashion_blog_detail_radius_lg: 16px;
+}
+
+svg.svg-inline--fa {
+    display: inline-block !important;
+    height: 1em;
+    width: auto;
+    overflow: visible;
+    vertical-align: -0.125em;
+    fill: currentColor;
+}
+
+/* Specific SVG sizing to override global main.css svg { width: 20px; height: 20px; } */
+.nobifashion_blog_detail_breadcrumb_separator svg,
+.nobifashion_blog_detail_breadcrumb_separator svg.svg-inline--fa {
+    width: 8px !important;
+    height: 8px !important;
+    display: inline-block !important;
+}
+
+.nobifashion_blog_detail_breadcrumb_item a svg,
+.nobifashion_blog_detail_breadcrumb_item a svg.svg-inline--fa {
+    width: 13px !important;
+    height: 13px !important;
+    display: inline-block !important;
+}
+
+.nobifashion_blog_detail_category_badge svg,
+.nobifashion_blog_detail_category_badge svg.svg-inline--fa {
+    width: 10px !important;
+    height: 12px !important;
+    display: inline-block !important;
+    vertical-align: -1px;
+}
+
+.nobifashion_blog_detail_hero_meta_item svg,
+.nobifashion_blog_detail_hero_meta_item svg.svg-inline--fa {
+    width: 13px !important;
+    height: 13px !important;
+    display: inline-block !important;
+}
+
+.nobifashion_blog_detail_btn_read_now svg,
+.nobifashion_blog_detail_btn_read_now svg.svg-inline--fa {
+    width: 12px !important;
+    height: 12px !important;
+    display: inline-block !important;
+    fill: #ffffff;
+}
+
+.nobifashion_blog_detail_btn_share svg,
+.nobifashion_blog_detail_btn_share svg.svg-inline--fa {
+    width: 14px !important;
+    height: 14px !important;
+    display: inline-block !important;
+}
+
+.nobifashion_blog_detail_mobile_toc_title svg,
+.nobifashion_blog_detail_mobile_toc_title svg.svg-inline--fa {
+    width: 13px !important;
+    height: 13px !important;
+    display: inline-block !important;
+}
+
+.nobifashion_blog_detail_related_links_item svg,
+.nobifashion_blog_detail_related_links_item svg.svg-inline--fa {
+    width: 12px !important;
+    height: 12px !important;
+    display: inline-block !important;
+}
+
+.nobifashion_blog_detail_star_btn svg,
+.nobifashion_blog_detail_star_btn svg.svg-inline--fa {
+    width: 18px !important;
+    height: 18px !important;
+    display: block !important;
+}
+
+.nobifashion_blog_detail_comment_rating .star svg,
+.nobifashion_blog_detail_comment_rating .star svg.svg-inline--fa {
+    width: 11px !important;
+    height: 11px !important;
+    display: inline-block !important;
+}
+
+.nobifashion_blog_detail_related_date svg,
+.nobifashion_blog_detail_related_date svg.svg-inline--fa {
+    width: 11px !important;
+    height: 11px !important;
+    display: inline-block !important;
+}
+
+.nobifashion_blog_detail_submit_btn svg,
+.nobifashion_blog_detail_submit_btn svg.svg-inline--fa {
+    width: 13px !important;
+    height: 13px !important;
+    display: inline-block !important;
+    fill: #ffffff;
+}
+
+.nobifashion_blog_detail_comment_note svg,
+.nobifashion_blog_detail_comment_note svg.svg-inline--fa {
+    width: 13px !important;
+    height: 13px !important;
+    display: inline-block !important;
+}
+
+.nobifashion_blog_detail_reply_indicator svg,
+.nobifashion_blog_detail_reply_indicator svg.svg-inline--fa {
+    width: 12px !important;
+    height: 12px !important;
+    display: inline-block !important;
 }
 
 body {
@@ -102,11 +213,11 @@ body {
     align-items: center;
 }
 
-.nobifashion_blog_detail_breadcrumb_separator i {
-    font-size: 8px !important;
-    display: flex;
-    align-items: flex-end;
-    margin-top: 2px;
+.nobifashion_blog_detail_breadcrumb_separator i,
+.nobifashion_blog_detail_breadcrumb_separator svg {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 div.nobifashion_blog_detail_content * {
@@ -141,11 +252,13 @@ div.nobifashion_blog_detail_content * {
 }
 
 .nobifashion_blog_detail_category_badge:hover {
-    background: #111827;
+    background: #1f2937;
 }
 
-.nobifashion_blog_detail_category_badge i {
+.nobifashion_blog_detail_category_badge i,
+.nobifashion_blog_detail_category_badge svg {
     margin-right: 4px;
+    vertical-align: -1px;
 }
 
 .nobifashion_blog_detail_hero_title {
@@ -174,6 +287,12 @@ div.nobifashion_blog_detail_content * {
     display: flex;
     align-items: center;
     gap: 6px;
+}
+
+.nobifashion_blog_detail_hero_meta_item i,
+.nobifashion_blog_detail_hero_meta_item svg {
+    color: var(--nobifashion_blog_detail_text_muted);
+    flex-shrink: 0;
 }
 
 .nobifashion_blog_detail_hero_actions {
@@ -429,7 +548,7 @@ div.nobifashion_blog_detail_content * {
 }
 
 .nobifashion_blog_detail_article figcaption {
-    color: #6b7280;
+    color: #374151;
     background-color: #ededed;
     font-style: italic;
     padding: 10px 14px;
@@ -547,9 +666,12 @@ div.nobifashion_blog_detail_content * {
     gap: 6px;
 }
 
-.nobifashion_blog_detail_mobile_toc_title i {
+.nobifashion_blog_detail_mobile_toc_title i,
+.nobifashion_blog_detail_mobile_toc_title svg {
     color: var(--nobifashion_blog_detail_accent);
     font-size: 13px;
+    display: inline-flex;
+    align-items: center;
 }
 
 .nobifashion_blog_detail_mobile_toc_list {
@@ -581,7 +703,6 @@ div.nobifashion_blog_detail_content * {
 .nobifashion_blog_detail_mobile_toc_link {
     display: flex !important;
     align-items: center;
-    min-height: 44px;
     text-decoration: none !important;
     border-bottom: none !important;
     border-radius: 6px;
@@ -597,7 +718,7 @@ div.nobifashion_blog_detail_content * {
 }
 
 .nobifashion_blog_detail_mobile_toc_item.is-h2 .nobifashion_blog_detail_mobile_toc_link {
-    padding: 8px 12px !important;
+    padding: 0 12px !important;
     color: #1e293b !important;
     font-size: 13px !important;
     font-weight: 600 !important;
@@ -611,7 +732,7 @@ div.nobifashion_blog_detail_content * {
 }
 
 .nobifashion_blog_detail_mobile_toc_item.is-h3 .nobifashion_blog_detail_mobile_toc_link {
-    padding: 8px 12px !important;
+    padding: 0 12px !important;
     color: #64748b !important;
     font-size: 12.5px !important;
     font-weight: 500 !important;
@@ -698,12 +819,13 @@ div.nobifashion_blog_detail_content * {
     transition: color 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.nobifashion_blog_detail_related_links_item i {
+.nobifashion_blog_detail_related_links_item i,
+.nobifashion_blog_detail_related_links_item svg {
     font-size: 12px;
-    color: var(--nobifashion_blog_detail_accent, #ff3366);
-    margin-top: 3px;
+    color: var(--nobifashion_blog_detail_text_muted, #6b7280);
+    margin-top: 2px;
     flex-shrink: 0;
-    transition: transform 0.2s ease;
+    transition: transform 0.2s ease, color 0.2s ease;
 }
 
 .nobifashion_blog_detail_related_links_item span {
@@ -712,14 +834,16 @@ div.nobifashion_blog_detail_content * {
 }
 
 .nobifashion_blog_detail_related_links_item:hover {
-    border-color: var(--nobifashion_blog_detail_accent, #ff3366);
-    color: var(--nobifashion_blog_detail_accent, #ff3366);
+    border-color: #9ca3af;
+    color: var(--nobifashion_blog_detail_primary);
     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
     transform: translateY(-1px);
 }
 
-.nobifashion_blog_detail_related_links_item:hover i {
+.nobifashion_blog_detail_related_links_item:hover i,
+.nobifashion_blog_detail_related_links_item:hover svg {
     transform: translateX(3px);
+    color: var(--nobifashion_blog_detail_primary);
 }
 
 /* ==========================================================================
@@ -947,6 +1071,13 @@ div.nobifashion_blog_detail_content * {
     transform: scale(1.22);
 }
 
+.nobifashion_blog_detail_star_btn svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+    display: block;
+}
+
 .nobifashion_blog_detail_star_btn.hovered,
 .nobifashion_blog_detail_star_btn.active {
     color: #f59e0b;
@@ -1037,6 +1168,14 @@ div.nobifashion_blog_detail_content * {
 .comment-rating .star {
     color: #cbd5e1;
     font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.nobifashion_blog_detail_comment_rating .star svg,
+.comment-rating .star svg {
+    fill: currentColor;
+    display: block;
 }
 
 .nobifashion_blog_detail_comment_rating .star.filled,
@@ -1294,6 +1433,7 @@ div.nobifashion_blog_detail_content * {
 
 .nobifashion_blog_detail_related_item {
     display: flex;
+    align-items: center;
     gap: 12px;
     margin-bottom: 12px;
     text-decoration: none;
@@ -1310,9 +1450,9 @@ div.nobifashion_blog_detail_content * {
 }
 
 .nobifashion_blog_detail_related_thumb {
-    width: 80px;
-    height: 80px;
-    aspect-ratio: 1 / 1;
+    width: 120px;
+    height: 68px;
+    aspect-ratio: 16 / 9;
     object-fit: cover;
     border-radius: 8px;
     flex-shrink: 0;
@@ -1458,6 +1598,7 @@ div.nobifashion_blog_detail_content * {
         padding: 5px 0;
         background: #fdfdfd;
         border-bottom: 1px solid #f1f5f9;
+        margin-top: 90px;
     }
 
     .nobifashion_blog_detail_breadcrumb_list {
@@ -1491,7 +1632,8 @@ div.nobifashion_blog_detail_content * {
         gap: 5px;
     }
 
-    .nobifashion_blog_detail_breadcrumb_item a i {
+    .nobifashion_blog_detail_breadcrumb_item a i,
+    .nobifashion_blog_detail_breadcrumb_item a svg {
         font-size: 12px !important;
         color: #6b7280;
     }
@@ -1509,7 +1651,8 @@ div.nobifashion_blog_detail_content * {
         margin: 0;
     }
 
-    .nobifashion_blog_detail_breadcrumb_separator i {
+    .nobifashion_blog_detail_breadcrumb_separator i,
+    .nobifashion_blog_detail_breadcrumb_separator svg {
         font-size: 10px !important;
         margin: 0;
     }
@@ -1551,7 +1694,7 @@ div.nobifashion_blog_detail_content * {
     }
 
     .nobifashion_blog_detail_article {
-        padding: 5px !important;
+        padding: 10px !important;
         border: none !important;
     }
 

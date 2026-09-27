@@ -8,14 +8,27 @@
         @php
             $logoFile = $settings->site_logo ?? 'nobifashion-logo.png';
             $logoWebp = pathinfo($logoFile, PATHINFO_FILENAME) . '.webp';
+            $businessDir = public_path('clients/assets/img/business');
+            $webpPath = $businessDir . DIRECTORY_SEPARATOR . $logoWebp;
+            $pngPath = $businessDir . DIRECTORY_SEPARATOR . $logoFile;
+
+            if (!file_exists($webpPath) && file_exists($pngPath)) {
+                try {
+                    $im = @imagecreatefrompng($pngPath);
+                    if ($im) {
+                        imagepalettetotruecolor($im);
+                        imagealphablending($im, true);
+                        imagesavealpha($im, true);
+                        @imagewebp($im, $webpPath, 85);
+                        @imagedestroy($im);
+                    }
+                } catch (\Throwable $e) {}
+            }
+            $finalLogo = file_exists($webpPath) ? $logoWebp : $logoFile;
         @endphp
-        <picture>
-            @if(file_exists(public_path('clients/assets/img/business/' . $logoWebp)))
-                <source srcset="{{ asset('clients/assets/img/business/' . $logoWebp) }}" type="image/webp">
-            @endif
-            <img width="180" height="60" style="height: 60px; width: auto; max-width: 180px; object-fit: contain;" src="{{ asset('clients/assets/img/business/' . $logoFile) }}"
-                alt="Shop {{ renderMeta($settings->subname ?? 'Nobi Fashion' ) }}" title="Shop {{ renderMeta($settings->site_name ?? 'Nobi Fashion' ) }}">
-        </picture>
+        <img width="180" height="60" style="height: 60px; width: auto; max-width: 180px; object-fit: contain;" src="{{ asset('clients/assets/img/business/' . $finalLogo) }}"
+            alt="Shop {{ renderMeta($settings->subname ?? 'Nobi Fashion' ) }}" title="Shop {{ renderMeta($settings->site_name ?? 'Nobi Fashion' ) }}">
+
       </a>
       <nav class="nobifashion_home_tabs nobifashion_home_desktop_tabs" aria-label="Đối tượng mua sắm">
         @if(isset($categories) && $categories->isNotEmpty())

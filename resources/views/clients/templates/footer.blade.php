@@ -83,14 +83,27 @@
             @php
                 $footerLogoFile = (($settings->site_logo ?? null) ?: 'nobifashion-logo.png');
                 $footerLogoWebp = pathinfo($footerLogoFile, PATHINFO_FILENAME) . '.webp';
+                $footerBusinessDir = public_path('clients/assets/img/business');
+                $footerWebpPath = $footerBusinessDir . DIRECTORY_SEPARATOR . $footerLogoWebp;
+                $footerPngPath = $footerBusinessDir . DIRECTORY_SEPARATOR . $footerLogoFile;
+
+                if (!file_exists($footerWebpPath) && file_exists($footerPngPath)) {
+                    try {
+                        $im = @imagecreatefrompng($footerPngPath);
+                        if ($im) {
+                            imagepalettetotruecolor($im);
+                            imagealphablending($im, true);
+                            imagesavealpha($im, true);
+                            @imagewebp($im, $footerWebpPath, 85);
+                            @imagedestroy($im);
+                        }
+                    } catch (\Throwable $e) {}
+                }
+                $finalFooterLogo = file_exists($footerWebpPath) ? $footerLogoWebp : $footerLogoFile;
             @endphp
-            <picture>
-                @if(file_exists(public_path('clients/assets/img/business/' . $footerLogoWebp)))
-                    <source srcset="{{ asset('clients/assets/img/business/' . $footerLogoWebp) }}" type="image/webp">
-                @endif
-                <img loading="lazy" width="180" height="55" src="{{ asset('clients/assets/img/business/' . $footerLogoFile) }}"
-                    alt="Shop {{ renderMeta(($settings->subname ?? null) ?: 'Đang cập nhật...') }}" title="Shop {{ renderMeta(($settings->site_name ?? null) ?: 'Đang cập nhật...') }}">
-            </picture>
+            <img loading="lazy" width="180" height="55" src="{{ asset('clients/assets/img/business/' . $finalFooterLogo) }}"
+                alt="Shop {{ renderMeta(($settings->subname ?? null) ?: 'Đang cập nhật...') }}" title="Shop {{ renderMeta(($settings->site_name ?? null) ?: 'Đang cập nhật...') }}">
+
             <p class="nobifashion_footer_content_business_title">{{ renderMeta(($settings->site_name ?? null) ?: 'Đang cập nhật...') }}</p>
             <p class="nobifashion_footer_content_business_desc">{{ renderMeta(($settings->site_description ?? null) ?: 'Đang cập nhật...') }}</p>
             <p class="nobifashion_footer_content_business_address"><strong>Địa chỉ</strong>: {{ ($settings->contact_address ?? null) ?: 'Đang cập nhật...' }}</p>
@@ -146,7 +159,17 @@
                 <a href="{{ route('client.policy.privacy') }}">Chính sách bảo mật dữ liệu</a>
                 <a href="{{ route('client.policy.editorial') }}">Chính sách biên tập và đính chính thông tin</a>
                 @if (!empty($settings->dmca))
-                    <a style="position: relative;" href="{!! $settings->dmca !!}" target="_blank" rel="noopener noreferrer" title="DMCA.com Protection Status" class="dmca-badge"> <img style="position: relative; object-fit: cover; max-width: 150px; height: auto;" loading="lazy" src ="{!! ($settings->dmca_logo ?? null) ?: asset('clients/assets/img/other/DMCA.webp') !!}"  alt="DMCA.com Protection Status" /></a>  <script defer src="https://images.dmca.com/Badges/DMCABadgeHelper.min.js"> </script>
+                    <a style="position: relative;" href="{!! $settings->dmca !!}" target="_blank" rel="noopener noreferrer" title="DMCA.com Protection Status" class="dmca-badge"> <img style="position: relative; object-fit: cover; max-width: 150px; height: auto;" loading="lazy" width="150" height="30" src ="{!! ($settings->dmca_logo ?? null) ?: asset('clients/assets/img/other/DMCA.webp') !!}"  alt="DMCA.com Protection Status" /></a>
+                    <script>
+                        window.addEventListener('load', function() {
+                            setTimeout(function() {
+                                var s = document.createElement('script');
+                                s.src = 'https://images.dmca.com/Badges/DMCABadgeHelper.min.js';
+                                s.async = true;
+                                document.body.appendChild(s);
+                            }, 2500);
+                        });
+                    </script>
                 @endif
                 <a style="position: relative;" href="{{ route('client.policy.sale') }}">
                     <img loading="lazy" style="position: relative; object-fit: cover; max-width: 90%;" src="{{ asset('clients/assets/img/other/sales-policy.png') }}" alt="Chính sách bán hàng được chứng nhận">

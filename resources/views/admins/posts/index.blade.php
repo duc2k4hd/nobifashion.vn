@@ -89,6 +89,7 @@
                     <label class="form-label text-uppercase text-muted small">Danh mục</label>
                     <select name="category_id" class="form-select" data-slim-select data-allow-deselect="true" data-placeholder="Chọn danh mục">
                         <option value="">Tất cả</option>
+                        <option value="none" @selected(($filters['category_id'] ?? '') === 'none')>⚠️ Chưa có danh mục</option>
                         @foreach($categories as $category)
                             <option value="{{ $category->id }}" @selected(($filters['category_id'] ?? '') == $category->id)>
                                 {{ $category->name }}
@@ -145,6 +146,15 @@
                     <select name="without_thumbnail" class="form-select" data-slim-select data-allow-deselect="true" data-placeholder="Chọn kiểu">
                         <option value="">Không lọc</option>
                         <option value="1" @selected(($filters['without_thumbnail'] ?? '') === '1')>Chỉ bài chưa có thumbnail</option>
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <label class="form-label text-uppercase text-muted small">Lượt xem (View)</label>
+                    <select name="sort" class="form-select" data-slim-select data-allow-deselect="true" data-placeholder="Sắp xếp theo view">
+                        <option value="">Mặc định (Mới nhất)</option>
+                        <option value="view_asc" @selected(($filters['sort'] ?? '') === 'view_asc')>View tăng dần (A → Z)</option>
+                        <option value="view_desc" @selected(($filters['sort'] ?? '') === 'view_desc')>View giảm dần (Z → A)</option>
                     </select>
                 </div>
 
@@ -222,7 +232,24 @@
                             <th>Danh mục</th>
                             <th>Trạng thái</th>
                             <th>Nổi bật</th>
-                            <th>Lượt xem</th>
+                            <th>
+                                @php
+                                    $currentSort = $filters['sort'] ?? '';
+                                    $nextSort = ($currentSort === 'view_desc') ? 'view_asc' : 'view_desc';
+                                    $sortIcon = '';
+                                    if ($currentSort === 'view_desc') {
+                                        $sortIcon = '<i class="fas fa-sort-down text-primary ms-1" title="Đang giảm dần (Z → A)"></i>';
+                                    } elseif ($currentSort === 'view_asc') {
+                                        $sortIcon = '<i class="fas fa-sort-up text-primary ms-1" title="Đang tăng dần (A → Z)"></i>';
+                                    } else {
+                                        $sortIcon = '<i class="fas fa-sort text-muted opacity-50 ms-1"></i>';
+                                    }
+                                    $sortUrl = request()->fullUrlWithQuery(['sort' => $nextSort]);
+                                @endphp
+                                <a href="{{ $sortUrl }}" class="text-dark text-decoration-none d-inline-flex align-items-center" title="Bấm để sắp xếp theo lượt xem (A-Z / Z-A)">
+                                    Lượt xem {!! $sortIcon !!}
+                                </a>
+                            </th>
                             <th>Tác giả</th>
                             <th>Xuất bản</th>
                             <th class="text-end">Thao tác</th>
@@ -266,11 +293,13 @@
                                 </td>
                                 <td>
                                     @if($post->category)
-                                        <a href="{{ route('admin.posts.index', ['category_id' => $post->category->id]) }}" class="badge bg-light text-primary border text-decoration-none">
+                                        <a href="{{ route('admin.posts.index', array_merge(request()->except(['page']), ['category_id' => $post->category->id])) }}" class="badge bg-light text-primary border text-decoration-none">
                                             📁 {{ $post->category->name }}
                                         </a>
                                     @else
-                                        <span class="text-muted small">—</span>
+                                        <a href="{{ route('admin.posts.index', array_merge(request()->except(['page']), ['category_id' => 'none'])) }}" class="badge bg-warning text-dark border text-decoration-none" title="Bấm để lọc tất cả bài chưa có danh mục">
+                                            ⚠️ Chưa có danh mục
+                                        </a>
                                     @endif
                                 </td>
                                 <td>

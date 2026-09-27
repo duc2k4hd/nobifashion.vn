@@ -1,5 +1,5 @@
-<script defer src="{{ asset('clients/assets/js/main.js') }}?v={{ env('APP_VERSION') }}"></script>
-<script defer src="{{ asset('clients/assets/js/header.js') }}?v={{ env('APP_VERSION') }}"></script>
+<script defer src="{{ asset('clients/assets/js/' . (file_exists(public_path('clients/assets/js/main.min.js')) ? 'main.min.js' : 'main.js')) }}?v={{ env('APP_VERSION') }}"></script>
+<script defer src="{{ asset('clients/assets/js/' . (file_exists(public_path('clients/assets/js/header.min.js')) ? 'header.min.js' : 'header.js')) }}?v={{ env('APP_VERSION') }}"></script>
 <script defer src="{{ asset('clients/assets/js/customer_chat.js') }}?v={{ env('APP_VERSION') }}"></script>
 
 @php

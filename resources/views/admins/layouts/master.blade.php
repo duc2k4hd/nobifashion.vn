@@ -7,6 +7,7 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Admin Panel') | {{ $settings->site_name }}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="{{ asset('admins/css/custom.css') }}?v={{ env('APP_VERSION') }}">
     @stack('styles')
     <style>
@@ -23,17 +24,17 @@
             min-height: 100vh;
         }
         
-        /* Sidebar */
+        /* Modern Sidebar Design */
         .sidebar {
             width: 260px;
-            background: #f8f9fa;
+            background: #ffffff;
             position: fixed;
             height: 100vh;
             overflow-y: auto;
-            box-shadow: 1px 0 3px rgba(0,0,0,0.05);
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.04);
             z-index: 1000;
-            border-right: 1px solid #e9ecef;
-            transition: transform 0.3s ease, width 0.3s ease;
+            border-right: 1px solid #e2e8f0;
+            transition: transform 0.25s ease, width 0.25s ease;
         }
         .ck-content .image>figcaption {
             min-height: 20px !important;
@@ -42,47 +43,55 @@
             transform: translateX(-100%);
         }
         .sidebar::-webkit-scrollbar {
-            width: 6px;
+            width: 5px;
         }
         .sidebar::-webkit-scrollbar-track {
-            background: #f1f1f1;
+            background: transparent;
         }
         .sidebar::-webkit-scrollbar-thumb {
-            background: #cbd5e0;
-            border-radius: 3px;
+            background: #e2e8f0;
+            border-radius: 4px;
+        }
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: #cbd5e1;
         }
         .sidebar-header {
-            padding: 20px;
-            border-bottom: 1px solid #e9ecef;
-            background: white;
+            padding: 16px 20px;
+            border-bottom: 1px solid #f1f5f9;
+            background: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 70px;
         }
         .sidebar-header img {
-            max-width: 100%;
+            max-width: 170px;
+            max-height: 46px;
             height: auto;
-            margin-bottom: 10px;
+            object-fit: contain;
         }
         .sidebar-header h1 {
-            font-size: 18px;
+            font-size: 16px;
             font-weight: 600;
             text-align: center;
-            margin-bottom: 5px;
-            color: #333;
+            margin-bottom: 4px;
+            color: #1e293b;
         }
         .sidebar-header p {
-            font-size: 12px;
-            color: #6c757d;
+            font-size: 11.5px;
+            color: #64748b;
         }
         .sidebar-menu {
-            padding: 10px 0;
+            padding: 8px 0 40px 0;
         }
         .menu-section {
-            padding: 8px 15px;
+            padding: 18px 18px 6px 18px;
             font-size: 11px;
             text-transform: uppercase;
-            color: #6c757d;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            margin-top: 5px;
+            color: #94a3b8;
+            font-weight: 700;
+            letter-spacing: 0.07em;
+            user-select: none;
         }
         .menu-group {
             margin-bottom: 2px;
@@ -90,66 +99,144 @@
         .menu-group-header {
             display: flex;
             align-items: center;
-            padding: 10px 15px;
-            color: #495057;
+            margin: 2px 10px;
+            padding: 8.5px 12px;
+            border-radius: 8px;
+            color: #475569;
             text-decoration: none;
             cursor: pointer;
-            transition: background 0.2s;
-            font-size: 14px;
+            transition: all 0.15s ease;
+            font-size: 13.5px;
             font-weight: 500;
             user-select: none;
         }
         .menu-group-header:hover {
-            background: #e9ecef;
+            background: #f8fafc;
+            color: #0f172a;
         }
-        .menu-group-header.active {
-            background: #dee2e6;
-            color: #212529;
+        .menu-group-header.expanded {
+            background: #f8fafc;
+            color: #0f172a;
+            font-weight: 600;
         }
         .menu-group-header .menu-arrow {
             margin-left: auto;
-            font-size: 12px;
-            transition: transform 0.2s;
-            color: #6c757d;
+            color: #94a3b8;
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s ease;
+            flex-shrink: 0;
         }
         .menu-group-header.expanded .menu-arrow {
             transform: rotate(90deg);
+            color: #2563eb;
         }
         .menu-group-items {
             max-height: 0;
             overflow: hidden;
-            transition: max-height 0.3s ease;
-            background: white;
+            transition: max-height 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+            margin: 2px 10px 4px 22px;
+            padding-left: 12px;
+            border-left: 1.5px solid #e2e8f0;
         }
         .menu-group-items.expanded {
             max-height: 1000px;
         }
+        .menu-sub-item {
+            position: relative;
+            display: flex;
+            align-items: center;
+            padding: 6.5px 10px 6.5px 14px;
+            margin: 2px 0;
+            font-size: 13px;
+            color: #64748b;
+            border-radius: 6px;
+            text-decoration: none;
+            transition: all 0.15s ease;
+            font-weight: 400;
+        }
+        .menu-sub-item::before {
+            content: '';
+            position: absolute;
+            left: 2px;
+            width: 4.5px;
+            height: 4.5px;
+            border-radius: 50%;
+            background: #cbd5e1;
+            transition: all 0.15s ease;
+        }
+        .menu-sub-item:hover {
+            color: #0f172a;
+            background: #f8fafc;
+        }
+        .menu-sub-item:hover::before {
+            background: #64748b;
+            transform: scale(1.3);
+        }
+        .menu-sub-item.active {
+            color: #2563eb;
+            background: #eff6ff;
+            font-weight: 600;
+        }
+        .menu-sub-item.active::before {
+            background: #2563eb;
+            transform: scale(1.3);
+            box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+        }
         .menu-item {
             display: flex;
             align-items: center;
-            padding: 8px 15px 8px 40px;
-            color: #6c757d;
+            margin: 2px 10px;
+            padding: 8.5px 12px;
+            border-radius: 8px;
+            color: #475569;
             text-decoration: none;
-            transition: all 0.2s;
-            font-size: 13px;
-            font-weight: 400;
+            transition: all 0.15s ease;
+            font-size: 13.5px;
+            font-weight: 500;
         }
         .menu-item:hover {
-            background: #f1f3f5;
-            color: #212529;
+            background: #f8fafc;
+            color: #0f172a;
         }
         .menu-item.active {
-            background: #e7f5ff;
-            color: #1971c2;
-            font-weight: 500;
-            border-left: 3px solid #1971c2;
+            background: #eff6ff;
+            color: #2563eb;
+            font-weight: 600;
         }
-        .menu-item-icon {
-            display: inline-block;
+        .menu-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             width: 18px;
-            margin-right: 10px;
-            text-align: center;
-            font-size: 14px;
+            height: 18px;
+            margin-right: 11px;
+            flex-shrink: 0;
+            color: #64748b;
+            transition: color 0.15s ease;
+        }
+        .menu-item:hover .menu-icon,
+        .menu-group-header:hover .menu-icon {
+            color: #0f172a;
+        }
+        .menu-item.active .menu-icon,
+        .menu-group-header.expanded .menu-icon {
+            color: #2563eb;
+        }
+        .menu-badge {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 7px;
+            border-radius: 9999px;
+            margin-left: auto;
+            line-height: 1.2;
+            flex-shrink: 0;
+        }
+        .menu-badge-warning {
+            background: #fef3c7;
+            color: #b45309;
+        }
+        .menu-badge-danger {
+            background: #fee2e2;
+            color: #b91c1c;
         }
         
         /* Main Content */
@@ -434,146 +521,177 @@
         <nav class="sidebar-menu">
             <div class="menu-section">Tổng Quan</div>
             <a href="{{ route('admin.dashboard') }}" class="menu-item {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
-                <span class="menu-item-icon">📊</span>
-                Dashboard
+                <span class="menu-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect></svg>
+                </span>
+                <span>Dashboard</span>
             </a>
             
             <div class="menu-section">Sản Phẩm</div>
             <div class="menu-group">
-                <div class="menu-group-header" data-group="products">
-                    <span class="menu-item-icon">📦</span>
+                <div class="menu-group-header {{ request()->routeIs('admin.products.*') ? 'expanded' : '' }}" data-group="products">
+                    <span class="menu-icon">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"></path><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"></path><path d="m3.3 7 8.7 5 8.7-5"></path><path d="M12 22V12"></path></svg>
+                    </span>
                     <span>Sản Phẩm</span>
-                    <span class="menu-arrow">▶</span>
+                    <svg class="menu-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                 </div>
-                <div class="menu-group-items" id="products-group">
-                    <a href="{{ route('admin.products.index') }}" class="menu-item {{ request()->routeIs('admin.products.index') && !request('status') ? 'active' : '' }}">
+                <div class="menu-group-items {{ request()->routeIs('admin.products.*') ? 'expanded' : '' }}" id="products-group">
+                    <a href="{{ route('admin.products.index') }}" class="menu-sub-item {{ request()->routeIs('admin.products.index') && !request('status') ? 'active' : '' }}">
                         Tất cả sản phẩm
                     </a>
-                    <a href="{{ route('admin.products.index', ['status' => 'active']) }}" class="menu-item {{ request()->routeIs('admin.products.index') && request('status') === 'active' ? 'active' : '' }}">
+                    <a href="{{ route('admin.products.index', ['status' => 'active']) }}" class="menu-sub-item {{ request()->routeIs('admin.products.index') && request('status') === 'active' ? 'active' : '' }}">
                         Đang bán
                     </a>
-                    <a href="{{ route('admin.products.index', ['status' => 'inactive']) }}" class="menu-item {{ request()->routeIs('admin.products.index') && request('status') === 'inactive' ? 'active' : '' }}">
+                    <a href="{{ route('admin.products.index', ['status' => 'inactive']) }}" class="menu-sub-item {{ request()->routeIs('admin.products.index') && request('status') === 'inactive' ? 'active' : '' }}">
                         Tạm ẩn
-                    </a>
-                    <a href="{{ route('admin.products.import-excel') }}" class="menu-item {{ request()->routeIs('admin.products.import-excel*') ? 'active' : '' }}">
-                        Nhập Excel
-                    </a>
-                    <a href="{{ route('admin.products.export-excel') }}" class="menu-item {{ request()->routeIs('admin.products.export-excel') ? 'active' : '' }}">
-                        Xuất Excel
                     </a>
                 </div>
             </div>
             <a href="{{ route('admin.categories.index') }}" class="menu-item {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}">
-                <span class="menu-item-icon">🏷️</span>
-                Danh Mục
+                <span class="menu-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                </span>
+                <span>Danh Mục</span>
             </a>
             <a href="{{ route('admin.brands.index') }}" class="menu-item {{ request()->routeIs('admin.brands.*') ? 'active' : '' }}">
-                <span class="menu-item-icon">🏷️</span>
-                Hãng
+                <span class="menu-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"></circle><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"></path></svg>
+                </span>
+                <span>Hãng</span>
             </a>
             <a href="{{ route('admin.flash-sales.index') }}" class="menu-item {{ request()->routeIs('admin.flash-sales.*') ? 'active' : '' }}">
-                <span class="menu-item-icon">⚡</span>
-                Flash Sale
+                <span class="menu-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                </span>
+                <span>Flash Sale</span>
             </a>
             
             <div class="menu-section">Nội Dung</div>
             <div class="menu-group">
                 <div class="menu-group-header {{ request()->routeIs('admin.posts.*') || request()->routeIs('admin.post-categories.*') ? 'expanded' : '' }}" data-group="posts">
-                    <span class="menu-item-icon">📝</span>
+                    <span class="menu-icon">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    </span>
                     <span>Bài viết</span>
-                    <span class="menu-arrow">▶</span>
+                    <svg class="menu-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                 </div>
                 <div class="menu-group-items {{ request()->routeIs('admin.posts.*') || request()->routeIs('admin.post-categories.*') ? 'expanded' : '' }}" id="posts-group">
-                    <a href="{{ route('admin.posts.create') }}" class="menu-item {{ request()->routeIs('admin.posts.create') ? 'active' : '' }}">
-                        Thêm bài viết mới
-                    </a>
-                    <a href="{{ route('admin.posts.index') }}" class="menu-item {{ (request()->routeIs('admin.posts.index') && !request('status') && !request('is_trashed')) || request()->routeIs('admin.posts.edit') || request()->routeIs('admin.posts.show') ? 'active' : '' }}">
+                    <a href="{{ route('admin.posts.index') }}" class="menu-sub-item {{ (request()->routeIs('admin.posts.index') && !request('status') && !request('is_trashed')) || request()->routeIs('admin.posts.edit') || request()->routeIs('admin.posts.show') ? 'active' : '' }}">
                         Tất cả bài viết
                     </a>
-                    <a href="{{ route('admin.post-categories.index') }}" class="menu-item {{ request()->routeIs('admin.post-categories.*') ? 'active' : '' }}">
+                    <a href="{{ route('admin.post-categories.index') }}" class="menu-sub-item {{ request()->routeIs('admin.post-categories.*') ? 'active' : '' }}">
                         Danh mục bài viết
                     </a>
-                    <a href="{{ route('admin.posts.index', ['status' => 'published']) }}" class="menu-item {{ request()->routeIs('admin.posts.index') && request('status') === 'published' ? 'active' : '' }}">
+                    <a href="{{ route('admin.posts.index', ['status' => 'published']) }}" class="menu-sub-item {{ request()->routeIs('admin.posts.index') && request('status') === 'published' ? 'active' : '' }}">
                         Đã xuất bản
                     </a>
-                    <a href="{{ route('admin.posts.index', ['status' => 'pending']) }}" class="menu-item {{ request()->routeIs('admin.posts.index') && request('status') === 'pending' ? 'active' : '' }}">
+                    <a href="{{ route('admin.posts.index', ['status' => 'pending']) }}" class="menu-sub-item {{ request()->routeIs('admin.posts.index') && request('status') === 'pending' ? 'active' : '' }}">
                         Chờ duyệt
                     </a>
-                    <a href="{{ route('admin.posts.index', ['status' => 'draft']) }}" class="menu-item {{ request()->routeIs('admin.posts.index') && request('status') === 'draft' ? 'active' : '' }}">
+                    <a href="{{ route('admin.posts.index', ['status' => 'draft']) }}" class="menu-sub-item {{ request()->routeIs('admin.posts.index') && request('status') === 'draft' ? 'active' : '' }}">
                         Bản nháp
                     </a>
-                    <a href="{{ route('admin.posts.index', ['status' => 'archived']) }}" class="menu-item {{ request()->routeIs('admin.posts.index') && request('status') === 'archived' ? 'active' : '' }}">
+                    <a href="{{ route('admin.posts.index', ['status' => 'archived']) }}" class="menu-sub-item {{ request()->routeIs('admin.posts.index') && request('status') === 'archived' ? 'active' : '' }}">
                         Lưu trữ
                     </a>
-                    <a href="{{ route('admin.posts.index', ['status' => 'trashed']) }}" class="menu-item {{ request()->routeIs('admin.posts.index') && request('status') === 'trashed' ? 'active' : '' }}">
+                    <a href="{{ route('admin.posts.index', ['status' => 'trashed']) }}" class="menu-sub-item {{ request()->routeIs('admin.posts.index') && request('status') === 'trashed' ? 'active' : '' }}">
                         Thùng rác
                     </a>
                 </div>
             </div>
             <a href="{{ route('admin.comments.index') }}" class="menu-item {{ request()->routeIs('admin.comments.*') ? 'active' : '' }}">
-                <span class="menu-item-icon">💬</span>
-                Bình luận
+                <span class="menu-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                </span>
+                <span>Bình luận</span>
             </a>
             <a href="{{ route('admin.email-accounts.index') }}" class="menu-item {{ request()->routeIs('admin.email-accounts.*') ? 'active' : '' }}">
-                <span class="menu-item-icon">📧</span>
-                Email
+                <span class="menu-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
+                </span>
+                <span>Email</span>
             </a>
             <a href="{{ route('admin.tags.index') }}" class="menu-item {{ request()->routeIs('admin.tags.*') ? 'active' : '' }}">
-                <span class="menu-item-icon">🏷️</span>
-                Thẻ (Tags)
+                <span class="menu-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>
+                </span>
+                <span>Thẻ (Tags)</span>
             </a>
             <a href="{{ route('admin.banners.index') }}" class="menu-item {{ request()->routeIs('admin.banners.*') ? 'active' : '' }}">
-                <span class="menu-item-icon">🖼️</span>
-                Banner
+                <span class="menu-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg>
+                </span>
+                <span>Banner</span>
             </a>
             <a href="{{ route('admin.media.index') }}" class="menu-item {{ request()->routeIs('admin.media.*') ? 'active' : '' }}">
-                <span class="menu-item-icon">🗂️</span>
-                Media
+                <span class="menu-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"></path></svg>
+                </span>
+                <span>Media</span>
             </a>
             <a href="{{ route('admin.sitemap.index') }}" class="menu-item {{ request()->routeIs('admin.sitemap.*') ? 'active' : '' }}">
-                <span class="menu-item-icon">🗺️</span>
-                Sitemap
+                <span class="menu-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="18" r="3"></circle><circle cx="6" cy="6" r="3"></circle><circle cx="18" cy="18" r="3"></circle><path d="M6 9v3a3 3 0 0 0 3 3h6"></path></svg>
+                </span>
+                <span>Sitemap</span>
+            </a>
+            <a href="{{ route('admin.redirects.index') }}" class="menu-item {{ request()->routeIs('admin.redirects.*') ? 'active' : '' }}">
+                <span class="menu-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+                </span>
+                <span>Chuyển hướng 301</span>
             </a>
             
             <div class="menu-section">Đơn Hàng</div>
             <div class="menu-group">
-                <div class="menu-group-header" data-group="orders">
-                    <span class="menu-item-icon">📋</span>
+                <div class="menu-group-header {{ request()->routeIs('admin.orders.*') ? 'expanded' : '' }}" data-group="orders">
+                    <span class="menu-icon">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><path d="M12 11h4"></path><path d="M12 16h4"></path><path d="M8 11h.01"></path><path d="M8 16h.01"></path></svg>
+                    </span>
                     <span>Đơn Hàng</span>
-                    <span class="menu-arrow">▶</span>
+                    <svg class="menu-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                 </div>
-                <div class="menu-group-items" id="orders-group">
-                    <a href="{{ route('admin.orders.index') }}" class="menu-item {{ request()->routeIs('admin.orders.index') && !request('status') && !request('delivery_status') ? 'active' : '' }}">
+                <div class="menu-group-items {{ request()->routeIs('admin.orders.*') ? 'expanded' : '' }}" id="orders-group">
+                    <a href="{{ route('admin.orders.index') }}" class="menu-sub-item {{ request()->routeIs('admin.orders.index') && !request('status') && !request('delivery_status') ? 'active' : '' }}">
                         Tất cả đơn hàng
                     </a>
-                    <a href="{{ route('admin.orders.index', ['status' => 'pending']) }}" class="menu-item {{ request()->routeIs('admin.orders.*') && request('status') === 'pending' ? 'active' : '' }}">
+                    <a href="{{ route('admin.orders.index', ['status' => 'pending']) }}" class="menu-sub-item {{ request()->routeIs('admin.orders.*') && request('status') === 'pending' ? 'active' : '' }}">
                         Chờ xử lý
                     </a>
-                    <a href="{{ route('admin.orders.index', ['delivery_status' => 'shipped']) }}" class="menu-item {{ request()->routeIs('admin.orders.*') && request('delivery_status') === 'shipped' ? 'active' : '' }}">
+                    <a href="{{ route('admin.orders.index', ['delivery_status' => 'shipped']) }}" class="menu-sub-item {{ request()->routeIs('admin.orders.*') && request('delivery_status') === 'shipped' ? 'active' : '' }}">
                         Đang giao hàng
                     </a>
-                    <a href="{{ route('admin.orders.index', ['status' => 'completed']) }}" class="menu-item {{ request()->routeIs('admin.orders.*') && request('status') === 'completed' ? 'active' : '' }}">
+                    <a href="{{ route('admin.orders.index', ['status' => 'completed']) }}" class="menu-sub-item {{ request()->routeIs('admin.orders.*') && request('status') === 'completed' ? 'active' : '' }}">
                         Hoàn thành
                     </a>
                 </div>
             </div>
             <a href="{{ route('admin.carts.index') }}" class="menu-item {{ request()->routeIs('admin.carts.index') || (request()->routeIs('admin.carts.show') || request()->routeIs('admin.carts.edit')) ? 'active' : '' }}">
-                <span class="menu-item-icon">🛒</span>
-                Giỏ Hàng
+                <span class="menu-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"></circle><circle cx="19" cy="21" r="1"></circle><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"></path></svg>
+                </span>
+                <span>Giỏ Hàng</span>
             </a>
             <a href="{{ route('admin.carts.create-order.index') }}" class="menu-item {{ request()->routeIs('admin.carts.create-order.*') ? 'active' : '' }}">
-                <span class="menu-item-icon">📦</span>
-                Lên Đơn Hàng
+                <span class="menu-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                </span>
+                <span>Lên Đơn Hàng</span>
             </a>
             
             <div class="menu-section">Khách Hàng</div>
             <a href="{{ route('admin.accounts.index') }}" class="menu-item {{ request()->routeIs('admin.accounts.*') ? 'active' : '' }}">
-                <span class="menu-item-icon">👤</span>
-                Tài khoản
+                <span class="menu-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                </span>
+                <span>Tài khoản</span>
             </a>
             <a href="{{ route('admin.newsletters.index') }}" class="menu-item {{ request()->routeIs('admin.newsletters.*') ? 'active' : '' }}">
-                <span class="menu-item-icon">📧</span>
-                <span style="flex: 1;">Newsletter</span>
+                <span class="menu-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                </span>
+                <span>Newsletter</span>
                 @php
                     try {
                         $pendingNewsletterCount = \App\Models\NewsletterSubscription::where('status', 'pending')->count();
@@ -582,12 +700,14 @@
                     }
                 @endphp
                 @if($pendingNewsletterCount > 0)
-                    <span style="background: #f59e0b; color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px;">{{ $pendingNewsletterCount }}</span>
+                    <span class="menu-badge menu-badge-warning">{{ $pendingNewsletterCount }}</span>
                 @endif
             </a>
             <a href="{{ route('admin.contacts.index') }}" class="menu-item {{ request()->routeIs('admin.contacts.*') ? 'active' : '' }}">
-                <span class="menu-item-icon">💬</span>
-                <span style="flex: 1;">Liên Hệ</span>
+                <span class="menu-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                </span>
+                <span>Liên Hệ</span>
                 @php
                     try {
                         $newContactCount = \App\Models\Contact::where('status', 'new')->count();
@@ -596,60 +716,74 @@
                     }
                 @endphp
                 @if($newContactCount > 0)
-                    <span style="background: #ef4444; color: white; padding: 2px 6px; border-radius: 10px; font-size: 10px; font-weight: 600;">{{ $newContactCount }}</span>
+                    <span class="menu-badge menu-badge-danger">{{ $newContactCount }}</span>
                 @endif
             </a>
             <a href="{{ route('admin.addresses.index') }}" class="menu-item {{ request()->routeIs('admin.addresses.*') ? 'active' : '' }}">
-                <span class="menu-item-icon">📍</span>
-                Địa Chỉ Giao Hàng
+                <span class="menu-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                </span>
+                <span>Địa Chỉ Giao Hàng</span>
             </a>
             
             <div class="menu-section">Khuyến Mãi</div>
             <a href="{{ route('admin.vouchers.index') }}" class="menu-item {{ request()->routeIs('admin.vouchers.*') ? 'active' : '' }}">
-                <span class="menu-item-icon">🎫</span>
-                Voucher
+                <span class="menu-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="12" x="2" y="6" rx="2"></rect><circle cx="12" cy="12" r="2"></circle><path d="M6 12h.01M18 12h.01"></path></svg>
+                </span>
+                <span>Voucher</span>
             </a>
             
             <div class="menu-section">Hệ Thống</div>
             <a href="{{ route('admin.settings.index') }}" class="menu-item {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}">
-                <span class="menu-item-icon">⚙️</span>
-                Cài Đặt
+                <span class="menu-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                </span>
+                <span>Cài Đặt</span>
             </a>
             <a href="{{ route('admin.tools.index') }}" class="menu-item {{ request()->routeIs('admin.tools.*') ? 'active' : '' }}">
-                <span class="menu-item-icon">🧰</span>
-                Công cụ hệ thống
+                <span class="menu-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+                </span>
+                <span>Công cụ hệ thống</span>
             </a>
             <div class="menu-group">
-                <div class="menu-group-header" data-group="tools">
-                    <span class="menu-item-icon">🛠️</span>
+                <div class="menu-group-header {{ request()->routeIs('admin.*crawler*') ? 'expanded' : '' }}" data-group="tools">
+                    <span class="menu-icon">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                    </span>
                     <span>Tools Cào Website</span>
-                    <span class="menu-arrow">▶</span>
+                    <svg class="menu-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                 </div>
-                <div class="menu-group-items" id="tools-group">
-                    <a href="{{ route('admin.canifa-crawler.index') }}" class="menu-item {{ request()->routeIs('admin.canifa-crawler.*') ? 'active' : '' }}">
+                <div class="menu-group-items {{ request()->routeIs('admin.*crawler*') ? 'expanded' : '' }}" id="tools-group">
+                    <a href="{{ route('admin.canifa-crawler.index') }}" class="menu-sub-item {{ request()->routeIs('admin.canifa-crawler.*') ? 'active' : '' }}">
                         canifa.com
                     </a>
-                    <a href="{{ route('admin.routine-crawler.index') }}" class="menu-item {{ request()->routeIs('admin.routine-crawler.*') ? 'active' : '' }}">
+                    <a href="{{ route('admin.routine-crawler.index') }}" class="menu-sub-item {{ request()->routeIs('admin.routine-crawler.*') ? 'active' : '' }}">
                         routine.vn
                     </a>
-                    <a href="{{ route('admin.onoff-crawler.index') }}" class="menu-item {{ request()->routeIs('admin.onoff-crawler.*') ? 'active' : '' }}">
+                    <a href="{{ route('admin.onoff-crawler.index') }}" class="menu-sub-item {{ request()->routeIs('admin.onoff-crawler.*') ? 'active' : '' }}">
                         onoff.vn
                     </a>
-                    <a href="{{ route('admin.coolmate-crawler.index') }}" class="menu-item {{ request()->routeIs('admin.coolmate-crawler.*') ? 'active' : '' }}">
+                    <a href="{{ route('admin.coolmate-crawler.index') }}" class="menu-sub-item {{ request()->routeIs('admin.coolmate-crawler.*') ? 'active' : '' }}">
                         coolmate.me
                     </a>
-                    <a href="{{ route('admin.yody-crawler.index') }}" class="menu-item {{ request()->routeIs('admin.yody-crawler.*') ? 'active' : '' }}">
+                    <a href="{{ route('admin.yody-crawler.index') }}" class="menu-sub-item {{ request()->routeIs('admin.yody-crawler.*') ? 'active' : '' }}">
                         yody.vn
                     </a>
                 </div>
             </div>
             <a href="{{ route('admin.trash.index') }}" class="menu-item {{ request()->routeIs('admin.trash.*') ? 'active' : '' }}">
-                <span class="menu-item-icon">🗑️</span>
-                Thùng Rác
+                <span class="menu-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
+                </span>
+                <span>Thùng Rác</span>
             </a>
             <a href="{{ url('/') }}" class="menu-item" target="_blank">
-                <span class="menu-item-icon">🌐</span>
-                Về Trang Chủ
+                <span class="menu-icon">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
+                </span>
+                <span>Về Trang Chủ</span>
             </a>
         </nav>
     </aside>
@@ -925,7 +1059,7 @@
             });
 
             // Auto-expand groups with active items
-            document.querySelectorAll('.menu-item.active').forEach(activeItem => {
+            document.querySelectorAll('.menu-item.active, .menu-sub-item.active').forEach(activeItem => {
                 const group = activeItem.closest('.menu-group-items');
                 if (group) {
                     group.classList.add('expanded');

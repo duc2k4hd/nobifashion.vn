@@ -31,6 +31,7 @@ use App\Http\Controllers\Admins\PostCategoryController;
 use App\Http\Controllers\Admins\PostController as AdminPostController;
 use App\Http\Controllers\Admins\PostImportExportController;
 use App\Http\Controllers\Admins\ProductController;
+use App\Http\Controllers\Admins\RedirectController;
 use App\Http\Controllers\Admins\RoutineCrawlerController;
 use App\Http\Controllers\Admins\SeoController as AdminSeoController;
 use App\Http\Controllers\Admins\SettingController;
@@ -546,6 +547,18 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::put('/{category}', [PostCategoryController::class, 'update'])->name('update');
             Route::delete('/{category}', [PostCategoryController::class, 'destroy'])->name('destroy');
             Route::patch('/{category}/toggle', [PostCategoryController::class, 'toggle'])->name('toggle');
+        });
+
+        // Quản lý chuyển hướng 301 (Redirects)
+        Route::prefix('redirects')->name('redirects.')->group(function () {
+            Route::get('/', [RedirectController::class, 'index'])->name('index');
+            Route::post('/', [RedirectController::class, 'store'])->name('store');
+            Route::put('/{redirect}', [RedirectController::class, 'update'])->name('update');
+            Route::delete('/{redirect}', [RedirectController::class, 'destroy'])->name('destroy');
+            Route::patch('/{redirect}/toggle', [RedirectController::class, 'toggleActive'])->name('toggle');
+            Route::post('/bulk-destroy', [RedirectController::class, 'bulkDestroy'])->name('bulk-destroy');
+            Route::get('/export', [RedirectController::class, 'export'])->name('export');
+            Route::post('/import-batch', [RedirectController::class, 'importBatch'])->name('import-batch');
         });
 
         Route::post('seo/analyze', [AdminSeoController::class, 'analyze'])->name('seo.analyze');

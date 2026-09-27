@@ -124,11 +124,11 @@
                     @forelse($posts as $post)
                         <article class="nobifashion_blog_card">
                             <div class="nobifashion_blog_card_thumb_wrap">
-                                <img src="{{ $post->thumbnail ? asset('clients/assets/img/posts/' . $post->thumbnail) : asset('clients/assets/img/clothes/no-image.webp') }}"
+                                <img src="{{ getPostThumbnailUrl($post->thumbnail, 400) }}"
                                     alt="{{ renderMeta($post->thumbnail_alt_text ?? $post->title) }}"
                                     class="nobifashion_blog_card_thumb"
                                     width="400" height="230"
-                                    loading="lazy"
+                                    loading="lazy" decoding="async"
                                     onerror="this.onerror=null; this.src='{{ asset('clients/assets/img/clothes/no-image.webp') }}';">
                             </div>
 

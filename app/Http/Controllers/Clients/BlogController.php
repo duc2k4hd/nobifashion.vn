@@ -296,57 +296,58 @@ class BlogController extends Controller
         ]);
     }
 
-    public function show(Request $request, string $slug): View
+    public function show(Request $request, string $slug): View|\Illuminate\Http\RedirectResponse|\Illuminate\Http\Response
     {
         $post = Post::where('slug', $slug)->first();
 
         if (!$post || !$post->isPublished()) {
+            // Kiểm tra chuyển hướng 301 chuẩn SEO (Siêu tốc & Chống vòng lặp/link hỏng)
+            $redirectUrl = app(\App\Services\RedirectService::class)->resolveValidRedirect($slug, $request);
+
+            if ($redirectUrl) {
+                return redirect()->to($redirectUrl, 301);
+            }
+
             return view('clients.pages.errors.404');
         }
 
-        $post->load(['author.profile', 'category', 'tags']);
+        // Chỉ eager load đúng cột cần thiết, không nạp quan hệ thừa
+        $post->load(['category:id,name,slug', 'author:id,name']);
         $this->postService->incrementViews($post, $request);
 
-        // Lấy tags từ polymorphic relationship
-        $tags = $post->tags()->active()->get();
+        // Lấy tags hoạt động trực tiếp 1 lần duy nhất với các cột cần dùng
+        $tags = $post->tags()->active()->get(['tags.id', 'tags.name', 'tags.slug']);
 
-        // Lấy 3 bài trước và 3 bài sau cùng danh mục (tự động bù bài nếu một bên thiếu, tối ưu index cực nhanh)
+        // Lấy 3 bài trước và 3 bài sau cùng danh mục (tối ưu composite index posts_category_status_published_idx)
         $relatedPosts = Cache::remember("blog:related:{$post->id}:v3", 3600, function () use ($post) {
             return $this->getRelatedPosts($post, 3);
         });
 
-        // 20 bài random và cache mỗi bài
+        // 20 bài mới nhất gợi ý đọc thêm (Dùng index published_at, bỏ hẳn ORDER BY RAND() cực nặng)
         $internalLinks = Cache::remember("blog:recommendations:{$post->id}", 3600, function () use ($post) {
             return Post::published()
                 ->where('id', '!=', $post->id)
-                ->inRandomOrder()
+                ->latest('published_at')
                 ->take(20)
                 ->get(['id', 'title', 'slug']);
         });
 
         [$contentWithAnchors, $toc] = $this->buildTocContent($post->content ?? '');
+        $contentWithAnchors = optimizePostHtml($contentWithAnchors);
 
-        $sidebarCategories = Cache::remember('blog:sidebar:categories', 600, function () {
-            return PostCategory::active()
-                ->select('id', 'name', 'slug')
-                ->withCount(['posts as posts_count' => fn ($q) => $q->published()])
-                ->orderByDesc('posts_count')
-                ->take(10)
-                ->get();
-        });
-
-        $sidebarTags = Cache::remember('blog:sidebar:tags', 600, fn () => Tag::orderBy('name')->take(20)->get());
-
-        $schemaComments = $post->comments()
+        // Nạp bình luận duyệt cho Schema & số lượng bình luận
+        $approvedComments = $post->comments()
             ->approved()
             ->with('account:id,name')
             ->latest('created_at')
             ->take(5)
             ->get();
 
-        $schemaData = $this->buildSchemaData($post, $tags, $schemaComments);
+        $commentsCount = $approvedComments->count() < 5
+            ? $approvedComments->count()
+            : $post->comments()->approved()->count();
 
-        $commentsCount = $post->comments()->approved()->count();
+        $schemaData = $this->buildSchemaData($post, $tags, $approvedComments);
 
         return view('clients.blog.show', [
             'post' => $post,
@@ -355,8 +356,6 @@ class BlogController extends Controller
             'tags' => $tags,
             'relatedPosts' => $relatedPosts,
             'internalLinks' => $internalLinks,
-            'sidebarCategories' => $sidebarCategories,
-            'sidebarTags' => $sidebarTags,
             'schemaData' => $schemaData,
             'commentsCount' => $commentsCount,
         ]);
@@ -696,7 +695,7 @@ class BlogController extends Controller
             'dateModified' => optional($post->updated_at)->toIso8601String(),
             'author' => [
                 '@type' => 'Person',
-                'name' => $post->author?->displayName() ?? $siteName,
+                'name' => $post->author?->name ?? $siteName,
                 'url' => $siteUrl,
             ],
             'publisher' => [
