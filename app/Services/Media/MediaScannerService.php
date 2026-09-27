@@ -11,6 +11,7 @@ use App\Models\Profile;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
@@ -83,6 +84,11 @@ class MediaScannerService
 
     protected array $directories;
     protected array $directoryLabels;
+
+    public static function clearMissingCache(): void
+    {
+        Cache::forget('media_missing_file_ids');
+    }
 
     public function getDashboardStats(array $filters = []): array
     {
@@ -165,7 +171,7 @@ class MediaScannerService
 
     protected function requiresDeepScan(array $filters): bool
     {
-        return in_array($filters['status'], ['orphan_file', 'missing_file'], true)
+        return $filters['status'] === 'orphan_file'
             || $filters['type'] === 'filesystem_file'
             || $filters['folder'] === 'imports';
     }
@@ -309,6 +315,7 @@ class MediaScannerService
         match ($status) {
             'external' => $this->applyExternalCondition($query),
             'unassigned_record' => $this->applyUnassignedCondition($query),
+            'missing_file' => $this->applyMissingFileCondition($query),
             'in_use' => $query
                 ->where(function (Builder $builder) {
                     $builder->whereNotNull('entity_id')
@@ -325,6 +332,42 @@ class MediaScannerService
                 ->whereIn(DB::raw($assetExpression), $this->buildSharedAssetKeysQuery()),
             default => null,
         };
+    }
+
+    protected function applyMissingFileCondition(Builder $query): void
+    {
+        $missingIds = $this->getMissingFileImageIds();
+        if (empty($missingIds)) {
+            $query->whereRaw('1 = 0');
+        } else {
+            $query->whereIn('images.id', $missingIds);
+        }
+    }
+
+    public function getMissingFileImageIds(): array
+    {
+        return Cache::remember('media_missing_file_ids', 30, function () {
+            $records = Image::query()
+                ->select(['id', 'path', 'url', 'context', 'entity_type'])
+                ->get();
+
+            $missingIds = [];
+            foreach ($records as $record) {
+                $rawRef = $this->resolveRawReference($record);
+                if (Str::startsWith((string) $rawRef, ['http://', 'https://'])) {
+                    continue;
+                }
+
+                $fallbackFolderKey = $this->defaultFolderKeyFor($record->entity_type, $record->context);
+                $relativePath = $this->resolvePrimaryPath($record, $fallbackFolderKey);
+
+                if (!$relativePath || ! $this->files->fileExists($relativePath)) {
+                    $missingIds[] = $record->id;
+                }
+            }
+
+            return $missingIds;
+        });
     }
 
     protected function applyKeywordFilterToQuery(Builder $query, string $term): void
@@ -360,6 +403,21 @@ class MediaScannerService
         };
     }
 
+    public function getRealPhysicalFileCount(): int
+    {
+        return Cache::remember('media_real_physical_file_count', 60, function () {
+            $total = 0;
+            foreach ($this->directories as $relDir) {
+                $absDir = public_path(trim($relDir, '/\\'));
+                if (is_dir($absDir)) {
+                    $fi = new \FilesystemIterator($absDir, \FilesystemIterator::SKIP_DOTS);
+                    $total += iterator_count($fi);
+                }
+            }
+            return $total;
+        });
+    }
+
     protected function buildFastDashboardStats(): array
     {
         $total = Image::query()->count();
@@ -374,23 +432,25 @@ class MediaScannerService
             })
             ->count();
         $shared = (int) $this->buildSharedAssetAggregatesQuery()->get()->sum('aggregate');
-        $physicalFiles = (int) DB::query()
+        $trackedLocalKeys = (int) DB::query()
             ->fromSub($this->buildLocalAssetKeysBaseQuery(), 'local_assets')
             ->distinct()
             ->count('asset_key');
+        
+        $realPhysicalFiles = $this->getRealPhysicalFileCount();
+        $orphanFiles = max(0, $realPhysicalFiles - $trackedLocalKeys);
         $estimatedSize = (int) Image::query()->sum('size');
         $inUse = max($total - $external - $unassigned, 0);
 
-        $missing = Image::query()->where(function ($q) {
-            $q->whereNull('size')->orWhere('size', 0);
-        })->count();
+        $missingIds = $this->getMissingFileImageIds();
+        $missing = count($missingIds);
 
         return [
             'library_items' => $total,
             'tracked_records' => $total,
-            'physical_files' => $physicalFiles,
+            'physical_files' => $realPhysicalFiles,
             'in_use' => $inUse,
-            'orphan_files' => 0,
+            'orphan_files' => $orphanFiles,
             'missing_files' => $missing,
             'unassigned_records' => $unassigned,
             'external_files' => $external,
@@ -398,7 +458,7 @@ class MediaScannerService
             'status_counts' => [
                 'all' => $total,
                 'in_use' => $inUse,
-                'orphan_file' => 0,
+                'orphan_file' => $orphanFiles,
                 'missing_file' => $missing,
                 'unassigned_record' => $unassigned,
                 'external' => $external,
@@ -984,9 +1044,9 @@ class MediaScannerService
 
                 $inventory[$relativePath] = [
                     'size' => $fileInfo->getSize(),
-                    'mime_type' => @mime_content_type($fileInfo->getPathname()) ?: null,
+                    'mime_type' => null,
                     'extension' => $extension,
-                    'dimensions' => $this->readImageDimensions($fileInfo->getPathname()),
+                    'dimensions' => null,
                     'timestamp' => $fileInfo->getMTime(),
                     'created_at' => date('Y-m-d H:i:s', $fileInfo->getMTime()),
                     'updated_at' => date('Y-m-d H:i:s', $fileInfo->getMTime()),

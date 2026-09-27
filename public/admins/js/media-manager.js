@@ -1476,14 +1476,14 @@
                 return;
             }
 
-            this.lockUi('Đang phân tích các record media và file vật lý có thể dọn dẹp...');
+            this.lockUi('Đang kiểm tra các bản ghi thiếu file vật lý...');
 
             try {
                 const preview = await this.runCleanupRequest(true);
-                const totalActions = Number(preview.database_rows_to_delete || 0) + Number(preview.physical_files_to_delete || 0);
+                const count = Number(preview.missing_count ?? preview.database_rows_to_delete ?? 0);
 
-                if (totalActions === 0) {
-                    this.showToast(preview.message || 'Không có dữ liệu cần dọn dẹp.', 'success');
+                if (count === 0) {
+                    this.showToast(preview.message || 'Không có bản ghi nào bị thiếu file vật lý.', 'success');
                     return;
                 }
 
@@ -1492,18 +1492,17 @@
                     return;
                 }
             } catch (error) {
-                this.showToast(error.message || 'Không thể phân tích dữ liệu cleanup.', 'error');
+                this.showToast(error.message || 'Không thể kiểm tra dữ liệu cleanup.', 'error');
                 return;
             } finally {
                 this.unlockUi();
             }
 
-            this.lockUi('Đang dọn dẹp media lỗi và file rác...');
+            this.lockUi('Đang xóa các bản ghi thiếu file khỏi CSDL...');
 
             try {
                 const result = await this.runCleanupRequest(false);
-                const toastType = Number(result.physical_files_failed_count || 0) > 0 ? 'warning' : 'success';
-                this.showToast(result.message || 'Đã dọn dẹp media.', toastType);
+                this.showToast(result.message || 'Đã dọn dẹp các bản ghi thiếu file.', 'success');
                 this.state.selectedKeys.clear();
                 await this.fetchItems({ lockUi: false });
             } catch (error) {
@@ -1814,21 +1813,32 @@
         }
 
         buildCleanupConfirmMessage(preview) {
+            const count = Number(preview.missing_count ?? preview.database_rows_to_delete ?? 0);
             const lines = [
-                'Tool sẽ dọn dẹp các mục sau:',
-                `- Record DB bị mất file: ${this.formatNumber(preview.missing_database_rows || 0)}`,
-                `- Record DB chưa gắn đối tượng: ${this.formatNumber(preview.unassigned_database_rows || 0)}`,
-                `- File vật lý không còn bản ghi tham chiếu: ${this.formatNumber(preview.orphan_physical_files || 0)}`,
+                '=== XÁC NHẬN DỌN BẢN GHI THIẾU FILE VẬT LÝ ===',
                 '',
-                `Tổng record DB sẽ xóa: ${this.formatNumber(preview.database_rows_to_delete || 0)}`,
-                `Tổng file vật lý sẽ xóa: ${this.formatNumber(preview.physical_files_to_delete || 0)}`,
+                `Phát hiện: ${this.formatNumber(count)} bản ghi trong CSDL không tồn tại file trên ổ cứng.`,
+                '',
+                'QUY TẮC AN TOÀN TUYỆT ĐỐI:',
+                '• Chỉ xóa các dòng dữ liệu ảo / mất file khỏi bảng images trong database.',
+                '• TUYỆT ĐỐI KHÔNG xóa bất kỳ file vật lý nào trên ổ cứng server.',
+                '• TUYỆT ĐỐI KHÔNG xóa ảnh chưa gắn đối tượng hay ảnh sản phẩm / bài viết đang có file thật.',
             ];
 
-            if (Number(preview.preserved_shared_files || 0) > 0) {
-                lines.push(`File dùng chung được giữ lại: ${this.formatNumber(preview.preserved_shared_files || 0)}`);
+            if (preview.samples && preview.samples.length > 0) {
+                lines.push('');
+                lines.push('Danh sách mẫu các bản ghi sẽ xóa:');
+                preview.samples.slice(0, 5).forEach((item, index) => {
+                    const entity = item.entity_type ? `${item.entity_type} #${item.entity_id}` : 'Chưa gắn';
+                    lines.push(`  ${index + 1}. [ID: ${item.id}] ${item.file_name || item.path} (${entity})`);
+                });
+                if (count > 5) {
+                    lines.push(`  ... và ${this.formatNumber(count - 5)} bản ghi khác.`);
+                }
             }
 
-            lines.push('', 'Tiếp tục dọn dẹp?');
+            lines.push('');
+            lines.push(`Bạn có chắc chắn muốn xóa vĩnh viễn ${this.formatNumber(count)} bản ghi thiếu file này khỏi CSDL?`);
 
             return lines.join('\n');
         }

@@ -45,6 +45,16 @@ class Image extends Model
         'file_modified_at' => 'datetime',
     ];
 
+    protected static function booted()
+    {
+        static::saved(function () {
+            \Illuminate\Support\Facades\Cache::forget('media_missing_file_ids');
+        });
+        static::deleted(function () {
+            \Illuminate\Support\Facades\Cache::forget('media_missing_file_ids');
+        });
+    }
+
     /** Scope lọc theo context (post / product) */
     public function scopeForContext($query, string $context)
     {

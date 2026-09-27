@@ -17,6 +17,13 @@ class ImageRegistryService
     {
         $normalizedPath = $this->normalizeStoredPath($relativePath, $folderKey);
 
+        if ($normalizedPath) {
+            $existing = Image::where('path', $normalizedPath)->first();
+            if ($existing) {
+                return $existing;
+            }
+        }
+
         $image = new Image();
         $image->fill([
             'product_id' => null,
@@ -63,6 +70,13 @@ class ImageRegistryService
             $storedPath,
             $this->defaultFolderKey($entityType, $role)
         );
+
+        if (!$image && $normalizedPath) {
+            // Tái sử dụng bản ghi thư viện chưa gắn đối tượng nếu cùng đường dẫn (tránh sinh 2 bản ghi cho 1 ảnh)
+            $image = Image::whereNull('entity_type')
+                ->where('path', $normalizedPath)
+                ->first();
+        }
 
         $image ??= new Image();
         $image->fill([

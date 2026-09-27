@@ -39,6 +39,10 @@ class AdminMediaDeleteController extends Controller
             ], 422);
         }
 
+        if ($success) {
+            MediaScannerService::clearMissingCache();
+        }
+
         return response()->json([
             'success' => $success,
             'message' => $success

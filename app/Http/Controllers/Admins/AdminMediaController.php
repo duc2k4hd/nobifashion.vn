@@ -146,6 +146,10 @@ class AdminMediaController extends Controller
             $message .= ' ' . $failureMessages[0];
         }
 
+        if ($deletedCount > 0) {
+            MediaScannerService::clearMissingCache();
+        }
+
         return response()->json([
             'success' => $deletedCount > 0,
             'message' => $message,
@@ -168,6 +172,8 @@ class AdminMediaController extends Controller
         $batchSize = $validated['batch_size'] ?? 1000;
         $result = $assignment->deleteScopeChunk($validated['scope'], $batchSize);
 
+        MediaScannerService::clearMissingCache();
+
         return response()->json([
             'success' => true,
             'processed' => $result['processed'],
@@ -187,6 +193,10 @@ class AdminMediaController extends Controller
         $summary = ! empty($validated['dry_run'])
             ? $cleanup->preview()
             : $cleanup->cleanup();
+
+        if (empty($validated['dry_run'])) {
+            MediaScannerService::clearMissingCache();
+        }
 
         return response()->json($summary);
     }
@@ -240,6 +250,7 @@ class AdminMediaController extends Controller
     public function syncPostsCleanupGhostImages(\App\Services\Media\PostMediaSyncService $syncService)
     {
         $result = $syncService->cleanupGhostImages(10000);
+        MediaScannerService::clearMissingCache();
 
         return response()->json($result);
     }
