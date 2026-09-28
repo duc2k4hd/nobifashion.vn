@@ -136,22 +136,27 @@ class PostController extends Controller
     {
         $post = new Post();
         $post->setRelation('revisions', collect());
+        $post->setRelation('tags', collect());
 
-        // Chỉ lấy tags của posts (entity_type = Post::class), không lấy tags của products
-        $postOnlyTags = Tag::where('entity_type', Post::class)
+        $postMorph = $post->getMorphClass();
+        $postOnlyTags = Tag::whereIn('entity_type', [$postMorph, Post::class])
             ->select('id', 'name')
-            ->distinct('name')
             ->orderBy('name')
             ->get()
             ->unique('name')
             ->values();
 
+        $selectedTagNames = old('tag_ids')
+            ? Tag::whereIn('id', (array) old('tag_ids'))->pluck('name')->all()
+            : [];
+
         return view('admins.posts.create', [
             'post' => $post,
-            'categories' => PostCategory::ordered()->get(),
-            'tags' => $postOnlyTags, // Chỉ tags của posts
-            'postTags' => collect(), // Chưa có tags khi tạo mới
-            'mediaImages' => $this->getMediaImages(),
+            'categories' => PostCategory::ordered()->get(['id', 'name', 'sort_order']),
+            'tags' => $postOnlyTags,
+            'selectedTagNames' => $selectedTagNames,
+            'postTags' => collect(),
+            'mediaImages' => [],
         ]);
     }
 
@@ -166,32 +171,34 @@ class PostController extends Controller
 
     public function edit(Post $post): View
     {
+        $postMorph = $post->getMorphClass();
         $post->load([
-            'revisions' => fn ($q) => $q->latest()->limit(10),
+            'revisions' => fn ($q) => $q->with('editor:id,name')->latest()->limit(10),
             'author.profile',
-            'category',
+            'category:id,name',
+            'tags',
         ]);
 
-        // Load tags từ relationship (entity_type = Post::class)
-        $postTags = $post->tags()->get();
-        
-        // Chỉ lấy tags của posts (entity_type = Post::class), không lấy tags của products
-        $postOnlyTags = Tag::where('entity_type', Post::class)
+        $postOnlyTags = Tag::whereIn('entity_type', [$postMorph, Post::class])
             ->select('id', 'name')
-            ->distinct('name')
             ->orderBy('name')
             ->get()
             ->unique('name')
             ->values();
-        
+
+        $selectedTagNames = old('tag_ids')
+            ? Tag::whereIn('id', (array) old('tag_ids'))->pluck('name')->all()
+            : $post->tags->pluck('name')->all();
+
         return view('admins.posts.edit', [
             'post' => $post,
-            'categories' => PostCategory::ordered()->get(),
-            'tags' => $postOnlyTags, // Chỉ tags của posts
-            'postTags' => $postTags, // Tags đã gắn với post này
+            'categories' => PostCategory::ordered()->get(['id', 'name', 'sort_order']),
+            'tags' => $postOnlyTags,
+            'selectedTagNames' => $selectedTagNames,
+            'postTags' => $post->tags,
             'authors' => Account::orderBy('name')->get(['id', 'name', 'email']),
             'seoInsights' => $this->seoService->evaluateSeoScore($post),
-            'mediaImages' => $this->getMediaImages(),
+            'mediaImages' => [],
         ]);
     }
 
@@ -488,30 +495,7 @@ class PostController extends Controller
 
     private function getMediaImages(): array
     {
-        $directories = [
-            public_path('clients/assets/img'),
-        ];
-
-        $files = [];
-        foreach ($directories as $dir) {
-            if (!is_dir($dir)) {
-                continue;
-            }
-
-            foreach (File::allFiles($dir) as $file) {
-                $relative = str_replace(public_path(), '', $file->getRealPath());
-                $relative = str_replace('\\', '/', $relative);
-                $relative = ltrim($relative, '/');
-
-                $files[] = [
-                    'name' => $file->getFilename(),
-                    'url' => asset($relative),
-                    'path' => $relative,
-                ];
-            }
-        }
-
-        return $files;
+        return [];
     }
 }
 

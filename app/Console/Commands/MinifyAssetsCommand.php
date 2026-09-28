@@ -28,6 +28,7 @@ class MinifyAssetsCommand extends Command
             'public/clients/assets/css/main.css' => 'public/clients/assets/css/main.min.css',
             'public/clients/assets/css/blog-detail.css' => 'public/clients/assets/css/blog-detail.min.css',
             'public/clients/assets/css/responsive.css' => 'public/clients/assets/css/responsive.min.css',
+            'public/clients/assets/css/author.css' => 'public/clients/assets/css/author.min.css'
         ];
 
         foreach ($cssFiles as $src => $dest) {

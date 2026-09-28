@@ -888,8 +888,8 @@
     @php
         $avatar = $account->profile->avatar ?? '';
         $subAvatar = $account->profile->sub_avatar ?? '';
-        $avatarUrl = \Illuminate\Support\Str::startsWith($avatar, ['http://', 'https://']) ? $avatar : asset('admins/img/accounts/' . ltrim($avatar, '/'));
-        $subAvatarUrl = \Illuminate\Support\Str::startsWith($subAvatar, ['http://', 'https://']) ? $subAvatar : asset('admins/img/accounts/' . ltrim($subAvatar, '/'));
+        $avatarUrl = \Illuminate\Support\Str::startsWith($avatar, ['http://', 'https://']) ? $avatar : asset('clients/assets/img/' . (str_starts_with($avatar, 'users/') ? ltrim($avatar, '/') : 'users/' . ltrim($avatar, '/')));
+        $subAvatarUrl = \Illuminate\Support\Str::startsWith($subAvatar, ['http://', 'https://']) ? $subAvatar : asset('clients/assets/img/' . (str_starts_with($subAvatar, 'users/') ? ltrim($subAvatar, '/') : 'users/' . ltrim($subAvatar, '/')));
     @endphp
     <div class="nobifashion_profile_container mx-auto w-[95%] px-4 py-8">
         <div class="nobifashion_profile_header flex justify-between items-center mb-8">

@@ -788,4 +788,13 @@
         font-size: 13px;
         border-radius: 6px;
     }
+
+    .blog-pagination-list .page-item-dots {
+        display: none !important;
+    }
+
+    .blog-pagination-list .page-item-first:not(.active),
+    .blog-pagination-list .page-item-last:not(.active) {
+        display: none !important;
+    }
 }

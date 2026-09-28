@@ -4,13 +4,24 @@
     ?? 'NOBI FASHION VIỆT NAM')))
 @section('head')
     {{-- SEO Meta Tags --}}
+    @php
+        $canonicalUrl = $post->meta_canonical ?? route('client.blog.show', $post);
+        $hasQueryParams = count(request()->query()) > 0;
+    @endphp
+
+    @if ($hasQueryParams)
+        <meta name="robots" content="noindex, follow">
+    @else
+        <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    @endif
+
     <meta name="description" content="{{ renderMeta($post->meta_description ?? $post->excerpt_text) }}">
     <meta name="keywords" content="{{ renderMeta($post->meta_keywords) }}">
-    <link rel="canonical" href="{{ $post->meta_canonical ?? route('client.blog.show', $post) }}">
+    <link rel="canonical" href="{{ $canonicalUrl }}">
     <meta property="og:type" content="article">
     <meta property="og:title" content="{{ renderMeta($post->meta_title ?? $post->title) }}">
     <meta property="og:description" content="{{ renderMeta($post->meta_description ?? $post->excerpt_text) }}">
-    <meta property="og:url" content="{{ route('client.blog.show', $post) }}">
+    <meta property="og:url" content="{{ $canonicalUrl }}">
     <meta property="og:image"
         content="{{ $post->thumbnail ? asset('clients/assets/img/posts/' . $post->thumbnail) : asset('clients/assets/no-image.webp') }}">
     <meta name="twitter:card" content="summary_large_image">
@@ -168,7 +179,15 @@
                         <path fill="currentColor"
                             d="M399 384.2C376.9 345.8 335.4 320 288 320H224c-47.4 0-88.9 25.8-111 64.2c35.2 39.2 86.2 63.8 143 63.8s107.8-24.7 143-63.8zM0 256a256 256 0 1 1 512 0A256 256 0 1 1 0 256zm256 16a72 72 0 1 0 0-144 72 72 0 1 0 0 144z" />
                     </svg>
-                    <span>{{ $post->author?->displayName() ?? 'Team Nobi Fashion' }}</span>
+                    @if ($authorUrl)
+                        <a href="{{ $authorUrl }}" class="nobifashion_blog_detail_author_link" title="Xem thông tin tác giả {{ $authorFullName ?? $post->author?->displayName() ?? 'Đức Nobi 💖' }}">
+                            {{ $authorFullName ?? $post->author?->displayName() ?? 'Đức Nobi 💖' }}
+                        </a>
+                    @else
+                        <span class="nobifashion_blog_detail_author_link">
+                            {{ $authorFullName ?? $post->author?->displayName() ?? 'Đức Nobi 💖' }}
+                        </span>
+                    @endif
                 </div>
                 <div class="nobifashion_blog_detail_hero_meta_item">
                     <svg class="svg-inline--fa fa-calendar-days" aria-hidden="true" focusable="false" role="img"
@@ -306,6 +325,70 @@
                 {{-- Rich Content --}}
                 <div id="article-content" class="nobifashion_blog_detail_content">
                     {!! renderMeta($contentWithAnchors) !!}
+
+                    {{-- Thông tin thời gian xuất bản & cập nhật --}}
+                    @php
+                        $publishedAt = $post->published_at ?? $post->created_at;
+                        $updatedAt = $post->updated_at ?? $post->published_at ?? $post->created_at;
+                    @endphp
+                    <div class="nobifashion_blog_detail_timestamps">
+                        <div class="nobifashion_blog_detail_timestamp_item">
+                            <svg class="svg-inline--fa fa-calendar-plus" aria-hidden="true" focusable="false" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" width="13" height="13" fill="currentColor">
+                                <path fill="currentColor" d="M152 24c0-13.3-10.7-24-24-24s-24 10.7-24 24V64H64C28.7 64 0 92.7 0 128v320c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V128c0-35.3-28.7-64-64-64H344V24c0-13.3-10.7-24-24-24s-24 10.7-24 24V64H152V24zM48 192H400V448c0 8.8-7.2 16-16 16H64c-8.8 0-16-7.2-16-16V192zm176 80c0-8.8-7.2-16-16-16s-16 7.2-16 16v48H144c-8.8 0-16 7.2-16 16s7.2 16 16 16h48v48c0 8.8 7.2 16 16 16s16-7.2 16-16V368h48c8.8 0 16-7.2 16-16s-7.2-16-16-16H224V272z"/>
+                            </svg>
+                            <span>Xuất bản: <strong>{{ $publishedAt ? $publishedAt->format('H:i, d/m/Y') : '' }}</strong></span>
+                        </div>
+                        <div class="nobifashion_blog_detail_timestamp_item">
+                            <svg class="svg-inline--fa fa-clock-rotate-left" aria-hidden="true" focusable="false" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="13" height="13" fill="currentColor">
+                                <path fill="currentColor" d="M256 0a256 256 0 1 1 0 512A256 256 0 1 1 256 0zM232 120V256c0 8 4 15.5 10.7 20l96 64c11 7.4 25.9 4.4 33.3-6.7s4.4-25.9-6.7-33.3L280 243.2V120c0-13.3-10.7-24-24-24s-24 10.7-24 24z"/>
+                            </svg>
+                            <span>Cập nhật: <strong>{{ $updatedAt ? $updatedAt->format('H:i, d/m/Y') : '' }}</strong></span>
+                    </div>
+
+                    {{-- Khối tác giả bài viết chuẩn E-E-A-T & Internal Linking --}}
+                    <div class="nobifashion_blog_detail_author_box">
+                        <div class="nobifashion_blog_detail_author_avatar_wrap">
+                            @if ($authorUrl)
+                                <a href="{{ $authorUrl }}" title="Xem trang tác giả {{ $authorFullName }}">
+                                    <img src="{{ $authorAvatarUrl }}" 
+                                         alt="{{ $authorFullName }}" 
+                                         class="nobifashion_blog_detail_author_avatar" 
+                                         width="60" 
+                                         height="60" 
+                                         loading="lazy" 
+                                         onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode($authorFullName) }}&background=0F172A&color=ffffff&bold=true';">
+                                </a>
+                            @else
+                                <img src="{{ $authorAvatarUrl }}" 
+                                     alt="{{ $authorFullName }}" 
+                                     class="nobifashion_blog_detail_author_avatar" 
+                                     width="60" 
+                                     height="60" 
+                                     loading="lazy" 
+                                     onerror="this.onerror=null; this.src='https://ui-avatars.com/api/?name={{ urlencode($authorFullName) }}&background=0F172A&color=ffffff&bold=true';">
+                            @endif
+                        </div>
+                        <div class="nobifashion_blog_detail_author_info">
+                            <div class="nobifashion_blog_detail_author_head">
+                                <span class="nobifashion_blog_detail_author_role">{{ $authorRoleBadge ?? 'Tác giả bài viết' }}</span>
+                                <h4 class="nobifashion_blog_detail_author_name">
+                                    @if ($authorUrl)
+                                        <a href="{{ $authorUrl }}" title="Xem trang tác giả {{ $authorFullName }}">
+                                            {{ $authorFullName }}
+                                        </a>
+                                    @else
+                                        <span>{{ $authorFullName }}</span>
+                                    @endif
+                                </h4>
+                            </div>
+                            <p class="nobifashion_blog_detail_author_bio">{{ $authorBio }}</p>
+                            @if ($authorUrl)
+                                <a href="{{ $authorUrl }}" class="nobifashion_blog_detail_author_more">
+                                    Xem tất cả bài viết của tác giả &rarr;
+                                </a>
+                            @endif
+                        </div>
+                    </div>
                 </div>
 
                 {{-- Post Footer --}}
@@ -314,7 +397,7 @@
                     <div class="nobifashion_blog_detail_tags_wrap">
                         <span class="nobifashion_blog_detail_tags_label">Tags:</span>
                         @forelse($tags as $tag)
-                            <a href="{{ route('client.blog.index', ['tag' => $tag->slug]) }}"
+                            <a href="{{ route('client.tags.show', $tag->slug) }}"
                                 class="nobifashion_blog_detail_tag_pill">
                                 #{{ $tag->name }}
                             </a>

@@ -78,18 +78,17 @@
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-body">
                 <h5 class="fw-bold mb-3">Tags</h5>
-                            @php
-                                $selectedTagNames = [];
-                                if (old('tag_ids')) {
-                                    $selectedTagNames = \App\Models\Tag::whereIn('id', old('tag_ids'))->pluck('name')->toArray();
-                                } elseif (isset($post) && $post->exists) {
-                                    $selectedTagNames = $post->tags()->pluck('name')->toArray();
-                                }
-                                if (empty($selectedTagNames) && isset($post) && !empty($post->tag_ids)) {
-                                    $legacyIds = is_array($post->tag_ids) ? $post->tag_ids : [];
-                                    $selectedTagNames = \App\Models\Tag::whereIn('id', $legacyIds)->pluck('name')->toArray();
-                                }
-                            @endphp
+                @php
+                    if (!isset($selectedTagNames)) {
+                        if (old('tag_ids')) {
+                            $selectedTagNames = \App\Models\Tag::whereIn('id', (array) old('tag_ids'))->pluck('name')->toArray();
+                        } elseif (isset($post) && $post->exists) {
+                            $selectedTagNames = $post->relationLoaded('tags') ? $post->tags->pluck('name')->toArray() : $post->tags()->pluck('name')->toArray();
+                        } else {
+                            $selectedTagNames = [];
+                        }
+                    }
+                @endphp
                 <div class="mb-3">
                     <label class="form-label small text-muted">Chọn từ danh sách có sẵn:</label>
                     <select name="tag_ids[]" id="tagSelect" class="form-select" multiple>
@@ -148,14 +147,22 @@
             <div class="card-body">
                 <h5 class="fw-bold mb-3">Hình ảnh</h5>
                 <div class="mb-3">
-                    <label class="form-label fw-semibold">Thumbnail URL</label>
+                    <label class="form-label fw-semibold">Tên ảnh đại diện (vd: anh.webp)</label>
                     <div class="input-group">
-                        <input type="text" name="thumbnail" id="thumbnail-input" class="form-control" value="{{ old('thumbnail', $post->thumbnail ?? '') }}">
+                        <input type="text" name="thumbnail" id="thumbnail-input" class="form-control" placeholder="top-son-tint.jpg" value="{{ old('thumbnail', $post->thumbnail ?? '') }}">
                         <button type="button" class="btn btn-outline-secondary" onclick="openThumbnailPicker()">Chọn ảnh</button>
                     </div>
+                    <small class="text-muted">Chỉ lưu tên file ảnh kèm đuôi, không lưu đường dẫn (path).</small>
                     <div id="thumbnail-preview" class="mt-2">
                         @if(!empty($post->thumbnail))
-                            <img src="{{ str_starts_with($post->thumbnail, 'http') ? $post->thumbnail : asset('clients/assets/img/posts/' . $post->thumbnail) }}" class="img-fluid rounded shadow-sm" alt="preview">
+                            @php
+                                $adminThumb = basename($post->thumbnail);
+                            @endphp
+                            <img src="{{ asset('clients/assets/img/posts/' . $adminThumb) }}" 
+                                 class="img-fluid rounded shadow-sm" 
+                                 style="max-height: 180px; object-fit: cover;" 
+                                 alt="preview"
+                                 onerror="this.onerror=null; this.src='{{ asset('clients/assets/img/no-image.webp') }}';">
                         @endif
                     </div>
                 </div>
@@ -163,9 +170,6 @@
                     <label class="form-label fw-semibold">Alt text</label>
                     <input type="text" name="thumbnail_alt_text" class="form-control" value="{{ old('thumbnail_alt_text', $post->thumbnail_alt_text ?? '') }}">
                 </div>
-                @if(!empty($post->thumbnail))
-                    <img src="{{ str_starts_with($post->thumbnail, 'http') ? $post->thumbnail : asset('clients/assets/img/posts/' . $post->thumbnail) }}" class="img-fluid rounded shadow-sm" alt="preview">
-                @endif
             </div>
         </div>
 
@@ -177,7 +181,7 @@
                         <button class="btn btn-sm btn-outline-secondary" type="button" id="refresh-revision-btn">Refresh</button>
                     </div>
                     <div class="timeline" id="revision-list" style="max-height: 260px; overflow-y:auto;">
-                        @forelse($post->revisions()->latest()->limit(10)->get() as $revision)
+                        @forelse($post->revisions as $revision)
                             <div class="border rounded p-2 mb-2">
                                 <div class="small text-muted">{{ $revision->created_at->diffForHumans() }}</div>
                                 <div class="fw-semibold">{{ $revision->editor?->name ?? 'Unknown' }}</div>
@@ -361,7 +365,7 @@
                         if (preview) {
                             // Xây dựng đường dẫn preview đầy đủ cho bài viết
                             const previewUrl = image.original || `/clients/assets/img/posts/${filename}`;
-                            preview.innerHTML = `<img src="${previewUrl}" class="img-fluid rounded shadow-sm" alt="${image.name || 'preview'}">`;
+                            preview.innerHTML = `<img src="${previewUrl}" class="img-fluid rounded shadow-sm" style="max-height: 180px; object-fit: cover;" alt="${image.name || 'preview'}" onerror="this.onerror=null; this.src='/clients/assets/img/no-image.webp';">`;
                         }
                     },
                     insertMode: 'single'
@@ -369,6 +373,25 @@
             } else {
                 alert('Media Library chưa được khởi tạo');
             }
+        }
+
+        const thumbnailInput = document.getElementById('thumbnail-input');
+        if (thumbnailInput) {
+            thumbnailInput.addEventListener('input', function() {
+                let val = this.value.trim();
+                if (val.includes('/') || val.includes('\\')) {
+                    val = val.split(/[/\\]/).pop();
+                    this.value = val;
+                }
+                const preview = document.getElementById('thumbnail-preview');
+                if (preview) {
+                    if (val) {
+                        preview.innerHTML = `<img src="/clients/assets/img/posts/${val}" class="img-fluid rounded shadow-sm" style="max-height: 180px; object-fit: cover;" alt="preview" onerror="this.onerror=null; this.src='/clients/assets/img/no-image.webp';">`;
+                    } else {
+                        preview.innerHTML = '';
+                    }
+                }
+            });
         }
 
         // ==========================================

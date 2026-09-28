@@ -15,8 +15,8 @@
         }
     @endphp
 
-    <nav class="blog-pagination-nav" aria-label="Điều hướng phân trang bài viết">
-        <ul class="blog-pagination-list">
+    <nav class="nobifashion_pagination_nav" aria-label="Điều hướng phân trang">
+        <ul class="pagination nobifashion-pagination-list">
             {{-- Nút Trang trước --}}
             @if ($paginator->onFirstPage())
                 <li class="page-item disabled pagination-prev" aria-disabled="true" aria-label="Trang trước">
@@ -42,7 +42,7 @@
                     <a class="page-link" href="{{ $paginator->url(1) }}">1</a>
                 </li>
                 @if ($start > 2)
-                    <li class="page-item disabled dots page-item-dots page-item-dots-start" aria-disabled="true">
+                    <li class="page-item disabled page-item-dots page-item-dots-start" aria-disabled="true">
                         <span class="page-link">&hellip;</span>
                     </li>
                 @endif
@@ -64,7 +64,7 @@
             {{-- Trang cuối cùng nếu nằm ngoài vùng end --}}
             @if ($end < $lastPage)
                 @if ($end < $lastPage - 1)
-                    <li class="page-item disabled dots page-item-dots page-item-dots-end" aria-disabled="true">
+                    <li class="page-item disabled page-item-dots page-item-dots-end" aria-disabled="true">
                         <span class="page-link">&hellip;</span>
                     </li>
                 @endif

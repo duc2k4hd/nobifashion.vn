@@ -128,17 +128,18 @@ class AccountProfileController extends Controller
         }
 
         $extension = strtolower($file->getClientOriginalExtension() ?: 'jpg');
-        $filename = $account->id . '_' . $type . '_' . Str::random(20) . '.' . $extension;
+        $rawFilename = $account->id . '_' . $type . '_' . Str::random(20) . '.' . $extension;
 
-        $file->move($directory, $filename);
-        @chmod($directory . DIRECTORY_SEPARATOR . $filename, 0644);
+        $file->move($directory, $rawFilename);
+        @chmod($directory . DIRECTORY_SEPARATOR . $rawFilename, 0644);
 
-        return $filename;
+        // Lưu vào database với tiền tố users/ để dùng thống nhất /clients/assets/img/users/...
+        return 'users/' . $rawFilename;
     }
 
     protected function avatarDirectoryPath(): string
     {
-        return public_path('admins/img/accounts');
+        return public_path('clients/assets/img/users');
     }
 
     protected function rememberHistory(Profile $profile, string $field, ?string $oldFilename): void

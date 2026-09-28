@@ -22,6 +22,7 @@
             'post' => $post,
             'categories' => $categories,
             'tags' => $tags,
+            'selectedTagNames' => $selectedTagNames ?? [],
             'seoInsights' => ['score' => 0, 'warnings' => []],
         ])
         <div class="sticky-action-bar">

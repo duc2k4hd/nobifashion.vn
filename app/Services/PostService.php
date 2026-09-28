@@ -171,6 +171,9 @@ class PostService
                 if ($field === 'slug') {
                     $val = strip_tags($data[$field]);
                     $data[$field] = Str::limit(Str::slug($val) ?: $val, 250, '');
+                } elseif ($field === 'thumbnail') {
+                    $val = trim($data[$field]);
+                    $data[$field] = !empty($val) ? basename(parse_url($val, PHP_URL_PATH) ?? $val) : null;
                 } else {
                     $data[$field] = Str::limit($data[$field], 250, '');
                 }

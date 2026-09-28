@@ -192,9 +192,9 @@ class Tag extends Model
             if ($entity) {
                 $entityType = $this->entity_type;
                 if ($entityType === \App\Models\Product::class || $entityType === 'product') {
-                    return route('client.product.show', $entity->slug ?? $entity->id);
+                    return route('client.product.detail', ['slug' => $entity->slug ?? $entity->id]);
                 } elseif ($entityType === \App\Models\Post::class || $entityType === 'post') {
-                    return route('client.blog.show', $entity->slug ?? $entity->id);
+                    return route('client.blog.show', ['slug' => $entity->slug ?? $entity->id]);
                 }
             }
         } catch (\Exception $e) {

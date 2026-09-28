@@ -421,7 +421,7 @@
                         $profile = $account->profile;
                         $displayName = $profile?->full_name ?? $account->name ?? '—';
                         $avatar = $profile?->avatar
-                            ? asset('admins/img/accounts/' . $profile->avatar)
+                            ? asset('clients/assets/img/' . (str_starts_with($profile->avatar, 'users/') ? ltrim($profile->avatar, '/') : 'users/' . ltrim($profile->avatar, '/')))
                             : 'https://ui-avatars.com/api/?name=' . urlencode($displayName) . '&background=F3F4F6&color=0F172A&bold=true';
                         $roleClass = 'role-' . ($account->role ?? 'user');
                         $statusLabel = $account->is_active ? 'Đang hoạt động' : 'Đã khóa';

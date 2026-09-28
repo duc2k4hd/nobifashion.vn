@@ -4,10 +4,28 @@
     . ' - Xu hướng & Phong cách') : 'Nobi Blog, Xu hướng & Phong cách sống') . ' – ' . config('app.name'))
 
 @section('head')
+    @php
+        $canonicalUrl = isset($currentCategory) && $currentCategory
+            ? route('client.blog.category', $currentCategory)
+            : route('client.blog.index');
+        $hasQueryParams = count(request()->query()) > 0;
+        $isPaginated = request()->has('page') && (int) request()->query('page') > 1;
+    @endphp
+
+    {{-- Điều hướng SEO: Nếu có query string hoặc phân trang page > 1 thì noindex follow để tránh trùng lặp index, nhưng bot vẫn cào link bài viết --}}
+    @if ($hasQueryParams || $isPaginated)
+        <meta name="robots" content="noindex, follow">
+    @else
+        <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    @endif
+
     <meta name="description"
         content="{{ isset($currentCategory) && $currentCategory ? ($currentCategory->meta_description ?: ($currentCategory->description ?: 'Tổng hợp các bài viết và thông tin mới nhất về ' . $currentCategory->name . ' tại ' . config('app.name') . '.')) : 'Cập nhật xu hướng thời trang mới nhất, cẩm nang phối đồ và chia sẻ hữu ích về phong cách sống tại ' . config('app.name') . '.' }}">
-    <link rel="canonical"
-        href="{{ isset($currentCategory) && $currentCategory ? route('client.blog.category', $currentCategory) : route('client.blog.index') }}">
+    <link rel="canonical" href="{{ $canonicalUrl }}">
+    <meta property="og:url" content="{{ $canonicalUrl }}">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{{ (isset($currentCategory) && $currentCategory ? ($currentCategory->meta_title ?: $currentCategory->name . ' - Xu hướng & Phong cách') : 'Nobi Blog, Xu hướng & Phong cách sống') . ' – ' . config('app.name') }}">
+    <meta property="og:description" content="{{ isset($currentCategory) && $currentCategory ? ($currentCategory->meta_description ?: ($currentCategory->description ?: 'Tổng hợp các bài viết và thông tin mới nhất về ' . $currentCategory->name . ' tại ' . config('app.name') . '.')) : 'Cập nhật xu hướng thời trang mới nhất, cẩm nang phối đồ và chia sẻ hữu ích về phong cách sống tại ' . config('app.name') . '.' }}">
 @endsection
 
 @push('styles')
@@ -227,7 +245,7 @@
                         <h3 class="nobifashion_blog_widget_title">Hashtag nổi bật</h3>
                         <div class="nobifashion_blog_tag_cloud">
                             @foreach ($sidebarTags as $tag)
-                                <a href="{{ route('client.blog.index', ['tag' => $tag->slug]) }}"
+                                <a href="{{ route('client.tags.show', $tag->slug) }}"
                                     class="nobifashion_blog_tag">
                                     #{{ $tag->name }}
                                 </a>

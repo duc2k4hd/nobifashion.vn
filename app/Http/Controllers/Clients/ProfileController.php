@@ -283,7 +283,7 @@ class ProfileController extends Controller
 
     protected function storeAvatarFile(UploadedFile $file, $account, string $type): string
     {
-        $directory = public_path('admins/img/accounts');
+        $directory = public_path('clients/assets/img/users');
 
         if (!is_dir($directory)) {
             mkdir($directory, 0755, true);
@@ -295,7 +295,7 @@ class ProfileController extends Controller
         $file->move($directory, $filename);
         @chmod($directory . DIRECTORY_SEPARATOR . $filename, 0644);
 
-        return $filename;
+        return 'users/' . $filename;
     }
 
     protected function getAvatarUrl(?string $filename): string
@@ -308,7 +308,8 @@ class ProfileController extends Controller
             return $filename;
         }
 
-        return asset('admins/img/accounts/' . ltrim($filename, '/'));
+        $clean = ltrim($filename, '/');
+        return asset('clients/assets/img/' . (str_starts_with($clean, 'users/') ? $clean : 'users/' . $clean));
     }
 
     protected function rememberHistory(Profile $profile, string $field, ?string $oldFilename): void

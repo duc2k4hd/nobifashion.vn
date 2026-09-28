@@ -55,7 +55,7 @@
         <div class="nobi-chat-header">
             <div class="nobi-chat-header-profile">
                 <div class="nobi-chat-avatar-wrap">
-                    <img width="100%" height="100%" src="{{asset('/clients/assets/img/business/'. $settings->site_favicon)}}" alt="Nobi Fashion">
+                    <img width="100%" height="100%" src="{{ asset('/clients/assets/img/business/'. ($settings?->site_favicon ?? 'favicon.ico')) }}" alt="Nobi Fashion">
                 </div>
                 <div class="nobi-chat-header-info">
                     <h4>Nobi Fashion</h4>

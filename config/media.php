@@ -15,7 +15,7 @@ return [
         'users' => 'clients/assets/img/users',
         'vouchers' => 'clients/assets/img/vouchers',
         
-        'accounts_avatars' => 'admins/img/accounts',
+        'accounts_avatars' => 'clients/assets/img/users',
         'accounts_banners' => 'admins/img/banners',
         'general_banners' => 'admins/img/general',
         'icons_banners' => 'admins/img/icons',

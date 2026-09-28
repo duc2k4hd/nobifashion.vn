@@ -47,6 +47,11 @@ class Post extends Model
                 // Sử dụng url helper để lấy chuẩn domain và scheme
                 $post->meta_canonical = url('/blog/'.$post->slug);
             }
+
+            // Bắt buộc chỉ lưu tên ảnh + đuôi mở rộng, không lưu path
+            if (!empty($post->thumbnail)) {
+                $post->thumbnail = basename(parse_url($post->thumbnail, PHP_URL_PATH) ?? $post->thumbnail);
+            }
         });
 
         static::saved(function ($post) {
@@ -195,7 +200,24 @@ class Post extends Model
             }
         }
 
-        // Nếu không, lấy từ relationship
+        // Nếu relation tags đã load thì dùng từ memory, tránh lặp query
+        if ($this->relationLoaded('tags')) {
+            return $this->tags->pluck('id')->toArray();
+        }
+
+        // Nếu không, lấy từ relationship query
         return $this->tags()->pluck('id')->toArray();
+    }
+
+    /**
+     * Mutator đảm bảo thumbnail chỉ lưu tên ảnh + đuôi, không lưu path
+     */
+    public function setThumbnailAttribute($value): void
+    {
+        if (!empty($value)) {
+            $this->attributes['thumbnail'] = basename(parse_url($value, PHP_URL_PATH) ?? $value);
+        } else {
+            $this->attributes['thumbnail'] = null;
+        }
     }
 }

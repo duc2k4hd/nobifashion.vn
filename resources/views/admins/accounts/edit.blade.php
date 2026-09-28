@@ -249,23 +249,309 @@
             overflow-x: auto;
         }
         .avatar-manager {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        .avatar-manager-grid {
             display: grid;
-            gap: 20px;
-            grid-template-columns: repeat(auto-fit,minmax(260px,1fr));
+            gap: 24px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
         }
-        .avatar-card {
-            border: 1px dashed #cbd5f5;
+        .avatar-box-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 16px;
-            padding: 18px;
+            padding: 24px 20px;
             text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
+            transition: all 0.2s ease;
         }
-        .avatar-preview img {
-            width: 120px;
-            height: 120px;
+        .avatar-box-card:hover {
+            border-color: #cbd5e1;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+        }
+        .avatar-box-badge {
+            position: absolute;
+            top: 14px;
+            left: 14px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 3px 10px;
+            border-radius: 20px;
+        }
+        .avatar-box-badge.primary {
+            background: #0f172a;
+            color: #ffffff;
+        }
+        .avatar-box-badge.secondary {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+        .avatar-box-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 8px 0 16px 0;
+        }
+        .avatar-box-preview-wrap {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .avatar-box-preview {
+            width: 140px;
+            height: 140px;
             border-radius: 24px;
-            object-fit: cover;
+            overflow: hidden;
             border: 4px solid #f8fafc;
-            box-shadow: 0 10px 30px rgba(15,23,42,0.2);
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.12);
+            background: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .avatar-box-preview.ratio-16-9 {
+            width: 240px;
+            height: 135px;
+            max-width: 100%;
+            aspect-ratio: 16 / 9;
+            border-radius: 16px;
+        }
+        .avatar-box-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .avatar-box-preview.is-cropped {
+            outline: 3px solid #10b981;
+            outline-offset: 2px;
+        }
+        .avatar-box-actions {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            align-items: center;
+        }
+        .btn-avatar-upload {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            max-width: 220px;
+            padding: 10px 16px;
+            background: #f8fafc;
+            color: #0f172a;
+            border: 1.5px dashed #cbd5e1;
+            border-radius: 12px;
+            font-size: 13.5px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-avatar-upload:hover {
+            background: #0f172a;
+            color: #ffffff;
+            border-color: #0f172a;
+        }
+        .avatar-remove-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12.5px;
+            color: #dc2626;
+            cursor: pointer;
+            padding: 4px 10px;
+            border-radius: 8px;
+            transition: background 0.15s ease;
+            user-select: none;
+        }
+        .avatar-remove-pill:hover {
+            background: #fef2f2;
+        }
+        .avatar-remove-pill input[type="checkbox"] {
+            accent-color: #dc2626;
+            cursor: pointer;
+            width: 15px;
+            height: 15px;
+            margin: 0;
+            padding: 0 !important;
+            border: none !important;
+            background: transparent !important;
+        }
+        .avatar-save-bar {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-top: 16px;
+            border-top: 1px solid #e2e8f0;
+        }
+        .avatar-history-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 20px;
+        }
+        .avatar-history-card h4 {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0 0 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Modal Cropper */
+        .crop-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(4px);
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.25s ease;
+        }
+        .crop-modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .crop-modal-shell {
+            background: #ffffff;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 680px;
+            max-height: 90vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            transform: scale(0.95);
+            transition: transform 0.25s ease;
+        }
+        .crop-modal-overlay.active .crop-modal-shell {
+            transform: scale(1);
+        }
+        .crop-modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 20px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .crop-modal-header h3 {
+            font-size: 17px;
+            font-weight: 700;
+            margin: 0;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .crop-modal-close-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #64748b;
+            padding: 4px;
+            line-height: 1;
+            border-radius: 6px;
+        }
+        .crop-modal-close-btn:hover {
+            color: #0f172a;
+            background: #f1f5f9;
+        }
+        .crop-modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .crop-stage-container {
+            width: 100%;
+            height: 340px;
+            background: #0f172a;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .crop-stage-container img {
+            max-width: 100%;
+            max-height: 100%;
+            display: block;
+        }
+        .crop-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .crop-tool-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #334155;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .crop-tool-btn:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+        .crop-preview-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            padding: 8px 0;
+        }
+        .crop-preview-box {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 2px solid #0f172a;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .crop-preview-box.square {
+            border-radius: 14px;
+        }
+        .crop-preview-box.ratio-16-9 {
+            width: 120px;
+            height: 67.5px;
+            aspect-ratio: 16 / 9;
+            border-radius: 8px;
+        }
+        .crop-modal-footer {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 12px;
+            padding: 16px 20px;
+            border-top: 1px solid #e2e8f0;
+            background: #f8fafc;
         }
         .toast {
             position: fixed;
@@ -286,6 +572,7 @@
             transform: translateY(0);
         }
     </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.css">
 @endpush
 
 @section('content')
@@ -512,44 +799,117 @@
             </div>
 
             <div class="tab-panel" data-panel="avatar">
-                <div class="avatar-manager">
-                    <div class="avatar-card">
-                        <div class="avatar-preview">
-                            <img data-bind="avatar" src="https://via.placeholder.com/120" alt="avatar">
+                <form id="avatarForm" enctype="multipart/form-data">
+                    <div class="avatar-manager">
+                        <div class="avatar-manager-grid">
+                            <!-- Card 1: Avatar chính -->
+                            <div class="avatar-box-card">
+                                <span class="avatar-box-badge primary">Chính</span>
+                                <h4 class="avatar-box-title">Avatar chính</h4>
+                                <div class="avatar-box-preview-wrap">
+                                    <div class="avatar-box-preview" id="mainAvatarPreviewBox">
+                                        <img id="mainAvatarPreviewImg" data-bind="avatar" src="https://via.placeholder.com/140" alt="Avatar chính">
+                                    </div>
+                                </div>
+                                <div class="avatar-box-actions">
+                                    <label class="btn-avatar-upload" for="mainAvatarFileInput">
+                                        <i class="fa-solid fa-crop-simple"></i> Chọn & Cắt ảnh vuông
+                                    </label>
+                                    <input type="file" id="mainAvatarFileInput" accept="image/*" style="display:none;">
+                                    
+                                    <label class="avatar-remove-pill" id="removeAvatarLabel">
+                                        <input type="checkbox" name="remove_avatar" value="1" id="removeAvatarCheck">
+                                        <span><i class="fa-regular fa-trash-can"></i> Xóa avatar chính</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <!-- Card 2: Sub Avatar (Ảnh phụ 16:9) -->
+                            <div class="avatar-box-card">
+                                <span class="avatar-box-badge secondary">Ảnh phụ (16:9)</span>
+                                <h4 class="avatar-box-title">Sub Avatar (Ảnh phụ 16:9)</h4>
+                                <div class="avatar-box-preview-wrap">
+                                    <div class="avatar-box-preview ratio-16-9" id="subAvatarPreviewBox">
+                                        <img id="subAvatarPreviewImg" data-bind="sub_avatar" src="https://via.placeholder.com/240x135?text=Chưa+có+ảnh+phụ" alt="Sub Avatar (16:9)">
+                                    </div>
+                                </div>
+                                <div class="avatar-box-actions">
+                                    <label class="btn-avatar-upload" for="subAvatarFileInput">
+                                        <i class="fa-solid fa-crop-simple"></i> Chọn & Cắt ảnh 16:9
+                                    </label>
+                                    <input type="file" id="subAvatarFileInput" accept="image/*" style="display:none;">
+                                    
+                                    <label class="avatar-remove-pill" id="removeSubAvatarLabel">
+                                        <input type="checkbox" name="remove_sub_avatar" value="1" id="removeSubAvatarCheck">
+                                        <span><i class="fa-regular fa-trash-can"></i> Xóa ảnh phụ</span>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
-                        <h4>Avatar chính</h4>
-                        <form id="avatarForm" enctype="multipart/form-data">
-                            <div class="form-group">
-                                <input type="file" name="avatar" accept="image/*">
-                            </div>
-                            <div class="form-group">
-                                <input type="file" name="sub_avatar" accept="image/*">
-                            </div>
-                            <div class="form-group">
-                                <label>
-                                    <input type="checkbox" name="remove_avatar" value="1">
-                                    Xóa avatar hiện tại
-                                </label>
-                            </div>
-                            <div class="form-group">
-                                <label>
-                                    <input type="checkbox" name="remove_sub_avatar" value="1">
-                                    Xóa sub avatar
-                                </label>
-                            </div>
+
+                        <!-- Bar lưu thay đổi -->
+                        <div class="avatar-save-bar">
                             <input type="hidden" name="history_restore" value="">
-                            <div class="form-actions">
-                                <button type="submit" class="btn btn-primary">⬆️ Cập nhật avatar</button>
+                            <button type="submit" class="btn btn-primary" id="btnSubmitAvatar" style="padding: 10px 24px; font-weight: 600;">
+                                <i class="fa-solid fa-cloud-arrow-up"></i> Lưu thay đổi Avatar
+                            </button>
+                        </div>
+
+                        <!-- Card 3: Avatar lịch sử -->
+                        <div class="avatar-history-card">
+                            <h4><i class="fa-solid fa-clock-rotate-left"></i> Lịch sử Avatar đã sử dụng</h4>
+                            <div class="avatar-history" id="avatarHistory">
+                                <p style="color:#94a3b8;">Chưa có lịch sử.</p>
                             </div>
-                        </form>
-                    </div>
-                    <div class="avatar-card">
-                        <h4>Avatar lịch sử</h4>
-                        <div class="avatar-history" id="avatarHistory">
-                            <p style="color:#94a3b8;">Chưa có lịch sử.</p>
                         </div>
                     </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Kéo Cắt Ảnh (Cropper 1:1 & 16:9) -->
+    <div class="crop-modal-overlay" id="cropModalOverlay">
+        <div class="crop-modal-shell">
+            <div class="crop-modal-header">
+                <h3 id="cropModalTitle"><i class="fa-solid fa-crop-simple"></i> Cắt ảnh đại diện</h3>
+                <button type="button" class="crop-modal-close-btn" id="btnCancelCropX">&times;</button>
+            </div>
+            <div class="crop-modal-body">
+                <div class="crop-stage-container">
+                    <img id="cropTargetImage" src="" alt="Cắt ảnh">
                 </div>
+                
+                <div class="crop-toolbar">
+                    <button type="button" class="crop-tool-btn" id="cropZoomIn">
+                        <i class="fa-solid fa-magnifying-glass-plus"></i> Phóng to
+                    </button>
+                    <button type="button" class="crop-tool-btn" id="cropZoomOut">
+                        <i class="fa-solid fa-magnifying-glass-minus"></i> Thu nhỏ
+                    </button>
+                    <button type="button" class="crop-tool-btn" id="cropRotateLeft">
+                        <i class="fa-solid fa-rotate-left"></i> Xoay trái
+                    </button>
+                    <button type="button" class="crop-tool-btn" id="cropRotateRight">
+                        <i class="fa-solid fa-rotate-right"></i> Xoay phải
+                    </button>
+                    <button type="button" class="crop-tool-btn" id="cropReset">
+                        <i class="fa-solid fa-arrows-rotate"></i> Đặt lại
+                    </button>
+                </div>
+
+                <div class="crop-preview-row">
+                    <div style="font-size:12px;color:#64748b;font-weight:600;">Xem trước thực tế:</div>
+                    <div class="crop-preview-box" id="cropLivePreviewCircle"></div>
+                    <div class="crop-preview-box square" id="cropLivePreviewSquare"></div>
+                    <div class="crop-preview-box ratio-16-9" id="cropLivePreviewRect" style="display:none;"></div>
+                </div>
+            </div>
+            <div class="crop-modal-footer">
+                <button type="button" class="btn btn-light" id="btnCancelCrop">Hủy bỏ</button>
+                <button type="button" class="btn btn-primary" id="btnApplyCrop" style="font-weight:600;">
+                    <i class="fa-solid fa-check"></i> Cắt & Sử dụng ảnh này
+                </button>
             </div>
         </div>
     </div>
@@ -560,6 +920,7 @@
 @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/dayjs@1/dayjs.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dayjs@1/plugin/relativeTime.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.1/cropper.min.js"></script>
     <script>
         dayjs.extend(dayjs_plugin_relativeTime);
     </script>
@@ -572,7 +933,7 @@
             const roles = JSON.parse(root.dataset.roles || '[]');
             const statuses = JSON.parse(root.dataset.statuses || '[]');
             const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? '{{ csrf_token() }}';
-            const accountImageBase = @json(rtrim(asset('admins/img/accounts'), '/'));
+            const accountImageBase = @json(rtrim(asset('clients/assets/img'), '/'));
 
             const state = {
                 account: null,
@@ -620,11 +981,23 @@
                 const account = state.account;
                 if (!account) return;
                 const displayName = account.profile?.full_name || account.name || account.email;
-                const avatar = account.profile?.avatar || account.profile?.sub_avatar;
+                const avatar = account.profile?.avatar;
+                const subAvatar = account.profile?.sub_avatar;
                 const avatarUrl = avatar 
                     ? (avatar.startsWith('http') ? avatar : `${accountImageBase}/${avatar}`) 
                     : `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=F3F4F6&color=0F172A&bold=true`;
+                const subAvatarUrl = subAvatar
+                    ? (subAvatar.startsWith('http') ? subAvatar : `${accountImageBase}/${subAvatar}`)
+                    : `https://via.placeholder.com/140?text=Chưa+có+ảnh+phụ`;
+
                 root.querySelectorAll('[data-bind="avatar"]').forEach(img => img.src = avatarUrl);
+                root.querySelectorAll('[data-bind="sub_avatar"]').forEach(img => img.src = subAvatarUrl);
+
+                const removeAvatarLabel = document.getElementById('removeAvatarLabel');
+                if (removeAvatarLabel) removeAvatarLabel.style.display = avatar ? 'inline-flex' : 'none';
+                const removeSubAvatarLabel = document.getElementById('removeSubAvatarLabel');
+                if (removeSubAvatarLabel) removeSubAvatarLabel.style.display = subAvatar ? 'inline-flex' : 'none';
+
                 root.querySelector('[data-bind="displayName"]').textContent = displayName;
                 root.querySelector('[data-bind="email"]').textContent = account.email;
                 root.querySelector('[data-bind="roleBadge"]').textContent = account.role;
@@ -862,16 +1235,162 @@
             handleForm('profileForm', endpoints.profileUpdate, 'PUT', () => loadProfile());
             handleForm('passwordForm', endpoints.resetPassword, 'PATCH');
 
+            // Quản lý Cropper & Upload Avatar
+            let cropperInstance = null;
+            let currentCropTarget = null; // 'avatar' hoặc 'sub_avatar'
+            let croppedAvatarBlob = null;
+            let croppedSubAvatarBlob = null;
+
+            const cropModalOverlay = document.getElementById('cropModalOverlay');
+            const cropTargetImg = document.getElementById('cropTargetImage');
+
+            const closeCropper = () => {
+                if (cropModalOverlay) cropModalOverlay.classList.remove('active');
+                if (cropperInstance) {
+                    cropperInstance.destroy();
+                    cropperInstance = null;
+                }
+                currentCropTarget = null;
+                const mainInput = document.getElementById('mainAvatarFileInput');
+                const subInput = document.getElementById('subAvatarFileInput');
+                if (mainInput) mainInput.value = '';
+                if (subInput) subInput.value = '';
+            };
+
+            const openCropper = (file, targetType) => {
+                currentCropTarget = targetType;
+                const isSub = targetType === 'sub_avatar';
+                const title = isSub ? 'Cắt ảnh Sub Avatar (Tỉ lệ 16:9)' : 'Cắt ảnh Avatar chính (Tỉ lệ vuông 1:1)';
+                const titleEl = document.getElementById('cropModalTitle');
+                if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-crop-simple"></i> ${title}`;
+
+                // Điều khiển hiển thị preview tròn/vuông vs 16:9
+                const prevCircle = document.getElementById('cropLivePreviewCircle');
+                const prevSquare = document.getElementById('cropLivePreviewSquare');
+                const prevRect = document.getElementById('cropLivePreviewRect');
+                if (isSub) {
+                    if (prevCircle) prevCircle.style.display = 'none';
+                    if (prevSquare) prevSquare.style.display = 'none';
+                    if (prevRect) prevRect.style.display = 'block';
+                } else {
+                    if (prevCircle) prevCircle.style.display = 'block';
+                    if (prevSquare) prevSquare.style.display = 'block';
+                    if (prevRect) prevRect.style.display = 'none';
+                }
+
+                if (cropTargetImg.dataset.blobUrl) {
+                    URL.revokeObjectURL(cropTargetImg.dataset.blobUrl);
+                }
+                const objectUrl = URL.createObjectURL(file);
+                cropTargetImg.dataset.blobUrl = objectUrl;
+                cropTargetImg.src = objectUrl;
+                cropModalOverlay.classList.add('active');
+
+                if (cropperInstance) {
+                    cropperInstance.destroy();
+                    cropperInstance = null;
+                }
+
+                cropperInstance = new Cropper(cropTargetImg, {
+                    aspectRatio: isSub ? (16 / 9) : 1, // 16:9 cho sub avatar, 1:1 cho avatar chính
+                    viewMode: 1,
+                    dragMode: 'move',
+                    autoCropArea: 0.9,
+                    restore: false,
+                    guides: true,
+                    center: true,
+                    highlight: false,
+                    cropBoxMovable: true,
+                    cropBoxResizable: true,
+                    toggleDragModeOnDblclick: false,
+                    preview: isSub ? '#cropLivePreviewRect' : '#cropLivePreviewCircle, #cropLivePreviewSquare',
+                });
+            };
+
+            document.getElementById('mainAvatarFileInput')?.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    openCropper(this.files[0], 'avatar');
+                }
+            });
+
+            document.getElementById('subAvatarFileInput')?.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    openCropper(this.files[0], 'sub_avatar');
+                }
+            });
+
+            document.getElementById('btnCancelCrop')?.addEventListener('click', closeCropper);
+            document.getElementById('btnCancelCropX')?.addEventListener('click', closeCropper);
+
+            document.getElementById('cropZoomIn')?.addEventListener('click', () => cropperInstance?.zoom(0.1));
+            document.getElementById('cropZoomOut')?.addEventListener('click', () => cropperInstance?.zoom(-0.1));
+            document.getElementById('cropRotateLeft')?.addEventListener('click', () => cropperInstance?.rotate(-90));
+            document.getElementById('cropRotateRight')?.addEventListener('click', () => cropperInstance?.rotate(90));
+            document.getElementById('cropReset')?.addEventListener('click', () => cropperInstance?.reset());
+
+            document.getElementById('btnApplyCrop')?.addEventListener('click', () => {
+                if (!cropperInstance) return;
+                const isSub = currentCropTarget === 'sub_avatar';
+                const canvas = cropperInstance.getCroppedCanvas({
+                    width: isSub ? 960 : 500,
+                    height: isSub ? 540 : 500,
+                    imageSmoothingEnabled: true,
+                    imageSmoothingQuality: 'high',
+                });
+                canvas.toBlob((blob) => {
+                    if (!blob) return;
+                    const previewBlobUrl = URL.createObjectURL(blob);
+                    if (isSub) {
+                        croppedSubAvatarBlob = blob;
+                        const previewImg = document.getElementById('subAvatarPreviewImg');
+                        if (previewImg) {
+                            if (previewImg.dataset.tempBlob) URL.revokeObjectURL(previewImg.dataset.tempBlob);
+                            previewImg.dataset.tempBlob = previewBlobUrl;
+                            previewImg.src = previewBlobUrl;
+                        }
+                        document.getElementById('subAvatarPreviewBox')?.classList.add('is-cropped');
+                        const rmCheck = document.getElementById('removeSubAvatarCheck');
+                        if (rmCheck) rmCheck.checked = false;
+                        notify('Đã cắt ảnh 16:9 thành công! Vui lòng bấm "Lưu thay đổi Avatar"');
+                    } else {
+                        croppedAvatarBlob = blob;
+                        const previewImg = document.getElementById('mainAvatarPreviewImg');
+                        if (previewImg) {
+                            if (previewImg.dataset.tempBlob) URL.revokeObjectURL(previewImg.dataset.tempBlob);
+                            previewImg.dataset.tempBlob = previewBlobUrl;
+                            previewImg.src = previewBlobUrl;
+                        }
+                        document.getElementById('mainAvatarPreviewBox')?.classList.add('is-cropped');
+                        const rmCheck = document.getElementById('removeAvatarCheck');
+                        if (rmCheck) rmCheck.checked = false;
+                        notify('Đã cắt ảnh vuông 1:1 thành công! Vui lòng bấm "Lưu thay đổi Avatar"');
+                    }
+                    closeCropper();
+                }, 'image/jpeg', 0.92);
+            });
+
             const avatarForm = document.getElementById('avatarForm');
             if (avatarForm) {
                 avatarForm.addEventListener('submit', async (event) => {
                     event.preventDefault();
                     try {
+                        const formData = new FormData(avatarForm);
+                        if (croppedAvatarBlob) {
+                            formData.set('avatar', croppedAvatarBlob, 'avatar.jpg');
+                        }
+                        if (croppedSubAvatarBlob) {
+                            formData.set('sub_avatar', croppedSubAvatarBlob, 'sub_avatar.jpg');
+                        }
+
                         await fetchJson(endpoints.avatarUpload, {
                             method: 'POST',
-                            body: new FormData(avatarForm),
+                            body: formData,
                         });
-                        notify('Đã cập nhật avatar');
+                        notify('Đã cập nhật avatar thành công');
+                        croppedAvatarBlob = null;
+                        croppedSubAvatarBlob = null;
+                        document.getElementById('mainAvatarPreviewBox')?.classList.remove('is-cropped');
+                        document.getElementById('subAvatarPreviewBox')?.classList.remove('is-cropped');
                         avatarForm.reset();
                         const restoreInput = avatarForm.querySelector('input[name="history_restore"]');
                         if (restoreInput) {

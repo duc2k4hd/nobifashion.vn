@@ -45,6 +45,7 @@
             'post' => $post,
             'categories' => $categories,
             'tags' => $tags,
+            'selectedTagNames' => $selectedTagNames ?? [],
             'seoInsights' => $seoInsights,
         ])
         <div class="sticky-action-bar">

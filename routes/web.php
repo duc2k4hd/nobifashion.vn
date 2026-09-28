@@ -58,6 +58,7 @@ use App\Http\Controllers\Clients\ProductDetailController;
 use App\Http\Controllers\Clients\ProfileController;
 use App\Http\Controllers\Clients\ShopController;
 use App\Http\Controllers\Clients\TagController;
+use App\Http\Controllers\Clients\AuthorController;
 use App\Http\Controllers\Clients\VoucherController;
 use App\Http\Controllers\RobotsController;
 use App\Http\Controllers\SitemapController;
@@ -315,6 +316,12 @@ Route::post('/comments', [App\Http\Controllers\Api\V1\CommentController::class, 
 Route::prefix('tags')->name('client.tags.')->group(function () {
     Route::get('/{slug}', [TagController::class, 'show'])->name('show');
     Route::get('/entity/{entityType}', [TagController::class, 'index'])->name('index');
+});
+
+// Author routes (noindex, follow - Chỉ dành riêng cho Admin & Staff)
+Route::prefix('author')->name('client.author.')->group(function () {
+    Route::get('/', [AuthorController::class, 'index'])->name('index');
+    Route::get('/{slug}', [AuthorController::class, 'show'])->name('show');
 });
 
 // Robots.txt

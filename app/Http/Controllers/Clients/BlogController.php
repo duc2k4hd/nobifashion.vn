@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Clients;
 
 use App\Http\Controllers\Controller;
+use App\Models\Account;
 use App\Models\Comment;
 use App\Models\Post;
 use App\Models\PostCategory;
@@ -25,6 +26,24 @@ class BlogController extends Controller
         // Chuyển hướng 301 chuẩn SEO nếu có query ?category=slug sang URL danh mục chuyên biệt
         if ($request->filled('category')) {
             return redirect()->route('client.blog.category', ['category' => $request->query('category')], 301);
+        }
+
+        // Chuyển hướng 301 chuẩn SEO nếu có query ?tag=slug
+        if ($request->filled('tag')) {
+            $tagSlug = trim((string) $request->query('tag'));
+            $tag = Tag::where('slug', $tagSlug)->active()->first();
+            if ($tag) {
+                return redirect()->route('client.tags.show', ['slug' => $tag->slug], 301);
+            }
+            // Nếu tag không tồn tại (ví dụ slug cũ, tag rác như son-post-1686), chuyển hướng 301 về blog chuẩn không có hỏi chấm
+            return redirect()->route('client.blog.index', [], 301);
+        }
+
+        // Chuyển hướng 301 chuẩn SEO nếu có query ?page=1 về URL gốc sạch
+        if ($request->query('page') === '1' || $request->query('page') === 1) {
+            $cleanQuery = $request->query();
+            unset($cleanQuery['page']);
+            return redirect()->route('client.blog.index', $cleanQuery, 301);
         }
 
         $posts = Post::published()
@@ -51,7 +70,7 @@ class BlogController extends Controller
                 ->get();
         });
 
-        $sidebarTags = Cache::remember('blog:sidebar:tags', 600, fn () => Tag::orderBy('name')->take(20)->get());
+        $sidebarTags = $this->getBlogSidebarTags();
 
         $recentPosts = Cache::remember('blog:recent', 600, function () {
             return Post::published()
@@ -82,10 +101,17 @@ class BlogController extends Controller
         ]);
     }
 
-    public function category(Request $request, PostCategory $category): View
+    public function category(Request $request, PostCategory $category): \Illuminate\Http\RedirectResponse|View
     {
         if (!$category->is_active) {
             abort(404);
+        }
+
+        // Chuyển hướng 301 chuẩn SEO nếu có query ?page=1 về URL danh mục gốc sạch
+        if ($request->query('page') === '1' || $request->query('page') === 1) {
+            $cleanQuery = $request->query();
+            unset($cleanQuery['page']);
+            return redirect()->route('client.blog.category', array_merge(['category' => $category], $cleanQuery), 301);
         }
 
         // Tối ưu trực tiếp bằng B-Tree index posts_category_status_published_idx cực nhanh
@@ -127,7 +153,7 @@ class BlogController extends Controller
                 ->get();
         });
 
-        $sidebarTags = Cache::remember('blog:sidebar:tags', 600, fn () => Tag::orderBy('name')->take(20)->get());
+        $sidebarTags = $this->getBlogSidebarTags();
 
         $recentPosts = Cache::remember('blog:recent', 600, function () {
             return Post::published()
@@ -274,7 +300,7 @@ class BlogController extends Controller
             return PostCategory::active()->select('id', 'name', 'slug')->withCount(['posts as posts_count' => fn ($q) => $q->published()])->orderByDesc('posts_count')->orderBy('sort_order')->get();
         });
 
-        $sidebarTags = \Illuminate\Support\Facades\Cache::remember('blog:sidebar:tags', 600, fn () => \App\Models\Tag::orderBy('name')->take(20)->get());
+        $sidebarTags = $this->getBlogSidebarTags();
 
         $recentPosts = \Illuminate\Support\Facades\Cache::remember('blog:recent', 600, function () {
             return \App\Models\Post::published()->latest('published_at')->take(5)->get(['id', 'title', 'slug', 'published_at']);
@@ -313,12 +339,46 @@ class BlogController extends Controller
             return response()->view('clients.pages.errors.404', [], 404);
         }
 
-        // Chỉ eager load đúng cột cần thiết, không nạp quan hệ thừa
-        $post->load(['category:id,name,slug', 'author:id,name']);
+        // Chỉ eager load đúng cột cần thiết, nạp profile để lấy full_name tác giả siêu tốc
+        $post->load(['category:id,name,slug', 'author:id,name,role', 'author.profile']);
         $this->postService->incrementViews($post, $request);
 
         // Lấy tags hoạt động trực tiếp 1 lần duy nhất với các cột cần dùng
         $tags = $post->tags()->active()->get(['tags.id', 'tags.name', 'tags.slug']);
+
+        // Nếu bài viết chưa có tags từ relationship, trích xuất từ meta_keywords của bài viết
+        if ($tags->isEmpty() && !empty($post->meta_keywords)) {
+            $keywords = is_array($post->meta_keywords)
+                ? $post->meta_keywords
+                : array_map('trim', explode(',', (string) $post->meta_keywords));
+
+            $extractedTags = collect();
+            foreach ($keywords as $kw) {
+                $clean = trim($kw);
+                $lower = mb_strtolower($clean);
+                if (mb_strlen($clean) < 3 || in_array($lower, ['nobi fashion', 'nobi fashion việt nam', 'thời trang'])) {
+                    continue;
+                }
+                $slug = Str::slug($clean);
+                if ($slug && !$extractedTags->contains('slug', $slug)) {
+                    $tagModel = Tag::firstOrCreate(
+                        ['slug' => $slug],
+                        [
+                            'name' => $clean,
+                            'entity_type' => 'post',
+                            'entity_id' => 0,
+                            'is_active' => true,
+                            'usage_count' => 1,
+                        ]
+                    );
+                    $extractedTags->push($tagModel);
+                    if ($extractedTags->count() >= 8) {
+                        break;
+                    }
+                }
+            }
+            $tags = $extractedTags;
+        }
 
         // Lấy 3 bài trước và 3 bài sau cùng danh mục (tối ưu composite index posts_category_status_published_idx)
         $relatedPosts = Cache::remember("blog:related:{$post->id}:v3", 3600, function () use ($post) {
@@ -349,10 +409,46 @@ class BlogController extends Controller
             ? $approvedComments->count()
             : $post->comments()->approved()->count();
 
-        $schemaData = $this->buildSchemaData($post, $tags, $approvedComments);
+        // Xác định chính xác tác giả của bài viết (Admin hoặc Staff)
+        $author = $post->author;
+        if (! $author) {
+            $author = Account::where('role', Account::ROLE_ADMIN)->with('profile')->first() ?? Account::first();
+        } elseif (! $author->relationLoaded('profile')) {
+            $author->load('profile');
+        }
+
+        $authorProfile = $author?->profile;
+        $authorFullName = $authorProfile?->full_name ?? $author?->name ?? 'Đức Nobi 💖';
+        $authorAvatarUrl = null;
+        if (!empty($authorProfile?->avatar)) {
+            $rawAvatar = ltrim($authorProfile->avatar, '/');
+            $authorAvatarUrl = (str_starts_with($rawAvatar, 'http://') || str_starts_with($rawAvatar, 'https://'))
+                ? $rawAvatar
+                : asset('clients/assets/img/' . (str_starts_with($rawAvatar, 'users/') ? $rawAvatar : 'users/' . $rawAvatar));
+        }
+        if (!$authorAvatarUrl) {
+            $authorAvatarUrl = 'https://ui-avatars.com/api/?name=' . urlencode($authorFullName) . '&background=0F172A&color=ffffff&bold=true&size=160';
+        }
+
+        $isAuthorAdmin = ($author?->role === Account::ROLE_ADMIN);
+        $authorRoleBadge = $isAuthorAdmin ? '👑 Nhà sáng lập & Tổng biên tập' : '✨ Biên tập viên & Stylist';
+        $authorBio = $authorProfile?->bio && mb_strlen($authorProfile->bio) > 10
+            ? $authorProfile->bio
+            : ($isAuthorAdmin
+                ? 'Nhà sáng lập kiêm Tổng biên tập tại Nobi Fashion. Chuyên gia phân tích xu hướng thời trang giới trẻ, định hình phong cách sống hiện đại và phối đồ ứng dụng.'
+                : 'Chuyên viên Định hình phong cách và Biên tập viên nội dung thời trang tại Nobi Fashion. Chuyên gia tư vấn xu hướng và cẩm nang phối đồ thực tế.');
+
+        $authorUrl = AuthorController::getAuthorUrl($author);
+
+        $schemaData = $this->buildSchemaData($post, $tags, $approvedComments, $authorFullName, $authorUrl);
 
         return view('clients.blog.show', [
             'post' => $post,
+            'authorFullName' => $authorFullName,
+            'authorAvatarUrl' => $authorAvatarUrl,
+            'authorRoleBadge' => $authorRoleBadge,
+            'authorBio' => $authorBio,
+            'authorUrl' => $authorUrl,
             'contentWithAnchors' => $contentWithAnchors,
             'toc' => $toc,
             'tags' => $tags,
@@ -483,7 +579,8 @@ class BlogController extends Controller
                             'dateModified' => optional($post->updated_at)->toIso8601String(),
                             'author' => [
                                 '@type' => 'Person',
-                                'name' => $post->author?->name ?? $siteName,
+                                'name' => $post->author?->profile?->full_name ?? $post->author?->displayName() ?? 'Đức Nobi 💖',
+                                'url' => AuthorController::getAuthorUrl($post->author),
                             ],
                             'publisher' => [
                                 '@type' => 'Organization',
@@ -599,7 +696,8 @@ class BlogController extends Controller
                             'dateModified' => optional($post->updated_at)->toIso8601String(),
                             'author' => [
                                 '@type' => 'Person',
-                                'name' => $post->author?->name ?? $siteName,
+                                'name' => $post->author?->profile?->full_name ?? $post->author?->displayName() ?? 'Đức Nobi 💖',
+                                'url' => AuthorController::getAuthorUrl($post->author),
                             ],
                         ],
                     ];
@@ -610,7 +708,7 @@ class BlogController extends Controller
         return $schemas;
     }
 
-    protected function buildSchemaData(Post $post, Collection $tags, Collection $comments): array
+    protected function buildSchemaData(Post $post, Collection $tags, Collection $comments, ?string $authorFullName = null, ?string $authorUrl = null): array
     {
         $settings = \Illuminate\Support\Facades\View::shared('settings') ?? \App\Models\Setting::first();
         $siteUrl = $settings->site_url ?? config('app.url');
@@ -685,20 +783,20 @@ class BlogController extends Controller
             'itemListElement' => $breadcrumbs,
         ];
 
-        // 4. Article/BlogPosting Schema (Main)
+        // 4. BlogPosting Schema (Main)
         $articleSchema = [
             '@context' => 'https://schema.org',
-            '@type' => ['Article', 'BlogPosting'],
+            '@type' => 'BlogPosting',
             '@id' => route('client.blog.show', $post),
             'headline' => $post->meta_title ?? $post->title,
             'description' => $post->meta_description ?? $post->excerpt_text ?? Str::limit(strip_tags($post->content ?? ''), 160),
             'url' => route('client.blog.show', $post),
-            'datePublished' => optional($post->published_at)->toIso8601String(),
-            'dateModified' => optional($post->updated_at)->toIso8601String(),
+            'datePublished' => optional($post->published_at ?? $post->created_at)->toIso8601String(),
+            'dateModified' => optional($post->updated_at ?? $post->published_at ?? $post->created_at)->toIso8601String(),
             'author' => [
                 '@type' => 'Person',
-                'name' => $post->author?->name ?? $siteName,
-                'url' => $siteUrl,
+                'name' => $authorFullName ?? ($post->author?->profile?->full_name ?? $post->author?->displayName() ?? 'Đức Nobi 💖'),
+                'url' => $authorUrl ?? AuthorController::getAuthorUrl($post->author),
             ],
             'publisher' => [
                 '@type' => 'Organization',
@@ -721,9 +819,10 @@ class BlogController extends Controller
 
         // Image
         if ($post->thumbnail) {
+            $thumbFile = basename($post->thumbnail);
             $articleSchema['image'] = [
                 '@type' => 'ImageObject',
-                'url' => asset($post->thumbnail),
+                'url' => asset('clients/assets/img/posts/' . $thumbFile),
                 'width' => 1200,
                 'height' => 630,
             ];
@@ -851,6 +950,70 @@ class BlogController extends Controller
 
         // Ghép thứ tự thời gian chuẩn: Bài mới hơn xếp trên (đảo ngược asc thành desc) + bài cũ hơn
         return $selectedAfter->reverse()->concat($selectedBefore)->values();
+    }
+
+    /**
+     * Lấy danh sách hashtag bài viết nổi bật cho Blog (loại bỏ hoàn toàn tag sản phẩm)
+     */
+    protected function getBlogSidebarTags(): Collection
+    {
+        return Cache::remember('blog:sidebar:tags:v3', 3600, function () {
+            // 1. Ưu tiên lấy tag của bài viết từ database
+            $postTags = Tag::active()
+                ->where(function ($q) {
+                    $q->where('entity_type', Post::class)
+                      ->orWhere('entity_type', 'post');
+                })
+                ->orderByDesc('usage_count')
+                ->take(20)
+                ->get(['id', 'name', 'slug']);
+
+            if ($postTags->count() >= 10) {
+                return $postTags;
+            }
+
+            // 2. Trích xuất từ meta_keywords của các bài viết blog đã xuất bản
+            $recentKeywords = Post::published()
+                ->whereNotNull('meta_keywords')
+                ->latest('published_at')
+                ->take(80)
+                ->pluck('meta_keywords');
+
+            $tagCounts = [];
+            foreach ($recentKeywords as $kwStr) {
+                $items = array_map('trim', explode(',', (string) $kwStr));
+                foreach ($items as $item) {
+                    $clean = trim($item);
+                    $lower = mb_strtolower($clean);
+                    if (mb_strlen($clean) >= 3 && !in_array($lower, ['nobi fashion', 'nobi fashion việt nam', 'thời trang'])) {
+                        $tagCounts[$clean] = ($tagCounts[$clean] ?? 0) + 1;
+                    }
+                }
+            }
+
+            arsort($tagCounts);
+            $topTags = array_slice(array_keys($tagCounts), 0, 20);
+
+            $result = collect();
+            foreach ($topTags as $name) {
+                $slug = Str::slug($name);
+                if ($slug && !$result->contains('slug', $slug)) {
+                    $tagModel = Tag::firstOrCreate(
+                        ['slug' => $slug],
+                        [
+                            'name' => $name,
+                            'entity_type' => 'post',
+                            'entity_id' => 0,
+                            'is_active' => true,
+                            'usage_count' => $tagCounts[$name] ?? 1,
+                        ]
+                    );
+                    $result->push($tagModel);
+                }
+            }
+
+            return $result;
+        });
     }
 }
 
