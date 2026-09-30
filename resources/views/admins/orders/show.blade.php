@@ -884,15 +884,17 @@
                                 @php
                                     $imageUrl = $item->variant?->primaryVariantImage
                                         ? asset('clients/assets/img/clothes/' . $item->variant->primaryVariantImage->url)
-                                        : ($item->product->primaryImage
+                                        : ($item->product?->primaryImage
                                             ? asset('clients/assets/img/clothes/' . $item->product->primaryImage->url)
                                             : asset('clients/assets/img/clothes/no-image.webp'));
+                                    $productName = $item->product?->name ?? 'Sản phẩm đã xóa';
+                                    $productSku = $item->product?->sku ?? 'N/A';
                                 @endphp
                                 <img src="{{ $imageUrl }}" alt="" class="product-image">
                             </td>
                             <td>
-                                <strong>{{ $item->product->name }}</strong><br>
-                                <small style="color:#64748b;">SKU: {{ $item->product->sku }}</small>
+                                <strong>{{ $productName }}</strong><br>
+                                <small style="color:#64748b;">SKU: {{ $productSku }}</small>
                             </td>
                             <td>
                                 @if($item->variant)

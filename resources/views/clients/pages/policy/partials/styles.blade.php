@@ -191,6 +191,105 @@
         color: #5f6b7c;
     }
 
+    /* Breadcrumb tiện ích */
+    .policy-breadcrumb {
+        margin-bottom: 20px;
+    }
+
+    .policy-breadcrumb ol {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        list-style: none !important;
+        padding: 0;
+        margin: 0;
+        font-size: 13px;
+    }
+
+    .policy-breadcrumb li {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 8px;
+        color: #64748b;
+    }
+
+    .policy-breadcrumb a {
+        color: #64748b;
+        text-decoration: none !important;
+        transition: color 0.2s ease;
+    }
+
+    .policy-breadcrumb a:hover {
+        color: #0f172a;
+    }
+
+    .policy-breadcrumb li.active {
+        color: #0f172a;
+        font-weight: 600;
+    }
+
+    .policy-breadcrumb .separator {
+        font-size: 11px;
+        color: #94a3b8;
+    }
+
+    /* Bảng thông tin tiện ích */
+    .policy-table-wrapper {
+        overflow-x: auto;
+        margin-top: 14px;
+        border-radius: 16px;
+        border: 1px solid rgba(12, 22, 39, 0.08);
+    }
+
+    .policy-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        text-align: left;
+    }
+
+    .policy-table th {
+        background: #f8fafc;
+        color: #0f172a;
+        padding: 14px 18px;
+        font-weight: 600;
+        border-bottom: 1px solid rgba(12, 22, 39, 0.08);
+    }
+
+    .policy-table td {
+        padding: 14px 18px;
+        border-bottom: 1px solid rgba(12, 22, 39, 0.05);
+        color: #334155;
+    }
+
+    .policy-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    /* FAQ Box */
+    .policy-faq-item {
+        border: 1px solid rgba(12, 22, 39, 0.08);
+        border-radius: 16px;
+        padding: 18px 20px;
+        margin-top: 12px;
+        background: #fdfefe;
+    }
+
+    .policy-faq-item strong {
+        display: block;
+        color: #0f172a;
+        font-size: 15px;
+        margin-bottom: 6px;
+    }
+
+    .policy-faq-item p {
+        margin: 0;
+        color: #475569;
+        font-size: 14px;
+        line-height: 1.6;
+    }
+
     @media (max-width: 768px) {
         .policy-hero {
             padding: 32px 24px;

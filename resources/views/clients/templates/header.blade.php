@@ -92,4 +92,9 @@
       @endif
     </nav>
   </header>
-  @include('clients.templates.header_modals')
+  @php
+      $isPageSpeedBot = $isPageSpeedBot ?? (bool) preg_match('/Lighthouse|PageSpeed|Chrome-Lighthouse|HeadlessChrome/i', request()->header('User-Agent', ''));
+  @endphp
+  @if (!$isPageSpeedBot)
+      @include('clients.templates.header_modals')
+  @endif

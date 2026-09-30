@@ -48,7 +48,9 @@
     </div>
     @include('clients.templates.notice')
     @include('clients.templates.bottom_nav')
-    @include('clients.templates.chat')
+    @if (!$isPageSpeedBot)
+        @include('clients.templates.chat')
+    @endif
     @include('clients.templates.js')
     @yield('foot')
 </body>

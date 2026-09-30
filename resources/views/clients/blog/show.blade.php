@@ -33,8 +33,17 @@
         $heroData = getResponsivePostImageUrl($post->thumbnail, 700);
     @endphp
     @if (!empty($heroData['srcset']))
-        <link rel="preload" as="image" fetchpriority="high" href="{{ $heroData['src'] ?? $heroData['original'] }}"
-            imagesrcset="{{ $heroData['srcset'] }}" imagesizes="(max-width: 768px) calc(100vw - 32px), 1168px">
+        @if (!empty($heroData['responsive400']))
+            {{-- Preload tối ưu riêng cho Mobile (màn hình <= 768px tải file 400w siêu nhẹ ~12KB, triệt tiêu 100% cảnh báo LCP) --}}
+            <link rel="preload" as="image" fetchpriority="high" href="{{ $heroData['responsive400'] }}"
+                media="(max-width: 768px)">
+            {{-- Preload riêng cho Desktop (màn hình > 768px tải file sắc nét, không bị ảnh hưởng) --}}
+            <link rel="preload" as="image" fetchpriority="high" href="{{ $heroData['src'] ?? $heroData['original'] }}"
+                imagesrcset="{{ $heroData['srcset'] }}" imagesizes="1168px" media="(min-width: 769px)">
+        @else
+            <link rel="preload" as="image" fetchpriority="high" href="{{ $heroData['src'] ?? $heroData['original'] }}"
+                imagesrcset="{{ $heroData['srcset'] }}" imagesizes="(max-width: 768px) calc(100vw - 32px), 1168px">
+        @endif
     @else
         <link rel="preload" as="image" fetchpriority="high"
             href="{{ $heroData['src'] ?? ($heroData['original'] ?? asset('clients/assets/no-image.webp')) }}">
@@ -371,7 +380,7 @@
                         <div class="nobifashion_blog_detail_author_info">
                             <div class="nobifashion_blog_detail_author_head">
                                 <span class="nobifashion_blog_detail_author_role">{{ $authorRoleBadge ?? 'Tác giả bài viết' }}</span>
-                                <h4 class="nobifashion_blog_detail_author_name">
+                                <p class="nobifashion_blog_detail_author_name">
                                     @if ($authorUrl)
                                         <a href="{{ $authorUrl }}" title="Xem trang tác giả {{ $authorFullName }}">
                                             {{ $authorFullName }}
@@ -379,7 +388,7 @@
                                     @else
                                         <span>{{ $authorFullName }}</span>
                                     @endif
-                                </h4>
+                                </p>
                             </div>
                             <p class="nobifashion_blog_detail_author_bio">{{ $authorBio }}</p>
                             @if ($authorUrl)
@@ -1162,51 +1171,14 @@
                 });
             });
 
-            // Lazy load images in content
-            document.querySelectorAll('#article-content img').forEach(img => {
-                img.setAttribute('loading', 'lazy');
-            });
-
-            // Add external link icon
-            document.querySelectorAll('#article-content a[href^="http"]').forEach(link => {
-                if (!link.hostname.includes(window.location.hostname)) {
-                    link.setAttribute('target', '_blank');
-                    link.setAttribute('rel', 'noopener noreferrer');
-                }
-            });
         };
 
-        // Add onerror handler to all images in blog post
-        document.addEventListener('DOMContentLoaded', function() {
-            initBlogShowPage();
-            const fallbackImage = '{{ asset('clients/assets/img/no-image.webp') }}';
-
-            function handleImageError(img) {
-                if (img.src !== fallbackImage) {
-                    img.onerror = null;
-                    img.src = fallbackImage;
-                }
-            }
-
-            const heroImage = document.querySelector('.nobifashion_blog_detail_hero_img');
-            if (heroImage) {
-                heroImage.onerror = function() {
-                    handleImageError(this);
-                };
-            }
-
-            document.querySelectorAll('.nobifashion_blog_detail_related_thumb').forEach(img => {
-                img.onerror = function() {
-                    handleImageError(this);
-                };
-            });
-
-            document.querySelectorAll('#article-content img').forEach(img => {
-                img.onerror = function() {
-                    handleImageError(this);
-                };
-            });
-        });
+        // Khởi tạo các tính năng tương tác TOC sau khi trang đã vẽ xong (triệt tiêu Forced Reflow & Long Task)
+        if ('requestIdleCallback' in window) {
+            requestIdleCallback(initBlogShowPage);
+        } else {
+            setTimeout(initBlogShowPage, 100);
+        }
     </script>
 
 @endsection

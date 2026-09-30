@@ -41,6 +41,8 @@ class Category extends Model
         });
 
         static::saved(function ($category) {
+            \Illuminate\Support\Facades\Cache::forget('view.categories.tree.v1');
+            \Illuminate\Support\Facades\Cache::forget('view.categories.tree.v2');
             try {
                 app(ImageRegistryService::class)->syncEntityImage(
                     entityType: 'category',
@@ -60,6 +62,8 @@ class Category extends Model
         });
 
         static::deleted(function ($category) {
+            \Illuminate\Support\Facades\Cache::forget('view.categories.tree.v1');
+            \Illuminate\Support\Facades\Cache::forget('view.categories.tree.v2');
             try {
                 app(ImageRegistryService::class)->syncEntityImage(
                     entityType: 'category',

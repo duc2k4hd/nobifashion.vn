@@ -1,11 +1,120 @@
 @extends('clients.layouts.master')
 
-@section('title', 'Chính sách biên tập nội dung - ' . renderMeta($settings->site_name ?? ($settings->subname ?? 'NOBI FASHION VIỆT NAM')))
+@section('title', 'Chính sách biên tập nội dung & Đạo đức xuất bản | ' . renderMeta($settings->site_name ?? ($settings->subname ?? 'NOBI FASHION')))
 
 @section('head')
     <meta name="description"
-        content="{{ renderMeta('Chính sách biên tập nội dung ' . ($settings->site_name ?? 'NOBI FASHION VIỆT NAM') . ' - nguyên tắc biên tập, nguồn thông tin và cam kết đính chính minh bạch.') }}">
+        content="{{ renderMeta('Chính sách biên tập nội dung tại ' . ($settings->site_name ?? 'NOBI FASHION') . ' - Quy chuẩn kiểm duyệt, tính khách quan, nguồn trích dẫn và cam kết đính chính minh bạch.') }}">
+    <meta name="keywords" content="chính sách biên tập, quy chuẩn nội dung, đạo đức xuất bản, nobi fashion, kiểm duyệt nội dung, đính chính thông tin">
     <link rel="canonical" href="{{ url()->current() }}">
+
+    {{-- Open Graph / Facebook --}}
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="{{ url()->current() }}">
+    <meta property="og:title" content="Chính sách biên tập nội dung & Đạo đức xuất bản | {{ $settings->site_name ?? 'NOBI FASHION' }}">
+    <meta property="og:description" content="Quy chuẩn kiểm duyệt, nguyên tắc khách quan, nguồn dẫn chứng và cam kết minh bạch thông tin tại {{ $settings->site_name ?? 'NOBI FASHION' }}.">
+    <meta property="og:image" content="{{ asset('clients/assets/img/business/' . (($settings->site_banner ?? null) ?: (($settings->site_logo ?? null) ?: 'banner.webp'))) }}">
+    <meta property="og:image:alt" content="Chính sách biên tập nội dung NOBI FASHION">
+    <meta property="og:site_name" content="{{ $settings->site_name ?? 'NOBI FASHION VIỆT NAM' }}">
+    <meta property="og:locale" content="vi_VN">
+
+    {{-- Twitter Card --}}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Chính sách biên tập nội dung & Đạo đức xuất bản | {{ $settings->site_name ?? 'NOBI FASHION' }}">
+    <meta name="twitter:description" content="Quy chuẩn kiểm duyệt, nguyên tắc khách quan, nguồn dẫn chứng và cam kết minh bạch thông tin tại {{ $settings->site_name ?? 'NOBI FASHION' }}.">
+    <meta name="twitter:image" content="{{ asset('clients/assets/img/business/' . (($settings->site_banner ?? null) ?: (($settings->site_logo ?? null) ?: 'banner.webp'))) }}">
+@endsection
+
+@section('schema')
+    @php
+        $siteUrl = config('app.url') ?? url('/');
+        $logoUrl = asset('clients/assets/img/business/' . ($settings->site_logo ?? 'nobifashion-logo.png'));
+        $bannerUrl = asset('clients/assets/img/business/' . ($settings->site_banner ?? 'banner.webp'));
+        $socialLinks = array_values(array_filter([
+            $settings->facebook_link ?? null,
+            $settings->instagram_link ?? null,
+            $settings->tiktok_link ?? null,
+        ]));
+
+        $schemaGraph = [
+            '@context' => 'https://schema.org',
+            '@graph' => [
+                [
+                    '@type' => 'WebSite',
+                    '@id' => $siteUrl . '#website',
+                    'url' => $siteUrl,
+                    'name' => ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'NOBI FASHION'),
+                    'description' => ($settings->site_description ?? null) ?: 'Thương hiệu thời trang nam hiện đại chuẩn phom dáng người Việt',
+                    'publisher' => [
+                        '@id' => $siteUrl . '#organization'
+                    ],
+                    'inLanguage' => 'vi-VN'
+                ],
+                [
+                    '@type' => 'WebPage',
+                    '@id' => route('client.policy.editorial') . '#webpage',
+                    'url' => route('client.policy.editorial'),
+                    'name' => 'Chính sách biên tập nội dung & Đạo đức xuất bản | ' . (($settings->site_name ?? null) ?: 'NOBI FASHION'),
+                    'description' => 'Quy chuẩn kiểm duyệt, nguyên tắc khách quan, nguồn dẫn chứng và cam kết minh bạch thông tin tại NOBI FASHION.',
+                    'isPartOf' => [
+                        '@id' => $siteUrl . '#website'
+                    ],
+                    'breadcrumb' => [
+                        '@id' => route('client.policy.editorial') . '#breadcrumb'
+                    ],
+                    'about' => [
+                        '@id' => $siteUrl . '#organization'
+                    ],
+                    'inLanguage' => 'vi-VN'
+                ],
+                [
+                    '@type' => 'BreadcrumbList',
+                    '@id' => route('client.policy.editorial') . '#breadcrumb',
+                    'itemListElement' => [
+                        [
+                            '@type' => 'ListItem',
+                            'position' => 1,
+                            'name' => 'Trang chủ',
+                            'item' => route('client.home.index')
+                        ],
+                        [
+                            '@type' => 'ListItem',
+                            'position' => 2,
+                            'name' => 'Chính sách biên tập',
+                            'item' => route('client.policy.editorial')
+                        ]
+                    ]
+                ],
+                [
+                    '@type' => ['ClothingStore', 'Organization'],
+                    '@id' => $siteUrl . '#organization',
+                    'name' => ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'NOBI FASHION'),
+                    'alternateName' => ($settings->subname ?? null) ?: 'NOBI FASHION VIỆT NAM',
+                    'url' => $siteUrl,
+                    'logo' => [
+                        '@type' => 'ImageObject',
+                        'url' => $logoUrl,
+                        'caption' => 'Logo NOBI FASHION'
+                    ],
+                    'image' => $bannerUrl,
+                    'telephone' => ($settings->contact_phone ?? null) ?: '0981985361',
+                    'email' => ($settings->contact_email ?? null) ?: 'cskh@nobifashion.vn',
+                    'address' => [
+                        '@type' => 'PostalAddress',
+                        'streetAddress' => ($settings->contact_address ?? null) ?: 'Hải Phòng',
+                        'addressLocality' => ($settings->city ?? null) ?: 'Hải Phòng',
+                        'addressRegion' => ($settings->city ?? null) ?: 'Hải Phòng',
+                        'postalCode' => '180000',
+                        'addressCountry' => 'VN'
+                    ],
+                    'sameAs' => $socialLinks
+                ]
+            ]
+        ];
+    @endphp
+    <script type="application/ld+json">
+        {!! json_encode($schemaGraph, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT) !!}
+    </script>
 @endsection
 
 @push('styles')
@@ -675,9 +784,9 @@
                     <p>
                         Bạn có thể bình luận trực tiếp tại bài viết hoặc gửi phản hồi tới hòm thư chính thức của Ban Biên Tập:
                     </p>
-                    <a href="mailto:{{ $settings->contact_email }}" class="editorial-contact-btn">
+                    <a href="mailto:{{ $settings->contact_email ?? 'cskh@nobifashion.vn' }}" class="editorial-contact-btn">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                        Gửi phản hồi: {{ $settings->contact_email }}
+                        Gửi phản hồi: {{ $settings->contact_email ?? 'cskh@nobifashion.vn' }}
                     </a>
                 </div>
             </section>
@@ -685,7 +794,9 @@
             <p class="editorial-footer-note">
                 Cảm ơn bạn đã đọc, đóng góp ý kiến và đồng hành cùng Nobi Fashion Việt Nam trong quá trình xây dựng một nguồn thông tin ngày càng hữu ích, minh bạch và chính xác hơn.
             </p>
-
+            <p class="editorial-footer-note" style="font-size: 13px; color: var(--ep-muted); margin-top: 8px;">
+                Chính sách biên tập nội dung áp dụng cập nhật mới nhất từ tháng 09/2026 theo các quy chuẩn đạo đức xuất bản và pháp luật về Sở hữu trí tuệ hiện hành.
+            </p>
         </article>
     </div>
 @endsection

@@ -3,9 +3,8 @@
 namespace App\Http\Controllers\Admins;
 
 use App\Http\Controllers\Controller;
-use App\Models\Contact;
-use App\Models\FlashSale;
-use App\Models\NewsletterSubscription;
+use App\Models\Post;
+use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 
@@ -17,37 +16,25 @@ class TrashController extends Controller
      * @var array<string, array>
      */
     protected array $trashables = [
-        'flash_sales' => [
-            'label' => 'Flash Sale',
-            'model' => FlashSale::class,
-            'searchable' => ['title', 'tag', 'description'],
+        'posts' => [
+            'label' => 'Bài viết',
+            'model' => Post::class,
+            'searchable' => ['title', 'slug'],
             'columns' => [
                 'title' => 'Tiêu đề',
-                'tag' => 'Tag',
-                'start_time' => 'Bắt đầu',
-                'end_time' => 'Kết thúc',
+                'slug' => 'Đường dẫn',
+                'views' => 'Lượt xem',
             ],
         ],
-        'contacts' => [
-            'label' => 'Liên hệ',
-            'model' => Contact::class,
-            'searchable' => ['name', 'email', 'phone', 'subject'],
+        'products' => [
+            'label' => 'Sản phẩm',
+            'model' => Product::class,
+            'searchable' => ['name', 'sku', 'slug'],
             'columns' => [
-                'name' => 'Họ tên',
-                'email' => 'Email',
-                'phone' => 'Số điện thoại',
-                'subject' => 'Chủ đề',
-            ],
-        ],
-        'newsletter' => [
-            'label' => 'Đăng ký nhận tin',
-            'model' => NewsletterSubscription::class,
-            'searchable' => ['email', 'status', 'note'],
-            'columns' => [
-                'email' => 'Email',
-                'status' => 'Trạng thái',
-                'verified_at' => 'Xác thực',
-                'source' => 'Nguồn',
+                'name' => 'Tên sản phẩm',
+                'sku' => 'Mã SKU',
+                'price' => 'Giá bán',
+                'stock_quantity' => 'Tồn kho',
             ],
         ],
     ];

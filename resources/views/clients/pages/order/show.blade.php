@@ -133,13 +133,14 @@
                                                 @php
                                                     $imageUrl = $item->variant?->primaryVariantImage
                                                         ? asset('clients/assets/img/clothes/' . $item->variant->primaryVariantImage->url)
-                                                        : ($item->product->primaryImage
+                                                        : ($item->product?->primaryImage
                                                             ? asset('clients/assets/img/clothes/' . $item->product->primaryImage->url)
                                                             : asset('clients/assets/img/clothes/no-image.webp'));
+                                                    $productName = $item->product?->name ?? 'Sản phẩm đã ngừng kinh doanh';
                                                 @endphp
-                                                <img src="{{ $imageUrl }}" alt="{{ $item->product->name }}" class="nobifashion_order_detail_table_product_img">
+                                                <img src="{{ $imageUrl }}" alt="{{ $productName }}" class="nobifashion_order_detail_table_product_img">
                                                 <div class="nobifashion_order_detail_table_product_info">
-                                                    <div class="nobifashion_order_detail_table_product_name">{{ $item->product->name }}</div>
+                                                    <div class="nobifashion_order_detail_table_product_name">{{ $productName }}</div>
                                                     @if($item->variant)
                                                         @php
                                                             $attrs = is_string($item->variant->attributes) 

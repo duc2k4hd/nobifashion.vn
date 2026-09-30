@@ -192,6 +192,16 @@ class GenerateResponsivePostImagesCommand extends Command
                             ];
                         }
 
+                        // Bản 400w cho hero image mobile (khớp 100% viewport 396px của Google PageSpeed Mobile)
+                        $t400 = $cleanBase . "-400w.webp";
+                        if (!file_exists($postsDir . DIRECTORY_SEPARATOR . $t400)) {
+                            $queue[] = [
+                                'file' => $base,
+                                'target' => $t400,
+                                'width' => 400,
+                            ];
+                        }
+
                         // Bản 1200w cho hero image desktop
                         $t1200 = $cleanBase . "-1200w.webp";
                         if (!file_exists($postsDir . DIRECTORY_SEPARATOR . $t1200)) {

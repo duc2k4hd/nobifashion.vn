@@ -213,6 +213,7 @@ class PostController extends Controller
 
     public function destroy(Post $post): RedirectResponse
     {
+        $this->postService->clearPostCache($post, wasFeatured: (bool) $post->is_featured);
         $post->delete();
 
         return back()->with('success', 'Đã xóa bài viết.');
@@ -453,6 +454,7 @@ class PostController extends Controller
     public function feature(Post $post): RedirectResponse
     {
         $post->update(['is_featured' => true]);
+        $this->postService->clearPostCache($post, wasFeatured: true);
 
         return back()->with('success', 'Đã bật nổi bật.');
     }
@@ -460,6 +462,7 @@ class PostController extends Controller
     public function unfeature(Post $post): RedirectResponse
     {
         $post->update(['is_featured' => false]);
+        $this->postService->clearPostCache($post, wasFeatured: true);
 
         return back()->with('success', 'Đã tắt nổi bật.');
     }

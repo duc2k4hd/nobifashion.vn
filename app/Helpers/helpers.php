@@ -166,6 +166,8 @@ if (!function_exists('getResponsivePostImageUrl')) {
 
         // URL gốc
         $origUrl = asset('clients/assets/img/posts/' . $origName);
+        $responsive400Name = $cleanBase . '-400w.webp';
+        $responsive400Path = $postsDir . DIRECTORY_SEPARATOR . $responsive400Name;
         $responsiveName = $cleanBase . '-' . $targetWidth . 'w.webp';
         $responsivePath = $postsDir . DIRECTORY_SEPARATOR . $responsiveName;
         $responsive800Name = $cleanBase . '-800w.webp';
@@ -178,16 +180,51 @@ if (!function_exists('getResponsivePostImageUrl')) {
         $height = 675;
 
         // Kiểm tra nhanh các file phái sinh đã có sẵn trên đĩa (Không resize blocking trong request)
+        $has400 = file_exists($responsive400Path);
         $hasResponsive = file_exists($responsivePath);
         $has800 = file_exists($responsive800Path);
         $has1200 = file_exists($responsive1200Path);
         $hasOrig = file_exists($origPath);
 
+        // Tự động tạo bản 400w siêu nhẹ cho Mobile nếu chưa có
+        if (!$has400 && ($hasResponsive || $has800 || $hasOrig) && function_exists('imagewebp')) {
+            $sourceFor400 = $hasResponsive ? $responsivePath : ($has800 ? $responsive800Path : $origPath);
+            try {
+                $sInfo = @getimagesize($sourceFor400);
+                if ($sInfo && $sInfo[0] > 400) {
+                    $sW = $sInfo[0];
+                    $sH = $sInfo[1];
+                    $tW = 400;
+                    $tH = (int) round($sH * ($tW / $sW));
+                    $sImg = match ($sInfo[2] ?? 0) {
+                        IMAGETYPE_JPEG => @imagecreatefromjpeg($sourceFor400),
+                        IMAGETYPE_PNG => @imagecreatefrompng($sourceFor400),
+                        IMAGETYPE_WEBP => @imagecreatefromwebp($sourceFor400),
+                        default => null,
+                    };
+                    if ($sImg) {
+                        $canvas = imagecreatetruecolor($tW, $tH);
+                        imagealphablending($canvas, false);
+                        imagesavealpha($canvas, true);
+                        imagecopyresampled($canvas, $sImg, 0, 0, 0, 0, $tW, $tH, $sW, $sH);
+                        @imagewebp($canvas, $responsive400Path, 78);
+                        @imagedestroy($canvas);
+                        @imagedestroy($sImg);
+                        $has400 = file_exists($responsive400Path);
+                    }
+                }
+            } catch (\Throwable $e) {}
+        }
+
+        $responsive400Url = $has400 ? asset('clients/assets/img/posts/' . $responsive400Name) : null;
         $responsiveUrl = $hasResponsive ? asset('clients/assets/img/posts/' . $responsiveName) : null;
         $responsive800Url = $has800 ? asset('clients/assets/img/posts/' . $responsive800Name) : null;
         $responsive1200Url = $has1200 ? asset('clients/assets/img/posts/' . $responsive1200Name) : null;
 
         $srcsetParts = [];
+        if ($responsive400Url) {
+            $srcsetParts[] = "{$responsive400Url} 400w";
+        }
         if ($responsiveUrl) {
             $srcsetParts[] = "{$responsiveUrl} {$targetWidth}w";
         }
@@ -202,10 +239,11 @@ if (!function_exists('getResponsivePostImageUrl')) {
         }
 
         $srcset = !empty($srcsetParts) ? implode(', ', $srcsetParts) : null;
-        $src = $responsiveUrl ?? $responsive800Url ?? $responsive1200Url ?? $origUrl;
+        $src = $responsive400Url ?? $responsiveUrl ?? $responsive800Url ?? $responsive1200Url ?? $origUrl;
 
         return [
             'original' => $origUrl,
+            'responsive400' => $responsive400Url,
             'responsive' => $responsiveUrl ?? $responsive800Url,
             'responsive1200' => $responsive1200Url,
             'src' => $src,

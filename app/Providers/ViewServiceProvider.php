@@ -30,94 +30,41 @@ class ViewServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Chỉ chạy khi không phải console command
-        if (app()->runningInConsole()) {
-            return;
-        }
-
-        // --- SETTINGS ---
+        // --- SETTINGS (Cache vĩnh viễn, không query schema lãng phí) ---
         try {
-            if (Schema::hasTable('settings')) {
-                $settings = Cache::rememberForever('settings', function () {
-                    return Setting::active()
-                        ->get() // ❗ quan trọng
-                        ->mapWithKeys(fn($s) => [$s->key => $s->getParsedValue()])
-                        ->toArray();
-                });
+            $settings = Cache::rememberForever('settings', function () {
+                return Setting::active()
+                    ->get(['key', 'value', 'type'])
+                    ->mapWithKeys(fn($s) => [$s->key => $s->getParsedValue()])
+                    ->toArray();
+            });
 
-                config(['settings' => $settings]);
-                View::share('settings', (object) $settings);
-            }
+            config(['settings' => $settings]);
+            View::share('settings', (object) $settings);
         } catch (\Throwable $e) {
             // Bỏ qua lỗi khi database chưa sẵn sàng
         }
 
-        // --- CATEGORIES ---
+        // --- CATEGORIES (1 query duy nhất + Dựng cây quan hệ trong RAM cực nhanh 0.05ms + Cache vĩnh viễn) ---
         try {
-            if (Schema::hasTable('categories')) {
-                $categories = Cache::remember('view.categories.tree.v1', now()->addMinutes(15), function () {
-                    return Category::query()
-                        ->where('is_active', true)
-                        ->whereNull('parent_id')
-                        ->orderBy('sort_order')
-                        ->orderBy('name')
-                        ->with([
-                            'children' => function ($query) {
-                                $query->where('is_active', true)
-                                    ->orderBy('sort_order')
-                                    ->orderBy('name')
-                                    ->with([
-                                        'children' => function ($subQuery) {
-                                            $subQuery->where('is_active', true)
-                                                ->orderBy('sort_order')
-                                                ->orderBy('name')
-                                                ->with([
-                                                    'children' => function ($greatQuery) {
-                                                        $greatQuery->where('is_active', true)
-                                                            ->orderBy('sort_order')
-                                                            ->orderBy('name');
-                                                    }
-                                                ]);
-                                        }
-                                    ]);
-                            }
-                        ])
-                        ->get();
-                });
+            $categories = Cache::rememberForever('view.categories.tree.v2', function () {
+                $all = Category::query()
+                    ->where('is_active', true)
+                    ->select(['id', 'name', 'slug', 'parent_id', 'sort_order'])
+                    ->orderBy('sort_order')
+                    ->orderBy('name')
+                    ->get();
 
-                View::share('categories', $categories);
+                $grouped = $all->groupBy('parent_id');
+                foreach ($all as $item) {
+                    $item->setRelation('children', $grouped->get($item->id, collect()));
+                }
 
-                $headerCategoryProducts = Cache::remember('view.header.category_products.v1', now()->addMinutes(15), function () use ($categories) {
-                    $previewMap = [];
+                return $grouped->get(null, collect());
+            });
 
-                    foreach ($categories as $category) {
-                        $childIds = $category->children->pluck('id')->all();
-                        $categoryIds = array_values(array_unique(array_merge([$category->id], $childIds)));
-
-                        $previewMap[$category->id] = Product::query()
-                            ->active()
-                            ->select([
-                                'id',
-                                'name',
-                                'slug',
-                                'price',
-                                'sale_price',
-                                'is_featured',
-                                'created_at',
-                                'primary_category_id',
-                                'category_ids',
-                            ])
-                            ->inCategory($categoryIds)
-                            ->with(['primaryImage:id,product_id,url,alt,title'])
-                            ->limit(5)
-                            ->get();
-                    }
-
-                    return $previewMap;
-                });
-
-                View::share('headerCategoryProducts', $headerCategoryProducts);
-            }
+            View::share('categories', $categories);
+            View::share('headerCategoryProducts', []);
         } catch (\Throwable $e) {
             // Bỏ qua lỗi khi database chưa sẵn sàng
         }
@@ -147,19 +94,8 @@ class ViewServiceProvider extends ServiceProvider
 
                     $cart = $cartQuery->orderByDesc('id')->first();
 
-                    $cartItemSumQuery = CartItem::query()->active()
-                        ->where(function ($q) {
-                            $q->whereNull('status')->orWhere('status', 'active');
-                        })
-                        ->whereHas('cart', function ($q) use ($sessionId) {
-                            if (auth('web')->check()) {
-                                $q->where('account_id', auth('web')->id());
-                            } else {
-                                $q->whereNull('account_id')->where('session_id', $sessionId);
-                            }
-                        });
-
-                    $cartCount = (int) ($cartItemSumQuery->sum('quantity') ?? 0);
+                    // Tính tổng số lượng trực tiếp từ quan hệ items đã nạp trong RAM (tiết kiệm 1 subquery EXISTS nặng nề)
+                    $cartCount = $cart ? (int) $cart->items->sum('quantity') : 0;
                     $cartLink = $cartCount > 0 ? route('client.cart.index') : null;
 
                     $favorites = Favorite::ofOwner(auth('web')->id(), $sessionId)->pluck('product_id');

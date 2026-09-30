@@ -204,6 +204,10 @@
                                             $value = data_get($item, $field);
                                             if ($value instanceof \Illuminate\Support\Carbon) {
                                                 $value = $value->timezone(config('app.timezone'))->format('d/m/Y H:i');
+                                            } elseif ($field === 'price' && is_numeric($value)) {
+                                                $value = number_format($value, 0, ',', '.') . ' ₫';
+                                            } elseif (in_array($field, ['stock_quantity', 'views']) && is_numeric($value)) {
+                                                $value = number_format($value);
                                             }
                                         @endphp
                                         <td>{!! $value !== null && $value !== '' ? e($value) : '<span style="color:#94a3b8;">-</span>' !!}</td>

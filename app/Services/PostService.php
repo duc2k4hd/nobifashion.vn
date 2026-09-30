@@ -44,6 +44,11 @@ class PostService
     public function update(Post $post, array $payload, Account $editor): Post
     {
         return DB::transaction(function () use ($post, $payload, $editor) {
+            $oldSlug = $post->slug;
+            $oldCategoryId = $post->category_id;
+            $oldAuthorId = $post->created_by;
+            $wasFeatured = (bool) $post->is_featured;
+
             $data = $this->preparePayload($payload, $post);
 
             $tagIds = $data['tag_ids'] ?? [];
@@ -57,6 +62,9 @@ class PostService
             $this->syncTags($post, $tagIds, $tagNames);
             $this->handleStatusTransition($post, $payload);
             $this->recordRevision($post, $editor);
+
+            // Xóa cache trúng đích của chính bài viết vừa cập nhật
+            $this->clearPostCache($post, $oldSlug, $oldCategoryId, $oldAuthorId, $wasFeatured);
 
             return $post->refresh();
         });
@@ -94,8 +102,54 @@ class PostService
                 'is_autosave' => false,
             ]);
 
+            // Xóa cache trúng đích của chính bài viết vừa khôi phục bản sửa đổi
+            $this->clearPostCache($post);
+
             return $post->refresh();
         });
+    }
+
+    /**
+     * Xóa cache đích danh của một bài viết cụ thể (không flush toàn bộ hệ thống).
+     */
+    public function clearPostCache(
+        Post $post,
+        ?string $oldSlug = null,
+        ?int $oldCategoryId = null,
+        ?int $oldAuthorId = null,
+        bool $wasFeatured = false
+    ): void {
+        // 1. Cache chi tiết bài viết (Bài viết liên quan & Đề xuất đọc thêm)
+        Cache::forget("blog:related:{$post->id}:v3");
+        Cache::forget("blog:related:{$post->id}:v4");
+        Cache::forget("blog:recommendations:{$post->id}");
+
+        // 2. Cache kiểm tra tồn tại slug (dùng cho RedirectService & Routing)
+        if (!empty($post->slug)) {
+            Cache::forget("post:exists:{$post->slug}");
+        }
+        if (!empty($oldSlug) && $oldSlug !== $post->slug) {
+            Cache::forget("post:exists:{$oldSlug}");
+        }
+
+        // 3. Nếu bài viết là bài nổi bật hoặc trước khi sửa từng là nổi bật
+        if ($post->is_featured || $wasFeatured) {
+            Cache::forget('blog:featured');
+            if ($post->category_id) {
+                Cache::forget("blog:category:featured:{$post->category_id}");
+            }
+            if ($oldCategoryId && $oldCategoryId !== $post->category_id) {
+                Cache::forget("blog:category:featured:{$oldCategoryId}");
+            }
+        }
+
+        // 4. Cache showcase/thống kê của tác giả bài viết
+        if ($post->created_by) {
+            Cache::forget("author_showcase_v1_{$post->created_by}");
+        }
+        if ($oldAuthorId && $oldAuthorId !== $post->created_by) {
+            Cache::forget("author_showcase_v1_{$oldAuthorId}");
+        }
     }
 
     public function duplicate(Post $post, Account $actor): Post

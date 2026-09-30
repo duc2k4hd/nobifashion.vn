@@ -42,10 +42,7 @@ class RobotsController extends Controller
             # ------------------------------------------------------------
             # AUTHENTICATION / ACCOUNT
             # ------------------------------------------------------------
-            Disallow: /auth
             Disallow: /auth/
-            Disallow: /profile
-            Disallow: /profile/
             Disallow: /security/
             
             # ------------------------------------------------------------

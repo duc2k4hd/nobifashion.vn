@@ -428,6 +428,7 @@ class SitemapService
                 'client.policy.delivery',
                 'client.policy.privacy',
                 'client.policy.payment',
+                'client.policy.editorial'
             ];
 
             $urls = [];

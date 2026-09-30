@@ -526,8 +526,6 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::prefix('tools')->name('tools.')->group(function () {
             Route::get('/', [ToolsController::class, 'index'])->name('index');
-            Route::get('/scan-post-images', [ToolsController::class, 'scanPostImages'])->name('scan-post-images');
-            Route::post('/delete-post-images', [ToolsController::class, 'deletePostImages'])->name('delete-post-images');
             Route::get('/export-post-images', [ToolsController::class, 'exportPostImages'])->name('export-post-images');
         });
 
