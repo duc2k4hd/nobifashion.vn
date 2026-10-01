@@ -18,6 +18,7 @@ class PostService
     public function __construct(
         protected SeoService $seoService,
         protected PostStatusService $statusService,
+        protected PostResponsiveImageService $responsiveImageService,
     ) {}
 
     public function create(array $payload, Account $author): Post
@@ -36,6 +37,9 @@ class PostService
 
             $this->syncTags($post, $tagIds, $tagNames);
             $this->handleStatusTransition($post, $payload);
+
+            // Tự động tạo ảnh responsive (thumbnail + content srcset) cho bài viết hiện tại
+            $this->responsiveImageService->processPost($post);
 
             return $post->refresh();
         });
@@ -62,6 +66,9 @@ class PostService
             $this->syncTags($post, $tagIds, $tagNames);
             $this->handleStatusTransition($post, $payload);
             $this->recordRevision($post, $editor);
+
+            // Tự động tạo ảnh responsive (thumbnail + content srcset) cho bài viết hiện tại
+            $this->responsiveImageService->processPost($post);
 
             // Xóa cache trúng đích của chính bài viết vừa cập nhật
             $this->clearPostCache($post, $oldSlug, $oldCategoryId, $oldAuthorId, $wasFeatured);
@@ -101,6 +108,9 @@ class PostService
                 'edited_by' => $editor->id,
                 'is_autosave' => false,
             ]);
+
+            // Tự động tạo ảnh responsive (thumbnail + content srcset) cho bài viết hiện tại
+            $this->responsiveImageService->processPost($post);
 
             // Xóa cache trúng đích của chính bài viết vừa khôi phục bản sửa đổi
             $this->clearPostCache($post);
@@ -217,6 +227,11 @@ class PostService
             'published_at',
             'created_by', // Thêm created_by để có thể update tác giả
         ]);
+
+        // Loại bỏ thuộc tính rác data-list-item-id do CKEditor 5 sinh ra trên các thẻ <li>
+        if (isset($data['content']) && is_string($data['content'])) {
+            $data['content'] = preg_replace('/\s*data-list-item-id="[^"]*"/i', '', $data['content']);
+        }
 
         // Global Truncation for VARCHAR(255) columns
         $stringFields = ['title', 'slug', 'meta_title', 'meta_keywords', 'meta_canonical', 'thumbnail', 'thumbnail_alt_text'];

@@ -391,8 +391,9 @@
                 const form = textarea.closest('form');
                 if (form) {
                     form.addEventListener('submit', () => {
-                        // Đảm bảo lưu HTML, không phải Markdown
-                        const htmlContent = editor.getData();
+                        // Đảm bảo lưu HTML sạch sẽ, loại bỏ data-list-item-id rác của CKEditor
+                        let htmlContent = editor.getData();
+                        htmlContent = htmlContent.replace(/\s*data-list-item-id="[^"]*"/gi, '');
                         textarea.value = htmlContent;
                         console.log('Saving HTML content:', htmlContent.substring(0, 100));
                     });
@@ -444,8 +445,9 @@
                     const form = textarea.closest('form');
                     if (form) {
                         form.addEventListener('submit', () => {
-                            // Đảm bảo lưu HTML, không phải Markdown
-                            const htmlContent = editor.getData();
+                            // Đảm bảo lưu HTML sạch sẽ, loại bỏ data-list-item-id rác của CKEditor
+                            let htmlContent = editor.getData();
+                            htmlContent = htmlContent.replace(/\s*data-list-item-id="[^"]*"/gi, '');
                             textarea.value = htmlContent;
                             console.log('Saving HTML content for:', editorId, htmlContent.substring(0, 100));
                         });
@@ -467,8 +469,9 @@
         getContent: function(editorId) {
             const editor = this.get(editorId);
             if (!editor) return '';
-            // Đảm bảo trả về HTML, không phải Markdown
-            const htmlContent = editor.getData();
+            // Đảm bảo trả về HTML sạch sẽ, loại bỏ data-list-item-id rác
+            let htmlContent = editor.getData();
+            htmlContent = htmlContent.replace(/\s*data-list-item-id="[^"]*"/gi, '');
             console.log('Getting HTML content for:', editorId, htmlContent.substring(0, 100));
             return htmlContent;
         },
