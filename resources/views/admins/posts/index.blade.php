@@ -202,7 +202,7 @@
         {{-- Truyền cờ để controller biết đang ở chế độ xóa vĩnh viễn hay xóa mềm --}}
         <input type="hidden" name="is_trashed" value="{{ ($filters['status'] ?? '') === 'trashed' ? '1' : '0' }}">
         <div class="d-flex justify-content-between align-items-center mb-3">
-            <div>
+            <div class="d-flex align-items-center gap-2">
                 @if(($filters['status'] ?? '') === 'trashed')
                     <button type="submit" class="btn btn-sm btn-danger" id="btnBulkDelete" disabled onclick="return confirm('Xóa VĨNH VIỄN các bài đã chọn? Hành động này không thể hoàn tác!');">
                         <i class="fas fa-trash me-1"></i> Xóa vĩnh viễn các mục đã chọn
@@ -212,6 +212,9 @@
                         <i class="fas fa-trash me-1"></i> Xóa các mục đã chọn
                     </button>
                 @endif
+                <button type="button" class="btn btn-sm btn-success d-none" id="btnExportSelectedItems">
+                    <i class="fas fa-file-download me-1"></i> Xuất CSV các bài đã chọn (<span id="bulkSelectedBadge">0</span>)
+                </button>
             </div>
         </div>
     </form>
@@ -432,6 +435,12 @@
                                 <input class="form-check-input" type="radio" name="exportScope" id="scopeFilter" value="filter">
                                 <label class="form-check-label fw-semibold" for="scopeFilter">
                                     <i class="fas fa-filter text-info me-1"></i> Theo bộ lọc tìm kiếm hiện tại trên trang
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="exportScope" id="scopeSelected" value="selected" disabled>
+                                <label class="form-check-label fw-semibold" for="scopeSelected" id="labelScopeSelected">
+                                    <i class="fas fa-check-square text-success me-1"></i> Chỉ các bài viết đang chọn (<span id="modalSelectedCount">0</span> bài)
                                 </label>
                             </div>
                         </div>
@@ -750,8 +759,32 @@
                 });
             }
 
+            if (exportModalEl) {
+                exportModalEl.addEventListener('show.bs.modal', function () {
+                    const checkedCount = document.querySelectorAll('.item-check:checked').length;
+                    const radioSelected = document.getElementById('scopeSelected');
+                    const modalSelectedCount = document.getElementById('modalSelectedCount');
+                    if (modalSelectedCount) modalSelectedCount.textContent = checkedCount;
+
+                    if (checkedCount > 0) {
+                        if (radioSelected) {
+                            radioSelected.disabled = false;
+                            radioSelected.checked = true;
+                        }
+                    } else {
+                        if (radioSelected) {
+                            radioSelected.disabled = true;
+                            if (radioSelected.checked) {
+                                const scopeAll = document.getElementById('scopeAll');
+                                if (scopeAll) scopeAll.checked = true;
+                            }
+                        }
+                    }
+                });
+            }
+
             if (btnConfirmExport) {
-                btnConfirmExport.addEventListener('click', async function () {
+                btnConfirmExport.addEventListener('click', function () {
                     const selectedCols = Array.from(document.querySelectorAll('.export-col-check:checked')).map(cb => cb.value);
                     if (selectedCols.length === 0) {
                         alert('Vui lòng chọn ít nhất một cột để xuất CSV.');
@@ -760,7 +793,7 @@
 
                     const originalContent = this.innerHTML;
                     this.disabled = true;
-                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Đang xuất dữ liệu...';
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Đang tải xuống...';
 
                     try {
                         const scope = document.querySelector('input[name="exportScope"]:checked')?.value || 'all';
@@ -768,53 +801,81 @@
 
                         selectedCols.forEach(col => params.append('columns[]', col));
 
-                        if (scope === 'filter') {
+                        if (scope === 'selected') {
+                            const checkedItems = document.querySelectorAll('.item-check:checked');
+                            if (checkedItems.length === 0) {
+                                alert('Bạn chưa chọn bài viết nào từ danh sách!');
+                                this.disabled = false;
+                                this.innerHTML = originalContent;
+                                return;
+                            }
+                            checkedItems.forEach(cb => params.append('ids[]', cb.value));
+                        } else if (scope === 'filter') {
+                            // Lấy tất cả tham số lọc từ URL hiện tại
+                            const currentUrlParams = new URLSearchParams(window.location.search);
+                            for (const [key, val] of currentUrlParams.entries()) {
+                                if (val && key !== 'page' && key !== 'columns[]') {
+                                    params.append(key, val);
+                                }
+                            }
+
+                            // Bổ sung các giá trị từ form nếu người dùng vừa thay đổi mà chưa bấm Tìm kiếm
                             const filterForm = document.querySelector('.posts-filters form');
                             if (filterForm) {
                                 const formData = new FormData(filterForm);
                                 for (const [key, val] of formData.entries()) {
-                                    if (val && key !== 'page') {
+                                    if (val && key !== 'page' && !params.has(key)) {
                                         params.append(key, val);
                                     }
                                 }
                             }
                         }
 
-                        const response = await fetch("{{ route('admin.posts.export-data') }}?" + params.toString());
-                        const result = await response.json();
+                        // Gửi qua POST form để tránh LiteSpeed Web Server / WAF chặn query string URL dài hoặc chứa ký tự tiếng Việt (Lỗi 403 Forbidden)
+                        const exportForm = document.createElement('form');
+                        exportForm.method = 'POST';
+                        exportForm.action = "{{ route('admin.posts.export-csv') }}";
+                        exportForm.style.display = 'none';
 
-                        if (!result.success) {
-                            alert('Lỗi: ' + (result.message || 'Không thể lấy dữ liệu'));
-                            return;
+                        // CSRF Token
+                        const csrfInput = document.createElement('input');
+                        csrfInput.type = 'hidden';
+                        csrfInput.name = '_token';
+                        csrfInput.value = "{{ csrf_token() }}";
+                        exportForm.appendChild(csrfInput);
+
+                        // Thêm tất cả tham số vào POST body
+                        for (const [key, val] of params.entries()) {
+                            const input = document.createElement('input');
+                            input.type = 'hidden';
+                            input.name = key;
+                            input.value = val;
+                            exportForm.appendChild(input);
                         }
 
-                        if (!result.data || result.data.length === 0) {
-                            alert('Không có dữ liệu bài viết nào phù hợp để xuất.');
-                            return;
-                        }
+                        document.body.appendChild(exportForm);
+                        exportForm.submit();
+                        document.body.removeChild(exportForm);
 
-                        const worksheet = XLSX.utils.json_to_sheet(result.data, { header: selectedCols });
-                        const workbook = XLSX.utils.book_new();
-                        XLSX.utils.book_append_sheet(workbook, worksheet, 'Posts');
+                        // Đóng modal sau khi kích hoạt tải
+                        setTimeout(() => {
+                            const modalInstance = bootstrap.Modal.getInstance(exportModalEl);
+                            if (modalInstance) {
+                                modalInstance.hide();
+                            }
 
-                        const date = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
-                        XLSX.writeFile(workbook, `posts_export_${date}.csv`, { bookType: 'csv' });
-
-                        // Đóng modal
-                        const modalInstance = bootstrap.Modal.getInstance(exportModalEl);
-                        if (modalInstance) {
-                            modalInstance.hide();
-                        }
-
-                        if (window.Toast) {
-                            Toast.fire({ icon: 'success', title: `Đã xuất ${result.total || result.data.length} bài viết thành công!` });
-                        }
+                            if (window.Toast) {
+                                Toast.fire({ icon: 'success', title: 'File CSV đang được tải xuống máy tính của bạn!' });
+                            }
+                        }, 800);
                     } catch (error) {
                         console.error(error);
-                        alert('Lỗi hệ thống khi xuất CSV: ' + error.message);
+                        alert('Lỗi khi kích hoạt tải CSV: ' + error.message);
                     } finally {
-                        this.disabled = false;
-                        this.innerHTML = originalContent;
+                        setTimeout(() => {
+                            this.disabled = false;
+                            this.innerHTML = originalContent;
+                        }, 1200);
                     }
                 });
             }
@@ -929,7 +990,26 @@
                         const firstSheetName = workbook.SheetNames[0];
                         const worksheet = workbook.Sheets[firstSheetName];
 
-                        importJsonData = XLSX.utils.sheet_to_json(worksheet);
+                        const rawRows = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+                        importJsonData = [];
+                        let skippedEmptyRows = 0;
+
+                        rawRows.forEach((row, idx) => {
+                            let hasData = false;
+                            for (const key in row) {
+                                if (!key.startsWith('_') && String(row[key]).trim() !== '') {
+                                    hasData = true;
+                                    break;
+                                }
+                            }
+                            if (hasData) {
+                                row._excel_row = idx + 2; // Dòng 1 là Header trong Excel
+                                importJsonData.push(row);
+                            } else {
+                                skippedEmptyRows++;
+                            }
+                        });
+
                         const rawHeaderRows = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
                         const detectedHeaders = (rawHeaderRows && rawHeaderRows.length > 0) ? rawHeaderRows[0] : [];
 
@@ -942,6 +1022,10 @@
                             btnStartImportBatch.disabled = true;
                             importColumnsContainer.classList.add('d-none');
                             return;
+                        }
+
+                        if (skippedEmptyRows > 0) {
+                            addImportLog(`Đã tự động lọc bỏ ${skippedEmptyRows} dòng trống ở cuối tệp.`, 'info');
                         }
 
                         // Render danh sách checkbox các cột tìm thấy (Mặc định: ID, Tiêu đề, Slug, Content/Nội dung)
@@ -1091,16 +1175,18 @@
             }
 
             // ================================================
-            // Checkboxes: Chọn tất cả và xóa hàng loạt
+            // Checkboxes: Chọn tất cả, xóa và xuất hàng loạt
             // ================================================
             const checkAll = document.getElementById('checkAll');
             const itemChecks = document.querySelectorAll('.item-check');
             const btnBulkDelete = document.getElementById('btnBulkDelete');
+            const btnExportSelectedItems = document.getElementById('btnExportSelectedItems');
+            const bulkSelectedBadge = document.getElementById('bulkSelectedBadge');
 
             if (checkAll && itemChecks.length > 0) {
                 checkAll.addEventListener('change', function () {
                     itemChecks.forEach(cb => cb.checked = this.checked);
-                    toggleBulkDeleteButton();
+                    toggleBulkButtons();
                 });
 
                 itemChecks.forEach(cb => {
@@ -1109,15 +1195,32 @@
                         if (document.querySelectorAll('.item-check:checked').length === itemChecks.length) {
                             checkAll.checked = true;
                         }
-                        toggleBulkDeleteButton();
+                        toggleBulkButtons();
                     });
                 });
             }
 
-            function toggleBulkDeleteButton() {
+            function toggleBulkButtons() {
+                const checkedCount = document.querySelectorAll('.item-check:checked').length;
                 if (btnBulkDelete) {
-                    btnBulkDelete.disabled = document.querySelectorAll('.item-check:checked').length === 0;
+                    btnBulkDelete.disabled = checkedCount === 0;
                 }
+                if (btnExportSelectedItems) {
+                    if (checkedCount > 0) {
+                        btnExportSelectedItems.classList.remove('d-none');
+                        if (bulkSelectedBadge) bulkSelectedBadge.textContent = checkedCount;
+                    } else {
+                        btnExportSelectedItems.classList.add('d-none');
+                    }
+                }
+            }
+
+            if (btnExportSelectedItems && exportModalEl) {
+                btnExportSelectedItems.addEventListener('click', function () {
+                    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                        bootstrap.Modal.getOrCreateInstance(exportModalEl).show();
+                    }
+                });
             }
 
             // ================================================

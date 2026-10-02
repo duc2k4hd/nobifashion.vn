@@ -38,8 +38,10 @@ class PostService
             $this->syncTags($post, $tagIds, $tagNames);
             $this->handleStatusTransition($post, $payload);
 
-            // Tự động tạo ảnh responsive (thumbnail + content srcset) cho bài viết hiện tại
-            $this->responsiveImageService->processPost($post);
+            // Tự động tạo ảnh responsive (thumbnail + content srcset) cho bài viết (cho phép bỏ qua khi import hàng loạt)
+            if (empty($payload['skip_responsive_images'])) {
+                $this->responsiveImageService->processPost($post);
+            }
 
             return $post->refresh();
         });
@@ -65,10 +67,15 @@ class PostService
 
             $this->syncTags($post, $tagIds, $tagNames);
             $this->handleStatusTransition($post, $payload);
-            $this->recordRevision($post, $editor);
 
-            // Tự động tạo ảnh responsive (thumbnail + content srcset) cho bài viết hiện tại
-            $this->responsiveImageService->processPost($post);
+            if (empty($payload['skip_revisions'])) {
+                $this->recordRevision($post, $editor);
+            }
+
+            // Tự động tạo ảnh responsive (thumbnail + content srcset) cho bài viết (cho phép bỏ qua khi import hàng loạt)
+            if (empty($payload['skip_responsive_images'])) {
+                $this->responsiveImageService->processPost($post);
+            }
 
             // Xóa cache trúng đích của chính bài viết vừa cập nhật
             $this->clearPostCache($post, $oldSlug, $oldCategoryId, $oldAuthorId, $wasFeatured);
@@ -228,6 +235,10 @@ class PostService
             'created_by', // Thêm created_by để có thể update tác giả
         ]);
 
+        if (array_key_exists('published_at', $data)) {
+            $data['published_at'] = $this->parsePublishedAt($data['published_at']);
+        }
+
         // Loại bỏ thuộc tính rác data-list-item-id do CKEditor 5 sinh ra trên các thẻ <li>
         if (isset($data['content']) && is_string($data['content'])) {
             $data['content'] = preg_replace('/\s*data-list-item-id="[^"]*"/i', '', $data['content']);
@@ -300,8 +311,8 @@ class PostService
     protected function handleStatusTransition(Post $post, array $payload): void
     {
         $status = Arr::get($payload, 'status', $post->status);
-        $publishAt = Arr::get($payload, 'published_at');
-        $schedule = $publishAt ? Carbon::parse($publishAt) : null;
+        $publishAt = Arr::get($payload, 'published_at', $post->published_at);
+        $schedule = $this->parsePublishedAt($publishAt);
 
         if ($status === 'published') {
             $this->statusService->publish($post, $schedule);
@@ -444,5 +455,89 @@ class PostService
             array_map('trim', explode(',', $tagNames)),
             fn ($name) => ! empty($name)
         );
+    }
+
+    /**
+     * Chuẩn hoá thông minh ngày xuất bản thành Carbon instance
+     * Xử lý triệt để: Excel Serial Date, chuỗi thừa khoảng trắng, định dạng ngày tháng VN/quốc tế
+     */
+    public function parsePublishedAt(mixed $value): ?Carbon
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if ($value instanceof Carbon) {
+            return $value;
+        }
+
+        if ($value instanceof \DateTimeInterface) {
+            return Carbon::instance($value);
+        }
+
+        $value = trim((string) $value);
+        if ($value === '') {
+            return null;
+        }
+
+        $tz = config('app.timezone', 'Asia/Ho_Chi_Minh');
+
+        // 1. Trường hợp số Excel Serial Date
+        if (is_numeric($value)) {
+            $num = (float) $value;
+            if ($num >= 20000 && $num <= 100000) {
+                $seconds = round(($num - 25569) * 86400);
+                return Carbon::createFromTimestampUTC((int) $seconds);
+            }
+            if ($num > 100000000) {
+                return Carbon::createFromTimestamp((int) $num, $tz);
+            }
+        }
+
+        // 2. Chuẩn hoá khoảng trắng thừa
+        $cleanValue = preg_replace('/\s+/', ' ', $value);
+
+        // 3. Chuỗi ISO 8601 có múi giờ
+        if (str_contains($cleanValue, 'T') && (str_ends_with($cleanValue, 'Z') || preg_match('/[+-]\d{2}:?\d{2}$/', $cleanValue))) {
+            try {
+                return Carbon::parse($cleanValue)->setTimezone($tz);
+            } catch (\Throwable) {
+            }
+        }
+
+        // 4. Các định dạng ngày tháng kiểu Việt Nam & quốc tế
+        $formats = [
+            'd-m-Y H:i:s',
+            'd/m/Y H:i:s',
+            'd-m-Y H:i',
+            'd/m/Y H:i',
+            'Y-m-d H:i:s',
+            'Y-m-d H:i',
+            'd-m-Y',
+            'd/m/Y',
+            'Y-m-d',
+            'Y/m/d H:i:s',
+            'Y/m/d',
+        ];
+
+        foreach ($formats as $format) {
+            try {
+                $parsed = Carbon::createFromFormat($format, $cleanValue, $tz);
+                if ($parsed && $parsed->format($format) === $cleanValue) {
+                    if (! str_contains($format, 'H')) {
+                        $parsed->startOfDay();
+                    }
+                    return $parsed;
+                }
+            } catch (\Throwable) {
+            }
+        }
+
+        // 5. Fallback parse tự động
+        try {
+            return Carbon::parse($cleanValue, $tz);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }

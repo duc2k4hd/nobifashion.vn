@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Account;
 use App\Models\Post;
 use App\Models\PostCategory;
+use App\Services\HtmlCompressorService;
 use App\Services\PostService;
 use App\Services\SeoService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
@@ -30,15 +32,90 @@ class PostImportExportController extends Controller
     }
 
     /**
-     * API lấy dữ liệu toàn bộ bài viết để Export qua JS (Hỗ trợ lọc & chọn cột)
+     * Xuất trực tiếp file CSV dạng StreamedResponse (Tối ưu tuyệt đối O(1) Memory, không giới hạn số lượng bài viết, không lỗi font tiếng Việt)
      */
-    public function getExportData(Request $request)
+    public function exportCsv(Request $request)
     {
+        @ini_set('memory_limit', '512M');
+        @set_time_limit(600);
+
         $selectedColumns = $request->input('columns', ['ID', 'Tiêu đề', 'Slug', 'Nội dung']);
         if (! is_array($selectedColumns) || empty($selectedColumns)) {
             $selectedColumns = ['ID', 'Tiêu đề', 'Slug', 'Nội dung'];
         }
 
+        $query = $this->buildExportQuery($request);
+
+        $withRelations = [];
+        if (in_array('Danh mục (Slug)', $selectedColumns, true) || in_array('Danh mục (Tên)', $selectedColumns, true)) {
+            $withRelations[] = 'category';
+        }
+        if (in_array('Tác giả (Email)', $selectedColumns, true)) {
+            $withRelations[] = 'author';
+        }
+        if (in_array('Tags (phẩy)', $selectedColumns, true)) {
+            $withRelations[] = 'tags';
+        }
+
+        if (! empty($withRelations)) {
+            $query->with($withRelations);
+        }
+
+        $filename = 'posts_export_' . date('Y-m-d_H-i-s') . '.csv';
+
+        return response()->streamDownload(function () use ($query, $selectedColumns) {
+            $output = fopen('php://output', 'w');
+
+            // Ghi UTF-8 BOM để Excel hiển thị đúng tiếng Việt có dấu
+            fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+
+            // Ghi dòng tiêu đề
+            fputcsv($output, $selectedColumns);
+
+            // Duyệt từng bản ghi bằng cursor để giải phóng RAM tức thì (O(1) Memory)
+            foreach ($query->cursor() as $post) {
+                $row = [];
+                foreach ($selectedColumns as $col) {
+                    $row[] = match ($col) {
+                        'ID' => $post->id,
+                        'Tiêu đề' => $post->title,
+                        'Slug' => $post->slug,
+                        'Danh mục (Tên)' => $post->category?->name ?? '',
+                        'Danh mục (Slug)' => $post->category?->slug ?? '',
+                        'Nội dung' => HtmlCompressorService::compress($post->content),
+                        'Tóm tắt' => $post->excerpt,
+                        'Thumbnail URL' => $post->thumbnail,
+                        'Alt ảnh' => $post->thumbnail_alt_text,
+                        'Trạng thái' => $post->status,
+                        'Nổi bật' => $post->is_featured ? 1 : 0,
+                        'Tags (phẩy)' => $post->relationLoaded('tags') ? $post->tags->pluck('name')->implode(', ') : '',
+                        'Meta Title' => $post->meta_title,
+                        'Meta Description' => $post->meta_description,
+                        'Meta Keywords' => $post->meta_keywords,
+                        'Meta Canonical' => $post->meta_canonical,
+                        'Tác giả (Email)' => $post->author?->email ?? '',
+                        'Ngày xuất bản' => $post->published_at ? $post->published_at->format('Y-m-d H:i:s') : '',
+                        default => '',
+                    };
+                }
+                fputcsv($output, $row);
+            }
+
+            fclose($output);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+            'Cache-Control' => 'no-cache, no-store, must-revalidate',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
+        ]);
+    }
+
+    /**
+     * Xây dựng query lọc bài viết dùng chung cho cả Export CSV và JSON
+     */
+    protected function buildExportQuery(Request $request)
+    {
         $categoryFilter = $request->input('category_id');
         $isFilteringCategory = $request->has('category_id') && $categoryFilter !== null && $categoryFilter !== '';
 
@@ -48,6 +125,17 @@ class PostImportExportController extends Controller
             $query = Post::query();
             if ($request->filled('status')) {
                 $query->where('status', $request->input('status'));
+            }
+        }
+
+        // Lọc theo danh sách ID cụ thể (dành cho tính năng "Chỉ xuất những bài viết đang chọn")
+        if ($request->filled('ids')) {
+            $rawIds = $request->input('ids');
+            $ids = is_array($rawIds)
+                ? array_filter(array_map('intval', $rawIds))
+                : array_filter(array_map('intval', explode(',', (string) $rawIds)));
+            if (! empty($ids)) {
+                $query->whereIn('id', $ids);
             }
         }
 
@@ -114,6 +202,24 @@ class PostImportExportController extends Controller
             $query->latest('id');
         }
 
+        return $query;
+    }
+
+    /**
+     * API lấy dữ liệu bài viết để Export qua JS (Hỗ trợ lọc & chọn cột)
+     */
+    public function getExportData(Request $request)
+    {
+        @ini_set('memory_limit', '512M');
+        @set_time_limit(300);
+
+        $selectedColumns = $request->input('columns', ['ID', 'Tiêu đề', 'Slug', 'Nội dung']);
+        if (! is_array($selectedColumns) || empty($selectedColumns)) {
+            $selectedColumns = ['ID', 'Tiêu đề', 'Slug', 'Nội dung'];
+        }
+
+        $query = $this->buildExportQuery($request);
+
         // Tối ưu Eager Loading chỉ khi người dùng chọn cột tương ứng
         $withRelations = [];
         if (empty($selectedColumns) || in_array('Danh mục (Slug)', $selectedColumns, true) || in_array('Danh mục (Tên)', $selectedColumns, true)) {
@@ -139,7 +245,7 @@ class PostImportExportController extends Controller
                 'Slug' => $post->slug,
                 'Danh mục (Tên)' => $post->category?->name ?? '',
                 'Danh mục (Slug)' => $post->category?->slug ?? '',
-                'Nội dung' => $post->content,
+                'Nội dung' => HtmlCompressorService::compress($post->content),
                 'Tóm tắt' => $post->excerpt,
                 'Thumbnail URL' => $post->thumbnail,
                 'Alt ảnh' => $post->thumbnail_alt_text,
@@ -181,6 +287,8 @@ class PostImportExportController extends Controller
      */
     public function importBatch(Request $request)
     {
+        @set_time_limit(300);
+
         $request->validate([
             'items' => 'required|array',
             'selected_columns' => 'nullable|array',
@@ -250,7 +358,21 @@ class PostImportExportController extends Controller
         // --- BƯỚC 2: XỬ LÝ TỪNG ITEM VỚI LOGIC KHỚP BÀI VIẾT CHUẨN XÁC ---
         foreach ($items as $index => $item) {
             $itemTitle = trim((string) ($item['Tiêu đề'] ?? ''));
-            $itemIdentifier = ! empty($item['ID']) ? "ID {$item['ID']}" : ($item['Slug'] ?? $itemTitle ?: 'Dòng #'.($index + 1));
+            $itemSlug = trim((string) ($item['Slug'] ?? ''));
+            $itemId = trim((string) ($item['ID'] ?? ''));
+            $itemContent = trim((string) ($item['Nội dung'] ?? ''));
+
+            // Bỏ qua dòng hoàn toàn trống (dòng trắng thừa sinh ra từ Excel)
+            if ($itemTitle === '' && $itemSlug === '' && $itemId === '' && $itemContent === '') {
+                continue;
+            }
+
+            $excelRow = isset($item['_excel_row']) ? (int) $item['_excel_row'] : ($index + 1);
+            $itemIdentifier = ! empty($itemId)
+                ? "ID {$itemId} (Dòng #{$excelRow})"
+                : (! empty($itemSlug)
+                    ? "Slug '{$itemSlug}' (Dòng #{$excelRow})"
+                    : ($itemTitle ? "Dòng #{$excelRow} - {$itemTitle}" : "Dòng #{$excelRow}"));
 
             try {
                 $hasId = ! empty($item['ID']);
@@ -326,12 +448,14 @@ class PostImportExportController extends Controller
                         'meta_canonical' => $isColSelected('Meta Canonical') && array_key_exists('Meta Canonical', $item)
                             ? (string) $item['Meta Canonical']
                             : $post->meta_canonical,
-                        'published_at' => $isColSelected('Ngày xuất bản') && array_key_exists('Ngày xuất bản', $item)
-                            ? (! empty(trim((string) $item['Ngày xuất bản'])) ? trim((string) $item['Ngày xuất bản']) : null)
+                        'published_at' => ($isColSelected('Ngày xuất bản') && array_key_exists('Ngày xuất bản', $item) && $item['Ngày xuất bản'] !== null && trim((string) $item['Ngày xuất bản']) !== '')
+                            ? ($this->normalizeDateTime($item['Ngày xuất bản']) ?? ($post->published_at ? $post->published_at->format('Y-m-d H:i:s') : null))
                             : ($post->published_at ? $post->published_at->format('Y-m-d H:i:s') : null),
                         'category_id' => $post->category_id,
                         'account_id' => $post->account_id,
                         'created_by' => $post->created_by,
+                        'skip_responsive_images' => true,
+                        'skip_revisions' => true,
                     ];
 
                     $catId = $this->resolvePostCategoryId($item, $categoriesMapBySlug, $categoriesMapByName, $isColSelected);
@@ -368,6 +492,7 @@ class PostImportExportController extends Controller
                         'meta_canonical' => $post->meta_canonical,
                         'category_id' => $post->category_id,
                         'account_id' => $post->account_id,
+                        'published_at' => $post->published_at ? $post->published_at->format('Y-m-d H:i:s') : null,
                     ];
 
                     foreach ($comparisons as $key => $oldVal) {
@@ -407,16 +532,19 @@ class PostImportExportController extends Controller
                         'excerpt' => $isColSelected('Tóm tắt') ? (string) ($item['Tóm tắt'] ?? '') : '',
                         'thumbnail' => $isColSelected('Thumbnail URL') ? (string) ($item['Thumbnail URL'] ?? '') : '',
                         'thumbnail_alt_text' => $isColSelected('Alt ảnh') ? (string) ($item['Alt ảnh'] ?? '') : '',
-                        'status' => $isColSelected('Trạng thái') ? trim((string) ($item['Trạng thái'] ?? 'draft')) : 'draft',
+                        'status' => ($isColSelected('Trạng thái') && ! empty(trim((string) ($item['Trạng thái'] ?? ''))))
+                            ? trim((string) $item['Trạng thái'])
+                            : 'published',
                         'is_featured' => $isColSelected('Nổi bật') ? (bool) ($item['Nổi bật'] ?? false) : false,
                         'tag_names' => $isColSelected('Tags (phẩy)') ? trim((string) ($item['Tags (phẩy)'] ?? '')) : '',
                         'meta_title' => $isColSelected('Meta Title') ? (string) ($item['Meta Title'] ?? '') : '',
                         'meta_description' => $isColSelected('Meta Description') ? (string) ($item['Meta Description'] ?? '') : '',
                         'meta_keywords' => $isColSelected('Meta Keywords') ? (string) ($item['Meta Keywords'] ?? '') : '',
                         'meta_canonical' => $isColSelected('Meta Canonical') ? (string) ($item['Meta Canonical'] ?? '') : '',
-                        'published_at' => $isColSelected('Ngày xuất bản') && ! empty(trim((string) ($item['Ngày xuất bản'] ?? '')))
-                            ? trim((string) $item['Ngày xuất bản'])
-                            : null,
+                        'published_at' => ($isColSelected('Ngày xuất bản') && array_key_exists('Ngày xuất bản', $item) && $item['Ngày xuất bản'] !== null && trim((string) $item['Ngày xuất bản']) !== '')
+                            ? ($this->normalizeDateTime($item['Ngày xuất bản']) ?? now()->format('Y-m-d H:i:s'))
+                            : now()->format('Y-m-d H:i:s'),
+                        'skip_responsive_images' => true,
                     ];
 
                     $payload['category_id'] = $this->resolvePostCategoryId($item, $categoriesMapBySlug, $categoriesMapByName, $isColSelected);
@@ -461,7 +589,7 @@ class PostImportExportController extends Controller
             $content .= (string) $item[$column];
         }
 
-        return $content;
+        return HtmlCompressorService::compress($content);
     }
 
     private function resolvePostCategoryId(array $item, &$categoriesMapBySlug, &$categoriesMapByName, callable $isColSelected): ?int
@@ -518,5 +646,86 @@ class PostImportExportController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Chuẩn hoá thông minh ngày tháng từ Excel / CSV sang định dạng Y-m-d H:i:s
+     * Xử lý triệt để:
+     * 1. Số Excel Serial Date (ví dụ: 46297.453... -> 2026-10-02 10:53:00)
+     * 2. Chuỗi có khoảng trắng thừa (ví dụ: "02-10-2026  10:53:00")
+     * 3. Các định dạng ngày tháng thông dụng tại Việt Nam (d/m/Y, d-m-Y)
+     * 4. Định dạng chuẩn quốc tế (Y-m-d, ISO 8601)
+     */
+    private function normalizeDateTime(mixed $value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $value = trim((string) $value);
+        if ($value === '') {
+            return null;
+        }
+
+        $tz = config('app.timezone', 'Asia/Ho_Chi_Minh');
+
+        // 1. Trường hợp số Excel Serial Date (Ví dụ: 46297.453... -> 2026-10-02 10:53:00)
+        // 25569 = 01/01/1970 trong Excel, Excel không lưu timezone nên quy đổi qua UTC để giữ đúng giờ người dùng nhập
+        if (is_numeric($value)) {
+            $num = (float) $value;
+            if ($num >= 20000 && $num <= 100000) {
+                $seconds = round(($num - 25569) * 86400);
+                return Carbon::createFromTimestampUTC((int) $seconds)->format('Y-m-d H:i:s');
+            }
+            if ($num > 100000000) {
+                return Carbon::createFromTimestamp((int) $num, $tz)->format('Y-m-d H:i:s');
+            }
+        }
+
+        // 2. Chuẩn hoá khoảng trắng thừa (ví dụ "02-10-2026  10:53:00")
+        $cleanValue = preg_replace('/\s+/', ' ', $value);
+
+        // 3. Chuỗi ISO 8601 có múi giờ Z hoặc offset (ví dụ "2026-10-02T03:53:00.000Z")
+        if (str_contains($cleanValue, 'T') && (str_ends_with($cleanValue, 'Z') || preg_match('/[+-]\d{2}:?\d{2}$/', $cleanValue))) {
+            try {
+                return Carbon::parse($cleanValue)->setTimezone($tz)->format('Y-m-d H:i:s');
+            } catch (\Throwable) {
+            }
+        }
+
+        // 4. Các định dạng ngày tháng kiểu Việt Nam & quốc tế
+        $formats = [
+            'd-m-Y H:i:s',
+            'd/m/Y H:i:s',
+            'd-m-Y H:i',
+            'd/m/Y H:i',
+            'Y-m-d H:i:s',
+            'Y-m-d H:i',
+            'd-m-Y',
+            'd/m/Y',
+            'Y-m-d',
+            'Y/m/d H:i:s',
+            'Y/m/d',
+        ];
+
+        foreach ($formats as $format) {
+            try {
+                $parsed = Carbon::createFromFormat($format, $cleanValue, $tz);
+                if ($parsed && $parsed->format($format) === $cleanValue) {
+                    if (! str_contains($format, 'H')) {
+                        $parsed->startOfDay();
+                    }
+                    return $parsed->format('Y-m-d H:i:s');
+                }
+            } catch (\Throwable) {
+            }
+        }
+
+        // 5. Fallback tự động parse bằng Carbon thông thường
+        try {
+            return Carbon::parse($cleanValue, $tz)->format('Y-m-d H:i:s');
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }

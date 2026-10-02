@@ -527,6 +527,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::prefix('tools')->name('tools.')->group(function () {
             Route::get('/', [ToolsController::class, 'index'])->name('index');
             Route::get('/export-post-images', [ToolsController::class, 'exportPostImages'])->name('export-post-images');
+            Route::post('/compress-posts-html', [ToolsController::class, 'compressPostsHtml'])->name('compress-posts-html');
         });
 
         Route::resource('settings', SettingController::class)->except(['show'])->names('settings');
@@ -536,6 +537,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('email-accounts', EmailAccountController::class)->names('email-accounts');
         Route::post('email-accounts/{email_account}/set-default', [EmailAccountController::class, 'setDefault'])->name('email-accounts.set-default');
 
+        Route::match(['get', 'post'], 'posts/export-csv', [PostImportExportController::class, 'exportCsv'])->name('posts.export-csv');
         Route::get('posts/export-data', [PostImportExportController::class, 'getExportData'])->name('posts.export-data');
         Route::get('posts/import-excel', [PostImportExportController::class, 'importForm'])->name('posts.import-excel');
         Route::post('posts/import-batch', [PostImportExportController::class, 'importBatch'])->name('posts.import-batch');
