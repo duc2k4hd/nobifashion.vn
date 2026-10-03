@@ -334,6 +334,85 @@
                 </div>
             </a>
         </section>
+
+        {{-- SECTION: BÀI VIẾT NỔI BẬT (SLIDER 2 HÀNG CHẠY VÔ TẬN) --}}
+        @if (!empty($featuredBlogPosts['row1']) && count($featuredBlogPosts['row1']) > 0)
+            <section class="nobifashion_home_blog_section" aria-labelledby="nobifashion_home_blog_title">
+                <div class="nobifashion_home_blog_header">
+                    <h2 class="nobifashion_home_blog_title" id="nobifashion_home_blog_title">Bài viết nổi bật</h2>
+                </div>
+
+                {{-- HÀNG 1: Chạy sang phải (Left to Right) --}}
+                <div class="nobifashion_home_blog_marquee nobifashion_marquee_ltr">
+                    <div class="nobifashion_home_blog_track">
+                        @foreach ($featuredBlogPosts['row1'] as $post)
+                            <a href="{{ $post['url'] }}" class="nobifashion_home_blog_card" title="{{ $post['title'] }}">
+                                <div class="nobifashion_home_blog_card_media">
+                                    <img src="{{ $post['image'] }}" alt="{{ $post['alt'] }}" loading="lazy" decoding="async">
+                                    <div class="nobifashion_home_blog_card_overlay"></div>
+                                </div>
+                                <div class="nobifashion_home_blog_card_content">
+                                    <h3 class="nobifashion_home_blog_card_title">{{ $post['title'] }}</h3>
+                                    @if (!empty($post['excerpt']))
+                                        <p class="nobifashion_home_blog_card_excerpt">{{ $post['excerpt'] }}</p>
+                                    @endif
+                                </div>
+                            </a>
+                        @endforeach
+                        {{-- Duplicate để chạy vòng lặp vô tận mượt mà --}}
+                        @foreach ($featuredBlogPosts['row1'] as $post)
+                            <a href="{{ $post['url'] }}" class="nobifashion_home_blog_card" aria-hidden="true" tabindex="-1">
+                                <div class="nobifashion_home_blog_card_media">
+                                    <img src="{{ $post['image'] }}" alt="{{ $post['alt'] }}" loading="lazy" decoding="async">
+                                    <div class="nobifashion_home_blog_card_overlay"></div>
+                                </div>
+                                <div class="nobifashion_home_blog_card_content">
+                                    <h3 class="nobifashion_home_blog_card_title">{{ $post['title'] }}</h3>
+                                    @if (!empty($post['excerpt']))
+                                        <p class="nobifashion_home_blog_card_excerpt">{{ $post['excerpt'] }}</p>
+                                    @endif
+                                </div>
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+
+                {{-- HÀNG 2: Chạy sang trái (Right to Left) --}}
+                <div class="nobifashion_home_blog_marquee nobifashion_marquee_rtl">
+                    <div class="nobifashion_home_blog_track">
+                        @foreach ($featuredBlogPosts['row2'] as $post)
+                            <a href="{{ $post['url'] }}" class="nobifashion_home_blog_card" title="{{ $post['title'] }}">
+                                <div class="nobifashion_home_blog_card_media">
+                                    <img src="{{ $post['image'] }}" alt="{{ $post['alt'] }}" loading="lazy" decoding="async">
+                                    <div class="nobifashion_home_blog_card_overlay"></div>
+                                </div>
+                                <div class="nobifashion_home_blog_card_content">
+                                    <h3 class="nobifashion_home_blog_card_title">{{ $post['title'] }}</h3>
+                                    @if (!empty($post['excerpt']))
+                                        <p class="nobifashion_home_blog_card_excerpt">{{ $post['excerpt'] }}</p>
+                                    @endif
+                                </div>
+                            </a>
+                        @endforeach
+                        {{-- Duplicate để chạy vòng lặp vô tận mượt mà --}}
+                        @foreach ($featuredBlogPosts['row2'] as $post)
+                            <a href="{{ $post['url'] }}" class="nobifashion_home_blog_card" aria-hidden="true" tabindex="-1">
+                                <div class="nobifashion_home_blog_card_media">
+                                    <img src="{{ $post['image'] }}" alt="{{ $post['alt'] }}" loading="lazy" decoding="async">
+                                    <div class="nobifashion_home_blog_card_overlay"></div>
+                                </div>
+                                <div class="nobifashion_home_blog_card_content">
+                                    <h3 class="nobifashion_home_blog_card_title">{{ $post['title'] }}</h3>
+                                    @if (!empty($post['excerpt']))
+                                        <p class="nobifashion_home_blog_card_excerpt">{{ $post['excerpt'] }}</p>
+                                    @endif
+                                </div>
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+            </section>
+        @endif
         <div class="nobifashion_home_spacer" aria-hidden="true"></div>
     </main>
 

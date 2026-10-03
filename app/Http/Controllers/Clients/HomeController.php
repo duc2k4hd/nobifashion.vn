@@ -22,7 +22,7 @@ class HomeController extends Controller
         $kidsCategoryIds = $this->resolveBranchCategoryIds($rootCategories, 'tre-em');
         $householdCategoryIds = $this->resolveBranchCategoryIds($rootCategories, 'do-gia-dung');
 
-        $homeData = Cache::remember('home.page.payload.v4', now()->addMinutes(10), function () use (
+        $homeData = Cache::remember('home.page.payload.v5', now()->addMinutes(10), function () use (
             $rootCategories,
             $menCategoryIds,
             $womenCategoryIds,
@@ -65,6 +65,7 @@ class HomeController extends Controller
                 'womenProducts' => $this->loadHomeProductsByCategoryIds($womenCategoryIds, 18),
                 'sportProducts' => $this->loadHomeProductsByCategoryIds($householdCategoryIds, 18),
                 'featuredCategoryCounts' => $this->buildHomeCategoryProductCounts($rootCategories),
+                'featuredBlogPosts' => $this->loadFeaturedBlogPosts(),
             ];
         });
 
@@ -263,5 +264,72 @@ class HomeController extends Controller
 
             return $counts;
         });
+    }
+
+    /**
+     * Tải dữ liệu các bài viết nổi bật nhiều lượt xem nhất cho slider marquee 2 hàng ở cuối trang Home.
+     * Tối ưu hóa tuyệt đối: dùng composite index (status, deleted_at, views, published_at).
+     * Tuyệt đối không Full Table Scan (không WHERE content LIKE trong SQL).
+     * Chia chuẩn xác 10 bài hàng trên và 10 bài hàng dưới.
+     */
+    protected function loadFeaturedBlogPosts(): array
+    {
+        $posts = \App\Models\Post::published()
+            ->select(['id', 'title', 'slug', 'thumbnail', 'thumbnail_alt_text', 'excerpt', 'content', 'published_at', 'views'])
+            ->orderByDesc('views')
+            ->orderByDesc('published_at')
+            ->limit(40)
+            ->get();
+
+        $cleanPosts = [];
+        foreach ($posts as $post) {
+            $img = null;
+            if (! empty($post->thumbnail)) {
+                $img = getPostThumbnailUrl($post->thumbnail, 600);
+            }
+            if (! $img || str_contains($img, 'no-image')) {
+                if (preg_match('/<img[^>]+src=[\'"]([^\'"]+)[\'"]/i', (string) $post->content, $m)) {
+                    $img = $m[1];
+                }
+            }
+
+            if (! $img || str_contains($img, 'no-image')) {
+                continue;
+            }
+
+            $title = function_exists('renderMeta') ? renderMeta($post->title) : $post->title;
+            $title = str_replace(['[[NOBI]currentyear[NOBI]]', '[NOBI]currentyear[NOBI]'], date('Y'), $title);
+
+            $rawExcerpt = $post->excerpt ?: strip_tags((string) $post->content);
+            $cleanExcerpt = html_entity_decode(strip_tags((string) $rawExcerpt), ENT_QUOTES, 'UTF-8');
+            $cleanExcerpt = trim(preg_replace('/\s+/', ' ', $cleanExcerpt));
+            $cleanExcerpt = str_replace(['[[NOBI]currentyear[NOBI]]', '[NOBI]currentyear[NOBI]'], date('Y'), $cleanExcerpt);
+
+            $cleanPosts[] = [
+                'id' => $post->id,
+                'title' => $title,
+                'slug' => $post->slug,
+                'url' => route('client.blog.show', $post->slug),
+                'image' => $img,
+                'alt' => function_exists('renderMeta') ? renderMeta($post->thumbnail_alt_text ?? $title) : $title,
+                'excerpt' => \Illuminate\Support\Str::limit($cleanExcerpt, 85),
+            ];
+
+            if (count($cleanPosts) >= 20) {
+                break;
+            }
+        }
+
+        $row1 = array_slice($cleanPosts, 0, 10);
+        $row2 = array_slice($cleanPosts, 10, 10);
+
+        if (empty($row2) && ! empty($row1)) {
+            $row2 = $row1;
+        }
+
+        return [
+            'row1' => $row1,
+            'row2' => $row2,
+        ];
     }
 }

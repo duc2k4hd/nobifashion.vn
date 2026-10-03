@@ -250,7 +250,7 @@
     <hr>
     <div class="nobifashion_footer_bottom">
         <p>{!! !empty($settings->copyright) ? Blade::render($settings->copyright) : 'Đang cập nhật...' !!}</p>
-        <p>Thiết kế bởi <a href="{{ ($settings->facebook_link ?? null) ?: 'https://www.facebook.com/ducnobi2004' }}" target="_blank" rel="noopener noreferrer">Đức Nobi</a></p>
+        <p>Thiết kế bởi <a href="{{ route('client.author.show', 'nguyen-minh-duc') }}" target="_blank" rel="noopener noreferrer">Đức Nobi</a></p>
         <p>MST: {{ ($settings->site_tax_code ?? null) ?: 'Đang cập nhật...' }}</p>
     </div>
 </footer>
