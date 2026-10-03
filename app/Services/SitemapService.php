@@ -451,6 +451,38 @@ class SitemapService
                 ];
             }
 
+            // Thêm các trang tác giả chuẩn (/author/...) vào sitemap
+            try {
+                $authorUrls = [];
+                $authorUrls[] = route('client.author.show', 'nguyen-minh-duc');
+
+                $candidateAuthors = \App\Models\Account::whereIn('role', [\App\Models\Account::ROLE_ADMIN, \App\Models\Account::ROLE_STAFF])
+                    ->whereHas('profile', function ($q) {
+                        $q->whereNotNull('nickname')->where('nickname', '!=', '');
+                    })
+                    ->with('profile')
+                    ->get();
+
+                foreach ($candidateAuthors as $cand) {
+                    $u = \App\Http\Controllers\Clients\AuthorController::getAuthorUrl($cand);
+                    if ($u && ! in_array($u, $authorUrls, true)) {
+                        $authorUrls[] = $u;
+                    }
+                }
+
+                foreach ($authorUrls as $authorLoc) {
+                    if (! $this->isUrlExcluded($authorLoc)) {
+                        $urls[] = [
+                            'loc' => $authorLoc,
+                            'priority' => '0.6',
+                            'changefreq' => 'weekly',
+                        ];
+                    }
+                }
+            } catch (\Throwable $e) {
+                // Bỏ qua nếu có lỗi
+            }
+
             return $this->buildUrlSet($urls);
         });
     }

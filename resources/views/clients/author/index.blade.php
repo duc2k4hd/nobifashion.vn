@@ -3,8 +3,19 @@
 @section('title', $seoTitle)
 
 @section('head')
-    {{-- SEO Meta Tags --}}
-    <meta name="robots" content="follow, index, max-snippet:-1, max-video-preview:-1, max-image-preview:large" />
+    {{-- SEO Meta Tags: Mọi trang /author/... đều được index nếu không có ?, nếu có ? hoặc tham số đằng sau thì noindex --}}
+    @php
+        $rawUri = (string) (request()->server('REQUEST_URI') ?? ($_SERVER['REQUEST_URI'] ?? ''));
+        $rawQuery = (string) (request()->server('QUERY_STRING') ?? ($_SERVER['QUERY_STRING'] ?? ''));
+        $hasAnyQuery = ! empty(request()->query())
+            || trim($rawQuery) !== ''
+            || str_contains($rawUri, '?')
+            || str_contains(request()->getRequestUri(), '?');
+        $currentRobots = ! $hasAnyQuery
+            ? ($robotsMeta ?? 'follow, index, max-snippet:-1, max-video-preview:-1, max-image-preview:large')
+            : 'noindex, follow';
+    @endphp
+    <meta name="robots" content="{{ $currentRobots }}" />
     <meta name="description" content="{{ $seoDescription }}">
     <link rel="canonical" href="{{ $canonicalUrl }}">
     
@@ -49,11 +60,13 @@
                     </li>
                     <li class="nobifashion_author_breadcrumb_separator">/</li>
                     <li class="nobifashion_author_breadcrumb_item">
-                        <a href="{{ route('client.blog.index') }}">Blog</a>
+                        <a href="{{ $authorIndexUrl ?? route('client.author.index') }}">
+                            <span>{{ $breadcrumbRole ?? ($isAdmin ? 'Admin' : 'Staff') }}</span>
+                        </a>
                     </li>
                     <li class="nobifashion_author_breadcrumb_separator">/</li>
                     <li class="nobifashion_author_breadcrumb_item active" aria-current="page">
-                        <span>{{ $roleTitle }}: {{ $fullName }}</span>
+                        <span>{{ $fullName }}</span>
                     </li>
                 </ol>
             </nav>

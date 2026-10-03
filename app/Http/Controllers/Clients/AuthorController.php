@@ -34,6 +34,11 @@ class AuthorController extends Controller
             return null;
         }
 
+        // Tác giả chính thức của hệ thống (Admin) luôn trỏ về URL chuẩn nguyen-minh-duc
+        if ($author->role === Account::ROLE_ADMIN) {
+            return route('client.author.show', 'nguyen-minh-duc');
+        }
+
         // Bắt buộc phải có nickname trong profiles
         $nickname = trim((string) ($author->profile?->nickname ?? ''));
         if ($nickname === '') {
@@ -44,23 +49,11 @@ class AuthorController extends Controller
     }
 
     /**
-     * Truy cập /author -> 301 Redirect về trang của tác giả hợp lệ đầu tiên có nickname
+     * Truy cập /author -> 301 Redirect về trang tác giả chính thức /author/nguyen-minh-duc
      */
     public function index(): RedirectResponse|Response
     {
-        $firstAuthor = Account::whereIn('role', [Account::ROLE_ADMIN, Account::ROLE_STAFF])
-            ->whereHas('profile', function ($q) {
-                $q->whereNotNull('nickname')->where('nickname', '!=', '');
-            })
-            ->with('profile')
-            ->orderByRaw("FIELD(role, 'admin', 'staff')")
-            ->first();
-
-        if (! $firstAuthor || empty($firstAuthor->profile?->nickname)) {
-            return response()->view('clients.pages.errors.404', ['error' => 'Tác giả không tồn tại!'], 404);
-        }
-
-        return redirect()->route('client.author.show', Str::slug($firstAuthor->profile->nickname), 301);
+        return redirect()->route('client.author.show', 'nguyen-minh-duc', 301);
     }
 
     /**
@@ -82,18 +75,27 @@ class AuthorController extends Controller
             ->with(['profile'])
             ->get();
 
-        // 2. So khớp slug với nickname trong profiles (không hardcode bất kỳ vai trò hay tên nào)
+        // 2. So khớp slug với nickname trong profiles
         $author = $candidateAuthors->first(function ($acc) use ($cleanSlug, $decodedSlug) {
             $nick = trim((string) ($acc->profile?->nickname ?? ''));
             if ($nick === '') {
                 return false;
             }
 
-            return Str::slug($nick) === $cleanSlug || $nick === $cleanSlug || $nick === $decodedSlug;
+            if (Str::slug($nick) === $cleanSlug || $nick === $cleanSlug || $nick === $decodedSlug) {
+                return true;
+            }
+
+            // Hỗ trợ alias slug chính thức 'nguyen-minh-duc' cho tài khoản Admin
+            if ($cleanSlug === 'nguyen-minh-duc' && $acc->role === Account::ROLE_ADMIN) {
+                return true;
+            }
+
+            return false;
         });
 
-        // Nếu không tìm thấy tác giả nào có nickname khớp -> Trả về trang 404 có sẵn
-        if (! $author) {
+        // Nếu không tìm thấy tác giả nào có nickname khớp hoặc không phải admin/staff -> Trả về 404 (Người dùng thông thường không có trang author)
+        if (! $author || ! in_array($author->role, [Account::ROLE_ADMIN, Account::ROLE_STAFF])) {
             return response()->view('clients.pages.errors.404', ['error' => 'Tác giả không tồn tại!'], 404);
         }
 
@@ -260,30 +262,186 @@ class AuthorController extends Controller
         $seoDescription = "Hồ sơ tác giả {$fullName} - {$roleBadge} tại {$siteName}. Tuyển tập bài viết đọc nhiều nhất, cẩm nang phối đồ xu hướng và góc nhìn phong cách thời trang.";
         $canonicalUrl = route('client.author.show', $cleanSlug);
 
-        // Schema ProfilePage & Person
+        // Cấu trúc Schema chuẩn Google E-E-A-T: ProfilePage, Person, Organization, Brand, WebSite và BreadcrumbList
+        $homeUrl = route('client.home.index');
+        $blogUrl = route('client.blog.index');
+        $logoUrl = asset('clients/assets/img/business/' . ($settings->site_logo ?? 'logo.png'));
+        $bannerUrl = asset('clients/assets/img/banners/' . ($settings->site_banner ?? 'banner.png'));
+
+        $socialLinks = array_values(array_filter([
+            $settings->facebook_link ?? null,
+            $settings->instagram_link ?? null,
+            $settings->discord_link ?? null,
+            $settings->telegram_link ?? null,
+            $settings->twitter_link ?? null,
+            $settings->site_pinterest ?? null,
+        ]));
+
         $schemaData = [
             '@context' => 'https://schema.org',
-            '@type' => 'ProfilePage',
-            'mainEntity' => [
-                '@type' => 'Person',
-                'name' => $fullName,
-                'alternateName' => $nickname,
-                'url' => $canonicalUrl,
-                'image' => $avatarUrl,
-                'description' => $bio,
-                'jobTitle' => $roleTitle,
-                'worksFor' => [
-                    '@type' => 'Organization',
-                    'name' => $siteName,
-                    'url' => $siteUrl,
+            '@graph' => [
+                // 1. ProfilePage (Google Search Profile Page Structured Data)
+                [
+                    '@type' => 'ProfilePage',
+                    '@id' => $canonicalUrl . '#webpage',
+                    'url' => $canonicalUrl,
+                    'name' => $seoTitle,
+                    'description' => $seoDescription,
+                    'inLanguage' => 'vi-VN',
+                    'isPartOf' => [
+                        '@id' => $homeUrl . '#website',
+                    ],
+                    'breadcrumb' => [
+                        '@id' => $canonicalUrl . '#breadcrumb',
+                    ],
+                    'mainEntity' => [
+                        '@id' => $canonicalUrl . '#author',
+                    ],
+                    'about' => [
+                        '@id' => $canonicalUrl . '#author',
+                    ],
                 ],
-                'sameAs' => [
-                    $siteUrl,
+
+                // 2. Person (Tác giả / Tổng biên tập theo tiêu chuẩn E-E-A-T)
+                [
+                    '@type' => 'Person',
+                    '@id' => $canonicalUrl . '#author',
+                    'name' => $fullName,
+                    'alternateName' => $nickname,
+                    'url' => $canonicalUrl,
+                    'image' => [
+                        '@type' => 'ImageObject',
+                        '@id' => $canonicalUrl . '#avatar',
+                        'url' => $avatarUrl,
+                        'caption' => $fullName,
+                    ],
+                    'description' => $bio,
+                    'jobTitle' => $roleTitle,
+                    'worksFor' => [
+                        '@id' => $homeUrl . '#organization',
+                    ],
+                    'knowsAbout' => $expertiseTags,
+                    'homeLocation' => [
+                        '@type' => 'Place',
+                        'name' => $location,
+                    ],
+                    'sameAs' => ! empty($socialLinks) ? $socialLinks : [$canonicalUrl],
+                ],
+
+                // 3. Organization (Tổ chức & Doanh nghiệp sở hữu website)
+                [
+                    '@type' => 'Organization',
+                    '@id' => $homeUrl . '#organization',
+                    'name' => $siteName,
+                    'legalName' => $siteName,
+                    'url' => $homeUrl,
+                    'logo' => [
+                        '@type' => 'ImageObject',
+                        '@id' => $homeUrl . '#logo',
+                        'url' => $logoUrl,
+                        'caption' => $siteName,
+                    ],
+                    'image' => $bannerUrl,
+                    'description' => $settings->site_description ?? "Thương hiệu thời trang {$siteName}",
+                    'email' => $settings->contact_email ?? 'support@nobifashion.vn',
+                    'telephone' => $settings->contact_phone ?? '0382941465',
+                    'address' => [
+                        '@type' => 'PostalAddress',
+                        'streetAddress' => $settings->contact_address ?? ($settings->detail_address ?? 'Hải Phòng, Việt Nam'),
+                        'addressLocality' => $settings->city ?? 'Hải Phòng',
+                        'addressRegion' => $settings->city ?? 'Hải Phòng',
+                        'postalCode' => $settings->postalCode ?? '180000',
+                        'addressCountry' => 'VN',
+                    ],
+                    'contactPoint' => [
+                        [
+                            '@type' => 'ContactPoint',
+                            'telephone' => $settings->contact_phone ?? '0382941465',
+                            'contactType' => 'customer service',
+                            'areaServed' => 'VN',
+                            'availableLanguage' => ['Vietnamese', 'vi'],
+                        ],
+                    ],
+                    'sameAs' => $socialLinks,
+                ],
+
+                // 4. Brand (Thương hiệu chính hãng)
+                [
+                    '@type' => 'Brand',
+                    '@id' => $homeUrl . '#brand',
+                    'name' => $siteName,
+                    'url' => $homeUrl,
+                    'logo' => $logoUrl,
+                    'slogan' => $settings->subname ?? 'Thời trang phong cách sống hiện đại',
+                    'description' => $settings->site_description ?? "Thương hiệu thời trang {$siteName}",
+                ],
+
+                // 5. WebSite
+                [
+                    '@type' => 'WebSite',
+                    '@id' => $homeUrl . '#website',
+                    'url' => $homeUrl,
+                    'name' => $siteName,
+                    'description' => $settings->site_description ?? "Cửa hàng thời trang {$siteName}",
+                    'publisher' => [
+                        '@id' => $homeUrl . '#organization',
+                    ],
+                    'inLanguage' => 'vi-VN',
+                    'potentialAction' => [
+                        '@type' => 'SearchAction',
+                        'target' => $homeUrl . '/shop?q={search_term_string}',
+                        'query-input' => 'required name=search_term_string',
+                    ],
+                ],
+
+                // 6. BreadcrumbList (Phân cấp điều hướng chuẩn Google Search: Trang chủ -> Admin/Staff -> Tác giả)
+                [
+                    '@type' => 'BreadcrumbList',
+                    '@id' => $canonicalUrl . '#breadcrumb',
+                    'itemListElement' => [
+                        [
+                            '@type' => 'ListItem',
+                            'position' => 1,
+                            'name' => 'Trang chủ',
+                            'item' => $homeUrl,
+                        ],
+                        [
+                            '@type' => 'ListItem',
+                            'position' => 2,
+                            'name' => $isAdmin ? 'Admin' : 'Staff',
+                            'item' => route('client.author.index'),
+                        ],
+                        [
+                            '@type' => 'ListItem',
+                            'position' => 3,
+                            'name' => $fullName,
+                            'item' => $canonicalUrl,
+                        ],
+                    ],
                 ],
             ],
         ];
 
-        return view('clients.author.index', compact(
+        // Quy tắc SEO Robots:
+        // Mọi trang tác giả chuẩn (/author/{slug}) đều được phép index nếu là URL gốc sạch.
+        // Nếu có bất kỳ dấu '?' nào hoặc bất kỳ tham số nào đằng sau (phân trang ?page=..., lọc, tracking...) -> Đều cho noindex.
+        $rawUri = (string) ($request->server('REQUEST_URI') ?? ($_SERVER['REQUEST_URI'] ?? ''));
+        $rawQueryString = (string) ($request->server('QUERY_STRING') ?? ($_SERVER['QUERY_STRING'] ?? ''));
+        $hasQueryParams = ! empty($request->query())
+            || trim($rawQueryString) !== ''
+            || str_contains($rawUri, '?')
+            || str_contains($request->getRequestUri(), '?');
+
+        $isIndexable = ! $hasQueryParams;
+
+        $robotsMeta = $isIndexable
+            ? 'follow, index, max-snippet:-1, max-video-preview:-1, max-image-preview:large'
+            : 'noindex, follow';
+
+        $breadcrumbRole = $isAdmin ? 'Admin' : 'Staff';
+        $authorIndexUrl = route('client.author.index');
+
+        $view = view('clients.author.index', compact(
             'author',
             'profile',
             'fullName',
@@ -308,7 +466,15 @@ class AuthorController extends Controller
             'seoDescription',
             'canonicalUrl',
             'schemaData',
-            'settings'
+            'settings',
+            'robotsMeta',
+            'isIndexable',
+            'breadcrumbRole',
+            'authorIndexUrl'
         ));
+
+        // Trả về kèm HTTP header X-Robots-Tag để bot tìm kiếm nhận diện ngay từ header
+        return response($view)
+            ->header('X-Robots-Tag', $isIndexable ? 'index, follow' : 'noindex, follow');
     }
 }
