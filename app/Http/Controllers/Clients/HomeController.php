@@ -22,7 +22,7 @@ class HomeController extends Controller
         $kidsCategoryIds = $this->resolveBranchCategoryIds($rootCategories, 'tre-em');
         $householdCategoryIds = $this->resolveBranchCategoryIds($rootCategories, 'do-gia-dung');
 
-        $homeData = Cache::remember('home.page.payload.v7', now()->addMinutes(10), function () use (
+        $homeData = Cache::remember('home.page.payload.v8', now()->addMinutes(10), function () use (
             $rootCategories,
             $menCategoryIds,
             $womenCategoryIds,

@@ -47,10 +47,10 @@ class ViewServiceProvider extends ServiceProvider
 
         // --- CATEGORIES (1 query duy nhất + Dựng cây quan hệ trong RAM cực nhanh 0.05ms + Cache vĩnh viễn) ---
         try {
-            $categories = Cache::rememberForever('view.categories.tree.v2', function () {
+            $categories = Cache::rememberForever('view.categories.tree.v3', function () {
                 $all = Category::query()
                     ->where('is_active', true)
-                    ->select(['id', 'name', 'slug', 'parent_id', 'sort_order'])
+                    ->select(['id', 'name', 'slug', 'image', 'parent_id', 'sort_order'])
                     ->orderBy('sort_order')
                     ->orderBy('name')
                     ->get();

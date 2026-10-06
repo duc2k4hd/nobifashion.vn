@@ -6,7 +6,7 @@
     quần áo & phụ kiện thời trang')))
 
 @section('head')
-    <link rel="stylesheet" href="{{ asset('clients/assets/css/home.css') }}?v={{ env('APP_VERSION') }}">
+    <link rel="stylesheet" href="{{ asset('clients/assets/css/home.css') }}?v={{ filemtime(public_path('clients/assets/css/home.css')) }}">
     <meta name="robots" content="follow, index, max-snippet:-1, max-video-preview:-1, max-image-preview:large" />
     <meta name="keywords" content="{{ $settings->seo_keywords ?? 'NOBI FASHION, quần áo, phụ kiện, thời trang' }}">
     <meta name="description"
@@ -15,7 +15,7 @@
 @endsection
 
 @section('foot')
-    <script defer src="{{ asset('clients/assets/js/home.js') }}?v={{ env('APP_VERSION') }}"></script>
+    <script defer src="{{ asset('clients/assets/js/home.js') }}?v={{ filemtime(public_path('clients/assets/js/home.js')) }}"></script>
 @endsection
 
 @section('schema')
@@ -131,7 +131,7 @@
                             class="nobifashion_home_banner_main_nav_btn nobifashion_home_banner_main_nav_prev"
                             id="nobifashion_home_banner_main_prev_btn"
                             aria-label="Xem banner trước">
-                        <svg class="nobifashion_home_banner_main_nav_icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <svg class="nobifashion_home_banner_main_nav_icon" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <polyline points="15 18 9 12 15 6"></polyline>
                         </svg>
                     </button>
@@ -139,7 +139,7 @@
                             class="nobifashion_home_banner_main_nav_btn nobifashion_home_banner_main_nav_next"
                             id="nobifashion_home_banner_main_next_btn"
                             aria-label="Xem banner kế tiếp">
-                        <svg class="nobifashion_home_banner_main_nav_icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <svg class="nobifashion_home_banner_main_nav_icon" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <polyline points="9 18 15 12 9 6"></polyline>
                         </svg>
                     </button>
@@ -161,32 +161,105 @@
         </section>
         @endif
 
-        <nav class="nobifashion_home_categories" id="nobifashion_home_categories" data-nobifashion-tone="light"
+        {{-- ====================================================================
+             KHÁM PHÁ THEO DANH MỤC - MODERN TABS & AESTHETIC SQUIRCLE CARDS
+             ==================================================================== --}}
+        <section class="nobifashion_home_categories_section" id="nobifashion_home_categories" data-nobifashion-tone="light"
             aria-labelledby="nobifashion_home_categories_title">
             <div class="nobifashion_home_container">
-                <h2 class="nobifashion_home_section_title" id="nobifashion_home_categories_title">Tìm theo danh mục</h2>
-                <div class="nobifashion_home_category_grid">
-                    @foreach ($categories as $rootCat)
-                        @foreach ($rootCat->children as $category)
-                            <a class="nobifashion_home_category" href="{{ url('/' . $category->slug) }}">
-                                <img class="nobifashion_home_category_image"
-                                    src="{{ $category->image_url ?? asset('clients/assets/img/clothes/no-image.webp') }}"
-                                    alt="{{ $category->name }}"
-                                    width="80"
-                                    height="80"
-                                    loading="lazy"
-                                    decoding="async"
-                                    onerror="this.onerror=null; this.src='{{ asset('clients/assets/img/clothes/no-image.webp') }}';">
-                                <span class="nobifashion_home_category_text">{{ $category->name }}</span>
-                            </a>
+                <div class="nobifashion_home_categories_header">
+                    <div class="nobifashion_home_categories_title_box">
+                        <span class="nobifashion_home_categories_badge">BỘ SƯU TẬP NOBI</span>
+                        <h2 class="nobifashion_home_categories_title" id="nobifashion_home_categories_title">Khám Phá Danh Mục</h2>
+                        <p class="nobifashion_home_categories_subtitle">Lựa chọn trang phục & phụ kiện phù hợp theo phong cách của bạn</p>
+                    </div>
+
+                    {{-- Bộ lọc Tabs phân loại hiện đại (Department Switcher) --}}
+                    <div class="nobifashion_home_categories_tabs" role="tablist" aria-label="Bộ lọc danh mục">
+                        @foreach ($categories as $rootCat)
+                            @php
+                                $slug = $rootCat->slug;
+                            @endphp
+                            <button type="button"
+                                    class="nobifashion_home_categories_tab_btn {{ $loop->first ? 'nobifashion_home_categories_tab_active' : '' }}"
+                                    data-nobifashion-tab="cat-{{ $rootCat->id }}"
+                                    role="tab"
+                                    aria-selected="{{ $loop->first ? 'true' : 'false' }}">
+                                @if(str_contains($slug, 'nam'))
+                                    <svg class="nobifashion_home_categories_tab_icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                        <circle cx="12" cy="7" r="4"></circle>
+                                    </svg>
+                                @elseif(str_contains($slug, 'nu'))
+                                    <svg class="nobifashion_home_categories_tab_icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M6 3h12l4 6-10 12L2 9z"></path>
+                                    </svg>
+                                @elseif(str_contains($slug, 'tre-em'))
+                                    <svg class="nobifashion_home_categories_tab_icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <circle cx="12" cy="12" r="9"></circle>
+                                        <path d="M9 10h.01"></path>
+                                        <path d="M15 10h.01"></path>
+                                        <path d="M9.5 15a3.5 3.5 0 0 0 5 0"></path>
+                                    </svg>
+                                @else
+                                    <svg class="nobifashion_home_categories_tab_icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                    </svg>
+                                @endif
+                                <span class="nobifashion_home_categories_tab_name">{{ $rootCat->name }}</span>
+                                <span class="nobifashion_home_categories_tab_count">{{ $rootCat->children->count() }}</span>
+                            </button>
                         @endforeach
+                    </div>
+                </div>
+
+                {{-- Khung hiển thị danh mục theo từng Tab --}}
+                <div class="nobifashion_home_categories_content">
+                    @foreach ($categories as $rootCat)
+                        <div class="nobifashion_home_categories_panel {{ $loop->first ? 'nobifashion_home_categories_panel_active' : '' }}"
+                             id="nobifashion_cat_panel_cat-{{ $rootCat->id }}"
+                             role="tabpanel"
+                             {!! $loop->first ? '' : 'style="display: none;"' !!}>
+                            <div class="nobifashion_home_categories_grid">
+                                @foreach ($rootCat->children as $category)
+                                    <a class="nobifashion_home_category_card" href="{{ url('/' . $category->slug) }}" title="{{ $category->name }}">
+                                        <div class="nobifashion_home_category_media">
+                                            <img class="nobifashion_home_category_img"
+                                                 src="{{ $category->image_url }}"
+                                                 alt="{{ $category->name }}"
+                                                 width="120"
+                                                 height="120"
+                                                 loading="lazy"
+                                                 decoding="async"
+                                                 onerror="this.onerror=null; this.src='{{ asset('clients/assets/img/categories/no-image.webp') }}';">
+                                        </div>
+                                        <span class="nobifashion_home_category_name">{{ $category->name }}</span>
+                                        <span class="nobifashion_home_category_explore" aria-hidden="true">
+                                            Khám phá
+                                            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                                <polyline points="9 18 15 12 9 6"></polyline>
+                                            </svg>
+                                        </span>
+                                    </a>
+                                @endforeach
+                            </div>
+                        </div>
                     @endforeach
                 </div>
-                <button class="nobifashion_home_pill nobifashion_home_all_categories" type="button"
-                    data-nobifashion-open="menu" aria-controls="nobifashion_home_menu" aria-expanded="false">Xem tất cả
-                    danh mục sản phẩm</button>
+
+                <div class="nobifashion_home_categories_footer">
+                    <button class="nobifashion_home_pill nobifashion_home_all_categories_btn" type="button"
+                        data-nobifashion-open="menu" aria-controls="nobifashion_home_menu" aria-expanded="false">
+                        <span>Xem tất cả danh mục sản phẩm</span>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                    </button>
+                </div>
             </div>
-        </nav>
+        </section>
 
         <section class="nobifashion_home_banner" data-nobifashion-tone="dark"
             aria-labelledby="nobifashion_home_banner_1_title">

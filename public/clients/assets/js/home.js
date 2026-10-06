@@ -408,7 +408,7 @@
           if (width < 768) {
               return {
                   mode: 'mobile',
-                  stepX: 130,
+                  stepX: 140,
                   scaleStep: 0.15,
                   zStep: 80,
                   rotY: 8,
@@ -418,7 +418,7 @@
           if (width < 992) {
               return {
                   mode: 'tablet',
-                  stepX: 190,
+                  stepX: 160,
                   scaleStep: 0.14,
                   zStep: 90,
                   rotY: 12,
@@ -428,7 +428,7 @@
           if (width < 1200) {
               return {
                   mode: 'laptop',
-                  stepX: 220,
+                  stepX: 185,
                   scaleStep: 0.13,
                   zStep: 100,
                   rotY: 14,
@@ -437,7 +437,7 @@
           }
           return {
               mode: 'desktop',
-              stepX: 240,
+              stepX: 210,
               scaleStep: 0.13,
               zStep: 110,
               rotY: 16,
@@ -469,7 +469,7 @@
                   card.setAttribute('aria-hidden', 'true');
 
                   const dir = offset > 0 ? 1 : -1;
-                  const posX = dir * (absOffset * metrics.stepX + (absOffset === 1 ? 40 : 20));
+                  const posX = dir * (absOffset * metrics.stepX + (absOffset === 1 ? 35 : 15));
                   const posZ = -absOffset * metrics.zStep;
                   const scale = Math.max(0.45, 1 - absOffset * metrics.scaleStep);
                   const rotY = -dir * (metrics.rotY + (absOffset - 1) * 3);
@@ -547,15 +547,23 @@
           startAutoplay();
       }
 
-      // Card clicks
+      // Card clicks: clicking any background slide switches it to the main slide
       cards.forEach((card, index) => {
-          card.addEventListener('click', function (e) {
+          function selectThisCard(e) {
               if (index !== currentIndex) {
                   e.preventDefault();
                   e.stopPropagation();
                   goToSlide(index);
               }
-          });
+          }
+
+          // Use capture phase to intercept click before child elements / link navigation
+          card.addEventListener('click', selectThisCard, true);
+
+          const link = card.querySelector('.nobifashion_home_banner_main_card_link');
+          if (link) {
+              link.addEventListener('click', selectThisCard);
+          }
       });
 
       // Prev / Next button clicks
@@ -662,10 +670,54 @@
       startAutoplay();
   }
 
+  /* ====================================================================
+     CATEGORY EXPLORER DEPARTMENT TABS CONTROLLER
+     ==================================================================== */
+  function initNobifashionCategoryTabs() {
+      const tabsContainer = document.querySelector('.nobifashion_home_categories_tabs');
+      if (!tabsContainer) return;
+
+      const tabs = tabsContainer.querySelectorAll('.nobifashion_home_categories_tab_btn');
+      const panels = document.querySelectorAll('.nobifashion_home_categories_panel');
+
+      tabs.forEach(tab => {
+          tab.addEventListener('click', function (e) {
+              e.preventDefault();
+              if (this.classList.contains('nobifashion_home_categories_tab_active')) return;
+
+              const targetKey = this.getAttribute('data-nobifashion-tab');
+              if (!targetKey) return;
+
+              tabs.forEach(t => {
+                  t.classList.remove('nobifashion_home_categories_tab_active');
+                  t.setAttribute('aria-selected', 'false');
+              });
+              this.classList.add('nobifashion_home_categories_tab_active');
+              this.setAttribute('aria-selected', 'true');
+
+              panels.forEach(panel => {
+                  if (panel.id === 'nobifashion_cat_panel_' + targetKey) {
+                      panel.style.display = 'block';
+                      // Force DOM reflow so staggered animation triggers cleanly
+                      void panel.offsetWidth;
+                      panel.classList.add('nobifashion_home_categories_panel_active');
+                  } else {
+                      panel.style.display = 'none';
+                      panel.classList.remove('nobifashion_home_categories_panel_active');
+                  }
+              });
+          });
+      });
+  }
+
   if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initNobifashionHomeBannerMain);
+      document.addEventListener('DOMContentLoaded', function () {
+          initNobifashionHomeBannerMain();
+          initNobifashionCategoryTabs();
+      });
   } else {
       initNobifashionHomeBannerMain();
+      initNobifashionCategoryTabs();
   }
 })();
 
