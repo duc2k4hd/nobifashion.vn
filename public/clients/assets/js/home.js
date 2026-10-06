@@ -368,4 +368,304 @@
       return;
     }
   });
+
+  /* ====================================================================
+     NOBI FASHION - 3D COVERFLOW HERO BANNER MAIN CONTROLLER
+     Class Prefix: nobifashion_home_banner_main_
+     Pure Vanilla JS, Large Dots Pagination, GPU-accelerated
+     ==================================================================== */
+  function initNobifashionHomeBannerMain() {
+      const carouselEl = document.getElementById('nobifashion_home_banner_main_carousel');
+      if (!carouselEl) return;
+
+      const stageEl = carouselEl.querySelector('.nobifashion_home_banner_main_stage');
+      const cards = Array.from(carouselEl.querySelectorAll('.nobifashion_home_banner_main_card'));
+      const prevBtn = document.getElementById('nobifashion_home_banner_main_prev_btn');
+      const nextBtn = document.getElementById('nobifashion_home_banner_main_next_btn');
+      const paginationDots = Array.from(carouselEl.parentElement.querySelectorAll('.nobifashion_home_banner_main_pagination_dot'));
+      const ambientGlowEl = document.getElementById('nobifashion_home_banner_main_ambient_glow');
+
+      if (!cards.length) return;
+
+      let currentIndex = 0;
+      let autoplayTimer = null;
+      const total = cards.length;
+      const AUTOPLAY_INTERVAL = 5000;
+
+      const ambientColors = [
+          'radial-gradient(circle, rgba(56, 189, 248, 0.35) 0%, rgba(14, 165, 233, 0.12) 50%, transparent 80%)',
+          'radial-gradient(circle, rgba(251, 146, 60, 0.35) 0%, rgba(249, 115, 22, 0.12) 50%, transparent 80%)',
+          'radial-gradient(circle, rgba(244, 114, 182, 0.35) 0%, rgba(236, 72, 153, 0.12) 50%, transparent 80%)',
+          'radial-gradient(circle, rgba(167, 139, 250, 0.35) 0%, rgba(139, 92, 246, 0.12) 50%, transparent 80%)',
+          'radial-gradient(circle, rgba(52, 211, 153, 0.35) 0%, rgba(16, 185, 129, 0.12) 50%, transparent 80%)',
+          'radial-gradient(circle, rgba(250, 204, 21, 0.35) 0%, rgba(234, 179, 8, 0.12) 50%, transparent 80%)',
+          'radial-gradient(circle, rgba(148, 163, 184, 0.40) 0%, rgba(100, 116, 139, 0.15) 50%, transparent 80%)',
+          'radial-gradient(circle, rgba(225, 29, 72, 0.32) 0%, rgba(190, 18, 60, 0.12) 50%, transparent 80%)',
+      ];
+
+      function getResponsiveMetrics() {
+          const width = window.innerWidth;
+          if (width < 768) {
+              return {
+                  mode: 'mobile',
+                  stepX: 130,
+                  scaleStep: 0.15,
+                  zStep: 80,
+                  rotY: 8,
+                  maxVisible: 1,
+              };
+          }
+          if (width < 992) {
+              return {
+                  mode: 'tablet',
+                  stepX: 190,
+                  scaleStep: 0.14,
+                  zStep: 90,
+                  rotY: 12,
+                  maxVisible: 2,
+              };
+          }
+          if (width < 1200) {
+              return {
+                  mode: 'laptop',
+                  stepX: 220,
+                  scaleStep: 0.13,
+                  zStep: 100,
+                  rotY: 14,
+                  maxVisible: 2,
+              };
+          }
+          return {
+              mode: 'desktop',
+              stepX: 240,
+              scaleStep: 0.13,
+              zStep: 110,
+              rotY: 16,
+              maxVisible: 3,
+          };
+      }
+
+      function update3DStage() {
+          const metrics = getResponsiveMetrics();
+
+          cards.forEach((card, index) => {
+              let offset = index - currentIndex;
+              while (offset > total / 2) offset -= total;
+              while (offset < -total / 2) offset += total;
+
+              const absOffset = Math.abs(offset);
+              const isActive = offset === 0;
+
+              if (isActive) {
+                  card.classList.add('nobifashion_home_banner_main_card_active');
+                  card.setAttribute('aria-hidden', 'false');
+                  card.style.transform = 'translate3d(-50%, -50%, 0px) scale(1) rotateY(0deg)';
+                  card.style.zIndex = '20';
+                  card.style.opacity = '1';
+                  card.style.filter = 'brightness(1) contrast(1)';
+                  card.style.pointerEvents = 'auto';
+              } else if (absOffset <= metrics.maxVisible) {
+                  card.classList.remove('nobifashion_home_banner_main_card_active');
+                  card.setAttribute('aria-hidden', 'true');
+
+                  const dir = offset > 0 ? 1 : -1;
+                  const posX = dir * (absOffset * metrics.stepX + (absOffset === 1 ? 40 : 20));
+                  const posZ = -absOffset * metrics.zStep;
+                  const scale = Math.max(0.45, 1 - absOffset * metrics.scaleStep);
+                  const rotY = -dir * (metrics.rotY + (absOffset - 1) * 3);
+                  const opacity = Math.max(0.3, 1 - absOffset * 0.22);
+                  const brightness = Math.max(0.4, 0.85 - (absOffset - 1) * 0.18);
+
+                  card.style.transform = `translate3d(calc(-50% + ${posX}px), -50%, ${posZ}px) scale(${scale}) rotateY(${rotY}deg)`;
+                  card.style.zIndex = String(20 - absOffset);
+                  card.style.opacity = String(opacity);
+                  card.style.filter = `brightness(${brightness})`;
+                  card.style.pointerEvents = 'auto';
+              } else {
+                  card.classList.remove('nobifashion_home_banner_main_card_active');
+                  card.setAttribute('aria-hidden', 'true');
+                  const dir = offset > 0 ? 1 : -1;
+                  const posX = dir * (metrics.maxVisible * metrics.stepX + 160);
+                  card.style.transform = `translate3d(calc(-50% + ${posX}px), -50%, -300px) scale(0.5)`;
+                  card.style.zIndex = '0';
+                  card.style.opacity = '0';
+                  card.style.pointerEvents = 'none';
+              }
+          });
+
+          // Update Large Dots Pagination
+          paginationDots.forEach((dot, index) => {
+              if (index === currentIndex) {
+                  dot.classList.add('nobifashion_home_banner_main_pagination_dot_active');
+                  dot.setAttribute('aria-current', 'true');
+              } else {
+                  dot.classList.remove('nobifashion_home_banner_main_pagination_dot_active');
+                  dot.setAttribute('aria-current', 'false');
+              }
+          });
+
+          // Update Ambient Glow
+          if (ambientGlowEl) {
+              const colorIdx = currentIndex % ambientColors.length;
+              ambientGlowEl.style.background = ambientColors[colorIdx];
+          }
+      }
+
+      function goToSlide(targetIndex) {
+          if (targetIndex === currentIndex) return;
+          currentIndex = (targetIndex + total) % total;
+          update3DStage();
+          resetAutoplay();
+      }
+
+      function nextSlide() {
+          goToSlide(currentIndex + 1);
+      }
+
+      function prevSlide() {
+          goToSlide(currentIndex - 1);
+      }
+
+      function startAutoplay() {
+          stopAutoplay();
+          autoplayTimer = setInterval(() => {
+              if (!document.hidden) {
+                  nextSlide();
+              }
+          }, AUTOPLAY_INTERVAL);
+      }
+
+      function stopAutoplay() {
+          if (autoplayTimer) {
+              clearInterval(autoplayTimer);
+              autoplayTimer = null;
+          }
+      }
+
+      function resetAutoplay() {
+          stopAutoplay();
+          startAutoplay();
+      }
+
+      // Card clicks
+      cards.forEach((card, index) => {
+          card.addEventListener('click', function (e) {
+              if (index !== currentIndex) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  goToSlide(index);
+              }
+          });
+      });
+
+      // Prev / Next button clicks
+      if (prevBtn) {
+          prevBtn.addEventListener('click', function (e) {
+              e.preventDefault();
+              prevSlide();
+          });
+      }
+
+      if (nextBtn) {
+          nextBtn.addEventListener('click', function (e) {
+              e.preventDefault();
+              nextSlide();
+          });
+      }
+
+      // Large Dots clicks
+      paginationDots.forEach((dot) => {
+          dot.addEventListener('click', function (e) {
+              e.preventDefault();
+              const targetIdx = parseInt(this.getAttribute('data-nobifashion-index'), 10);
+              if (!isNaN(targetIdx)) {
+                  goToSlide(targetIdx);
+              }
+          });
+      });
+
+      // Keyboard navigation
+      carouselEl.addEventListener('keydown', function (e) {
+          if (e.key === 'ArrowLeft') {
+              e.preventDefault();
+              prevSlide();
+          } else if (e.key === 'ArrowRight') {
+              e.preventDefault();
+              nextSlide();
+          }
+      });
+
+      // Touch & Swipe Support
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let touchEndX = 0;
+      let touchEndY = 0;
+
+      stageEl.addEventListener('touchstart', function (e) {
+          if (e.touches.length === 1) {
+              touchStartX = e.touches[0].clientX;
+              touchStartY = e.touches[0].clientY;
+              touchEndX = touchStartX;
+              touchEndY = touchStartY;
+              stopAutoplay();
+          }
+      }, { passive: true });
+
+      stageEl.addEventListener('touchmove', function (e) {
+          if (e.touches.length === 1) {
+              touchEndX = e.touches[0].clientX;
+              touchEndY = e.touches[0].clientY;
+          }
+      }, { passive: true });
+
+      stageEl.addEventListener('touchend', function () {
+          const diffX = touchEndX - touchStartX;
+          const diffY = touchEndY - touchStartY;
+          const SWIPE_THRESHOLD = 45;
+
+          if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > SWIPE_THRESHOLD) {
+              if (diffX < 0) {
+                  nextSlide();
+              } else {
+                  prevSlide();
+              }
+          }
+          startAutoplay();
+      }, { passive: true });
+
+      // Hover pause
+      carouselEl.addEventListener('mouseenter', stopAutoplay);
+      carouselEl.addEventListener('mouseleave', startAutoplay);
+      carouselEl.addEventListener('focusin', stopAutoplay);
+      carouselEl.addEventListener('focusout', startAutoplay);
+
+      // Resize throttle
+      let resizeTimeout = null;
+      window.addEventListener('resize', function () {
+          if (resizeTimeout) clearTimeout(resizeTimeout);
+          resizeTimeout = setTimeout(() => {
+              update3DStage();
+          }, 100);
+      }, { passive: true });
+
+      // Visibility change
+      document.addEventListener('visibilitychange', function () {
+          if (document.hidden) {
+              stopAutoplay();
+          } else {
+              startAutoplay();
+          }
+      });
+
+      // Initial setup
+      update3DStage();
+      startAutoplay();
+  }
+
+  if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initNobifashionHomeBannerMain);
+  } else {
+      initNobifashionHomeBannerMain();
+  }
 })();
+

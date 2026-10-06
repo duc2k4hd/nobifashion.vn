@@ -57,6 +57,110 @@
                 </svg>
             </button>
         </section>
+
+        {{-- ====================================================================
+             3D COVERFLOW HERO BANNER MAIN
+             Dữ liệu lấy trực tiếp từ bảng banners (Controller query & cache)
+             Tất cả class đều chứa tiền tố: nobifashion_home_banner_main_
+             Phân trang dấu chấm to (Large Dots)
+             ==================================================================== --}}
+        @if(!empty($homeMainBanners) && $homeMainBanners->isNotEmpty())
+        <section class="nobifashion_home_banner_main_section" aria-label="Bộ sưu tập nổi bật 3D Coverflow">
+            {{-- Lớp ánh sáng nền đổi màu mờ ảo theo banner trung tâm (Ambient Lighting Backdrop) --}}
+            <div class="nobifashion_home_banner_main_ambient" aria-hidden="true">
+                <div class="nobifashion_home_banner_main_ambient_glow" id="nobifashion_home_banner_main_ambient_glow"></div>
+            </div>
+
+            <div class="nobifashion_home_banner_main_container">
+                {{-- Sân khấu 3D Carousel --}}
+                <div class="nobifashion_home_banner_main_carousel" id="nobifashion_home_banner_main_carousel" tabindex="0" role="region" aria-roledescription="carousel" aria-label="Banner 3D Coverflow">
+                    <div class="nobifashion_home_banner_main_stage" id="nobifashion_home_banner_main_stage">
+                        @foreach($homeMainBanners as $bannerItem)
+                            @php
+                                $isFirst = $loop->first;
+                                $imgFile = $bannerItem->image_desktop ?: $bannerItem->image_mobile;
+                                $imgUrl = str_starts_with($imgFile, 'http') ? $imgFile : asset('clients/assets/img/banners/' . $imgFile);
+                                $brandTitle = Str::upper($bannerItem->title ?? 'NOBI FASHION');
+                                $tagBadge = 'SALE';
+                            @endphp
+                            <article class="nobifashion_home_banner_main_card {{ $isFirst ? 'nobifashion_home_banner_main_card_active' : '' }}"
+                                     data-nobifashion-index="{{ $loop->index }}"
+                                     data-nobifashion-image="{{ $imgUrl }}"
+                                     role="group"
+                                     aria-roledescription="slide"
+                                     aria-label="{{ $loop->iteration }} trên {{ $homeMainBanners->count() }}"
+                                     aria-hidden="{{ $isFirst ? 'false' : 'true' }}">
+                                <div class="nobifashion_home_banner_main_card_inner">
+                                    <a class="nobifashion_home_banner_main_card_link"
+                                       href="{{ $bannerItem->link ?: '#' }}"
+                                       target="{{ $bannerItem->taget ?: '_self' }}"
+                                       title="{{ $bannerItem->title }}"
+                                       data-nobifashion-index="{{ $loop->index }}">
+                                        <div class="nobifashion_home_banner_main_card_media">
+                                            <img class="nobifashion_home_banner_main_card_img"
+                                                 src="{{ $imgUrl }}"
+                                                 alt="{{ $bannerItem->title }}"
+                                                 width="740"
+                                                 height="420"
+                                                 loading="{{ $loop->iteration <= 2 ? 'eager' : 'lazy' }}"
+                                                 decoding="async"
+                                                 {{ $isFirst ? 'fetchpriority=high' : '' }}
+                                                 onerror="this.onerror=null; this.src='{{ asset('clients/assets/no-image.webp') }}';">
+                                            <div class="nobifashion_home_banner_main_card_overlay" aria-hidden="true"></div>
+                                        </div>
+
+                                        {{-- Huy hiệu pill thương hiệu & tag SALE góc dưới bên trái --}}
+                                        <div class="nobifashion_home_banner_main_card_badge_box">
+                                            <span class="nobifashion_home_banner_main_card_brand_badge">{{ $brandTitle }}</span>
+                                            <span class="nobifashion_home_banner_main_card_sale_badge">{{ $tagBadge }}</span>
+                                        </div>
+
+                                        @if(!empty($bannerItem->description))
+                                        <div class="nobifashion_home_banner_main_card_info">
+                                            <span class="nobifashion_home_banner_main_card_desc">{{ $bannerItem->description }}</span>
+                                        </div>
+                                        @endif
+                                    </a>
+                                </div>
+                            </article>
+                        @endforeach
+                    </div>
+
+                    {{-- Nút mũi tên chuyển slide Trái / Phải dạng tròn glassmorphism --}}
+                    <button type="button"
+                            class="nobifashion_home_banner_main_nav_btn nobifashion_home_banner_main_nav_prev"
+                            id="nobifashion_home_banner_main_prev_btn"
+                            aria-label="Xem banner trước">
+                        <svg class="nobifashion_home_banner_main_nav_icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </button>
+                    <button type="button"
+                            class="nobifashion_home_banner_main_nav_btn nobifashion_home_banner_main_nav_next"
+                            id="nobifashion_home_banner_main_next_btn"
+                            aria-label="Xem banner kế tiếp">
+                        <svg class="nobifashion_home_banner_main_nav_icon" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </button>
+                </div>
+
+                {{-- Thanh phân trang dấu chấm to (Large Dots Pagination) theo yêu cầu --}}
+                <nav class="nobifashion_home_banner_main_pagination" aria-label="Điều hướng các mục banner">
+                    @foreach($homeMainBanners as $pageItem)
+                        <button type="button"
+                                class="nobifashion_home_banner_main_pagination_dot {{ $loop->first ? 'nobifashion_home_banner_main_pagination_dot_active' : '' }}"
+                                data-nobifashion-index="{{ $loop->index }}"
+                                aria-label="Chuyển tới slide {{ $loop->iteration }}"
+                                aria-current="{{ $loop->first ? 'true' : 'false' }}">
+                            <span class="nobifashion_home_banner_main_pagination_dot_inner"></span>
+                        </button>
+                    @endforeach
+                </nav>
+            </div>
+        </section>
+        @endif
+
         <nav class="nobifashion_home_categories" id="nobifashion_home_categories" data-nobifashion-tone="light"
             aria-labelledby="nobifashion_home_categories_title">
             <div class="nobifashion_home_container">

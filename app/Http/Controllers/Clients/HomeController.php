@@ -22,7 +22,7 @@ class HomeController extends Controller
         $kidsCategoryIds = $this->resolveBranchCategoryIds($rootCategories, 'tre-em');
         $householdCategoryIds = $this->resolveBranchCategoryIds($rootCategories, 'do-gia-dung');
 
-        $homeData = Cache::remember('home.page.payload.v5', now()->addMinutes(10), function () use (
+        $homeData = Cache::remember('home.page.payload.v7', now()->addMinutes(10), function () use (
             $rootCategories,
             $menCategoryIds,
             $womenCategoryIds,
@@ -48,6 +48,12 @@ class HomeController extends Controller
                     ->active()
                     ->ordered()
                     ->limit(2)
+                    ->get(),
+                'homeMainBanners' => Banner::query()
+                    ->select(['id', 'title', 'description', 'image_desktop', 'image_mobile', 'link', 'taget', 'order', 'position'])
+                    ->home()
+                    ->active()
+                    ->ordered()
                     ->get(),
                 'productsFeatured' => $this->baseHomeProductQuery()
                     ->featured()
