@@ -31,7 +31,7 @@ class BannerRequest extends FormRequest
                 'max:4096',
             ],
             'image_mobile' => [
-                $bannerId ? 'nullable' : 'required',
+                'nullable',
                 'image',
                 'extensions:jpg,jpeg,png,webp,avif',
                 'max:4096',

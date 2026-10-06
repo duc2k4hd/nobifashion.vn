@@ -531,8 +531,17 @@ Route::prefix('admin')->name('admin.')->group(function () {
         });
 
         Route::resource('settings', SettingController::class)->except(['show'])->names('settings');
-        Route::resource('banners', BannerController::class)->except(['show'])->names('banners');
-        Route::patch('banners/{banner}/toggle', [BannerController::class, 'toggle'])->name('banners.toggle');
+        Route::prefix('banners')->name('banners.')->controller(BannerController::class)->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+            Route::get('/{banner}/edit', 'edit')->name('edit');
+            Route::put('/{banner}', 'update')->name('update');
+            Route::delete('/{banner}', 'destroy')->name('destroy');
+
+            Route::post('/reorder', 'reorder')->name('reorder');
+            Route::patch('/{banner}/toggle', 'toggle')->name('toggle');
+        });
 
         Route::resource('email-accounts', EmailAccountController::class)->names('email-accounts');
         Route::post('email-accounts/{email_account}/set-default', [EmailAccountController::class, 'setDefault'])->name('email-accounts.set-default');
@@ -542,18 +551,36 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('posts/import-excel', [PostImportExportController::class, 'importForm'])->name('posts.import-excel');
         Route::post('posts/import-batch', [PostImportExportController::class, 'importBatch'])->name('posts.import-batch');
 
-        Route::resource('posts', AdminPostController::class)->except(['show'])->names('posts');
-        Route::post('posts/bulk-destroy', [AdminPostController::class, 'bulkDestroy'])->name('posts.bulk-destroy');
-        Route::post('posts/destroy-from-txt', [AdminPostController::class, 'destroyFromTxt'])->name('posts.destroy-from-txt');
-        Route::post('posts/{post}/publish', [AdminPostController::class, 'publish'])->name('posts.publish');
-        Route::post('posts/{post}/archive', [AdminPostController::class, 'archive'])->name('posts.archive');
-        Route::post('posts/{post}/duplicate', [AdminPostController::class, 'duplicate'])->name('posts.duplicate');
-        Route::post('posts/{post}/feature', [AdminPostController::class, 'feature'])->name('posts.feature');
-        Route::post('posts/{post}/unfeature', [AdminPostController::class, 'unfeature'])->name('posts.unfeature');
-        Route::patch('posts/{post}/restore', [AdminPostController::class, 'restore'])->name('posts.restore');
-        Route::get('posts/{post}/revisions', [AdminPostController::class, 'revisions'])->name('posts.revisions');
-        Route::post('posts/{post}/autosave', [AdminPostController::class, 'autosave'])->name('posts.autosave');
-        Route::post('posts/{post}/revisions/{revisionId}/restore', [AdminPostController::class, 'restoreRevision'])->name('posts.revisions.restore');
+        Route::prefix('posts')->name('posts.')->controller(AdminPostController::class)->group(function () {
+            // CRUD
+            Route::get('/', 'index')->name('index');
+            Route::get('/create', 'create')->name('create');
+            Route::post('/', 'store')->name('store');
+
+            // Bulk actions
+            Route::post('/bulk-destroy', 'bulkDestroy')->name('bulk-destroy');
+            Route::post('/destroy-from-txt', 'destroyFromTxt')->name('destroy-from-txt');
+
+            // Post actions
+            Route::post('/{post}/publish', 'publish')->name('publish');
+            Route::post('/{post}/archive', 'archive')->name('archive');
+            Route::post('/{post}/duplicate', 'duplicate')->name('duplicate');
+            Route::post('/{post}/feature', 'feature')->name('feature');
+            Route::post('/{post}/unfeature', 'unfeature')->name('unfeature');
+            Route::patch('/{post}/restore', 'restore')->name('restore');
+
+            // Revisions & autosave
+            Route::get('/{post}/revisions', 'revisions')->name('revisions');
+            Route::post('/{post}/autosave', 'autosave')->name('autosave');
+            Route::post('/{post}/revisions/{revisionId}/restore', 'restoreRevision')
+                ->name('revisions.restore');
+
+            // Edit / Update / Delete
+            Route::get('/{post}/edit', 'edit')->name('edit');
+            Route::put('/{post}', 'update')->name('update');
+            Route::patch('/{post}', 'update');
+            Route::delete('/{post}', 'destroy')->name('destroy');
+        });
 
         // Danh mục bài viết
         Route::prefix('post-categories')->name('post-categories.')->group(function () {

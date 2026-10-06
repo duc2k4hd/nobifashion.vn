@@ -648,9 +648,9 @@ body.nobifashion_home_page svg:not([class*="nobi-chat"]),
 }
 
 .nobifashion_home_category_img {
-    width: 88%;
-    height: 88%;
-    object-fit: contain;
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
     object-position: center;
     display: block;
     transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
@@ -1871,6 +1871,10 @@ body.nobifashion_home_page svg:not([class*="nobi-chat"]),
     width: 100%;
     height: 100%;
     overflow: hidden;
+}
+
+.nobifashion_home_banner_main_picture {
+    display: contents;
 }
 
 .nobifashion_home_banner_main_card_img {

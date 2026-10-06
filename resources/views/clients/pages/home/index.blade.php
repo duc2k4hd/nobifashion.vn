@@ -78,14 +78,17 @@
                         @foreach($homeMainBanners as $bannerItem)
                             @php
                                 $isFirst = $loop->first;
-                                $imgFile = $bannerItem->image_desktop ?: $bannerItem->image_mobile;
-                                $imgUrl = str_starts_with($imgFile, 'http') ? $imgFile : asset('clients/assets/img/banners/' . $imgFile);
+                                $desktopFilename = basename($bannerItem->image_desktop ?: $bannerItem->image_mobile);
+                                $mobileFilename = basename($bannerItem->image_mobile ?: $bannerItem->image_desktop);
+
+                                $desktopUrl = $desktopFilename ? asset('clients/assets/img/banners/' . $desktopFilename) : asset('clients/assets/no-image.webp');
+                                $mobileUrl = $mobileFilename ? asset('clients/assets/img/banners/' . $mobileFilename) : $desktopUrl;
                                 $brandTitle = Str::upper($bannerItem->title ?? 'NOBI FASHION');
                                 $tagBadge = 'SALE';
                             @endphp
                             <article class="nobifashion_home_banner_main_card {{ $isFirst ? 'nobifashion_home_banner_main_card_active' : '' }}"
                                      data-nobifashion-index="{{ $loop->index }}"
-                                     data-nobifashion-image="{{ $imgUrl }}"
+                                     data-nobifashion-image="{{ $desktopUrl }}"
                                      role="group"
                                      aria-roledescription="slide"
                                      aria-label="{{ $loop->iteration }} trên {{ $homeMainBanners->count() }}"
@@ -97,15 +100,20 @@
                                        title="{{ $bannerItem->title }}"
                                        data-nobifashion-index="{{ $loop->index }}">
                                         <div class="nobifashion_home_banner_main_card_media">
-                                            <img class="nobifashion_home_banner_main_card_img"
-                                                 src="{{ $imgUrl }}"
-                                                 alt="{{ $bannerItem->title }}"
-                                                 width="740"
-                                                 height="420"
-                                                 loading="{{ $loop->iteration <= 2 ? 'eager' : 'lazy' }}"
-                                                 decoding="async"
-                                                 {{ $isFirst ? 'fetchpriority=high' : '' }}
-                                                 onerror="this.onerror=null; this.src='{{ asset('clients/assets/no-image.webp') }}';">
+                                            <picture class="nobifashion_home_banner_main_picture">
+                                                @if($mobileUrl && $mobileUrl !== $desktopUrl)
+                                                    <source media="(max-width: 768px)" srcset="{{ $mobileUrl }}">
+                                                @endif
+                                                <img class="nobifashion_home_banner_main_card_img"
+                                                     src="{{ $desktopUrl }}"
+                                                     alt="{{ $bannerItem->title }}"
+                                                     width="740"
+                                                     height="420"
+                                                     loading="{{ $loop->iteration <= 2 ? 'eager' : 'lazy' }}"
+                                                     decoding="async"
+                                                     {{ $isFirst ? 'fetchpriority=high' : '' }}
+                                                     onerror="this.onerror=null; this.src='{{ asset('clients/assets/no-image.webp') }}';">
+                                            </picture>
                                             <div class="nobifashion_home_banner_main_card_overlay" aria-hidden="true"></div>
                                         </div>
 

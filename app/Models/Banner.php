@@ -40,6 +40,8 @@ class Banner extends Model
     protected static function booted()
     {
         static::saved(function ($banner) {
+            \Illuminate\Support\Facades\Cache::forget('home.page.payload.v8');
+
             try {
                 $registry = app(ImageRegistryService::class);
                 $registry->syncEntityImage(
@@ -72,6 +74,8 @@ class Banner extends Model
         });
 
         static::deleted(function ($banner) {
+            \Illuminate\Support\Facades\Cache::forget('home.page.payload.v8');
+
             try {
                 $registry = app(ImageRegistryService::class);
                 $registry->syncEntityImage('banner', (int) $banner->id, 'desktop', null);
@@ -80,6 +84,48 @@ class Banner extends Model
                 report($exception);
             }
         });
+    }
+
+    /**
+     * Đảm bảo trong database chỉ lưu tên file kèm đuôi mở rộng, không lưu path.
+     */
+    protected function imageDesktop(): \Illuminate\Database\Eloquent\Casts\Attribute
+    {
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(
+            set: fn ($value) => $value ? basename($value) : null,
+        );
+    }
+
+    protected function imageMobile(): \Illuminate\Database\Eloquent\Casts\Attribute
+    {
+        return \Illuminate\Database\Eloquent\Casts\Attribute::make(
+            set: fn ($value) => $value ? basename($value) : null,
+        );
+    }
+
+    /**
+     * Lấy đường dẫn đầy đủ đến ảnh Desktop
+     */
+    public function getDesktopUrlAttribute(): string
+    {
+        if (empty($this->image_desktop)) {
+            return asset('clients/assets/no-image.webp');
+        }
+        $filename = basename($this->image_desktop);
+        return asset('clients/assets/img/banners/' . $filename);
+    }
+
+    /**
+     * Lấy đường dẫn đầy đủ đến ảnh Mobile
+     */
+    public function getMobileUrlAttribute(): string
+    {
+        $file = $this->image_mobile ?: $this->image_desktop;
+        if (empty($file)) {
+            return asset('clients/assets/no-image.webp');
+        }
+        $filename = basename($file);
+        return asset('clients/assets/img/banners/' . $filename);
     }
 
     // ------------------------------
