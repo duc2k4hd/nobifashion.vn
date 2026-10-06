@@ -327,7 +327,7 @@ svg.nobifashion_home_icon_solid,
     height: var(--nobifashion_home_header_height, 64px);
     max-width: 1200px;
     margin-inline: auto;
-    padding-inline: 16px;
+    padding-inline: 0;
 }
 
 .nobifashion_home_logo {
