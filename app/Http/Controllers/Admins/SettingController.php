@@ -13,8 +13,25 @@ use Illuminate\Validation\ValidationException;
 class SettingController extends Controller
 {
     protected array $protectedKeys = [
-        'site_name',
+        'product_recommen',
+        'contact_address',
+        'contact_email',
+        'contact_phone',
+        'contact_zalo',
+        'copyright',
+        'dmca',
+        'dmca_logo',
+        'google_analytics',
+        'google_search_console',
+        'google_tag_body',
+        'google_tag_header',
+        'maintenance_mode',
+        'site_banner',
+        'site_description',
+        'site_favicon',
         'site_logo',
+        'site_tax_code',
+        'site_name',
         'site_url',
         'site_title',
     ];
@@ -26,7 +43,8 @@ class SettingController extends Controller
         if ($keyword = $request->get('keyword')) {
             $query->where(function ($q) use ($keyword) {
                 $q->where('key', 'like', "%{$keyword}%")
-                    ->orWhere('label', 'like', "%{$keyword}%");
+                    ->orWhere('label', 'like', "%{$keyword}%")
+                    ->orWhere('value', 'like', "%{$keyword}%");
             });
         }
 
@@ -50,7 +68,24 @@ class SettingController extends Controller
         $groups = Setting::select('group')->distinct()->pluck('group')->filter();
         $types = $this->allowedTypes();
 
-        return view('admins.settings.index', compact('settings_all', 'groups', 'types'));
+        $currentUser = auth()->user();
+        $isSuperAdmin = $currentUser && strtolower(trim((string) $currentUser->email)) === 'admin@gmail.com';
+        $protectedKeys = $this->protectedKeys;
+
+        $stats = [
+            'total'  => Setting::count(),
+            'public' => Setting::where('is_public', true)->count(),
+            'system' => Setting::whereIn('key', $this->protectedKeys)->count(),
+        ];
+
+        return view('admins.settings.index', compact(
+            'settings_all',
+            'groups',
+            'types',
+            'protectedKeys',
+            'isSuperAdmin',
+            'stats'
+        ));
     }
 
     public function create()
@@ -59,8 +94,11 @@ class SettingController extends Controller
         $groups = Setting::select('group')->distinct()->pluck('group')->filter();
         $types = $this->allowedTypes();
         $categories = Category::where('is_active', true)->select('id', 'name', 'slug', 'parent_id')->orderBy('sort_order')->orderBy('name')->get();
+        $protectedKeys = $this->protectedKeys;
+        $currentUser = auth()->user();
+        $isSuperAdmin = $currentUser && strtolower(trim((string) $currentUser->email)) === 'admin@gmail.com';
 
-        return view('admins.settings.create', compact('setting', 'groups', 'types', 'categories'));
+        return view('admins.settings.create', compact('setting', 'groups', 'types', 'categories', 'protectedKeys', 'isSuperAdmin'));
     }
 
     public function store(SettingRequest $request)
@@ -82,8 +120,11 @@ class SettingController extends Controller
         $groups = Setting::select('group')->distinct()->pluck('group')->filter();
         $types = $this->allowedTypes();
         $categories = Category::where('is_active', true)->select('id', 'name', 'slug', 'parent_id')->orderBy('sort_order')->orderBy('name')->get();
+        $protectedKeys = $this->protectedKeys;
+        $currentUser = auth()->user();
+        $isSuperAdmin = $currentUser && strtolower(trim((string) $currentUser->email)) === 'admin@gmail.com';
 
-        return view('admins.settings.edit', compact('setting', 'groups', 'types', 'categories'));
+        return view('admins.settings.edit', compact('setting', 'groups', 'types', 'categories', 'protectedKeys', 'isSuperAdmin'));
     }
 
     public function update(SettingRequest $request, Setting $setting)
@@ -113,17 +154,21 @@ class SettingController extends Controller
 
     public function destroy(Setting $setting)
     {
-        if (in_array($setting->key, $this->protectedKeys, true)) {
-            return back()->with('error', 'Không thể xoá setting hệ thống.');
+        $currentUser = auth()->user();
+        $isSuperAdmin = $currentUser && strtolower(trim((string) $currentUser->email)) === 'admin@gmail.com';
+
+        if (in_array($setting->key, $this->protectedKeys, true) && !$isSuperAdmin) {
+            return back()->with('error', "Cài đặt [{$setting->key}] là cấu hình hệ thống quan trọng, không được phép xoá (chỉ tài khoản admin@gmail.com mới có quyền xoá).");
         }
 
+        $key = $setting->key;
         $setting->delete();
 
-        if ($setting->key === 'product_recommen') {
+        if ($key === 'product_recommen') {
             ProductRecommendationService::clearCache();
         }
 
-        return back()->with('success', 'Đã xoá setting.');
+        return back()->with('success', "Đã xoá cài đặt '{$key}' thành công.");
     }
 
     private function normalizeValue(array $data): array
