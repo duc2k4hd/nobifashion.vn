@@ -1,93 +1,874 @@
 @extends('admins.layouts.master')
 
 @section('page-title', 'Quản lý bài viết')
+@section('title', 'Quản lý bài viết')
 
 @push('head')
-    @php
-        $slimSelectCssAsset = asset('admins/vendor/slimselect/slimselect.css') . '?v=' . env('APP_VERSION');
-        $slimSelectJsAsset = asset('admins/vendor/slimselect/slimselect.min.js') . '?v=' . env('APP_VERSION');
-    @endphp
     <link rel="shortcut icon" href="{{ asset('admins/img/icons/posts-icon.png') }}" type="image/png">
-    <link rel="stylesheet" href="{{ $slimSelectCssAsset }}">
 @endpush
 
 @push('styles')
     <style>
-        .posts-filters .ss-main,
-        .posts-filters .ss-content {
-            border-radius: 0.375rem;
+        .posts-container {
+            margin: 0 auto;
         }
 
-        .posts-filters .ss-main {
-            min-height: 38px;
-            border-color: var(--bs-border-color);
+        /* Header Box */
+        .page-header-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .page-header-box h2 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .page-header-box p {
+            margin: 4px 0 0;
+            color: #64748b;
+            font-size: 13px;
+        }
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
-        .posts-filters .ss-main:focus {
-            border-color: #86b7fe;
-            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+        /* Quick Status Filter Tabs */
+        .status-tabs-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .status-tab-item {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            text-decoration: none;
+            color: #334155;
+            transition: all 0.15s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .status-tab-item:hover {
+            border-color: #cbd5e1;
+            background: #f8fafc;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+            color: #0f172a;
+        }
+        .status-tab-item.active {
+            border-color: #3b82f6;
+            background: #ffffff;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.12), 0 4px 12px rgba(59, 130, 246, 0.06);
+        }
+        .status-tab-item.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #3b82f6;
+        }
+        .status-tab-title {
+            font-size: 12.5px;
+            font-weight: 600;
+            color: #64748b;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .status-tab-item.active .status-tab-title {
+            color: #1e40af;
+        }
+        .status-tab-count {
+            font-size: 18px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .status-tab-item.active .status-tab-count {
+            color: #2563eb;
         }
 
-        .posts-search-hint {
-            font-size: 0.8rem;
+        /* Filter Panel */
+        .filter-panel {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 16px 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.03);
         }
-
-        .post-thumb-wrap {
-            width: 80px;
-            min-width: 80px;
+        .filter-panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #e2e8f0;
         }
-
-        .post-thumb-wrap img {
-            width: 80px;
-            height: 45px;
-            object-fit: cover;
-            border-radius: 4px;
+        .filter-panel-title {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #1e293b;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+        .filter-results-summary {
+            font-size: 12.5px;
+            color: #64748b;
+        }
+        .filter-results-summary strong {
+            color: #0f172a;
+        }
+        .filter-grid-primary {
+            display: grid;
+            grid-template-columns: 2.2fr 1.3fr 1.1fr 1.2fr 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .filter-grid-secondary {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1.1fr 1.3fr auto;
+            gap: 12px;
+            align-items: flex-end;
+        }
+        @media (max-width: 1280px) {
+            .filter-grid-primary,
+            .filter-grid-secondary {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        @media (max-width: 768px) {
+            .filter-grid-primary,
+            .filter-grid-secondary {
+                grid-template-columns: 1fr;
+            }
+        }
+        .filter-field label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 5px;
             display: block;
-            background: #f0f0f0;
+        }
+        .filter-field input,
+        .filter-field select {
+            width: 100%;
+            height: 38px;
+            padding: 7px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 13px;
+            color: #1e293b;
+            background-color: #f8fafc;
+            transition: all 0.15s ease;
+        }
+        .filter-field input:focus,
+        .filter-field select:focus {
+            background-color: #ffffff;
+            border-color: #3b82f6;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+        }
+        .filter-field-search {
+            position: relative;
+        }
+        .filter-field-search input {
+            padding-left: 34px;
+        }
+        .filter-field-search .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 31px;
+            color: #94a3b8;
+            font-size: 13px;
+            pointer-events: none;
+        }
+        .filter-actions-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Search Hint */
+        .search-hint-box {
+            font-size: 12px;
+            padding: 6px 12px;
+            border-radius: 6px;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .search-hint-exact {
+            background: #ecfdf5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        .search-hint-fallback {
+            background: #fffbeb;
+            color: #92400e;
+            border: 1px solid #fde68a;
+        }
+
+        /* Table Card */
+        .table-card {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            overflow: visible;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+            margin-bottom: 24px;
+        }
+        @media (min-width: 992px) {
+            .table-card .table-responsive {
+                overflow: visible;
+            }
+        }
+        .table-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 14px 18px;
+            background: #f8fafc;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .table-card-header h3 {
+            font-size: 14px;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Bulk Actions Bar */
+        .bulk-actions-bar {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            padding: 6px 12px;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: 6px;
+            font-size: 12.5px;
+            color: #1e40af;
+            animation: fadeIn 0.2s ease;
+        }
+        .bulk-actions-bar.active {
+            display: inline-flex;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Clean Table */
+        .clean-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+            margin: 0;
+        }
+        .clean-table th {
+            background: #f8fafc;
+            color: #475569;
+            font-weight: 600;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 12px 14px;
+            border-bottom: 1px solid #e2e8f0;
+            white-space: nowrap;
+        }
+        .clean-table td {
+            padding: 12px 14px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+            color: #334155;
+        }
+        .clean-table tbody tr:hover td {
+            background: #f8fafc;
+        }
+
+        /* Post Cell */
+        .post-cell {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            max-width: 440px;
+        }
+        .post-thumb-wrap {
+            width: 68px;
+            height: 44px;
+            border-radius: 6px;
+            overflow: hidden;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .post-thumb-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        .post-thumb-placeholder {
+            color: #94a3b8;
+            font-size: 16px;
+        }
+        .post-info {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            min-width: 0;
+        }
+        .post-title {
+            font-weight: 600;
+            color: #0f172a;
+            font-size: 13px;
+            line-height: 1.35;
+            text-decoration: none;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .post-title:hover {
+            color: #2563eb;
+        }
+        .post-slug {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 11px;
+            color: #64748b;
+            text-decoration: none;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 320px;
+        }
+        .post-tags-row {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-wrap: wrap;
+            margin-top: 2px;
+        }
+        .post-tag-pill {
+            font-size: 10.5px;
+            color: #475569;
+            background: #f1f5f9;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            padding: 1px 6px;
+            line-height: 1.3;
+        }
+
+        /* Status Badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11.5px;
+            font-weight: 600;
+            white-space: nowrap;
+            border: 1px solid transparent;
+        }
+        .status-badge-published {
+            background: #ecfdf5;
+            color: #047857;
+            border-color: #a7f3d0;
+        }
+        .status-badge-draft {
+            background: #f8fafc;
+            color: #64748b;
+            border-color: #cbd5e1;
+        }
+        .status-badge-pending {
+            background: #fffbeb;
+            color: #d97706;
+            border-color: #fde68a;
+        }
+        .status-badge-archived {
+            background: #f1f5f9;
+            color: #334155;
+            border-color: #cbd5e1;
+        }
+        .status-badge-trashed {
+            background: #fef2f2;
+            color: #dc2626;
+            border-color: #fecaca;
+        }
+
+        /* Featured Star */
+        .star-featured {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            background: #fef3c7;
+            color: #d97706;
+            border: 1px solid #fde68a;
+            font-size: 12px;
+        }
+
+        /* Views Badge */
+        .views-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        /* Table Action Buttons */
+        .action-btn-group {
+            display: inline-flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .btn-table-action {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            font-size: 12.5px;
+            text-decoration: none;
+            transition: all 0.15s ease-in-out;
+            border: 1px solid #cbd5e1;
+            cursor: pointer;
+            line-height: 1;
+            flex-shrink: 0;
+            background: #ffffff;
+            color: #475569;
+        }
+        .btn-table-action:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+            border-color: #94a3b8;
+        }
+        .btn-action-view {
+            color: #0284c7;
+            border-color: #bae6fd;
+            background: #f0f9ff;
+        }
+        .btn-action-view:hover {
+            background: #0284c7;
+            color: #ffffff;
+            border-color: #0284c7;
+        }
+        .btn-action-edit {
+            color: #2563eb;
+            border-color: #bfdbfe;
+            background: #eff6ff;
+        }
+        .btn-action-edit:hover {
+            background: #2563eb;
+            color: #ffffff;
+            border-color: #2563eb;
+        }
+
+        /* Post Row Action Dropdown */
+        .post-action-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        .post-action-dropdown-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: calc(100% + 4px);
+            min-width: 185px;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15), 0 8px 10px -6px rgba(15, 23, 42, 0.1);
+            padding: 6px;
+            z-index: 1050;
+            text-align: left;
+        }
+        .post-action-dropdown-menu.show {
+            display: block !important;
+            animation: postDropdownAnim 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        @keyframes postDropdownAnim {
+            from {
+                opacity: 0;
+                transform: translateY(-4px) scale(0.98);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        .post-dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            width: 100%;
+            padding: 7px 10px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #334155;
+            background: transparent;
+            border: none;
+            border-radius: 6px;
+            text-decoration: none;
+            cursor: pointer;
+            text-align: left;
+            transition: background 0.12s ease, color 0.12s ease;
+            white-space: nowrap;
+        }
+        .post-dropdown-item:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+        .post-dropdown-item.text-danger {
+            color: #dc2626 !important;
+        }
+        .post-dropdown-item.text-danger:hover {
+            background: #fef2f2 !important;
+            color: #b91c1c !important;
+        }
+        .post-dropdown-divider {
+            height: 1px;
+            background: #f1f5f9;
+            margin: 4px 0;
+        }
+
+        /* Modern Action Buttons */
+        .btn-modern-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 16px;
+            background: #2563eb;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 6px;
+            text-decoration: none;
+            border: 1px solid #2563eb;
+            transition: all 0.15s ease;
+        }
+        .btn-modern-primary:hover {
+            background: #1d4ed8;
+            border-color: #1d4ed8;
+            color: #ffffff;
+        }
+        .btn-modern-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 16px;
+            background: #ffffff;
+            color: #334155;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 6px;
+            text-decoration: none;
+            border: 1px solid #cbd5e1;
+            transition: all 0.15s ease;
+        }
+        .btn-modern-secondary:hover {
+            background: #f8fafc;
+            color: #0f172a;
+            border-color: #94a3b8;
+        }
+        .btn-modern-green {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 16px;
+            background: #f0fdf4;
+            color: #15803d;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 6px;
+            text-decoration: none;
+            border: 1px solid #bbf7d0;
+            transition: all 0.15s ease;
+        }
+        .btn-modern-green:hover {
+            background: #15803d;
+            color: #ffffff;
+            border-color: #15803d;
+        }
+        .btn-modern-cyan {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 16px;
+            background: #ecfeff;
+            color: #0e7490;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 6px;
+            text-decoration: none;
+            border: 1px solid #a5f3fc;
+            transition: all 0.15s ease;
+        }
+        .btn-modern-cyan:hover {
+            background: #0e7490;
+            color: #ffffff;
+            border-color: #0e7490;
+        }
+        .btn-modern-danger {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 8px 16px;
+            background: #fef2f2;
+            color: #b91c1c;
+            font-size: 13px;
+            font-weight: 600;
+            border-radius: 6px;
+            text-decoration: none;
+            border: 1px solid #fecaca;
+            transition: all 0.15s ease;
+        }
+        .btn-modern-danger:hover {
+            background: #b91c1c;
+            color: #ffffff;
+            border-color: #b91c1c;
+        }
+
+        /* Pagination Box */
+        .posts-pagination-box {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 14px;
+            padding: 14px 20px;
+            background: #ffffff;
+            border-top: 1px solid #e2e8f0;
+        }
+        .pagination-count-text {
+            font-size: 13px;
+            color: #64748b;
+        }
+        .pagination-count-text strong {
+            color: #0f172a;
+            font-weight: 600;
+        }
+        .clean-pagination-list {
+            display: flex !important;
+            align-items: center !important;
+            gap: 4px !important;
+            list-style: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        .clean-pagination-list .page-item {
+            margin: 0 !important;
+            list-style: none !important;
+        }
+        .clean-pagination-list .page-link {
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            min-width: 34px !important;
+            height: 34px !important;
+            padding: 0 10px !important;
+            font-size: 13px !important;
+            font-weight: 500 !important;
+            color: #334155 !important;
+            background: #ffffff !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 6px !important;
+            text-decoration: none !important;
+            transition: all 0.15s ease-in-out !important;
+            cursor: pointer !important;
+            box-shadow: none !important;
+            line-height: 1 !important;
+        }
+        .clean-pagination-list .page-link:hover {
+            background: #f8fafc !important;
+            border-color: #94a3b8 !important;
+            color: #0f172a !important;
+        }
+        .clean-pagination-list .page-item.active .page-link {
+            background: #2563eb !important;
+            border-color: #2563eb !important;
+            color: #ffffff !important;
+            font-weight: 600 !important;
+        }
+        .clean-pagination-list .page-item.disabled .page-link {
+            background: #f8fafc !important;
+            border-color: #e2e8f0 !important;
+            color: #cbd5e1 !important;
+            cursor: not-allowed !important;
+            pointer-events: none !important;
+        }
+        .clean-pagination-list .page-link.dots {
+            border-color: transparent !important;
+            background: transparent !important;
+            color: #94a3b8 !important;
+            cursor: default !important;
         }
     </style>
 @endpush
 
 @section('content')
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+<div class="posts-container">
+
+    {{-- Page Header --}}
+    <div class="page-header-box">
         <div>
-            <h2 class="fw-bold mb-1">Quản lý bài viết</h2>
-            <p class="text-muted mb-0">Theo dõi, lọc và xuất bản nội dung như một mini CMS.</p>
+            <h2>
+                <i class="fa-solid fa-newspaper text-primary"></i>
+                Quản lý bài viết
+            </h2>
+            <p>Theo dõi, biên tập, xuất bản nội dung và quản lý kho bài viết chuẩn SEO.</p>
         </div>
-        <div class="d-flex gap-2">
-            <button type="button" id="btnOpenExportModal" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#exportCsvModal">
-                <i class="fas fa-file-download me-1"></i> Xuất CSV
+
+        <div class="header-actions">
+            <button type="button" id="btnOpenExportModal" class="btn-modern-green" data-bs-toggle="modal" data-bs-target="#exportCsvModal">
+                <i class="fa-solid fa-file-arrow-down"></i> Xuất CSV
             </button>
-            <button type="button" id="btnOpenImportModal" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#importCsvModal">
-                <i class="fas fa-file-upload me-1"></i> Nhập CSV/Excel
+            <button type="button" id="btnOpenImportModal" class="btn-modern-cyan" data-bs-toggle="modal" data-bs-target="#importCsvModal">
+                <i class="fa-solid fa-file-arrow-up"></i> Nhập CSV/Excel
             </button>
-            <button type="button" class="btn btn-danger mb-0" id="btnOpenDeleteFromTxt" data-bs-toggle="modal" data-bs-target="#deleteTxtModal" title="Xóa bài viết hàng loạt theo danh sách ID từ file .txt, kèm xóa ảnh">
-                <i class="fas fa-trash-alt me-1"></i> Xóa từ TXT
+            <button type="button" class="btn-modern-danger" id="btnOpenDeleteFromTxt" data-bs-toggle="modal" data-bs-target="#deleteTxtModal" title="Xóa bài viết hàng loạt theo danh sách ID từ file .txt, kèm xóa ảnh">
+                <i class="fa-solid fa-trash-can"></i> Xóa từ TXT
             </button>
-            <a href="{{ route('admin.posts.create') }}" class="btn btn-primary">
-                <i class="fas fa-plus me-1"></i> Viết bài mới
+            <a href="{{ route('admin.posts.create') }}" class="btn-modern-primary">
+                <i class="fa-solid fa-plus"></i> Viết bài mới
             </a>
         </div>
     </div>
 
-    <div class="card shadow-sm border-0 mb-4 posts-filters">
-        <div class="card-body">
-            <form action="{{ route('admin.posts.index') }}" method="GET" class="row g-3 align-items-end">
-                <div class="col-md-2">
-                    <label class="form-label text-uppercase text-muted small">Trạng thái</label>
-                    <select name="status" class="form-select" data-slim-select data-allow-deselect="true" data-placeholder="Chọn trạng thái">
-                        <option value="">Tất cả</option>
-                        @foreach($statusOptions as $value => $label)
-                            <option value="{{ $value }}" @selected(($filters['status'] ?? '') === $value)>{{ $label }}</option>
-                        @endforeach
-                        <option value="trashed" @selected(($filters['status'] ?? '') === 'trashed')>🗑 Đã xóa mềm</option>
-                    </select>
+    {{-- Quick Status Filter Tabs --}}
+    @php
+        $currentStatus = $filters['status'] ?? '';
+    @endphp
+    <div class="status-tabs-row">
+        {{-- Tất cả --}}
+        <a href="{{ route('admin.posts.index', request()->except(['page', 'status'])) }}"
+           class="status-tab-item {{ $currentStatus === '' ? 'active' : '' }}">
+            <span class="status-tab-title">
+                <i class="fa-solid fa-layer-group"></i> Tất cả bài viết
+            </span>
+            <span class="status-tab-count">{{ number_format($stats->total ?? 0) }}</span>
+        </a>
+
+        {{-- Đã xuất bản --}}
+        <a href="{{ route('admin.posts.index', array_merge(request()->except(['page', 'status']), ['status' => 'published'])) }}"
+           class="status-tab-item {{ $currentStatus === 'published' ? 'active' : '' }}">
+            <span class="status-tab-title" style="color: #059669;">
+                <i class="fa-solid fa-circle-check"></i> Đã xuất bản
+            </span>
+            <span class="status-tab-count">{{ number_format($stats->published ?? 0) }}</span>
+        </a>
+
+        {{-- Bản nháp --}}
+        <a href="{{ route('admin.posts.index', array_merge(request()->except(['page', 'status']), ['status' => 'draft'])) }}"
+           class="status-tab-item {{ $currentStatus === 'draft' ? 'active' : '' }}">
+            <span class="status-tab-title" style="color: #64748b;">
+                <i class="fa-regular fa-file-lines"></i> Bản nháp
+            </span>
+            <span class="status-tab-count">{{ number_format($stats->draft ?? 0) }}</span>
+        </a>
+
+        {{-- Chờ duyệt --}}
+        <a href="{{ route('admin.posts.index', array_merge(request()->except(['page', 'status']), ['status' => 'pending'])) }}"
+           class="status-tab-item {{ $currentStatus === 'pending' ? 'active' : '' }}">
+            <span class="status-tab-title" style="color: #d97706;">
+                <i class="fa-regular fa-clock"></i> Chờ duyệt
+            </span>
+            <span class="status-tab-count">{{ number_format($stats->pending ?? 0) }}</span>
+        </a>
+
+        {{-- Lưu trữ --}}
+        <a href="{{ route('admin.posts.index', array_merge(request()->except(['page', 'status']), ['status' => 'archived'])) }}"
+           class="status-tab-item {{ $currentStatus === 'archived' ? 'active' : '' }}">
+            <span class="status-tab-title" style="color: #475569;">
+                <i class="fa-solid fa-box-archive"></i> Lưu trữ
+            </span>
+            <span class="status-tab-count">{{ number_format($stats->archived ?? 0) }}</span>
+        </a>
+
+        {{-- Thùng rác --}}
+        <a href="{{ route('admin.posts.index', array_merge(request()->except(['page', 'status']), ['status' => 'trashed'])) }}"
+           class="status-tab-item {{ $currentStatus === 'trashed' ? 'active' : '' }}">
+            <span class="status-tab-title" style="color: #dc2626;">
+                <i class="fa-regular fa-trash-can"></i> Thùng rác
+            </span>
+            <span class="status-tab-count">{{ number_format($stats->trashed ?? 0) }}</span>
+        </a>
+    </div>
+
+    {{-- Filter Panel --}}
+    <div class="filter-panel">
+        <div class="filter-panel-header">
+            <span class="filter-panel-title">
+                <i class="fa-solid fa-filter text-primary"></i> Bộ lọc & Tìm kiếm bài viết
+            </span>
+            <div class="filter-results-summary">
+                Hiển thị <strong>{{ number_format($posts->firstItem() ?? 0) }} - {{ number_format($posts->lastItem() ?? 0) }}</strong> trên tổng <strong>{{ number_format($posts->total()) }}</strong> kết quả
+            </div>
+        </div>
+
+        <form action="{{ route('admin.posts.index') }}" method="GET" id="filter-form">
+            @if(request('status'))
+                <input type="hidden" name="status" value="{{ request('status') }}">
+            @endif
+
+            {{-- Hàng lọc chính --}}
+            <div class="filter-grid-primary">
+                {{-- Từ khóa --}}
+                <div class="filter-field filter-field-search">
+                    <label for="filter-search">Tìm kiếm</label>
+                    <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                    <input
+                        id="filter-search"
+                        type="text"
+                        name="search"
+                        value="{{ $filters['search'] ?? '' }}"
+                        placeholder="Tiêu đề bài viết, slug..."
+                    >
                 </div>
 
-                <div class="col-md-2">
-                    <label class="form-label text-uppercase text-muted small">Danh mục</label>
-                    <select name="category_id" class="form-select" data-slim-select data-allow-deselect="true" data-placeholder="Chọn danh mục">
-                        <option value="">Tất cả</option>
+                {{-- Danh mục --}}
+                <div class="filter-field">
+                    <label for="filter-category">Danh mục</label>
+                    <select id="filter-category" name="category_id">
+                        <option value="">Tất cả danh mục</option>
                         <option value="none" @selected(($filters['category_id'] ?? '') === 'none')>⚠️ Chưa có danh mục</option>
                         @foreach($categories as $category)
                             <option value="{{ $category->id }}" @selected(($filters['category_id'] ?? '') == $category->id)>
@@ -97,10 +878,11 @@
                     </select>
                 </div>
 
-                <div class="col-md-2">
-                    <label class="form-label text-uppercase text-muted small">Tag</label>
-                    <select name="tag_id" class="form-select" data-slim-select data-allow-deselect="true" data-placeholder="Chọn tag">
-                        <option value="">Tất cả</option>
+                {{-- Tag --}}
+                <div class="filter-field">
+                    <label for="filter-tag">Thẻ Tag</label>
+                    <select id="filter-tag" name="tag_id">
+                        <option value="">Tất cả thẻ</option>
                         @foreach($tags as $tag)
                             <option value="{{ $tag->id }}" @selected(($filters['tag_id'] ?? '') == $tag->id)>
                                 {{ $tag->name }}
@@ -109,10 +891,11 @@
                     </select>
                 </div>
 
-                <div class="col-md-2">
-                    <label class="form-label text-uppercase text-muted small">Tác giả</label>
-                    <select name="author_id" class="form-select" data-slim-select data-allow-deselect="true" data-placeholder="Chọn tác giả">
-                        <option value="">Tất cả</option>
+                {{-- Tác giả --}}
+                <div class="filter-field">
+                    <label for="filter-author">Tác giả</label>
+                    <select id="filter-author" name="author_id">
+                        <option value="">Tất cả tác giả</option>
                         @foreach($authors as $author)
                             <option value="{{ $author->id }}" @selected(($filters['author_id'] ?? '') == $author->id)>
                                 {{ $author->name ?? $author->email }}
@@ -121,292 +904,492 @@
                     </select>
                 </div>
 
-                <div class="col-md-2">
-                    <label class="form-label text-uppercase text-muted small">Ngày từ</label>
-                    <input type="date" name="date_from" class="form-control" value="{{ $filters['date_from'] ?? '' }}">
+                {{-- Trạng thái --}}
+                <div class="filter-field">
+                    <label for="filter-status">Trạng thái</label>
+                    <select id="filter-status" name="status">
+                        <option value="">Tất cả trạng thái</option>
+                        @foreach($statusOptions as $val => $lbl)
+                            <option value="{{ $val }}" @selected(($filters['status'] ?? '') === $val)>{{ $lbl }}</option>
+                        @endforeach
+                        <option value="trashed" @selected(($filters['status'] ?? '') === 'trashed')>Đã xóa mềm</option>
+                    </select>
                 </div>
 
-                <div class="col-md-2">
-                    <label class="form-label text-uppercase text-muted small">Ngày đến</label>
-                    <input type="date" name="date_to" class="form-control" value="{{ $filters['date_to'] ?? '' }}">
+                {{-- Hiển thị / trang --}}
+                <div class="filter-field">
+                    <label for="filter-limit">Hiển thị / trang</label>
+                    <select id="filter-limit" name="limit">
+                        <option value="50" @selected(($filters['limit'] ?? 50) == 50)>50 bài</option>
+                        <option value="100" @selected(($filters['limit'] ?? 50) == 100)>100 bài</option>
+                        <option value="300" @selected(($filters['limit'] ?? 50) == 300)>300 bài</option>
+                        <option value="1000" @selected(($filters['limit'] ?? 50) == 1000)>1000 bài</option>
+                    </select>
+                </div>
+            </div>
+
+            {{-- Hàng lọc mở rộng --}}
+            <div class="filter-grid-secondary">
+                {{-- Ngày từ --}}
+                <div class="filter-field">
+                    <label for="filter-date-from">Ngày xuất bản từ</label>
+                    <input type="date" id="filter-date-from" name="date_from" value="{{ $filters['date_from'] ?? '' }}">
                 </div>
 
-                <div class="col-md-2">
-                    <label class="form-label text-uppercase text-muted small">Nổi bật</label>
-                    <select name="is_featured" class="form-select" data-slim-select data-allow-deselect="true" data-placeholder="Chọn loại">
+                {{-- Ngày đến --}}
+                <div class="filter-field">
+                    <label for="filter-date-to">Ngày xuất bản đến</label>
+                    <input type="date" id="filter-date-to" name="date_to" value="{{ $filters['date_to'] ?? '' }}">
+                </div>
+
+                {{-- Nổi bật --}}
+                <div class="filter-field">
+                    <label for="filter-featured">Nổi bật</label>
+                    <select id="filter-featured" name="is_featured">
                         <option value="">Tất cả</option>
                         <option value="1" @selected(($filters['is_featured'] ?? '') === '1')>Chỉ nổi bật</option>
                         <option value="0" @selected(($filters['is_featured'] ?? '') === '0')>Không nổi bật</option>
                     </select>
                 </div>
 
-                <div class="col-md-2">
-                    <label class="form-label text-uppercase text-muted small">Thiếu thumbnail</label>
-                    <select name="without_thumbnail" class="form-select" data-slim-select data-allow-deselect="true" data-placeholder="Chọn kiểu">
-                        <option value="">Không lọc</option>
-                        <option value="1" @selected(($filters['without_thumbnail'] ?? '') === '1')>Chỉ bài chưa có thumbnail</option>
+                {{-- Thiếu thumbnail --}}
+                <div class="filter-field">
+                    <label for="filter-without-thumb">Thiếu thumbnail</label>
+                    <select id="filter-without-thumb" name="without_thumbnail">
+                        <option value="">Tất cả</option>
+                        <option value="1" @selected(($filters['without_thumbnail'] ?? '') === '1')>Chưa có thumbnail</option>
                     </select>
                 </div>
 
-                <div class="col-md-2">
-                    <label class="form-label text-uppercase text-muted small">Lượt xem (View)</label>
-                    <select name="sort" class="form-select" data-slim-select data-allow-deselect="true" data-placeholder="Sắp xếp theo view">
-                        <option value="">Mặc định (Mới nhất)</option>
-                        <option value="view_asc" @selected(($filters['sort'] ?? '') === 'view_asc')>View tăng dần (A → Z)</option>
-                        <option value="view_desc" @selected(($filters['sort'] ?? '') === 'view_desc')>View giảm dần (Z → A)</option>
+                {{-- Sắp xếp theo Lượt xem / Thời gian --}}
+                <div class="filter-field">
+                    <label for="filter-sort">Sắp xếp</label>
+                    <select id="filter-sort" name="sort">
+                        <option value="">Mới nhất</option>
+                        <option value="oldest" @selected(($filters['sort'] ?? '') === 'oldest')>Cũ nhất</option>
+                        <option value="view_desc" @selected(($filters['sort'] ?? '') === 'view_desc')>Lượt xem cao nhất</option>
+                        <option value="view_asc" @selected(($filters['sort'] ?? '') === 'view_asc')>Lượt xem thấp nhất</option>
                     </select>
                 </div>
 
-                <div class="col-md-2">
-                    <label class="form-label text-uppercase text-muted small">Hiển thị</label>
-                    <select name="limit" class="form-select" data-slim-select data-allow-deselect="false" data-placeholder="Số lượng">
-                        <option value="50" @selected(($filters['limit'] ?? 50) == 50)>50 bài / trang</option>
-                        <option value="100" @selected(($filters['limit'] ?? 50) == 100)>100 bài / trang</option>
-                        <option value="300" @selected(($filters['limit'] ?? 50) == 300)>300 bài / trang</option>
-                        <option value="1000" @selected(($filters['limit'] ?? 50) == 1000)>1000 bài / trang</option>
-                    </select>
+                {{-- Nút bấm Lọc & Reset --}}
+                <div class="filter-actions-group" style="padding-bottom: 2px;">
+                    <button type="submit" class="btn-modern-primary" style="height: 38px;">
+                        <i class="fa-solid fa-filter"></i> Lọc
+                    </button>
+                    <a href="{{ route('admin.posts.index', request('status') ? ['status' => request('status')] : []) }}"
+                       class="btn-modern-secondary" style="height: 38px;" title="Xóa bộ lọc">
+                        <i class="fa-solid fa-arrow-rotate-left"></i> Đặt lại
+                    </a>
                 </div>
+            </div>
 
-                <div class="col-md-4">
-                    <label class="form-label text-uppercase text-muted small">Từ khóa</label>
-                    <input
-                        type="text"
-                        name="search"
-                        class="form-control"
-                        placeholder="Tìm theo tiêu đề, ưu tiên đúng cụm từ trước"
-                        value="{{ $filters['search'] ?? '' }}"
-                    >
-                    @if(($searchMeta['mode'] ?? null) === 'exact_phrase')
-                        <div class="form-text posts-search-hint text-success">
-                            Đang ưu tiên kết quả khớp đúng cụm từ.
-                        </div>
-                    @elseif(($searchMeta['mode'] ?? null) === 'progressive')
-                        <div class="form-text posts-search-hint text-warning">
-                            Không có bản ghi khớp đúng cụm từ. Hệ thống đang fallback theo các cụm gần đúng:
-                            {{ collect($searchMeta['segments'] ?? [])->take(5)->implode(', ') }}.
-                        </div>
-                    @endif
+            {{-- Thông báo Progressive Search --}}
+            @if(($searchMeta['mode'] ?? null) === 'exact_phrase')
+                <div class="search-hint-box search-hint-exact">
+                    <i class="fa-solid fa-check-circle"></i>
+                    <span>Đang ưu tiên các bài viết khớp đúng cụm từ khóa <strong>"{{ $filters['search'] ?? '' }}"</strong>.</span>
                 </div>
-
-                <div class="col-md-4 text-end ms-auto">
-                    <button type="submit" class="btn btn-dark me-2">Lọc kết quả</button>
-                    <a href="{{ route('admin.posts.index') }}" class="btn btn-outline-secondary">Xóa lọc</a>
+            @elseif(($searchMeta['mode'] ?? null) === 'progressive')
+                <div class="search-hint-box search-hint-fallback">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>Không có bài viết khớp chính xác. Đang tìm kiếm theo các cụm từ tương đồng:
+                        <strong>{{ collect($searchMeta['segments'] ?? [])->take(5)->implode(', ') }}</strong>.
+                    </span>
                 </div>
-            </form>
-        </div>
+            @endif
+        </form>
     </div>
 
-
-    <form action="{{ route('admin.posts.bulk-destroy') }}" method="POST" id="bulkDeleteForm">
-        @csrf
-        {{-- Truyền cờ để controller biết đang ở chế độ xóa vĩnh viễn hay xóa mềm --}}
-        <input type="hidden" name="is_trashed" value="{{ ($filters['status'] ?? '') === 'trashed' ? '1' : '0' }}">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <div class="d-flex align-items-center gap-2">
+    {{-- Main Table Card --}}
+    <div class="table-card">
+        <div class="table-card-header">
+            <h3>
+                <i class="fa-solid fa-list-check text-primary"></i>
+                Danh sách bài viết
                 @if(($filters['status'] ?? '') === 'trashed')
-                    <button type="submit" class="btn btn-sm btn-danger" id="btnBulkDelete" disabled onclick="return confirm('Xóa VĨNH VIỄN các bài đã chọn? Hành động này không thể hoàn tác!');">
-                        <i class="fas fa-trash me-1"></i> Xóa vĩnh viễn các mục đã chọn
-                    </button>
-                @else
-                    <button type="submit" class="btn btn-sm btn-danger" id="btnBulkDelete" disabled onclick="return confirm('Bạn có chắc chắn muốn xóa các bài viết đã chọn?');">
-                        <i class="fas fa-trash me-1"></i> Xóa các mục đã chọn
-                    </button>
+                    <span class="badge bg-danger ms-2" style="font-size: 11px; font-weight: 500;">Thùng rác</span>
                 @endif
-                <button type="button" class="btn btn-sm btn-success d-none" id="btnExportSelectedItems">
-                    <i class="fas fa-file-download me-1"></i> Xuất CSV các bài đã chọn (<span id="bulkSelectedBadge">0</span>)
-                </button>
+            </h3>
+
+            {{-- Bulk Actions Bar --}}
+            <div class="bulk-actions-bar" id="bulkActionsBar">
+                <span><strong id="bulkSelectedBadge">0</strong> bài viết được chọn:</span>
+                <form action="{{ route('admin.posts.bulk-destroy') }}" method="POST" id="bulkDeleteForm" class="d-inline-flex gap-1 m-0">
+                    @csrf
+                    <input type="hidden" name="is_trashed" value="{{ ($filters['status'] ?? '') === 'trashed' ? '1' : '0' }}">
+
+                    @if(($filters['status'] ?? '') === 'trashed')
+                        <button type="submit" class="btn btn-sm btn-danger" id="btnBulkDelete" onclick="return confirm('Xóa VĨNH VIỄN các bài đã chọn? Hành động này KHÔNG thể hoàn tác!');">
+                            <i class="fa-solid fa-trash-can"></i> Xóa vĩnh viễn đã chọn
+                        </button>
+                    @else
+                        <button type="submit" class="btn btn-sm btn-outline-danger bg-white" id="btnBulkDelete" onclick="return confirm('Bạn có chắc chắn muốn bỏ vào thùng rác các bài viết đã chọn?');">
+                            <i class="fa-regular fa-trash-can"></i> Xóa các mục đã chọn
+                        </button>
+                    @endif
+
+                    <button type="button" class="btn btn-sm btn-outline-success bg-white" id="btnExportSelectedItems">
+                        <i class="fa-solid fa-file-arrow-down"></i> Xuất CSV đã chọn
+                    </button>
+                </form>
             </div>
         </div>
-    </form>
 
-    <div class="card border-0 shadow-sm">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="bg-light">
-                        <tr>
-                            <th style="width:40px">
-                                <input class="form-check-input" type="checkbox" id="checkAll">
-                            </th>
-                            <th style="width:40px">ID</th>
-                            <th style="width:90px">Ảnh</th>
-                            <th>Tiêu đề</th>
-                            <th>Danh mục</th>
-                            <th>Trạng thái</th>
-                            <th>Nổi bật</th>
-                            <th>
-                                @php
-                                    $currentSort = $filters['sort'] ?? '';
-                                    $nextSort = ($currentSort === 'view_desc') ? 'view_asc' : 'view_desc';
-                                    $sortIcon = '';
-                                    if ($currentSort === 'view_desc') {
-                                        $sortIcon = '<i class="fas fa-sort-down text-primary ms-1" title="Đang giảm dần (Z → A)"></i>';
-                                    } elseif ($currentSort === 'view_asc') {
-                                        $sortIcon = '<i class="fas fa-sort-up text-primary ms-1" title="Đang tăng dần (A → Z)"></i>';
-                                    } else {
-                                        $sortIcon = '<i class="fas fa-sort text-muted opacity-50 ms-1"></i>';
-                                    }
-                                    $sortUrl = request()->fullUrlWithQuery(['sort' => $nextSort]);
-                                @endphp
-                                <a href="{{ $sortUrl }}" class="text-dark text-decoration-none d-inline-flex align-items-center" title="Bấm để sắp xếp theo lượt xem (A-Z / Z-A)">
-                                    Lượt xem {!! $sortIcon !!}
-                                </a>
-                            </th>
-                            <th>Tác giả</th>
-                            <th>Xuất bản</th>
-                            <th class="text-end">Thao tác</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+        <div class="table-responsive">
+            <table class="clean-table" id="postsTable">
+                <thead>
+                    <tr>
+                        <th style="width: 44px; text-align: center;">
+                            <input class="form-check-input mt-0" type="checkbox" id="checkAll" style="cursor: pointer;">
+                        </th>
+                        <th style="width: 50px; text-align: center;">ID</th>
+                        <th>Bài viết</th>
+                        <th style="width: 140px;">Danh mục</th>
+                        <th style="width: 120px; text-align: center;">Trạng thái</th>
+                        <th style="width: 80px; text-align: center;">Nổi bật</th>
+                        <th style="width: 100px; text-align: center;">
+                            @php
+                                $currentSort = $filters['sort'] ?? '';
+                                $nextSort = ($currentSort === 'view_desc') ? 'view_asc' : 'view_desc';
+                                $sortIcon = '';
+                                if ($currentSort === 'view_desc') {
+                                    $sortIcon = '<i class="fa-solid fa-arrow-down-short-wide text-primary ms-1" title="Giảm dần"></i>';
+                                } elseif ($currentSort === 'view_asc') {
+                                    $sortIcon = '<i class="fa-solid fa-arrow-up-wide-short text-primary ms-1" title="Tăng dần"></i>';
+                                } else {
+                                    $sortIcon = '<i class="fa-solid fa-sort text-muted opacity-50 ms-1"></i>';
+                                }
+                                $sortUrl = request()->fullUrlWithQuery(['sort' => $nextSort]);
+                            @endphp
+                            <a href="{{ $sortUrl }}" class="text-dark text-decoration-none d-inline-flex align-items-center" title="Bấm để sắp xếp theo lượt xem">
+                                Lượt xem {!! $sortIcon !!}
+                            </a>
+                        </th>
+                        <th style="width: 130px;">Tác giả</th>
+                        <th style="width: 120px;">Xuất bản</th>
+                        <th style="width: 110px; text-align: right;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($posts as $post)
                         @php
-                            $statusBadge = [
-                                'draft' => 'secondary',
-                                'pending' => 'warning',
-                                'published' => 'success',
-                                'archived' => 'dark',
-                            ];
+                            $thumbSrc = null;
+                            if (!empty($post->thumbnail)) {
+                                $thumbSrc = asset('clients/assets/img/posts/' . $post->thumbnail);
+                            }
+                            $tagNames = !empty($post->tag_ids) 
+                                ? $tags->whereIn('id', $post->tag_ids)->pluck('name')
+                                : ($post->relationLoaded('tags') ? $post->tags->pluck('name') : collect());
                         @endphp
+                        <tr>
+                            {{-- Checkbox --}}
+                            <td style="text-align: center;">
+                                <input form="bulkDeleteForm" class="form-check-input item-check mt-0" type="checkbox" name="ids[]" value="{{ $post->id }}" style="cursor: pointer;">
+                            </td>
 
-                        @forelse($posts as $post)
-                            <tr>
-                                <td>
-                                    <input form="bulkDeleteForm" class="form-check-input item-check" type="checkbox" name="ids[]" value="{{ $post->id }}">
-                                </td>
-                                <td>#{{ $post->id }}</td>
-                                <td class="post-thumb-wrap">
-                                    @php
-                                        $thumbSrc = asset('clients/assets/img/posts/'.$post->thumbnail ?? 'https://placehold.co/80x45/e9ecef/adb5bd?text=No+Img');
-                                    @endphp
-                                    <img
-                                        src="{{ $thumbSrc }}"
-                                        alt="{{ $post->title }}"
-                                        loading="lazy"
-                                        onerror="this.onerror=null;this.src='https://placehold.co/80x45/e9ecef/adb5bd?text=No+Img'"
-                                        @if(!$thumbSrc) src="https://placehold.co/80x45/e9ecef/adb5bd?text=No+Img" @endif
-                                    >
-                                </td>
-                                <td>
-                                    <div class="fw-semibold">{{ renderMeta($post->title) }}</div>
-                                    <div class="text-muted small">{{ $post->slug }}</div>
-                                    @php
-                                        $tagNames = $post->tag_ids ? $tags->whereIn('id', $post->tag_ids)->pluck('name')->implode(', ') : null;
-                                    @endphp
-                                    <div class="small text-muted">Tags: {{ $tagNames ?: '—' }}</div>
-                                </td>
-                                <td>
-                                    @if($post->category)
-                                        <a href="{{ route('admin.posts.index', array_merge(request()->except(['page']), ['category_id' => $post->category->id])) }}" class="badge bg-light text-primary border text-decoration-none">
-                                            📁 {{ $post->category->name }}
+                            {{-- ID --}}
+                            <td style="text-align: center; font-weight: 600; color: #64748b; font-size: 12px;">
+                                #{{ $post->id }}
+                            </td>
+
+                            {{-- Bài viết (Ảnh + Tiêu đề + Slug + Tags) --}}
+                            <td>
+                                <div class="post-cell">
+                                    <div class="post-thumb-wrap">
+                                        @if($thumbSrc)
+                                            <img
+                                                src="{{ $thumbSrc }}"
+                                                alt="{{ $post->title }}"
+                                                class="post-thumb-img"
+                                                loading="lazy"
+                                                onerror="this.onerror=null;this.parentElement.innerHTML='<span class=\'post-thumb-placeholder\'><i class=\'fa-regular fa-image\'></i></span>';"
+                                            >
+                                        @else
+                                            <span class="post-thumb-placeholder">
+                                                <i class="fa-regular fa-image"></i>
+                                            </span>
+                                        @endif
+                                    </div>
+                                    <div class="post-info">
+                                        <a href="{{ route('admin.posts.edit', $post) }}" class="post-title" title="{{ $post->title }}">
+                                            {{ renderMeta($post->title) }}
                                         </a>
-                                    @else
-                                        <a href="{{ route('admin.posts.index', array_merge(request()->except(['page']), ['category_id' => 'none'])) }}" class="badge bg-warning text-dark border text-decoration-none" title="Bấm để lọc tất cả bài chưa có danh mục">
-                                            ⚠️ Chưa có danh mục
-                                        </a>
-                                    @endif
-                                </td>
-                                <td>
-                                    @if($post->trashed())
-                                        <span class="badge bg-danger">🗑 Đã xóa mềm</span>
-                                    @else
-                                        <span class="badge bg-{{ $statusBadge[$post->status] ?? 'secondary' }}">
-                                            {{ $statusOptions[$post->status] ?? ucfirst($post->status) }}
+                                        <span class="post-slug" title="{{ $post->slug }}">
+                                            {{ $post->slug }}
                                         </span>
-                                    @endif
-                                </td>
-                                <td>
-                                    @if($post->is_featured)
-                                        <span class="badge bg-gradient text-uppercase">★</span>
-                                    @else
-                                        —
-                                    @endif
-                                </td>
-                                <td>{{ number_format($post->views) }}</td>
-                                <td>{{ $post->author?->displayName() ?? '—' }}</td>
-                                <td>
+                                        @if($tagNames->isNotEmpty())
+                                            <div class="post-tags-row">
+                                                @foreach($tagNames->take(3) as $tName)
+                                                    <span class="post-tag-pill">#{{ $tName }}</span>
+                                                @endforeach
+                                                @if($tagNames->count() > 3)
+                                                    <span class="post-tag-pill">+{{ $tagNames->count() - 3 }}</span>
+                                                @endif
+                                            </div>
+                                        @endif
+                                    </div>
+                                </div>
+                            </td>
+
+                            {{-- Danh mục --}}
+                            <td>
+                                @if($post->category)
+                                    <a href="{{ route('admin.posts.index', array_merge(request()->except(['page']), ['category_id' => $post->category->id])) }}"
+                                       class="badge bg-light text-primary border text-decoration-none" style="font-weight: 500; font-size: 11.5px;">
+                                        {{ $post->category->name }}
+                                    </a>
+                                @else
+                                    <a href="{{ route('admin.posts.index', array_merge(request()->except(['page']), ['category_id' => 'none'])) }}"
+                                       class="badge bg-warning text-dark border text-decoration-none" style="font-size: 11px;" title="Chưa gắn danh mục">
+                                        Chưa có
+                                    </a>
+                                @endif
+                            </td>
+
+                            {{-- Trạng thái --}}
+                            <td style="text-align: center;">
+                                @if($post->trashed())
+                                    <span class="status-badge status-badge-trashed">
+                                        <i class="fa-regular fa-trash-can"></i> Đã xóa
+                                    </span>
+                                @elseif($post->status === 'published')
+                                    <span class="status-badge status-badge-published">
+                                        <i class="fa-solid fa-circle-check"></i> Xuất bản
+                                    </span>
+                                @elseif($post->status === 'draft')
+                                    <span class="status-badge status-badge-draft">
+                                        <i class="fa-regular fa-file-lines"></i> Bản nháp
+                                    </span>
+                                @elseif($post->status === 'pending')
+                                    <span class="status-badge status-badge-pending">
+                                        <i class="fa-regular fa-clock"></i> Chờ duyệt
+                                    </span>
+                                @else
+                                    <span class="status-badge status-badge-archived">
+                                        <i class="fa-solid fa-box-archive"></i> Lưu trữ
+                                    </span>
+                                @endif
+                            </td>
+
+                            {{-- Nổi bật --}}
+                            <td style="text-align: center;">
+                                @if($post->is_featured)
+                                    <span class="star-featured" title="Bài viết nổi bật">★</span>
+                                @else
+                                    <span class="text-muted small">—</span>
+                                @endif
+                            </td>
+
+                            {{-- Lượt xem --}}
+                            <td style="text-align: center;">
+                                <span class="views-badge" title="{{ number_format($post->views) }} lượt xem">
+                                    <i class="fa-regular fa-eye text-muted"></i>
+                                    {{ number_format($post->views) }}
+                                </span>
+                            </td>
+
+                            {{-- Tác giả --}}
+                            <td>
+                                <span style="font-weight: 500; font-size: 12.5px; color: #334155;">
+                                    {{ $post->author?->displayName() ?? '—' }}
+                                </span>
+                            </td>
+
+                            {{-- Ngày xuất bản --}}
+                            <td>
+                                <span style="font-size: 12px; color: #64748b;">
                                     @if($post->published_at)
-                                        {{ $post->published_at->translatedFormat('d/m/Y H:i') }}
+                                        {{ $post->published_at->translatedFormat('d/m/Y') }}
+                                        <br><small class="text-muted">{{ $post->published_at->format('H:i') }}</small>
                                     @else
                                         —
                                     @endif
-                                </td>
-                                <td class="text-end">
-                                    <div class="btn-group">
-                                        <a href="{{ route('admin.posts.edit', $post) }}" class="btn btn-sm btn-outline-primary">Sửa</a>
-                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown"></button>
-                                        <div class="dropdown-menu dropdown-menu-end">
-                                            @if($post->trashed())
-                                                <!-- Hành động cho bài viết trong thùng rác -->
-                                                <form action="{{ route('admin.posts.restore', $post->id) }}" method="POST" class="dropdown-item p-0">
+                                </span>
+                            </td>
+
+                            {{-- Thao tác --}}
+                            <td style="text-align: right;">
+                                <div class="action-btn-group">
+                                    @if($post->trashed())
+                                        {{-- Nút Khôi phục --}}
+                                        <form action="{{ route('admin.posts.restore', $post->id) }}" method="POST" class="d-inline">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit" class="btn-table-action" style="color: #16a34a; border-color: #bbf7d0; background: #f0fdf4;" title="Khôi phục bài viết">
+                                                <i class="fa-solid fa-rotate-left"></i>
+                                            </button>
+                                        </form>
+
+                                        {{-- Nút Xóa vĩnh viễn --}}
+                                        <form
+                                            action="{{ route('admin.posts.bulk-destroy') }}"
+                                            method="POST"
+                                            class="d-inline"
+                                            onsubmit="return confirm('CẢNH BÁO: Xóa vĩnh viễn bài viết &quot;{{ addslashes($post->title) }}&quot;? Hành động này KHÔNG thể hoàn tác!')"
+                                        >
+                                            @csrf
+                                            <input type="hidden" name="ids[]" value="{{ $post->id }}">
+                                            <input type="hidden" name="is_trashed" value="1">
+                                            <button type="submit" class="btn-table-action" style="color: #ffffff; background: #dc2626; border-color: #dc2626;" title="Xóa vĩnh viễn">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                            </button>
+                                        </form>
+                                    @else
+                                        {{-- Nút Xem ngoài web --}}
+                                        @if(Route::has('client.blog.show') && $post->slug)
+                                            <a href="{{ route('client.blog.show', $post->slug) }}" target="_blank" class="btn-table-action btn-action-view" title="Xem ngoài website">
+                                                <i class="fa-regular fa-eye"></i>
+                                            </a>
+                                        @endif
+
+                                        {{-- Nút Sửa --}}
+                                        <a href="{{ route('admin.posts.edit', $post) }}" class="btn-table-action btn-action-edit" title="Chỉnh sửa bài viết">
+                                            <i class="fa-solid fa-pen-to-square"></i>
+                                        </a>
+
+                                        {{-- Menu mở rộng tùy chọn --}}
+                                        <div class="post-action-dropdown">
+                                            <button class="btn-table-action post-action-more-btn" type="button" title="Tùy chọn khác">
+                                                <i class="fa-solid fa-ellipsis-vertical"></i>
+                                            </button>
+                                            <div class="post-action-dropdown-menu">
+                                                <form action="{{ route('admin.posts.duplicate', $post) }}" method="POST" class="m-0">
                                                     @csrf
-                                                    @method('PATCH')
-                                                    <button class="btn btn-link dropdown-item text-success text-start" type="submit">Khôi phục</button>
+                                                    <button class="post-dropdown-item" type="submit">
+                                                        <i class="fa-regular fa-copy text-muted" style="width: 16px;"></i> Nhân bản bài viết
+                                                    </button>
                                                 </form>
-
-                                                <div class="dropdown-divider"></div>
-
-                                                <form
-                                                    action="{{ route('admin.posts.bulk-destroy') }}"
-                                                    method="POST"
-                                                    class="dropdown-item p-0"
-                                                    onsubmit="return confirm('Bạn có chắc chắn muốn xóa vĩnh viễn bài viết này? Hành động này không thể hoàn tác!')"
-                                                >
-                                                    @csrf
-                                                    <input type="hidden" name="ids[]" value="{{ $post->id }}">
-                                                    <input type="hidden" name="is_trashed" value="1">
-                                                    <button class="btn btn-link dropdown-item text-danger text-start" type="submit">Xóa vĩnh viễn</button>
-                                                </form>
-                                            @else
-                                                <!-- Hành động cho bài viết bình thường -->
-                                                <a class="dropdown-item" href="{{ route('client.blog.show', $post) }}" target="_blank">Xem ngoài site</a>
-
-                                                <form action="{{ route('admin.posts.duplicate', $post) }}" method="POST" class="dropdown-item p-0">
-                                                    @csrf
-                                                    <button class="btn btn-link dropdown-item text-start" type="submit">Nhân bản</button>
-                                                </form>
-
                                                 @if(!$post->is_featured)
-                                                    <form action="{{ route('admin.posts.feature', $post) }}" method="POST" class="dropdown-item p-0">
+                                                    <form action="{{ route('admin.posts.feature', $post) }}" method="POST" class="m-0">
                                                         @csrf
-                                                        <button class="btn btn-link dropdown-item text-start" type="submit">Đánh dấu nổi bật</button>
+                                                        <button class="post-dropdown-item" type="submit">
+                                                            <i class="fa-regular fa-star text-warning" style="width: 16px;"></i> Bật nổi bật
+                                                        </button>
                                                     </form>
                                                 @else
-                                                    <form action="{{ route('admin.posts.unfeature', $post) }}" method="POST" class="dropdown-item p-0">
+                                                    <form action="{{ route('admin.posts.unfeature', $post) }}" method="POST" class="m-0">
                                                         @csrf
-                                                        <button class="btn btn-link dropdown-item text-start" type="submit">Bỏ nổi bật</button>
+                                                        <button class="post-dropdown-item" type="submit">
+                                                            <i class="fa-solid fa-star-half-stroke text-muted" style="width: 16px;"></i> Bỏ nổi bật
+                                                        </button>
                                                     </form>
                                                 @endif
-
-                                                <div class="dropdown-divider"></div>
-
+                                                <div class="post-dropdown-divider"></div>
                                                 <form
                                                     action="{{ route('admin.posts.destroy', $post) }}"
                                                     method="POST"
-                                                    class="dropdown-item p-0"
-                                                    onsubmit="return confirm('Xóa bài viết này?')"
+                                                    class="m-0"
+                                                    onsubmit="return confirm('Chuyển bài viết &quot;{{ addslashes($post->title) }}&quot; vào Thùng rác?')"
                                                 >
                                                     @csrf
                                                     @method('DELETE')
-                                                    <button class="btn btn-link dropdown-item text-danger text-start" type="submit">Xóa</button>
+                                                    <button class="post-dropdown-item text-danger" type="submit">
+                                                        <i class="fa-regular fa-trash-can text-danger" style="width: 16px;"></i> Bỏ vào thùng rác
+                                                    </button>
                                                 </form>
-                                            @endif
+                                            </div>
                                         </div>
-                                    </div>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="10" class="text-center py-5 text-muted">
-                                    Chưa có bài viết nào khớp bộ lọc.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="10" style="text-align: center; padding: 48px 16px; color: #94a3b8;">
+                                <i class="fa-regular fa-newspaper" style="font-size: 36px; margin-bottom: 12px; display: block; color: #cbd5e1;"></i>
+                                <div style="font-weight: 600; font-size: 14px; color: #64748b;">Không tìm thấy bài viết nào</div>
+                                <div style="font-size: 12.5px; margin-top: 4px;">Thử thay đổi từ khóa tìm kiếm hoặc điều chỉnh lại các tiêu chí lọc phía trên.</div>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
 
-        <div class="card-footer bg-white border-0">
-            {{ $posts->links('pagination::bootstrap-5') }}
+        {{-- Phân trang sạch đẹp --}}
+        <div class="posts-pagination-box">
+            <div class="pagination-count-text">
+                Hiển thị <strong>{{ number_format($posts->firstItem() ?? 0) }}</strong> - <strong>{{ number_format($posts->lastItem() ?? 0) }}</strong> trên tổng <strong>{{ number_format($posts->total()) }}</strong> bài viết
+            </div>
+
+            @if($posts->hasPages())
+                <nav aria-label="Phân trang bài viết">
+                    <ul class="clean-pagination-list">
+                        {{-- Nút Trang trước --}}
+                        @if ($posts->onFirstPage())
+                            <li class="page-item disabled">
+                                <span class="page-link" aria-label="Trang trước" title="Trang trước">
+                                    <i class="fa-solid fa-angle-left"></i>
+                                </span>
+                            </li>
+                        @else
+                            <li class="page-item">
+                                <a class="page-link" href="{{ $posts->previousPageUrl() }}" rel="prev" aria-label="Trang trước" title="Trang trước">
+                                    <i class="fa-solid fa-angle-left"></i>
+                                </a>
+                            </li>
+                        @endif
+
+                        {{-- Danh sách trang --}}
+                        @php
+                            $currentPage = $posts->currentPage();
+                            $lastPage = $posts->lastPage();
+                            $startPage = max(1, $currentPage - 2);
+                            $endPage = min($lastPage, $currentPage + 2);
+                        @endphp
+
+                        @if($startPage > 1)
+                            <li class="page-item">
+                                <a class="page-link" href="{{ $posts->url(1) }}">1</a>
+                            </li>
+                            @if($startPage > 2)
+                                <li class="page-item disabled">
+                                    <span class="page-link dots">…</span>
+                                </li>
+                            @endif
+                        @endif
+
+                        @for ($page = $startPage; $page <= $endPage; $page++)
+                            @if ($page == $currentPage)
+                                <li class="page-item active" aria-current="page">
+                                    <span class="page-link">{{ $page }}</span>
+                                </li>
+                            @else
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ $posts->url($page) }}">{{ $page }}</a>
+                                </li>
+                            @endif
+                        @endfor
+
+                        @if($endPage < $lastPage)
+                            @if($endPage < $lastPage - 1)
+                                <li class="page-item disabled">
+                                    <span class="page-link dots">…</span>
+                                </li>
+                            @endif
+                            <li class="page-item">
+                                <a class="page-link" href="{{ $posts->url($lastPage) }}">{{ $lastPage }}</a>
+                            </li>
+                        @endif
+
+                        {{-- Nút Trang sau --}}
+                        @if ($posts->hasMorePages())
+                            <li class="page-item">
+                                <a class="page-link" href="{{ $posts->nextPageUrl() }}" rel="next" aria-label="Trang sau" title="Trang sau">
+                                    <i class="fa-solid fa-angle-right"></i>
+                                </a>
+                            </li>
+                        @else
+                            <li class="page-item disabled">
+                                <span class="page-link" aria-label="Trang sau" title="Trang sau">
+                                    <i class="fa-solid fa-angle-right"></i>
+                                </span>
+                            </li>
+                        @endif
+                    </ul>
+                </nav>
+            @endif
         </div>
     </div>
 
@@ -416,7 +1399,7 @@
             <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
                 <div class="modal-header border-0 pb-0 pt-4 px-4">
                     <h5 class="modal-title fw-bold" id="exportCsvModalLabel">
-                        <i class="fas fa-file-download text-success me-2"></i> Tùy chọn Xuất dữ liệu Bài viết ra CSV
+                        <i class="fa-solid fa-file-arrow-down text-success me-2"></i> Tùy chọn Xuất dữ liệu Bài viết ra CSV
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -428,19 +1411,19 @@
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="exportScope" id="scopeAll" value="all" checked>
                                 <label class="form-check-label fw-semibold" for="scopeAll">
-                                    <i class="fas fa-globe text-primary me-1"></i> Tất cả bài viết trong hệ thống
+                                    <i class="fa-solid fa-globe text-primary me-1"></i> Tất cả bài viết trong hệ thống
                                 </label>
                             </div>
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="exportScope" id="scopeFilter" value="filter">
                                 <label class="form-check-label fw-semibold" for="scopeFilter">
-                                    <i class="fas fa-filter text-info me-1"></i> Theo bộ lọc tìm kiếm hiện tại trên trang
+                                    <i class="fa-solid fa-filter text-info me-1"></i> Theo bộ lọc tìm kiếm hiện tại trên trang
                                 </label>
                             </div>
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="exportScope" id="scopeSelected" value="selected" disabled>
                                 <label class="form-check-label fw-semibold" for="scopeSelected" id="labelScopeSelected">
-                                    <i class="fas fa-check-square text-success me-1"></i> Chỉ các bài viết đang chọn (<span id="modalSelectedCount">0</span> bài)
+                                    <i class="fa-solid fa-square-check text-success me-1"></i> Chỉ các bài viết đang chọn (<span id="modalSelectedCount">0</span> bài)
                                 </label>
                             </div>
                         </div>
@@ -497,7 +1480,7 @@
                 <div class="modal-footer border-0 pt-0 pb-4 px-4">
                     <button type="button" class="btn btn-light rounded-3 px-4" data-bs-dismiss="modal">Hủy</button>
                     <button type="button" id="btnConfirmExport" class="btn btn-success rounded-3 px-4 fw-bold">
-                        <i class="fas fa-file-download me-1"></i> Tải File CSV
+                        <i class="fa-solid fa-file-arrow-down me-1"></i> Tải File CSV
                     </button>
                 </div>
             </div>
@@ -510,7 +1493,7 @@
             <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
                 <div class="modal-header border-0 pb-0 pt-4 px-4">
                     <h5 class="modal-title fw-bold" id="importCsvModalLabel">
-                        <i class="fas fa-file-upload text-info me-2"></i> Nhập bài viết từ CSV/Excel (Batch Ultra Fast)
+                        <i class="fa-solid fa-file-arrow-up text-info me-2"></i> Nhập bài viết từ CSV/Excel (Batch Ultra Fast)
                     </h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
@@ -524,14 +1507,14 @@
                                 <div id="modalImportDropZone" class="border-2 border-dashed rounded-3 p-4 text-center transition-all" style="background: #f8fafc; border-color: #cbd5e1; cursor: pointer;">
                                     <input type="file" id="modalImportFileInput" class="d-none" accept=".csv, .xlsx, .xls">
                                     <div id="modalImportDropContent">
-                                        <i class="fas fa-cloud-upload-alt text-primary fa-2x mb-2"></i>
+                                        <i class="fa-solid fa-cloud-arrow-up text-primary fa-2x mb-2"></i>
                                         <p class="mb-1 fw-semibold small text-dark">Kéo thả file CSV/Excel vào đây hoặc nhấn để chọn</p>
                                         <span class="text-muted" style="font-size: 0.75rem;">Hỗ trợ .csv, .xlsx, .xls</span>
                                     </div>
                                     <div id="modalImportFileInfo" class="d-none text-start p-2 bg-white rounded shadow-sm">
                                         <div class="d-flex align-items-center justify-content-between">
                                             <div class="d-flex align-items-center overflow-hidden">
-                                                <i class="fas fa-file-csv text-success fa-2x me-2"></i>
+                                                <i class="fa-solid fa-file-csv text-success fa-2x me-2"></i>
                                                 <div class="text-truncate">
                                                     <div id="modalImportFileName" class="fw-bold small text-truncate">file.csv</div>
                                                     <div id="modalImportFileSize" class="text-muted" style="font-size: 0.75rem;">0 KB</div>
@@ -545,7 +1528,7 @@
 
                             <!-- Quy tắc khớp bài viết -->
                             <div class="alert alert-info py-2 px-3 mb-3 small border-0" style="background: #f0f9ff; border-left: 4px solid #0284c7 !important;">
-                                <div class="fw-bold mb-1 text-primary"><i class="fas fa-shield-alt me-1"></i> Quy tắc khớp bài viết thông minh:</div>
+                                <div class="fw-bold mb-1 text-primary"><i class="fa-solid fa-shield-halved me-1"></i> Quy tắc khớp bài viết thông minh:</div>
                                 <ul class="mb-0 ps-3">
                                     <li><strong>Có ID:</strong> Bắt buộc là cập nhật bài viết theo ID. (Báo lỗi nếu ID không tồn tại trên hệ thống).</li>
                                     <li><strong>Không có ID:</strong> Khớp theo <code>Slug</code> (hoặc tự sinh Slug từ Tiêu đề). Nếu Slug đã có -> Cập nhật; nếu chưa có -> Tạo bài mới.</li>
@@ -624,19 +1607,20 @@
                 <div class="modal-footer border-0 pt-0 pb-4 px-4">
                     <button type="button" class="btn btn-light rounded-3 px-4" data-bs-dismiss="modal">Đóng</button>
                     <button type="button" id="btnStartImportBatch" class="btn btn-primary rounded-3 px-4 fw-bold" disabled>
-                        <i class="fas fa-rocket me-1"></i> Bắt đầu Nhập Dữ Liệu
+                        <i class="fa-solid fa-rocket me-1"></i> Bắt đầu Nhập Dữ Liệu
                     </button>
                 </div>
             </div>
         </div>
     </div>
+
     {{-- MODAL: XÓA BÀI VIẾT TỪ FILE TXT --}}
     <div class="modal fade" id="deleteTxtModal" tabindex="-1" aria-labelledby="deleteTxtModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-lg">
             <div class="modal-content border-0 shadow-lg rounded-3">
                 <div class="modal-header" style="background: linear-gradient(135deg,#dc3545,#b02a37); color:#fff;">
                     <h5 class="modal-title fw-bold" id="deleteTxtModalLabel">
-                        <i class="fas fa-trash-alt me-2"></i> Xóa bài viết hàng loạt từ file .TXT
+                        <i class="fa-solid fa-trash-can me-2"></i> Xóa bài viết hàng loạt từ file .TXT
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Đóng"></button>
                 </div>
@@ -644,7 +1628,7 @@
 
                     {{-- Hướng dẫn --}}
                     <div class="alert alert-warning border-0 rounded-3 mb-4">
-                        <div class="fw-bold mb-2"><i class="fas fa-info-circle me-1"></i> Hướng dẫn sử dụng</div>
+                        <div class="fw-bold mb-2"><i class="fa-solid fa-circle-info me-1"></i> Hướng dẫn sử dụng</div>
                         <ul class="mb-0 small">
                             <li>Tạo file <code>.txt</code> với mỗi dòng là <strong>1 ID bài viết</strong> cần xóa. Ví dụ: <code>123</code>, <code>456</code>, ...</li>
                             <li>Hệ thống sẽ tự động xóa bài viết, <strong>ảnh đại diện</strong> và <strong>ảnh trong nội dung</strong>.</li>
@@ -705,34 +1689,19 @@
                 <div class="modal-footer border-0 pt-0 pb-4 px-4 gap-2">
                     <button type="button" class="btn btn-light" data-bs-dismiss="modal" id="deleteTxtBtnClose">Hủy / Đóng</button>
                     <button type="button" class="btn btn-danger fw-bold px-4" id="deleteTxtBtnStart" disabled>
-                        <i class="fas fa-trash-alt me-1"></i> Bắt đầu xóa
+                        <i class="fa-solid fa-trash-can me-1"></i> Bắt đầu xóa
                     </button>
                 </div>
             </div>
         </div>
     </div>
+</div>
 @endsection
 
 @push('scripts')
-    <script src="{{ $slimSelectJsAsset }}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            if (typeof SlimSelect !== 'undefined') {
-                document.querySelectorAll('select[data-slim-select]').forEach((select) => {
-                    new SlimSelect({
-                        select,
-                        settings: {
-                            allowDeselect: select.dataset.allowDeselect === 'true',
-                            searchPlaceholder: 'Tìm kiếm...',
-                            searchText: 'Không tìm thấy dữ liệu phù hợp',
-                            placeholderText: select.dataset.placeholder || '',
-                            closeOnSelect: true,
-                        }
-                    });
-                });
-            }
-
             // ==========================================
             // LOGIC XUẤT CSV VỚI POPUP CHỌN CỘT
             // ==========================================
@@ -811,7 +1780,6 @@
                             }
                             checkedItems.forEach(cb => params.append('ids[]', cb.value));
                         } else if (scope === 'filter') {
-                            // Lấy tất cả tham số lọc từ URL hiện tại
                             const currentUrlParams = new URLSearchParams(window.location.search);
                             for (const [key, val] of currentUrlParams.entries()) {
                                 if (val && key !== 'page' && key !== 'columns[]') {
@@ -819,8 +1787,7 @@
                                 }
                             }
 
-                            // Bổ sung các giá trị từ form nếu người dùng vừa thay đổi mà chưa bấm Tìm kiếm
-                            const filterForm = document.querySelector('.posts-filters form');
+                            const filterForm = document.getElementById('filter-form');
                             if (filterForm) {
                                 const formData = new FormData(filterForm);
                                 for (const [key, val] of formData.entries()) {
@@ -831,20 +1798,17 @@
                             }
                         }
 
-                        // Gửi qua POST form để tránh LiteSpeed Web Server / WAF chặn query string URL dài hoặc chứa ký tự tiếng Việt (Lỗi 403 Forbidden)
                         const exportForm = document.createElement('form');
                         exportForm.method = 'POST';
                         exportForm.action = "{{ route('admin.posts.export-csv') }}";
                         exportForm.style.display = 'none';
 
-                        // CSRF Token
                         const csrfInput = document.createElement('input');
                         csrfInput.type = 'hidden';
                         csrfInput.name = '_token';
                         csrfInput.value = "{{ csrf_token() }}";
                         exportForm.appendChild(csrfInput);
 
-                        // Thêm tất cả tham số vào POST body
                         for (const [key, val] of params.entries()) {
                             const input = document.createElement('input');
                             input.type = 'hidden';
@@ -857,7 +1821,6 @@
                         exportForm.submit();
                         document.body.removeChild(exportForm);
 
-                        // Đóng modal sau khi kích hoạt tải
                         setTimeout(() => {
                             const modalInstance = bootstrap.Modal.getInstance(exportModalEl);
                             if (modalInstance) {
@@ -1003,7 +1966,7 @@
                                 }
                             }
                             if (hasData) {
-                                row._excel_row = idx + 2; // Dòng 1 là Header trong Excel
+                                row._excel_row = idx + 2;
                                 importJsonData.push(row);
                             } else {
                                 skippedEmptyRows++;
@@ -1028,7 +1991,6 @@
                             addImportLog(`Đã tự động lọc bỏ ${skippedEmptyRows} dòng trống ở cuối tệp.`, 'info');
                         }
 
-                        // Render danh sách checkbox các cột tìm thấy (Mặc định: ID, Tiêu đề, Slug, Content/Nội dung)
                         importColumnsList.innerHTML = '';
                         detectedHeaders.forEach((colName, idx) => {
                             if (!colName || String(colName).trim() === '') return;
@@ -1155,7 +2117,7 @@
 
                     modalCurrentStatus.innerText = 'Hoàn tất!';
                     addImportLog(`🎉 Quá trình nhập hoàn tất! Thành công: ${successCount}, Lỗi: ${errorCount}`, 'success');
-                    btnStartImportBatch.innerHTML = '<i class="fas fa-check me-2"></i> HOÀN TẤT NHẬP DỮ LIỆU';
+                    btnStartImportBatch.innerHTML = '<i class="fa-solid fa-check me-2"></i> HOÀN TẤT NHẬP DỮ LIỆU';
                     btnStartImportBatch.classList.remove('btn-primary');
                     btnStartImportBatch.classList.add('btn-success');
 
@@ -1175,46 +2137,52 @@
             }
 
             // ================================================
-            // Checkboxes: Chọn tất cả, xóa và xuất hàng loạt
+            // Checkboxes: Chọn tất cả, Bulk Action Bar
             // ================================================
             const checkAll = document.getElementById('checkAll');
             const itemChecks = document.querySelectorAll('.item-check');
-            const btnBulkDelete = document.getElementById('btnBulkDelete');
-            const btnExportSelectedItems = document.getElementById('btnExportSelectedItems');
+            const bulkActionsBar = document.getElementById('bulkActionsBar');
             const bulkSelectedBadge = document.getElementById('bulkSelectedBadge');
+            const btnBulkDelete = document.getElementById('btnBulkDelete');
+
+            function updateBulkBar() {
+                const checkedBoxes = Array.from(itemChecks).filter(cb => cb.checked);
+                const count = checkedBoxes.length;
+
+                if (bulkSelectedBadge) {
+                    bulkSelectedBadge.textContent = count;
+                }
+
+                if (bulkActionsBar) {
+                    if (count > 0) {
+                        bulkActionsBar.classList.add('active');
+                    } else {
+                        bulkActionsBar.classList.remove('active');
+                    }
+                }
+
+                if (btnBulkDelete) {
+                    btnBulkDelete.disabled = (count === 0);
+                }
+
+                if (checkAll) {
+                    checkAll.checked = (itemChecks.length > 0 && count === itemChecks.length);
+                    checkAll.indeterminate = (count > 0 && count < itemChecks.length);
+                }
+            }
 
             if (checkAll && itemChecks.length > 0) {
                 checkAll.addEventListener('change', function () {
                     itemChecks.forEach(cb => cb.checked = this.checked);
-                    toggleBulkButtons();
+                    updateBulkBar();
                 });
 
                 itemChecks.forEach(cb => {
-                    cb.addEventListener('change', function () {
-                        if (!this.checked) checkAll.checked = false;
-                        if (document.querySelectorAll('.item-check:checked').length === itemChecks.length) {
-                            checkAll.checked = true;
-                        }
-                        toggleBulkButtons();
-                    });
+                    cb.addEventListener('change', updateBulkBar);
                 });
             }
 
-            function toggleBulkButtons() {
-                const checkedCount = document.querySelectorAll('.item-check:checked').length;
-                if (btnBulkDelete) {
-                    btnBulkDelete.disabled = checkedCount === 0;
-                }
-                if (btnExportSelectedItems) {
-                    if (checkedCount > 0) {
-                        btnExportSelectedItems.classList.remove('d-none');
-                        if (bulkSelectedBadge) bulkSelectedBadge.textContent = checkedCount;
-                    } else {
-                        btnExportSelectedItems.classList.add('d-none');
-                    }
-                }
-            }
-
+            const btnExportSelectedItems = document.getElementById('btnExportSelectedItems');
             if (btnExportSelectedItems && exportModalEl) {
                 btnExportSelectedItems.addEventListener('click', function () {
                     if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
@@ -1257,7 +2225,7 @@
                 if (deleteTxtPreview) deleteTxtPreview.style.display = 'none';
                 if (deleteTxtBtnStart) {
                     deleteTxtBtnStart.disabled = true;
-                    deleteTxtBtnStart.innerHTML = '<i class="fas fa-trash-alt me-1"></i> Bắt đầu xóa';
+                    deleteTxtBtnStart.innerHTML = '<i class="fa-solid fa-trash-can me-1"></i> Bắt đầu xóa';
                     deleteTxtBtnStart.classList.remove('btn-success');
                     deleteTxtBtnStart.classList.add('btn-danger');
                 }
@@ -1402,7 +2370,7 @@
                     addDeleteLog('Hoàn tất! Tổng: ' + totalDeletedPosts + ' bài đã xóa, ' + totalDeletedFiles + ' ảnh đã xóa, ' + totalSkippedFiles + ' ảnh giữ lại.', 'success');
 
                     if (deleteTxtProgressBar) deleteTxtProgressBar.classList.remove('progress-bar-animated');
-                    deleteTxtBtnStart.innerHTML = '<i class="fas fa-check me-1"></i> Hoàn tất!';
+                    deleteTxtBtnStart.innerHTML = '<i class="fa-solid fa-check me-1"></i> Hoàn tất!';
                     deleteTxtBtnStart.classList.remove('btn-danger');
                     deleteTxtBtnStart.classList.add('btn-success');
                     if (deleteTxtBtnClose) {
@@ -1413,7 +2381,47 @@
                     isRunning = false;
                 });
             }
+
+            // Xử lý đóng/mở Dropdown 3 chấm tùy chọn bài viết
+            document.addEventListener('click', function (e) {
+                const moreBtn = e.target.closest('.post-action-more-btn');
+                const allMenus = document.querySelectorAll('.post-action-dropdown-menu');
+
+                if (moreBtn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    const parent = moreBtn.closest('.post-action-dropdown');
+                    const menu = parent ? parent.querySelector('.post-action-dropdown-menu') : null;
+                    const isOpen = menu && menu.classList.contains('show');
+
+                    // Đóng tất cả menu đang mở
+                    allMenus.forEach(m => m.classList.remove('show'));
+
+                    if (menu && !isOpen) {
+                        // Tự động lật ngược lên trên nếu gần đáy màn hình
+                        const rect = moreBtn.getBoundingClientRect();
+                        const spaceBelow = window.innerHeight - rect.bottom;
+                        if (spaceBelow < 180) {
+                            menu.style.top = 'auto';
+                            menu.style.bottom = 'calc(100% + 4px)';
+                        } else {
+                            menu.style.top = 'calc(100% + 4px)';
+                            menu.style.bottom = 'auto';
+                        }
+                        menu.classList.add('show');
+                    }
+                } else if (!e.target.closest('.post-action-dropdown-menu')) {
+                    allMenus.forEach(m => m.classList.remove('show'));
+                }
+            });
+
+            // Đóng menu khi nhấn Escape
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    document.querySelectorAll('.post-action-dropdown-menu.show').forEach(m => m.classList.remove('show'));
+                }
+            });
         });
     </script>
 @endpush
-

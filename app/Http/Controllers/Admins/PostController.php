@@ -38,10 +38,47 @@ class PostController extends Controller
         $categoryFilter = $request->input('category_id');
         $isFilteringCategory = $request->has('category_id') && $categoryFilter !== null && $categoryFilter !== '';
 
+        // Thống kê đếm siêu nhanh qua 1 truy vấn duy nhất
+        $stats = Post::withTrashed()
+            ->selectRaw("
+                COUNT(CASE WHEN deleted_at IS NULL THEN 1 END) as total,
+                COUNT(CASE WHEN deleted_at IS NULL AND status = 'published' THEN 1 END) as published,
+                COUNT(CASE WHEN deleted_at IS NULL AND status = 'draft' THEN 1 END) as draft,
+                COUNT(CASE WHEN deleted_at IS NULL AND status = 'pending' THEN 1 END) as pending,
+                COUNT(CASE WHEN deleted_at IS NULL AND status = 'archived' THEN 1 END) as archived,
+                COUNT(CASE WHEN deleted_at IS NULL AND is_featured = 1 THEN 1 END) as featured,
+                COUNT(CASE WHEN deleted_at IS NOT NULL THEN 1 END) as trashed
+            ")
+            ->first();
+
+        $selectColumns = [
+            'posts.id',
+            'posts.title',
+            'posts.slug',
+            'posts.thumbnail',
+            'posts.category_id',
+            'posts.created_by',
+            'posts.status',
+            'posts.is_featured',
+            'posts.views',
+            'posts.tag_ids',
+            'posts.published_at',
+            'posts.created_at',
+            'posts.deleted_at',
+        ];
+
+        $eagerRelations = [
+            'author:id,name,email',
+            'author.profile:id,account_id,full_name',
+            'category:id,name,slug',
+            'tags:id,name',
+        ];
+
         // Nếu lọc bài đã xóa mềm thì dùng onlyTrashed(), ngược lại query bình thường
         if ($request->input('status') === 'trashed') {
             $query = Post::onlyTrashed()
-                ->with(['author.profile', 'category'])
+                ->select($selectColumns)
+                ->with($eagerRelations)
                 ->when($isFilteringCategory, function ($q) use ($categoryFilter) {
                     if ($categoryFilter === 'none' || $categoryFilter === '0' || $categoryFilter === 'uncategorized') {
                         $q->where(function ($sub) {
@@ -63,7 +100,8 @@ class PostController extends Controller
                 ->when($request->filled('date_to'), fn ($q) => $q->whereDate('published_at', '<=', $request->date('date_to')));
         } else {
             $query = Post::query()
-                ->with(['author.profile', 'category'])
+                ->select($selectColumns)
+                ->with($eagerRelations)
                 ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))
                 ->when($isFilteringCategory, function ($q) use ($categoryFilter) {
                     if ($categoryFilter === 'none' || $categoryFilter === '0' || $categoryFilter === 'uncategorized') {
@@ -120,9 +158,10 @@ class PostController extends Controller
             'posts' => $posts,
             'filters' => $request->all(),
             'searchMeta' => $searchMeta,
-            'categories' => PostCategory::ordered()->get(),
+            'stats' => $stats,
+            'categories' => PostCategory::ordered()->select('id', 'name', 'sort_order')->get(),
             'tags' => Tag::where('entity_type', Post::class)->select('id', 'name')->distinct('name')->orderBy('name')->get()->unique('name')->values(),
-            'authors' => Account::orderBy('name')->get(['id', 'name', 'email']),
+            'authors' => Account::select('id', 'name', 'email')->orderBy('name')->get(),
             'statusOptions' => [
                 'draft' => 'Nháp',
                 'pending' => 'Chờ duyệt',
