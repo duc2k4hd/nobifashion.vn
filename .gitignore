@@ -45,6 +45,8 @@
 /Themes/
 /Lệnh reset Quyền đọc ghi folder
 /Lệnh reset Quyền đọc ghi folder/
+/ckeditor5-builder-47.4.0
+/ckeditor5-builder-47.4.0/
 
 # Bootstrap cache temp files
 /bootstrap/cache/*.tmp
