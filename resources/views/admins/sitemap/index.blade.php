@@ -618,6 +618,11 @@
                         <label for="categories_enabled">Danh mục (Categories)</label>
                     </div>
                     <div class="form-check">
+                        <input type="checkbox" name="brands_enabled" id="brands_enabled" value="1"
+                               {{ ($configs['brands_enabled'] ?? true) ? 'checked' : '' }}>
+                        <label for="brands_enabled">Thương hiệu (Brands)</label>
+                    </div>
+                    <div class="form-check">
                         <input type="checkbox" name="tags_enabled" id="tags_enabled" value="1"
                                {{ ($configs['tags_enabled'] ?? true) ? 'checked' : '' }}>
                         <label for="tags_enabled">Tags</label>
@@ -702,6 +707,7 @@
                                 <option value="post_id">Post ID</option>
                                 <option value="product_id">Product ID</option>
                                 <option value="category_id">Category ID</option>
+                                <option value="brand_id">Brand ID</option>
                                 <option value="pattern">Pattern (Regex)</option>
                             </select>
                         </div>
@@ -793,6 +799,9 @@
                 </a>
                 <a href="{{ url('/sitemap-categories.xml') }}" target="_blank" class="list-group-item list-group-item-action">
                     <strong>Categories:</strong> {{ url('/sitemap-categories.xml') }}
+                </a>
+                <a href="{{ url('/sitemap-brands.xml') }}" target="_blank" class="list-group-item list-group-item-action">
+                    <strong>Brands:</strong> {{ url('/sitemap-brands.xml') }}
                 </a>
                 <a href="{{ url('/sitemap-tags.xml') }}" target="_blank" class="list-group-item list-group-item-action">
                     <strong>Tags:</strong> {{ url('/sitemap-tags.xml') }}

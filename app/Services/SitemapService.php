@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Brand;
 use App\Models\Category;
 use App\Models\Post;
 use App\Models\Product;
@@ -63,6 +64,10 @@ class SitemapService
 
         if ($this->isEnabled('categories')) {
             $this->generateCategories();
+        }
+
+        if ($this->isEnabled('brands')) {
+            $this->generateBrands();
         }
 
         if ($this->isEnabled('tags')) {
@@ -155,6 +160,13 @@ class SitemapService
             if ($this->isEnabled('categories')) {
                 $entries[] = [
                     'loc' => url('/sitemap-categories.xml'),
+                    'lastmod' => $lastmod,
+                ];
+            }
+
+            if ($this->isEnabled('brands')) {
+                $entries[] = [
+                    'loc' => url('/sitemap-brands.xml'),
                     'lastmod' => $lastmod,
                 ];
             }
@@ -309,6 +321,68 @@ class SitemapService
                 $urls[] = [
                     'loc' => $loc,
                     'lastmod' => optional($postCat->updated_at)->toAtomString(),
+                    'changefreq' => 'weekly',
+                    'priority' => '0.7',
+                ];
+            }
+
+            return $this->buildUrlSet($urls);
+        });
+    }
+
+    public function generateBrands(): string
+    {
+        if (! $this->isEnabled('brands')) {
+            return $this->buildUrlSet([]);
+        }
+
+        return $this->remember('brands', function () {
+            $urls = [];
+
+            // Trang danh sách tất cả thương hiệu (/brands)
+            try {
+                $listUrl = route('client.brand.list');
+                if (! $this->isUrlExcluded($listUrl)) {
+                    $urls[] = [
+                        'loc' => $listUrl,
+                        'changefreq' => 'daily',
+                        'priority' => '0.8',
+                    ];
+                }
+            } catch (\Throwable $e) {
+                // Bỏ qua nếu route không tồn tại
+            }
+
+            // Danh sách các thương hiệu đang hoạt động
+            $brands = Brand::query()
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->orderBy('id')
+                ->get();
+
+            foreach ($brands as $brand) {
+                if ($this->isExcludedId('brand_id', $brand->id)) {
+                    continue;
+                }
+
+                // Ưu tiên meta_canonical nếu có (chuẩn SEO)
+                if (! empty($brand->meta_canonical)) {
+                    $loc = $brand->meta_canonical;
+                    if (! filter_var($loc, FILTER_VALIDATE_URL)) {
+                        $base = rtrim(URL::to('/'), '/');
+                        $loc = $base . '/' . ltrim($loc, '/');
+                    }
+                } else {
+                    $loc = route('client.brand.show', $brand->slug);
+                }
+
+                if ($this->isUrlExcluded($loc)) {
+                    continue;
+                }
+
+                $urls[] = [
+                    'loc' => $loc,
+                    'lastmod' => optional($brand->updated_at)->toAtomString(),
                     'changefreq' => 'weekly',
                     'priority' => '0.7',
                 ];
@@ -743,6 +817,7 @@ class SitemapService
             'post_id' => [],
             'product_id' => [],
             'category_id' => [],
+            'brand_id' => [],
         ];
 
         SitemapExclude::active()->orderBy('id')->chunk(200, function ($items) use (&$groups) {

@@ -101,6 +101,24 @@ class SitemapController extends Controller
     }
 
     /**
+     * Display brands sitemap
+     */
+    public function brands(): Response
+    {
+        try {
+            $xml = $this->sitemapService->generateBrands();
+            return response($xml, 200)->header('Content-Type', 'application/xml');
+        } catch (\Exception $e) {
+            Log::error('Sitemap brands error', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response($this->sitemapService->generateBrands(), 200)
+                ->header('Content-Type', 'application/xml');
+        }
+    }
+
+    /**
      * Display tags sitemap
      */
     public function tags(): Response
@@ -185,6 +203,12 @@ class SitemapController extends Controller
                 'url' => url('/sitemap-categories.xml'),
                 'description' => 'Danh sách tất cả danh mục sản phẩm',
                 'icon' => '📂',
+            ],
+            [
+                'name' => 'Thương hiệu',
+                'url' => url('/sitemap-brands.xml'),
+                'description' => 'Danh sách tất cả thương hiệu thời trang chính hãng',
+                'icon' => '🏷️',
             ],
             [
                 'name' => 'Tags',

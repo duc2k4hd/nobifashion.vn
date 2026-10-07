@@ -14,6 +14,12 @@ class Brand extends Model
         'name',
         'slug',
         'description',
+        'campaign',
+        'followers_count',
+        'rating_score',
+        'joined_years',
+        'banner_slides',
+        'faqs',
         'logo',
         'website',
         'meta_title',
@@ -27,6 +33,11 @@ class Brand extends Model
     protected $casts = [
         'is_active' => 'boolean',
         'sort_order' => 'integer',
+        'followers_count' => 'integer',
+        'rating_score' => 'float',
+        'joined_years' => 'integer',
+        'banner_slides' => 'array',
+        'faqs' => 'array',
     ];
 
     public function products(): HasMany

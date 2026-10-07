@@ -28,6 +28,7 @@ class SitemapController extends Controller
             'posts_enabled',
             'products_enabled',
             'categories_enabled',
+            'brands_enabled',
             'tags_enabled',
             'pages_enabled',
             'images_enabled',
@@ -89,6 +90,12 @@ class SitemapController extends Controller
                 'icon' => '📂',
             ],
             [
+                'name' => 'Thương hiệu (Brands)',
+                'description' => 'Danh sách tất cả các thương hiệu chính hãng trên website.',
+                'url' => url('/sitemap-brands.xml'),
+                'icon' => '🏷️',
+            ],
+            [
                 'name' => 'Tags - Sản phẩm',
                 'description' => 'Danh sách các thẻ sản phẩm.',
                 'url' => url('/sitemap-tags-products.xml'),
@@ -139,6 +146,7 @@ class SitemapController extends Controller
             'posts_enabled' => 'nullable|boolean',
             'products_enabled' => 'nullable|boolean',
             'categories_enabled' => 'nullable|boolean',
+            'brands_enabled' => 'nullable|boolean',
             'tags_enabled' => 'nullable|boolean',
             'pages_enabled' => 'nullable|boolean',
             'images_enabled' => 'nullable|boolean',
@@ -152,6 +160,7 @@ class SitemapController extends Controller
             'posts_enabled',
             'products_enabled',
             'categories_enabled',
+            'brands_enabled',
             'tags_enabled',
             'pages_enabled',
             'images_enabled',
@@ -220,6 +229,7 @@ class SitemapController extends Controller
                 'posts' => $this->sitemapService->generatePosts($page),
                 'products' => $this->sitemapService->generateProducts($page),
                 'categories' => $this->sitemapService->generateCategories(),
+                'brands' => $this->sitemapService->generateBrands(),
                 'tags-products' => $this->sitemapService->generateTagsProducts(),
                 'tags-posts' => $this->sitemapService->generateTagsPosts(),
                 'pages' => $this->sitemapService->generatePages(),
@@ -265,7 +275,7 @@ class SitemapController extends Controller
     public function storeExclude(Request $request)
     {
         $request->validate([
-            'type' => 'required|in:url,post_id,product_id,category_id,pattern',
+            'type' => 'required|in:url,post_id,product_id,category_id,brand_id,pattern',
             'value' => 'required|string|max:500',
             'description' => 'nullable|string|max:1000',
         ]);
@@ -328,8 +338,11 @@ class SitemapController extends Controller
         if (SitemapConfig::getValue('products_enabled', true)) {
             $total += \App\Models\Product::where('is_active', true)->count();
         }
-        if (SitemapConfig::getValue('categories_enabled', true)) {
+        if ($SitemapCategoriesEnabled = SitemapConfig::getValue('categories_enabled', true)) {
             $total += \App\Models\Category::where('is_active', true)->count();
+        }
+        if (SitemapConfig::getValue('brands_enabled', true)) {
+            $total += \App\Models\Brand::where('is_active', true)->count() + 1; // Số brand + 1 trang danh sách /brands
         }
         if (SitemapConfig::getValue('tags_enabled', true)) {
             $total += \App\Models\Tag::where('is_active', true)->count();

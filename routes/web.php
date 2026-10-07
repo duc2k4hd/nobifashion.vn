@@ -59,6 +59,7 @@ use App\Http\Controllers\Clients\ProfileController;
 use App\Http\Controllers\Clients\ShopController;
 use App\Http\Controllers\Clients\TagController;
 use App\Http\Controllers\Clients\AuthorController;
+use App\Http\Controllers\Clients\BrandController as ClientBrandController;
 use App\Http\Controllers\Clients\VoucherController;
 use App\Http\Controllers\RobotsController;
 use App\Http\Controllers\SitemapController;
@@ -291,6 +292,11 @@ Route::get('/shop', [ShopController::class, 'index'])->name('client.product.shop
 Route::get('/shop/search', [ShopController::class, 'searchKeyword'])->name('client.product.shop.search.keyword');
 Route::post('/api/search', [ShopController::class, 'search'])->name('client.product.shop.search')->middleware('throttle:30,1');
 
+// Brand routes
+Route::get('/brands', [ClientBrandController::class, 'index'])->name('client.brand.list');
+Route::get('/brand/{slug}', [ClientBrandController::class, 'show'])->name('client.brand.show');
+Route::get('/brand/{slug}/products', [ClientBrandController::class, 'getProducts'])->name('client.brand.products');
+
 Route::post('/contact/phone', [ContactController::class, 'store'])->name('client.page.contact.store');
 Route::post('/product/phone-request', [ContactController::class, 'sendPhoneRequest'])->name('client.product.phone.request');
 
@@ -336,6 +342,7 @@ Route::get('/sitemap-posts-{page}.xml', [SitemapController::class, 'posts'])->na
 Route::get('/sitemap-products.xml', [SitemapController::class, 'products'])->name('sitemap.products');
 Route::get('/sitemap-products-{page}.xml', [SitemapController::class, 'products'])->name('sitemap.products.page');
 Route::get('/sitemap-categories.xml', [SitemapController::class, 'categories'])->name('sitemap.categories');
+Route::get('/sitemap-brands.xml', [SitemapController::class, 'brands'])->name('sitemap.brands');
 Route::get('/sitemap-tags.xml', [SitemapController::class, 'tags'])->name('sitemap.tags');
 Route::get('/sitemap-pages.xml', [SitemapController::class, 'pages'])->name('sitemap.pages');
 Route::get('/sitemap-images.xml', [SitemapController::class, 'images'])->name('sitemap.images');
@@ -406,7 +413,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/', [BrandController::class, 'index'])->name('index');
             Route::get('/create', [BrandController::class, 'create'])->name('create');
             Route::post('/', [BrandController::class, 'store'])->name('store');
+            Route::get('/search-products', [BrandController::class, 'searchProducts'])->name('search-products');
             Route::get('/{brand}/edit', [BrandController::class, 'edit'])->name('edit');
+            Route::get('/{brand}/products', [BrandController::class, 'getBrandProducts'])->name('products');
+            Route::post('/{brand}/attach-products', [BrandController::class, 'attachProducts'])->name('attach-products');
+            Route::post('/{brand}/detach-product', [BrandController::class, 'detachProduct'])->name('detach-product');
             Route::put('/{brand}', [BrandController::class, 'update'])->name('update');
             Route::delete('/{brand}', [BrandController::class, 'destroy'])->name('destroy');
             Route::patch('/{brand}/toggle', [BrandController::class, 'toggleStatus'])->name('toggle');
