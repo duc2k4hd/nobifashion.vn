@@ -33,49 +33,85 @@ class ProductController extends Controller
         $brandId = $request->filled('brand_id') ? (int) $request->input('brand_id') : null;
         $sortBy = (string) $request->input('sort_by', 'latest');
 
+        // Thống kê đếm siêu nhanh qua 1 truy vấn duy nhất
+        $stats = Product::withTrashed()
+            ->selectRaw("
+                COUNT(CASE WHEN deleted_at IS NULL THEN 1 END) as total,
+                COUNT(CASE WHEN deleted_at IS NULL AND is_active = 1 THEN 1 END) as active,
+                COUNT(CASE WHEN deleted_at IS NULL AND is_active = 0 THEN 1 END) as inactive,
+                COUNT(CASE WHEN deleted_at IS NULL AND stock_quantity <= 0 THEN 1 END) as out_of_stock,
+                COUNT(CASE WHEN deleted_at IS NOT NULL THEN 1 END) as trash
+            ")
+            ->first();
+
         $query = Product::query();
 
         // Xử lý lọc theo trạng thái (bao gồm Thùng rác)
         if ($request->status === 'trash') {
             $query->onlyTrashed();
         } else {
-            $query->withTrashed(); // Để có thể thấy SP inactive (is_active=false)
+            $query->withTrashed();
             if ($request->status === 'active') {
                 $query->where('is_active', true)->whereNull('deleted_at');
             } elseif ($request->status === 'inactive') {
                 $query->where('is_active', false)->whereNull('deleted_at');
+            } elseif ($request->status === 'out_of_stock') {
+                $query->whereNull('deleted_at')->where('stock_quantity', '<=', 0);
             } else {
                 $query->whereNull('deleted_at');
             }
         }
 
-        $query->with(['primaryCategory', 'brand'])
-            ->when($brandId, function ($query) use ($brandId) {
-                $query->where('brand_id', $brandId);
-            })
-            ->when($request->filled('category_id'), function ($query) use ($request) {
-                $query->inCategory($request->integer('category_id'));
-            })
-            ->when($request->filled('stock_status'), function ($query) use ($request) {
-                if ($request->stock_status === 'in_stock') {
-                    $query->where('stock_quantity', '>', 0);
-                } elseif ($request->stock_status === 'out_of_stock') {
-                    $query->where('stock_quantity', '<=', 0);
-                }
-            })
-            ->when($request->filled('is_featured'), function ($query) use ($request) {
-                $query->where('is_featured', $request->boolean('is_featured'));
-            })
-            ->when($request->filled('has_variants'), function ($query) use ($request) {
-                $query->where('has_variants', $request->boolean('has_variants'));
-            })
-            ->when($request->filled('flash_sale_status'), function ($query) use ($request) {
-                if ($request->input('flash_sale_status') === '1') {
-                    $query->whereHas('currentFlashSaleItem');
-                } elseif ($request->input('flash_sale_status') === '0') {
-                    $query->whereDoesntHave('currentFlashSaleItem');
-                }
-            });
+        $query->select([
+            'products.id',
+            'products.sku',
+            'products.name',
+            'products.slug',
+            'products.price',
+            'products.sale_price',
+            'products.stock_quantity',
+            'products.brand_id',
+            'products.primary_category_id',
+            'products.category_ids',
+            'products.is_active',
+            'products.is_featured',
+            'products.has_variants',
+            'products.created_at',
+            'products.updated_at',
+            'products.deleted_at',
+        ])
+        ->with([
+            'primaryCategory:id,name,slug',
+            'brand:id,name,slug',
+            'primaryImage:id,product_id,url,path',
+            'currentFlashSaleItem.flashSale:id,title,end_time,status,is_active',
+        ])
+        ->when($brandId, function ($query) use ($brandId) {
+            $query->where('brand_id', $brandId);
+        })
+        ->when($request->filled('category_id'), function ($query) use ($request) {
+            $query->inCategory($request->integer('category_id'));
+        })
+        ->when($request->filled('stock_status') && $request->status !== 'out_of_stock', function ($query) use ($request) {
+            if ($request->stock_status === 'in_stock') {
+                $query->where('stock_quantity', '>', 0);
+            } elseif ($request->stock_status === 'out_of_stock') {
+                $query->where('stock_quantity', '<=', 0);
+            }
+        })
+        ->when($request->filled('is_featured'), function ($query) use ($request) {
+            $query->where('is_featured', $request->boolean('is_featured'));
+        })
+        ->when($request->filled('has_variants'), function ($query) use ($request) {
+            $query->where('has_variants', $request->boolean('has_variants'));
+        })
+        ->when($request->filled('flash_sale_status'), function ($query) use ($request) {
+            if ($request->input('flash_sale_status') === '1') {
+                $query->whereHas('currentFlashSaleItem');
+            } elseif ($request->input('flash_sale_status') === '0') {
+                $query->whereDoesntHave('currentFlashSaleItem');
+            }
+        });
 
         $searchMeta = $this->progressiveSearchService->apply(
             $query,
@@ -99,13 +135,13 @@ class ProductController extends Controller
             ->paginate($perPage)
             ->appends($request->query());
 
-        $categories = Category::orderBy('name')->get();
-        $brands = Brand::query()
+        $categories = Category::select('id', 'name')->orderBy('name')->get();
+        $brands = Brand::select('id', 'name')
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
 
-        return view('admins.products.index', compact('products', 'categories', 'brands', 'perPageOptions', 'perPage', 'searchMeta'));
+        return view('admins.products.index', compact('products', 'categories', 'brands', 'perPageOptions', 'perPage', 'searchMeta', 'stats'));
     }
 
     public function create()
