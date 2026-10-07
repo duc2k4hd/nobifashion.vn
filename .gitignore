@@ -5,25 +5,52 @@
 .env.production
 .phpactor.json
 .phpunit.result.cache
+
+# IDE & Editor folders
 .code_tmp
+.codex_tmp
+.codex_tmp/
 .cursor
-.git
+.cursor/
+/.vscode
+/.vscode/
 /.fleet
 /.idea
 /.nova
-/.phpunit.cache
-/.vscode
 /.zed
 /auth.json
+
+# Node & Composer dependencies
 /node_modules
+/node_modules/
+/vendor
+/package-lock.json
+
+# Public assets & Temporary files
 /public/build
 /public/hot
 /public/storage
-/storage/*.key
-/storage/pail
-/vendor
-/package-lock.json
+/public/.well-known
+/public/.well-known/
 /public/clients/assets/img/
+
+# Storage & Logs (Không theo dõi bất kỳ dữ liệu hay file log/session nào trong storage)
+/storage
+/storage/
+/storage/*
+/storage/logs/*
+
+# Themes & Document folders
+/Themes
+/Themes/
+/Lệnh reset Quyền đọc ghi folder
+/Lệnh reset Quyền đọc ghi folder/
+
+# Bootstrap cache temp files
+/bootstrap/cache/*.tmp
+/bootstrap/cache/*.php
+!/bootstrap/cache/.gitignore
+
 Homestead.json
 Homestead.yaml
 Thumbs.db

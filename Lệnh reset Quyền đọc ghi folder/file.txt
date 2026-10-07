@@ -1,3 +1,0 @@
-icacls bootstrap\cache /reset /T
-
-icacls public\clients\assets\img\imports /reset /T
