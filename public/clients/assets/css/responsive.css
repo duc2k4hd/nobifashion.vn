@@ -52,40 +52,45 @@
 
     .nobifashion_single_desc_tabs_describe_specifications {
         font-size: 14px !important;
-        line-height: 1.6 !important;
+        line-height: 1.75 !important;
     }
 
     .nobifashion_single_desc_tabs_describe_specifications h1 {
-        font-size: 24px;
+        font-size: 17px !important;
+        line-height: 1.4 !important;
     }
 
     .nobifashion_single_desc_tabs_describe_specifications h2 {
-        font-size: 20px;
+        font-size: 16px !important;
+        line-height: 1.4 !important;
     }
 
     .nobifashion_single_desc_tabs_describe_specifications h3 {
-        font-size: 18px;
+        font-size: 15px !important;
     }
 
     .nobifashion_single_desc_tabs_describe_specifications h4 {
-        font-size: 16px;
+        font-size: 14px !important;
     }
 
     .nobifashion_single_desc_tabs_describe_specifications h5 {
-        font-size: 15px;
+        font-size: 13.5px !important;
     }
 
     .nobifashion_single_desc_tabs_describe_specifications h6 {
-        font-size: 14px;
+        font-size: 13px !important;
     }
 
     .nobifashion_single_desc_tabs_describe_specifications table,
     .nobifashion_single_desc_tabs_describe_specifications pre {
-        font-size: 13px;
-        min-width: 400px;
+        font-size: 13px !important;
+        min-width: 100%;
+        overflow-x: auto;
     }
-    
-    .nobifashion_main_slider_main_slider, .nobifashion_main_slider_main_slider_track, .nobifashion_main_slider_main_slider_track img {
+
+    .nobifashion_main_slider_main_slider,
+    .nobifashion_main_slider_main_slider_track,
+    .nobifashion_main_slider_main_slider_track img {
         aspect-ratio: 16 / 9;
     }
 }
@@ -419,7 +424,7 @@
         position: sticky;
         top: 0;
         z-index: 10;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     }
 
     .nobifashion_mobile_categories_back {
@@ -851,7 +856,7 @@
         padding: 0 !important;
         row-gap: 1rem !important;
     }
-    
+
     .nobifashion_main_checkout_left {
         flex: 1;
         width: 100%;
@@ -1129,8 +1134,8 @@
     }
 
     .nobifashion_single_desc_tabs_describe_specifications {
-        font-size: 13px;
-        line-height: 1.5;
+        font-size: 13.5px !important;
+        line-height: 1.75 !important;
         padding: 0;
     }
 
@@ -1139,39 +1144,47 @@
     }
 
     .nobifashion_single_desc_tabs_describe_specifications h1 {
-        font-size: 20px;
+        font-size: 16.5px !important;
+        margin-top: 20px !important;
+        margin-bottom: 8px !important;
     }
 
     .nobifashion_single_desc_tabs_describe_specifications h2 {
-        font-size: 18px;
+        font-size: 15.5px !important;
+        margin-top: 18px !important;
+        margin-bottom: 8px !important;
     }
 
     .nobifashion_single_desc_tabs_describe_specifications h3 {
-        font-size: 16px;
+        font-size: 14.5px !important;
     }
 
     .nobifashion_single_desc_tabs_describe_specifications h4 {
-        font-size: 15px;
+        font-size: 14px !important;
     }
 
     .nobifashion_single_desc_tabs_describe_specifications h5 {
-        font-size: 14px;
+        font-size: 13.5px !important;
     }
 
     .nobifashion_single_desc_tabs_describe_specifications h6 {
-        font-size: 13px;
+        font-size: 13px !important;
+    }
+
+    .nobifashion_single_desc_tabs_describe_specifications p {
+        margin: 0 0 14px 0 !important;
+        line-height: 1.75 !important;
     }
 
     .nobifashion_single_desc_tabs_describe_specifications ul,
     .nobifashion_single_desc_tabs_describe_specifications ol {
-        padding-left: 1.2em;
+        padding-left: 1.2em !important;
     }
 
     .nobifashion_single_desc_tabs_describe_specifications table,
     .nobifashion_single_desc_tabs_describe_specifications pre {
-        font-size: 12px;
+        font-size: 12.5px !important;
         overflow-x: auto;
-        /* tránh vỡ layout */
         display: block;
         min-width: 100%;
     }
