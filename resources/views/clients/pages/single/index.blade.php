@@ -11,7 +11,7 @@
     ($settings->site_name ?? 'NOBI FASHION'))
 
 @section('head')
-    <link rel="stylesheet" href="{{ asset('clients/assets/css/single.css') }}?v={{ env('APP_VERSION') }}">
+    <link rel="stylesheet" href="{{ asset('clients/assets/css/single.min.css') }}?v={{ env('APP_VERSION') }}">
     @if ($product?->primaryImage?->url)
         <link rel="preload" as="image"
             href="{{ asset('clients/assets/img/clothes/' . ($product?->primaryImage?->url ?? 'no-image.webp')) }}"
@@ -65,7 +65,7 @@
 @endsection
 
 @section('foot')
-    <script src="{{ asset('clients/assets/js/single.js') }}?v={{ env('APP_VERSION') }}"></script>
+    <script src="{{ asset('clients/assets/js/single.min.js') }}?v={{ env('APP_VERSION') }}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('phone-request-form');
@@ -564,6 +564,83 @@
                         <div class="nobifashion_single_desc_tabs_describes">
                             <div class="nobifashion_single_desc_tabs_describe_specifications">
 
+                                @if (!empty($product->brand))
+                                    @php
+                                        $brand = $product->brand;
+                                        $followers = (int) ($brand->followers_count ?? 0);
+                                        $formattedFollowers = $followers >= 1000000
+                                            ? round($followers / 1000000, 1) . 'tr'
+                                            : ($followers >= 1000 ? round($followers / 1000, 1) . 'k' : number_format($followers, 0, ',', '.'));
+
+                                        $productsCount = (int) ($brand->products_count ?? 0);
+                                        $rating = !empty($brand->rating_score) ? number_format($brand->rating_score, 1) . '/5' : '5.0/5';
+                                        $joinedYears = !empty($brand->joined_years) ? $brand->joined_years . ' năm' : '1 năm';
+                                        $brandLogo = !empty($brand->logo) ? asset('clients/assets/img/brands/' . $brand->logo) : asset('clients/assets/img/clothes/no-image.webp');
+                                    @endphp
+
+                                    <div class="nobifashion_single_brand_widget" style="word-break: normal !important; overflow-wrap: normal !important;">
+                                        {{-- Khối thông tin thương hiệu bên trái --}}
+                                        <div class="nobifashion_single_brand_widget_left">
+                                            <a href="{{ route('client.brand.show', ['slug' => $brand->slug]) }}" class="nobifashion_single_brand_widget_avatar_wrap" style="text-decoration: none !important;">
+                                                <img loading="lazy" decoding="async" src="{{ $brandLogo }}" class="nobifashion_single_brand_widget_avatar" alt="{{ $brand->name }}" onerror="this.src='{{ asset('clients/assets/img/clothes/no-image.webp') }}';">
+                                            </a>
+                                            <div class="nobifashion_single_brand_widget_info">
+                                                <div class="nobifashion_single_brand_widget_header_row">
+                                                    <h4 class="nobifashion_single_brand_widget_name" style="margin: 0 !important; white-space: nowrap !important;">
+                                                        <a href="{{ route('client.brand.show', ['slug' => $brand->slug]) }}" style="text-decoration: none !important; color: #111827 !important; white-space: nowrap !important; font-weight: 700 !important;">{{ $brand->name }}</a>
+                                                    </h4>
+                                                    <a href="{{ route('client.brand.show', ['slug' => $brand->slug]) }}" class="nobifashion_single_brand_widget_link" title="Ghé gian hàng {{ $brand->name }}" style="text-decoration: none !important; white-space: nowrap !important;">
+                                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                                            <circle cx="8.5" cy="7" r="4"></circle>
+                                                            <line x1="20" y1="8" x2="20" y2="14"></line>
+                                                            <line x1="23" y1="11" x2="17" y2="11"></line>
+                                                        </svg>
+                                                        <span style="text-decoration: none !important; color: inherit !important;">Ghé shop</span>
+                                                    </a>
+                                                </div>
+                                                <div class="nobifashion_single_brand_widget_meta">
+                                                    <span>{{ $formattedFollowers }} người theo dõi</span>
+                                                    <span class="nobifashion_single_brand_widget_meta_dot">•</span>
+                                                    <span>{{ $productsCount }} sản phẩm</span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {{-- Khối 3 thẻ thống kê bên phải --}}
+                                        <div class="nobifashion_single_brand_widget_stats">
+                                            <div class="nobifashion_single_brand_widget_stat_item">
+                                                <span class="nobifashion_single_brand_widget_stat_value">{{ $rating }}</span>
+                                                <span class="nobifashion_single_brand_widget_stat_label">
+                                                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                                    </svg>
+                                                    Đánh giá
+                                                </span>
+                                            </div>
+                                            <div class="nobifashion_single_brand_widget_stat_item">
+                                                <span class="nobifashion_single_brand_widget_stat_value">{{ $formattedFollowers }}</span>
+                                                <span class="nobifashion_single_brand_widget_stat_label">
+                                                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                                                    </svg>
+                                                    Theo dõi
+                                                </span>
+                                            </div>
+                                            <div class="nobifashion_single_brand_widget_stat_item">
+                                                <span class="nobifashion_single_brand_widget_stat_value">{{ $joinedYears }}</span>
+                                                <span class="nobifashion_single_brand_widget_stat_label">
+                                                    <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <circle cx="12" cy="12" r="10"></circle>
+                                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                                    </svg>
+                                                    Tham gia
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endif
+
                                 {!! $product->description ?? '<p>Chưa có mô tả cho sản phẩm này.</p>' !!}
 
                                 <div class="nobifashion_single_info_images_tags">
@@ -577,7 +654,200 @@
                             </div>
                             <aside class="nobifashion_single_sidebar">
                                 <div class="sticky-box">
-                                    @include('clients.templates.product_new')
+                                    @php
+                                        $brandItems = $sidebarSuggestions['brandItems'] ?? collect();
+                                        $categoryItems = $sidebarSuggestions['categoryItems'] ?? collect();
+                                        $hasBrand = !empty($product->brand) && $brandItems->isNotEmpty();
+                                        $noImage = asset('clients/assets/img/clothes/no-image.webp');
+                                        $sidebarBrandLogo = !empty($product->brand?->logo) ? asset('clients/assets/img/brands/' . $product->brand->logo) : null;
+                                    @endphp
+
+                                    <div class="nobifashion_single_product_new">
+                                        {{-- Header / Brand Spotlight --}}
+                                        @if ($hasBrand)
+                                            <div class="nobifashion_single_product_new_brand_header">
+                                                <div class="nobifashion_single_product_new_brand_meta">
+                                                    @if ($sidebarBrandLogo)
+                                                        <img src="{{ $sidebarBrandLogo }}" class="nobifashion_single_product_new_brand_avatar" alt="{{ $product->brand->name }}" onerror="this.style.display='none';">
+                                                    @endif
+                                                    <div class="nobifashion_single_product_new_brand_info">
+                                                        <span class="nobifashion_single_product_new_brand_badge">
+                                                            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                                                <polyline points="20 6 9 17 4 12"></polyline>
+                                                            </svg>
+                                                            Chính hãng
+                                                        </span>
+                                                        <h4 class="nobifashion_single_product_new_brand_name">{{ $product->brand->name }}</h4>
+                                                    </div>
+                                                </div>
+                                                <a href="{{ route('client.brand.show', ['slug' => $product->brand->slug]) }}" class="nobifashion_single_product_new_brand_link" title="Xem tất cả sản phẩm của {{ $product->brand->name }}">
+                                                    Gian hàng
+                                                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <polyline points="9 18 15 12 9 6"></polyline>
+                                                    </svg>
+                                                </a>
+                                            </div>
+                                        @else
+                                            <div class="nobifashion_single_product_new_simple_header">
+                                                <h4 class="nobifashion_single_product_new_simple_title">Gợi ý dành cho bạn</h4>
+                                                <span class="nobifashion_single_product_new_simple_subtitle">Cùng phong cách phối đồ</span>
+                                            </div>
+                                        @endif
+
+                                        {{-- Tabs chuyển đổi nếu có cả 2 nhóm sản phẩm --}}
+                                        @if ($hasBrand && $categoryItems->isNotEmpty())
+                                            <div class="nobifashion_single_product_new_tabs" role="tablist">
+                                                <button type="button" class="nobifashion_single_product_new_tab active" data-tab="brand" role="tab" aria-selected="true">
+                                                    Cùng thương hiệu
+                                                </button>
+                                                <button type="button" class="nobifashion_single_product_new_tab" data-tab="category" role="tab" aria-selected="false">
+                                                    Cùng danh mục
+                                                </button>
+                                            </div>
+                                        @endif
+
+                                        {{-- Danh sách sản phẩm --}}
+                                        <div class="nobifashion_single_product_new_panels">
+                                            {{-- Panel Thương hiệu --}}
+                                            @if ($hasBrand)
+                                                <div class="nobifashion_single_product_new_panel active" id="nobifashion_single_product_new_tab_brand" role="tabpanel">
+                                                    <div class="nobifashion_single_product_new_list">
+                                                        @foreach ($brandItems as $item)
+                                                            @php
+                                                                $price = (float) ($item->price ?? 0);
+                                                                $salePrice = (float) ($item->sale_price ?? 0);
+                                                                $hasDiscount = $price > 0 && $salePrice > 0 && $salePrice < $price;
+                                                                $currentPrice = $hasDiscount ? $salePrice : $price;
+                                                                $discountPercent = $hasDiscount ? round((($price - $salePrice) / $price) * 100) : 0;
+                                                                $imageName = $item->primaryImage?->url;
+                                                                $hasRealImage = !empty($imageName) && file_exists(public_path('clients/assets/img/clothes/' . $imageName));
+                                                                $productImg = $hasRealImage
+                                                                    ? asset('clients/assets/img/clothes/' . $imageName)
+                                                                    : $noImage;
+                                                            @endphp
+                                                            <a href="{{ route('client.product.detail', ['slug' => $item->slug]) }}" class="nobifashion_single_product_new_item">
+                                                                <div class="nobifashion_single_product_new_item_thumb" style="width: 64px; height: 85px; min-width: 64px; flex-shrink: 0;">
+                                                                  <img loading="lazy" decoding="async"
+                                                                         src="{{ $productImg }}"
+                                                                         width="64" height="85"
+                                                                         style="width: 64px; height: 85px; object-fit: cover; display: block;"
+                                                                         onerror="this.onerror=null;this.src='{{ $noImage }}';"
+                                                                         alt="{{ $item->name }}">
+                                                                </div>
+                                                                <div class="nobifashion_single_product_new_item_body">
+                                                                    <h5 class="nobifashion_single_product_new_item_name">{{ $item->name }}</h5>
+                                                                    <div class="nobifashion_single_product_new_item_price_wrap">
+                                                                        <span class="nobifashion_single_product_new_item_price">{{ number_format($currentPrice, 0, ',', '.') }}đ</span>
+                                                                        @if ($hasDiscount)
+                                                                            <span class="nobifashion_single_product_new_item_old_price">{{ number_format($price, 0, ',', '.') }}đ</span>
+                                                                            <span class="nobifashion_single_product_new_item_discount">-{{ $discountPercent }}%</span>
+                                                                        @endif
+                                                                    </div>
+                                                                </div>
+                                                            </a>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            @endif
+
+                                            {{-- Panel Danh mục --}}
+                                            @if ($categoryItems->isNotEmpty())
+                                                <div class="nobifashion_single_product_new_panel {{ !$hasBrand ? 'active' : '' }}" id="nobifashion_single_product_new_tab_category" role="tabpanel">
+                                                    <div class="nobifashion_single_product_new_list">
+                                                        @foreach ($categoryItems as $item)
+                                                            @php
+                                                                $price = (float) ($item->price ?? 0);
+                                                                $salePrice = (float) ($item->sale_price ?? 0);
+                                                                $hasDiscount = $price > 0 && $salePrice > 0 && $salePrice < $price;
+                                                                $currentPrice = $hasDiscount ? $salePrice : $price;
+                                                                $discountPercent = $hasDiscount ? round((($price - $salePrice) / $price) * 100) : 0;
+                                                                $imageName = $item->primaryImage?->url;
+                                                                $hasRealImage = !empty($imageName) && file_exists(public_path('clients/assets/img/clothes/' . $imageName));
+                                                                $productImg = $hasRealImage
+                                                                    ? asset('clients/assets/img/clothes/' . $imageName)
+                                                                    : $noImage;
+                                                            @endphp
+                                                            <a href="{{ route('client.product.detail', ['slug' => $item->slug]) }}" class="nobifashion_single_product_new_item">
+                                                                <div class="nobifashion_single_product_new_item_thumb" style="width: 64px; height: 85px; min-width: 64px; flex-shrink: 0;">
+                                                                    <img loading="lazy" decoding="async"
+                                                                         src="{{ $productImg }}"
+                                                                         width="64" height="85"
+                                                                         style="width: 64px; height: 85px; object-fit: cover; display: block;"
+                                                                         onerror="this.onerror=null;this.src='{{ $noImage }}';"
+                                                                         alt="{{ $item->name }}">
+                                                                </div>
+                                                                <div class="nobifashion_single_product_new_item_body">
+                                                                    <h5 class="nobifashion_single_product_new_item_name">{{ $item->name }}</h5>
+                                                                    <div class="nobifashion_single_product_new_item_price_wrap">
+                                                                        <span class="nobifashion_single_product_new_item_price">{{ number_format($currentPrice, 0, ',', '.') }}đ</span>
+                                                                        @if ($hasDiscount)
+                                                                            <span class="nobifashion_single_product_new_item_old_price">{{ number_format($price, 0, ',', '.') }}đ</span>
+                                                                            <span class="nobifashion_single_product_new_item_discount">-{{ $discountPercent }}%</span>
+                                                                        @endif
+                                                                    </div>
+                                                                </div>
+                                                            </a>
+                                                        @endforeach
+                                                    </div>
+                                                </div>
+                                            @endif
+                                        </div>
+
+                                        {{-- Cam kết an tâm mua sắm (Shopping Confidence) --}}
+                                        <div class="nobifashion_single_product_new_trust">
+                                            <div class="nobifashion_single_product_new_trust_item">
+                                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                                    <rect x="1" y="3" width="15" height="13"></rect>
+                                                    <polygon points="16 8 20 8 23 11 23 16 16 16 8"></polygon>
+                                                    <circle cx="5.5" cy="18.5" r="2.5"></circle>
+                                                    <circle cx="18.5" cy="18.5" r="2.5"></circle>
+                                                </svg>
+                                                <span>Freeship từ 299k</span>
+                                            </div>
+                                            <div class="nobifashion_single_product_new_trust_item">
+                                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="23 4 23 10 17 10"></polyline>
+                                                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                                                </svg>
+                                                <span>Đổi size 30 ngày tận nơi</span>
+                                            </div>
+                                            <div class="nobifashion_single_product_new_trust_item">
+                                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                                                </svg>
+                                                <span>Đồng kiểm khi nhận hàng</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <script>
+                                    document.addEventListener('DOMContentLoaded', function () {
+                                        const tabs = document.querySelectorAll('.nobifashion_single_product_new_tab');
+                                        if (!tabs.length) return;
+
+                                        tabs.forEach(tab => {
+                                            tab.addEventListener('click', function () {
+                                                const targetId = 'nobifashion_single_product_new_tab_' + this.dataset.tab;
+                                                
+                                                tabs.forEach(t => {
+                                                    t.classList.remove('active');
+                                                    t.setAttribute('aria-selected', 'false');
+                                                });
+                                                this.classList.add('active');
+                                                this.setAttribute('aria-selected', 'true');
+
+                                                document.querySelectorAll('.nobifashion_single_product_new_panel').forEach(panel => {
+                                                    panel.classList.remove('active');
+                                                });
+
+                                                const targetPanel = document.getElementById(targetId);
+                                                if (targetPanel) {
+                                                    targetPanel.classList.add('active');
+                                                }
+                                            });
+                                        });
+                                    });
+                                    </script>
                                 </div>
                             </aside>
                         </div>

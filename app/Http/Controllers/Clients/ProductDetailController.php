@@ -50,14 +50,34 @@ class ProductDetailController extends Controller
                 ->get();
         });
 
-        $productNew = Cache::remember('product-detail:new-products:v2', now()->addMinutes(10), function () {
-            return Product::query()
+        $sidebarSuggestions = Cache::remember("product-detail:sidebar-curated:{$product->id}:v1", now()->addMinutes(15), function () use ($product) {
+            $brandItems = collect();
+            if (!empty($product->brand_id)) {
+                $brandItems = Product::query()
+                    ->active()
+                    ->where('id', '!=', $product->id)
+                    ->where('brand_id', $product->brand_id)
+                    ->select(['id', 'name', 'slug', 'price', 'sale_price', 'brand_id', 'primary_category_id'])
+                    ->with(['primaryImage:id,product_id,url,alt,title'])
+                    ->latest('id')
+                    ->limit(5)
+                    ->get();
+            }
+
+            $categoryItems = Product::query()
                 ->active()
-                ->select(['id', 'name', 'slug', 'price', 'sale_price', 'created_at'])
+                ->where('id', '!=', $product->id)
+                ->where('primary_category_id', $product->primary_category_id)
+                ->select(['id', 'name', 'slug', 'price', 'sale_price', 'brand_id', 'primary_category_id'])
                 ->with(['primaryImage:id,product_id,url,alt,title'])
                 ->latest('id')
-                ->limit(9)
+                ->limit(5)
                 ->get();
+
+            return [
+                'brandItems' => $brandItems,
+                'categoryItems' => $categoryItems,
+            ];
         });
 
         $productRelated = Cache::remember("product-detail:related:{$product->id}:v1", now()->addMinutes(10), function () use ($product) {
@@ -70,7 +90,7 @@ class ProductDetailController extends Controller
             [
                 'product' => $product,
                 'vouchers' => $vouchers,
-                'productNew' => $productNew,
+                'sidebarSuggestions' => $sidebarSuggestions,
                 'productRelated' => $productRelated,
             ],
             $detailData
@@ -85,7 +105,7 @@ class ProductDetailController extends Controller
             ->with([
                 'primaryImage:id,product_id,url,alt,title,is_primary,thumbnail_url',
                 'images:id,product_id,url,alt,title,is_primary,order',
-                'brand:id,name,slug',
+                'brand' => fn ($query) => $query->select(['id', 'name', 'slug', 'logo', 'followers_count', 'rating_score', 'joined_years'])->withCount('products'),
                 'primaryCategory:id,name,slug,parent_id',
                 'tags:id,name,entity_id,entity_type',
                 'faqs' => fn ($query) => $this->constrainProductFaqsRelation($query),
