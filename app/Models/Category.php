@@ -99,6 +99,11 @@ class Category extends Model
             ->orderBy('name');
     }
 
+    public function allChildren()
+    {
+        return $this->hasMany(Category::class, 'parent_id');
+    }
+
     /**
      * Quan hệ sản phẩm qua cột primary_category_id (tối ưu cho query chính).
      */

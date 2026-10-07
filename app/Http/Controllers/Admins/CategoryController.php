@@ -13,12 +13,20 @@ class CategoryController extends Controller
 {
     public function index(Request $request)
     {
-        if (!file_exists(public_path('clients/assets/img/categories'))) {
-            mkdir(public_path('clients/assets/img/categories'), 0777, true);
-        }
-        $query = Category::query()->with('parent', 'children');
+        $query = Category::query()
+            ->select([
+                'id', 'name', 'slug', 'image', 'parent_id', 
+                'sort_order', 'is_active', 'description',
+                'meta_title', 'meta_description', 'meta_keywords',
+                'created_at', 'updated_at'
+            ])
+            ->with(['parent:id,name,slug'])
+            ->withCount([
+                'primaryProducts as product_count',
+                'allChildren as child_count'
+            ]);
 
-        if ($keyword = $request->get('keyword')) {
+        if ($keyword = trim((string) $request->get('keyword'))) {
             $query->where(function ($q) use ($keyword) {
                 $q->where('name', 'like', '%' . $keyword . '%')
                     ->orWhere('slug', 'like', '%' . $keyword . '%')
@@ -34,15 +42,27 @@ class CategoryController extends Controller
             }
         }
 
-        $sort = $request->get('sort', 'sort_order');
-        $direction = $request->get('direction', 'asc');
-
-        if (in_array($sort, ['name', 'sort_order', 'created_at', 'updated_at'])) {
-            $query->orderBy($sort, $direction === 'desc' ? 'desc' : 'asc');
+        if ($level = $request->get('level')) {
+            if ($level === 'root') {
+                $query->whereNull('parent_id');
+            } elseif ($level === 'child') {
+                $query->whereNotNull('parent_id');
+            }
         }
 
-        // Sắp xếp theo parent_id trước để nhóm cha-con
-        $query->orderBy('parent_id', 'asc');
+        $sort = $request->get('sort', 'sort_order');
+        $direction = strtolower($request->get('direction', 'asc')) === 'desc' ? 'desc' : 'asc';
+
+        if (in_array($sort, ['name', 'sort_order', 'created_at', 'updated_at'])) {
+            $query->orderBy($sort, $direction);
+        }
+
+        // Nhóm cha - con hợp lý khi sắp xếp theo thứ tự
+        if ($sort === 'sort_order') {
+            $query->orderByRaw('CASE WHEN parent_id IS NULL THEN id ELSE parent_id END ASC, parent_id ASC, sort_order ASC');
+        } else {
+            $query->orderBy('parent_id', 'asc');
+        }
 
         $perPageOptions = [20, 50, 100];
         $perPage = (int) $request->get('per_page', 20);
@@ -52,13 +72,14 @@ class CategoryController extends Controller
             ->paginate($perPage)
             ->appends($request->query());
 
-        // Thêm stats từng danh mục
-        $categories->each(function ($cat) {
-            $cat->product_count = $cat->primaryProducts()->count();
-            $cat->child_count = $cat->children->count();
-        });
+        $stats = [
+            'total'    => Category::count(),
+            'root'     => Category::whereNull('parent_id')->count(),
+            'active'   => Category::where('is_active', true)->count(),
+            'inactive' => Category::where('is_active', false)->count(),
+        ];
 
-        return view('admins.categories.index', compact('categories', 'perPageOptions', 'perPage'));
+        return view('admins.categories.index', compact('categories', 'perPageOptions', 'perPage', 'stats'));
     }
 
     public function create()
