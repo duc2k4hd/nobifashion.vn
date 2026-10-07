@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Admins;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\SettingRequest;
+use App\Models\Category;
 use App\Models\Setting;
+use App\Services\ProductRecommendationService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
@@ -56,15 +58,20 @@ class SettingController extends Controller
         $setting = new Setting();
         $groups = Setting::select('group')->distinct()->pluck('group')->filter();
         $types = $this->allowedTypes();
+        $categories = Category::where('is_active', true)->select('id', 'name', 'slug', 'parent_id')->orderBy('sort_order')->orderBy('name')->get();
 
-        return view('admins.settings.create', compact('setting', 'groups', 'types'));
+        return view('admins.settings.create', compact('setting', 'groups', 'types', 'categories'));
     }
 
     public function store(SettingRequest $request)
     {
         $data = $this->normalizeValue($request->validated());
 
-        Setting::create($data);
+        $setting = Setting::create($data);
+
+        if ($setting->key === 'product_recommen') {
+            ProductRecommendationService::clearCache();
+        }
 
         return redirect()->route('admin.settings.index')
             ->with('success', 'Đã tạo setting thành công.');
@@ -74,8 +81,9 @@ class SettingController extends Controller
     {
         $groups = Setting::select('group')->distinct()->pluck('group')->filter();
         $types = $this->allowedTypes();
+        $categories = Category::where('is_active', true)->select('id', 'name', 'slug', 'parent_id')->orderBy('sort_order')->orderBy('name')->get();
 
-        return view('admins.settings.edit', compact('setting', 'groups', 'types'));
+        return view('admins.settings.edit', compact('setting', 'groups', 'types', 'categories'));
     }
 
     public function update(SettingRequest $request, Setting $setting)
@@ -95,6 +103,10 @@ class SettingController extends Controller
 
         $setting->update($data);
 
+        if ($setting->key === 'product_recommen') {
+            ProductRecommendationService::clearCache();
+        }
+
         return redirect()->route('admin.settings.edit', $setting)
             ->with('success', 'Đã cập nhật setting.');
     }
@@ -106,6 +118,10 @@ class SettingController extends Controller
         }
 
         $setting->delete();
+
+        if ($setting->key === 'product_recommen') {
+            ProductRecommendationService::clearCache();
+        }
 
         return back()->with('success', 'Đã xoá setting.');
     }
@@ -119,7 +135,7 @@ class SettingController extends Controller
                 $data['value'] = $value ? '1' : '0';
                 break;
             case 'integer':
-                $data['value'] = (string) (int) $value;
+                $data['value'] = ($value !== null && $value !== '') ? (string) (int) $value : null;
                 break;
             case 'float':
             case 'number':

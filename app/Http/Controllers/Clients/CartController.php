@@ -48,7 +48,7 @@ class CartController extends Controller
     }
     public function index(Request $request)
     {
-        $productNew = Product::active()->with('primaryImage')->orderBy('created_at', 'desc')->inRandomOrder()->limit(9)->get() ?? [];
+        $productNew = \App\Services\ProductRecommendationService::getRecommendedProducts(8);
 
         // Lấy cart của user hoặc guest
         $userId = auth('web')->id();
@@ -84,7 +84,8 @@ class CartController extends Controller
             [
                 "action"     => "required|string|in:add_to_cart,buy_now",
                 "quantity"   => "required|integer|min:1",
-                "variant_id" => "required|integer|exists:product_variants,id",
+                "product_id" => "required_without:variant_id|nullable|integer|exists:products,id",
+                "variant_id" => "nullable|integer|exists:product_variants,id",
             ],
             [
                 "action.required"   => "⚠️ Vui lòng chọn hành động (Thêm vào giỏ hàng hoặc Mua ngay).",
@@ -95,9 +96,10 @@ class CartController extends Controller
                 "quantity.integer"  => "Số lượng phải là số nguyên.",
                 "quantity.min"      => "Số lượng tối thiểu là 1.",
 
-                "variant_id.required" => "⚠️ Vui lòng chọn biến thể sản phẩm.",
-                "variant_id.integer"  => "Mã biến thể sản phẩm không hợp lệ.",
-                "variant_id.exists"   => "Biến thể sản phẩm không tồn tại trong hệ thống.",
+                "product_id.required_without" => "⚠️ Thiếu thông tin sản phẩm.",
+                "product_id.exists"           => "Sản phẩm không tồn tại trong hệ thống.",
+                "variant_id.integer"          => "Mã biến thể sản phẩm không hợp lệ.",
+                "variant_id.exists"           => "Biến thể sản phẩm không tồn tại trong hệ thống.",
             ]
         );
 
@@ -109,14 +111,39 @@ class CartController extends Controller
         }
 
         $validated = (object) $validator->validated();
-        $productVariant = ProductVariant::findOrFail($validated->variant_id);
+        $variantId = !empty($validated->variant_id) ? (int) $validated->variant_id : null;
+        $productId = !empty($validated->product_id) ? (int) $validated->product_id : null;
 
-        // Kiểm tra tồn kho
-        if ($productVariant->stock_quantity < $validated->quantity) {
-            return redirect()->back()->with(
-                'error',
-                "Xin lỗi, hiện chỉ còn {$productVariant->stock_quantity} sản phẩm. Vui lòng giảm số lượng để tiếp tục!"
-            );
+        if ($variantId) {
+            $productVariant = ProductVariant::findOrFail($variantId);
+            $productId = (int) $productVariant->product_id;
+            $product = $productVariant->product ?? Product::findOrFail($productId);
+
+            // Kiểm tra tồn kho variant
+            if ($productVariant->stock_quantity < $validated->quantity) {
+                return redirect()->back()->with(
+                    'error',
+                    "Xin lỗi, hiện chỉ còn {$productVariant->stock_quantity} sản phẩm. Vui lòng giảm số lượng để tiếp tục!"
+                );
+            }
+        } else {
+            $product = Product::findOrFail($productId);
+
+            // Nếu sản phẩm có biến thể đang hoạt động nhưng người dùng chưa chọn biến thể
+            if ($product->has_variants && $product->variants()->active()->exists()) {
+                return redirect()->back()->with(
+                    'error',
+                    "⚠️ Vui lòng chọn phân loại hàng (màu sắc, kích thước) trước khi thêm vào giỏ hàng!"
+                );
+            }
+
+            // Kiểm tra tồn kho sản phẩm đơn
+            if ($product->stock_quantity < $validated->quantity) {
+                return redirect()->back()->with(
+                    'error',
+                    "Xin lỗi, hiện chỉ còn {$product->stock_quantity} sản phẩm. Vui lòng giảm số lượng để tiếp tục!"
+                );
+            }
         }
 
         // 1. Xác định cart cha (sử dụng CartService để tự động validate giá Flash Sale)
@@ -132,8 +159,8 @@ class CartController extends Controller
             
             $cartItem = $this->cartService->addItem(
                 $cart,
-                $productVariant->product_id,
-                $productVariant->id,
+                $productId,
+                $variantId,
                 $validated->quantity
             );
             
@@ -142,7 +169,8 @@ class CartController extends Controller
         } catch (\Throwable $e) {
             Log::warning('Add to cart failed', [
                 'error' => $e->getMessage(),
-                'variant_id' => $productVariant->id,
+                'product_id' => $productId,
+                'variant_id' => $variantId,
                 'user_id' => auth('web')->id(),
                 'session_id' => session()->getId(),
             ]);

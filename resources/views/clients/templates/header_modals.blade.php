@@ -99,18 +99,18 @@
                                     <summary>{{ mb_strtoupper($child->name, 'UTF-8') }}</summary>
                                     <ul class="nobifashion_home_menu_links nobifashion_menu_links_list">
                                         <li>
-                                            <a href="{{ url($child->slug) }}"
+                                            <a href="{{ route('client.product.category.index', $child->slug) }}"
                                                 class="nobifashion_menu_view_all_link">Xem tất cả</a>
                                         </li>
                                         @if ($child->children && $child->children->isNotEmpty())
                                             @foreach ($child->children as $grandChild)
                                                 <li>
-                                                    <a href="{{ url($grandChild->slug) }}" class="nobifashion_menu_sub_link">{{ $grandChild->name }}</a>
+                                                    <a href="{{ route('client.product.category.index', $grandChild->slug) }}" class="nobifashion_menu_sub_link">{{ $grandChild->name }}</a>
                                                     @if ($grandChild->children && $grandChild->children->isNotEmpty())
                                                         <ul class="nobifashion_menu_great_sublinks">
                                                             @foreach ($grandChild->children as $greatChild)
                                                                 <li>
-                                                                    <a href="{{ url($greatChild->slug) }}">
+                                                                    <a href="{{ route('client.product.category.index', $greatChild->slug) }}">
                                                                         {{ $greatChild->name }}
                                                                     </a>
                                                                 </li>

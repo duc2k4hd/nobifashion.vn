@@ -42,6 +42,14 @@ class Product extends Model
                 $product->meta_canonical = $defaultCanonical;
             }
         });
+
+        static::saved(function () {
+            \App\Services\ProductRecommendationService::clearCache();
+        });
+
+        static::deleted(function () {
+            \App\Services\ProductRecommendationService::clearCache();
+        });
     }
 
     protected static function buildDefaultCanonical(string $slug): string

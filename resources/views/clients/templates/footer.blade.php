@@ -206,6 +206,7 @@
                 <a href="@auth
                     {{ route('client.profile.index') }}
                 @else
+                    {{ route('client.auth.login') }}
                 @endauth">Thông tin thanh toán</a>
                 <a href="{{ route('client.blog.index') }}">Nobi Blog</a>
                 {{-- <img loading="lazy" width="50%" src="{{ asset('clients/assets/img/other/tai-khoan-da-xac-thuc.png') }}" alt="Chính sách bán hàng được chứng nhận"> --}}

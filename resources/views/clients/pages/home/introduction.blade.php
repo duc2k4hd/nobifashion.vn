@@ -915,6 +915,306 @@
                 padding: 24px 20px;
             }
         }
+
+        /* Introduction Product Showcase - Tinh Tế & Thanh Lịch */
+        .intro-showcase {
+            margin-top: 56px;
+            margin-bottom: 24px;
+        }
+
+        .intro-showcase-header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 28px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid var(--nb-border);
+        }
+
+        .intro-showcase-title-wrap {
+            max-width: 620px;
+        }
+
+        .intro-showcase-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--nb-dark);
+            background: #f1f5f9;
+            padding: 4px 12px;
+            border-radius: 999px;
+            margin-bottom: 10px;
+            border: 1px solid var(--nb-border);
+        }
+
+        .intro-showcase-badge svg {
+            color: #e11d48;
+        }
+
+        .intro-showcase-title {
+            font-size: clamp(20px, 2.5vw, 26px);
+            font-weight: 800;
+            color: var(--nb-dark);
+            margin: 0 0 6px;
+            letter-spacing: -0.02em;
+        }
+
+        .intro-showcase-desc {
+            font-size: 14px;
+            color: var(--nb-muted);
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .intro-showcase-viewall {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--nb-dark);
+            text-decoration: none !important;
+            padding: 10px 18px;
+            border-radius: 999px;
+            border: 1px solid var(--nb-border);
+            background: #ffffff;
+            transition: all 0.2s ease;
+        }
+
+        .intro-showcase-viewall:hover {
+            background: var(--nb-dark);
+            color: #ffffff;
+            border-color: var(--nb-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+        }
+
+        .intro-showcase-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .intro-product-card {
+            background: #ffffff;
+            border: 1px solid var(--nb-border);
+            border-radius: 14px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            text-decoration: none !important;
+            color: inherit;
+        }
+
+        .intro-product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px -10px rgba(15, 23, 42, 0.12);
+            border-color: #cbd5e1;
+        }
+
+        .intro-product-thumb {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 3 / 4;
+            overflow: hidden;
+            background: #f8fafc;
+        }
+
+        .intro-product-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top center;
+            transition: transform 0.45s ease;
+            display: block;
+        }
+
+        .intro-product-card:hover .intro-product-thumb img {
+            transform: scale(1.05);
+        }
+
+        .intro-product-tags {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .intro-tag-pill {
+            font-size: 10.5px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            line-height: 1.2;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+        }
+
+        .intro-tag-new {
+            background: #0f172a;
+            color: #ffffff;
+        }
+
+        .intro-tag-discount {
+            background: #e11d48;
+            color: #ffffff;
+        }
+
+        .intro-product-body {
+            padding: 14px 16px 16px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            gap: 8px;
+            background: #ffffff;
+        }
+
+        .intro-product-brand {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--nb-muted);
+        }
+
+        .intro-product-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--nb-dark);
+            margin: 0;
+            line-height: 1.45;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 40px;
+            transition: color 0.2s ease;
+        }
+
+        .intro-product-card:hover .intro-product-name {
+            color: #2563eb;
+        }
+
+        .intro-product-footer {
+            margin-top: auto;
+            padding-top: 10px;
+            border-top: 1px dashed #e2e8f0;
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .intro-product-pricing {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .intro-product-price {
+            font-size: 15px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .intro-product-old-price {
+            font-size: 12.5px;
+            color: #94a3b8;
+            text-decoration: line-through;
+            font-weight: 400;
+        }
+
+        .intro-product-cta {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--nb-muted);
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            transition: transform 0.2s ease, color 0.2s ease;
+        }
+
+        .intro-product-card:hover .intro-product-cta {
+            color: var(--nb-dark);
+            transform: translateX(3px);
+        }
+
+        .intro-showcase-bottom-cta {
+            margin-top: 36px;
+            text-align: center;
+        }
+
+        .intro-showcase-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+            background: var(--nb-dark);
+            padding: 12px 28px;
+            border-radius: 999px;
+            text-decoration: none !important;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+        }
+
+        .intro-showcase-btn:hover {
+            background: #1e293b;
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.2);
+        }
+
+        @media (max-width: 1024px) {
+            .intro-showcase-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 16px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .intro-showcase-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+
+            .intro-product-body {
+                padding: 10px 12px 12px;
+            }
+
+            .intro-product-name {
+                font-size: 13px;
+                min-height: 36px;
+            }
+
+            .intro-product-price {
+                font-size: 14px;
+            }
+
+            .intro-product-cta {
+                display: none;
+            }
+
+            .intro-showcase-header {
+                margin-bottom: 20px;
+            }
+        }
     </style>
 @endpush
 
@@ -1177,11 +1477,90 @@
             </div>
         </section>
 
-        {{-- 8. Gợi Ý Sản Phẩm Mới --}}
-        @if (isset($productNew) && count($productNew) > 0)
-            <div class="intro-products" style="margin-top: 40px;">
-                @include('clients.templates.product_new')
-            </div>
+        {{-- 8. Gợi Ý Sản Phẩm Mới (Thiết kế trực tiếp, tinh tế, sang trọng) --}}
+        @if (isset($productNew) && $productNew->isNotEmpty())
+            <section class="intro-showcase" aria-label="Sản phẩm mới tại NOBI FASHION">
+                <div class="intro-showcase-header">
+                    <div class="intro-showcase-title-wrap">
+                        <span class="intro-showcase-badge">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            </svg>
+                            Bộ Sưu Tập Mới
+                        </span>
+                        <h2 class="intro-showcase-title">Sản phẩm mới ra mắt</h2>
+                        <p class="intro-showcase-desc">
+                            Những thiết kế đón đầu xu hướng thời trang hiện đại, tôn vinh phong cách và sự tự tin của bạn mỗi ngày.
+                        </p>
+                    </div>
+                    <a href="{{ route('client.product.shop.index') }}" class="intro-showcase-viewall" title="Xem tất cả sản phẩm">
+                        <span>Khám phá toàn bộ shop</span>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                    </a>
+                </div>
+
+                <div class="intro-showcase-grid">
+                    @foreach ($productNew->take(8) as $item)
+                        @php
+                            $imgUrl = $item->primaryImage?->url;
+                            $thumbSrc = $imgUrl
+                                ? (str_starts_with($imgUrl, 'http') ? $imgUrl : asset('clients/assets/img/clothes/' . $imgUrl))
+                                : asset('clients/assets/img/clothes/no-image.webp');
+                            
+                            $price = (float) ($item->price ?? 0);
+                            $salePrice = (float) ($item->sale_price ?? 0);
+                            $hasDiscount = $price > 0 && $salePrice > 0 && $salePrice < $price;
+                            $currentPrice = $hasDiscount ? $salePrice : ($price > 0 ? $price : $salePrice);
+                            $discountPercent = $hasDiscount ? round((($price - $salePrice) / $price) * 100) : 0;
+                            $isNew = $item->created_at ? $item->created_at->diffInDays(now()) <= 45 : true;
+                            $brandName = $item->brand?->name ?? 'NOBI FASHION';
+                        @endphp
+                        <a href="{{ route('client.product.detail', $item->slug) }}" class="intro-product-card" title="{{ $item->name }}">
+                            <div class="intro-product-thumb">
+                                <img loading="lazy" decoding="async" src="{{ $thumbSrc }}" alt="{{ $item->name }}">
+                                <div class="intro-product-tags">
+                                    @if ($hasDiscount)
+                                        <span class="intro-tag-pill intro-tag-discount">-{{ $discountPercent }}%</span>
+                                    @elseif ($isNew)
+                                        <span class="intro-tag-pill intro-tag-new">Mới</span>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="intro-product-body">
+                                <span class="intro-product-brand">{{ $brandName }}</span>
+                                <h3 class="intro-product-name">{{ $item->name }}</h3>
+                                <div class="intro-product-footer">
+                                    <div class="intro-product-pricing">
+                                        <span class="intro-product-price">{{ number_format($currentPrice, 0, ',', '.') }}đ</span>
+                                        @if ($hasDiscount)
+                                            <span class="intro-product-old-price">{{ number_format($price, 0, ',', '.') }}đ</span>
+                                        @endif
+                                    </div>
+                                    <span class="intro-product-cta">
+                                        Xem
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="9 18 15 12 9 6"></polyline>
+                                        </svg>
+                                    </span>
+                                </div>
+                            </div>
+                        </a>
+                    @endforeach
+                </div>
+
+                <div class="intro-showcase-bottom-cta">
+                    <a href="{{ route('client.product.shop.index') }}" class="intro-showcase-btn">
+                        <span>Xem thêm các sản phẩm khác</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                    </a>
+                </div>
+            </section>
         @endif
 
     </div>

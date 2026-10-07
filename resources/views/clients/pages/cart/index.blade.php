@@ -1,8 +1,8 @@
 @extends('clients.layouts.master')
 
 @section('title',
-    $account?->name
-        ? 'Giỏ hàng của ' . $account->name
+    (auth('web')->user()?->name ?? ($account->name ?? null))
+        ? 'Giỏ hàng của ' . (auth('web')->user()?->name ?? $account->name)
         : 'Giỏ hàng - ' . renderMeta(data_get($settings ?? [], 'site_name', data_get($settings ?? [], 'subname', 'Bạn'))))
 
 @section('head')
@@ -509,7 +509,91 @@
                     <a href="{{ route('client.home.index') }}" class="nobifashion_no_cart_button">Tiếp tục mua
                         sắm</a>
                 </div>
-                @include('clients.templates.product_new')
+                {{-- Gợi Ý Sản Phẩm Mới Khi Giỏ Hàng Trống (Thiết kế trực tiếp, tinh tế, sang trọng) --}}
+                @if (isset($productNew) && $productNew->isNotEmpty())
+                    <section class="cart-showcase" aria-label="Gợi ý sản phẩm dành cho bạn">
+                        <div class="cart-showcase-header">
+                            <div class="cart-showcase-title-wrap">
+                                <span class="cart-showcase-badge">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                                    </svg>
+                                    Gợi ý dành cho bạn
+                                </span>
+                                <h2 class="cart-showcase-title">Sản phẩm đang được quan tâm</h2>
+                                <p class="cart-showcase-desc">
+                                    Thêm ngay những mẫu trang phục yêu thích vào giỏ hàng để nhận nhiều ưu đãi hấp dẫn hôm nay.
+                                </p>
+                            </div>
+                            <a href="{{ route('client.product.shop.index') }}" class="cart-showcase-viewall" title="Xem tất cả sản phẩm">
+                                <span>Khám phá toàn bộ shop</span>
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                            </a>
+                        </div>
+
+                        <div class="cart-showcase-grid">
+                            @foreach ($productNew->take(8) as $item)
+                                @php
+                                    $imgUrl = $item->primaryImage?->url;
+                                    $thumbSrc = $imgUrl
+                                        ? (str_starts_with($imgUrl, 'http') ? $imgUrl : asset('clients/assets/img/clothes/' . $imgUrl))
+                                        : asset('clients/assets/img/clothes/no-image.webp');
+                                    
+                                    $price = (float) ($item->price ?? 0);
+                                    $salePrice = (float) ($item->sale_price ?? 0);
+                                    $hasDiscount = $price > 0 && $salePrice > 0 && $salePrice < $price;
+                                    $currentPrice = $hasDiscount ? $salePrice : ($price > 0 ? $price : $salePrice);
+                                    $discountPercent = $hasDiscount ? round((($price - $salePrice) / $price) * 100) : 0;
+                                    $isNew = $item->created_at ? $item->created_at->diffInDays(now()) <= 45 : true;
+                                    $brandName = $item->brand?->name ?? 'NOBI FASHION';
+                                @endphp
+                                <a href="{{ route('client.product.detail', $item->slug) }}" class="cart-product-card" title="{{ $item->name }}">
+                                    <div class="cart-product-thumb">
+                                        <img loading="lazy" decoding="async" src="{{ $thumbSrc }}" alt="{{ $item->name }}">
+                                        <div class="cart-product-tags">
+                                            @if ($hasDiscount)
+                                                <span class="cart-tag-pill cart-tag-discount">-{{ $discountPercent }}%</span>
+                                            @elseif ($isNew)
+                                                <span class="cart-tag-pill cart-tag-new">Mới</span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <div class="cart-product-body">
+                                        <span class="cart-product-brand">{{ $brandName }}</span>
+                                        <h3 class="cart-product-name">{{ $item->name }}</h3>
+                                        <div class="cart-product-footer">
+                                            <div class="cart-product-pricing">
+                                                <span class="cart-product-price">{{ number_format($currentPrice, 0, ',', '.') }}đ</span>
+                                                @if ($hasDiscount)
+                                                    <span class="cart-product-old-price">{{ number_format($price, 0, ',', '.') }}đ</span>
+                                                @endif
+                                            </div>
+                                            <span class="cart-product-cta">
+                                                Xem
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                                </svg>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </a>
+                            @endforeach
+                        </div>
+
+                        <div class="cart-showcase-bottom-cta">
+                            <a href="{{ route('client.product.shop.index') }}" class="cart-showcase-btn">
+                                <span>Xem thêm các sản phẩm khác</span>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                            </a>
+                        </div>
+                    </section>
+                @endif
             @endif
             @include('clients.templates.loding_form')
         </div>

@@ -321,6 +321,7 @@
                         {{-- 4. FORM MUA HÀNG: SỐ LƯỢNG + BIẾN THỂ + NÚT MUA --}}
                         <form class="nobifashion_single_order_form nobifashion_single_info_specifications_actions" action="{{ route('client.cart.add') }}" method="POST">
                             @csrf
+                            <input type="hidden" name="product_id" value="{{ $product->id }}">
                             <input type="hidden" name="quantity" value="1">
 
                             @if ($product->link_shopee)
@@ -424,22 +425,29 @@
                                         SẢN PHẨM KHÔNG BÁN TRỰC TIẾP TRÊN NOBI FASHION
                                     </div>
 
+                                    @php
+                                        $canDirectBuy = $variants->isEmpty() && ($product->stock_quantity > 0);
+                                    @endphp
+
                                     {{-- Các nút phụ mua web để khách vẫn có thể chọn mua --}}
                                     <div class="nobifashion_single_sub_actions">
-                                        <button disabled type="submit" name="action" value="add_to_cart" class="nobifashion_single_btn_sub nobifashion_single_info_add_cart nobifashion_single_info_specifications_actions_cart disabled">
+                                        <button {{ $canDirectBuy ? '' : 'disabled' }} type="submit" name="action" value="add_to_cart" class="nobifashion_single_btn_sub nobifashion_single_info_add_cart nobifashion_single_info_specifications_actions_cart {{ $canDirectBuy ? '' : 'disabled' }}">
                                             Thêm vào giỏ
                                         </button>
-                                        <button disabled type="submit" name="action" value="buy_now" class="nobifashion_single_btn_sub nobifashion_single_btn_sub_primary nobifashion_single_info_buy_now nobifashion_single_info_specifications_actions_buy disabled">
+                                        <button {{ $canDirectBuy ? '' : 'disabled' }} type="submit" name="action" value="buy_now" class="nobifashion_single_btn_sub nobifashion_single_btn_sub_primary nobifashion_single_info_buy_now nobifashion_single_info_specifications_actions_buy {{ $canDirectBuy ? '' : 'disabled' }}">
                                             Mua ngay
                                         </button>
                                     </div>
                                 @else
+                                    @php
+                                        $canDirectBuy = $variants->isEmpty() && ($product->stock_quantity > 0);
+                                    @endphp
                                     {{-- Sản phẩm bán trực tiếp trên Nobi --}}
                                     <div class="nobifashion_single_primary_actions">
-                                        <button disabled type="submit" name="action" value="add_to_cart" class="nobifashion_single_cta_pill_outline nobifashion_single_info_add_cart nobifashion_single_info_specifications_actions_cart disabled">
+                                        <button {{ $canDirectBuy ? '' : 'disabled' }} type="submit" name="action" value="add_to_cart" class="nobifashion_single_cta_pill_outline nobifashion_single_info_add_cart nobifashion_single_info_specifications_actions_cart {{ $canDirectBuy ? '' : 'disabled' }}">
                                             <span>Thêm vào giỏ hàng</span>
                                         </button>
-                                        <button disabled type="submit" name="action" value="buy_now" class="nobifashion_single_cta_pill_filled nobifashion_single_info_buy_now nobifashion_single_info_specifications_actions_buy disabled">
+                                        <button {{ $canDirectBuy ? '' : 'disabled' }} type="submit" name="action" value="buy_now" class="nobifashion_single_cta_pill_filled nobifashion_single_info_buy_now nobifashion_single_info_specifications_actions_buy {{ $canDirectBuy ? '' : 'disabled' }}">
                                             <span>Mua ngay</span>
                                             <span class="nobifashion_cta_arrow">→</span>
                                         </button>
@@ -473,7 +481,7 @@
                                 <div class="nobifashion_single_stock_track nobifashion_single_info_stock_bar_wrap">
                                     <div id="product-stock-progress" class="nobifashion_single_stock_fill nobifashion_single_info_stock_bar" data-base-width="{{ $defaultStockPercent }}" style="width: {{ $defaultStockPercent }}%;"></div>
                                 </div>
-                                <div class="nobifashion_single_stock_text nobifashion_single_info_stock_bar_text" id="product-stock">
+                                <div class="nobifashion_single_stock_text nobifashion_single_info_stock_bar_text" id="product-stock" data-stock="{{ $defaultStockValue }}">
                                     @if ($variants->isNotEmpty())
                                         Chọn biến thể để xem tồn kho
                                     @else

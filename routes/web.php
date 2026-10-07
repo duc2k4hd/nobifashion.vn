@@ -272,13 +272,13 @@ Route::get('/chinh-sach-bien-tap', function () {
 })->name('client.policy.editorial');
 
 Route::get('/gioi-thieu', function () {
-    $productNew = Product::active()->with('primaryImage')->orderBy('created_at', 'desc')->inRandomOrder()->limit(9)->get() ?? [];
+    $productNew = \App\Services\ProductRecommendationService::getRecommendedProducts(8);
 
     return view('clients.pages.home.introduction', compact('productNew'));
 })->name('client.page.introduction');
 
 Route::get('/lien-he', function () {
-    $productNew = Product::active()->with('primaryImage')->orderBy('created_at', 'desc')->inRandomOrder()->limit(9)->get() ?? [];
+    $productNew = \App\Services\ProductRecommendationService::getRecommendedProducts(8);
 
     return view('clients.pages.home.contact', compact('productNew'));
 })->name('client.page.contact');

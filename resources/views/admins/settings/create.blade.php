@@ -102,7 +102,24 @@
             <h3>Giá trị & mô tả</h3>
             <div class="grid-3">
                 <div style="grid-column: span 2;">
-                    <label>Giá trị</label>
+                    <div id="category-select-wrapper" style="display: none; margin-bottom: 12px;">
+                        <label style="font-weight: 700; color: #1e293b; font-size: 14px;">🎯 Chọn danh mục sản phẩm gợi ý</label>
+                        <select id="category-select-input" class="form-control" style="font-size:14px; padding: 10px 12px; border: 2px solid #3b82f6; border-radius: 8px;">
+                            <option value="">-- Mặc định (Tự động lấy 50% Thời trang nam & 50% Thời trang nữ) --</option>
+                            @if(isset($categories))
+                                @foreach($categories as $cat)
+                                    <option value="{{ $cat->id }}" {{ (string)old('value') === (string)$cat->id ? 'selected' : '' }}>
+                                        {{ $cat->parent_id ? '　↳ ' : '📁 ' }}{{ $cat->name }} (ID: {{ $cat->id }} | Slug: {{ $cat->slug }})
+                                    </option>
+                                @endforeach
+                            @endif
+                        </select>
+                        <small style="color:#10b981; display:block; margin-top:6px; font-weight:500;">
+                            ✨ Lưu ý: Hệ thống sẽ tự động lưu ID của danh mục này và show sản phẩm tương ứng.
+                        </small>
+                    </div>
+
+                    <label id="setting-value-label">Giá trị</label>
                     <textarea name="value" rows="6" class="form-control" id="setting-value">{{ old('value') }}</textarea>
                     <small style="color:#94a3b8;">Tùy vào kiểu dữ liệu, vui lòng nhập đúng định dạng.</small>
                 </div>
@@ -112,6 +129,37 @@
                 </div>
             </div>
         </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                const keyInput = document.querySelector('input[name="key"]');
+                const catWrap = document.getElementById('category-select-wrapper');
+                const catSelect = document.getElementById('category-select-input');
+                const valTextarea = document.getElementById('setting-value');
+                const valLabel = document.getElementById('setting-value-label');
+
+                function checkKey() {
+                    if (keyInput && keyInput.value.trim().toLowerCase() === 'product_recommen') {
+                        catWrap.style.display = 'block';
+                        valTextarea.style.display = 'none';
+                        valLabel.style.display = 'none';
+                        catSelect.name = 'value';
+                        valTextarea.removeAttribute('name');
+                    } else {
+                        catWrap.style.display = 'none';
+                        valTextarea.style.display = 'block';
+                        valLabel.style.display = 'block';
+                        catSelect.removeAttribute('name');
+                        valTextarea.name = 'value';
+                    }
+                }
+
+                if (keyInput) {
+                    keyInput.addEventListener('input', checkKey);
+                    checkKey();
+                }
+            });
+        </script>
 
         <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:16px;">
             <a href="{{ route('admin.settings.index') }}" class="btn btn-secondary">↩️ Quay lại danh sách</a>

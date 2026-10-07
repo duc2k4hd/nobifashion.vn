@@ -175,7 +175,7 @@ class CheckoutController extends Controller
         }
 
         $cartItem = CartItem::active()->with(['variant', 'product', 'cart'])->where('uuid', $uuid)->first();
-        $productNew = Product::active()->with('primaryImage')->orderBy('created_at', 'desc')->inRandomOrder()->limit(9)->get() ?? [];
+        $productNew = \App\Services\ProductRecommendationService::getRecommendedProducts(8);
 
         if (!$cartItem) {
             return redirect()->route('client.cart.index')->with('warning', 'Giỏ hàng không tồn tại! Vui lòng thử lại!');
@@ -674,7 +674,7 @@ class CheckoutController extends Controller
             })
         ]);
 
-        $productNew = Product::active()->with('primaryImage')->orderBy('created_at', 'desc')->inRandomOrder()->limit(9)->get() ?? [];
+        $productNew = \App\Services\ProductRecommendationService::getRecommendedProducts(8);
 
         // Tạm thời bỏ qua kiểm tra cart items để test
         // if ($cartItems->isEmpty()) {

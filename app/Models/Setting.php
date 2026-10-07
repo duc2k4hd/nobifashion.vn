@@ -76,12 +76,16 @@ class Setting extends Model
 
     protected static function booted()
     {
-        static::saved(function () {
+        static::saved(function ($setting) {
             Cache::forget('settings');
+            if (($setting->key ?? '') === 'product_recommen') {
+                \App\Services\ProductRecommendationService::clearCache();
+            }
         });
 
         static::deleted(function () {
             Cache::forget('settings');
+            \App\Services\ProductRecommendationService::clearCache();
         });
     }
 
@@ -93,8 +97,8 @@ class Setting extends Model
         $value,
         string $type = 'string',
         string $group = 'general',
-        string $label = null,
-        string $description = null,
+        ?string $label = null,
+        ?string $description = null,
         bool $isPublic = false,
         bool $isRequired = false
     ): Setting {

@@ -35,7 +35,7 @@
             @foreach($categories->take(5) as $cat)
                 <a class="nobifashion_home_tab" 
                    href="{{ route('client.product.category.index', $cat->slug) }}" 
-                   @if(request()->is('category/' . $cat->slug)) aria-current="page" @endif>
+                   @if(request()->is($cat->slug)) aria-current="page" @endif>
                     {{ $cat->name }}
                 </a>
             @endforeach
@@ -57,20 +57,21 @@
           </svg>
           <span class="nobifashion_home_count" id="nobifashion_home_wishlist_count" hidden>0</span>
         </button>
-        <a class="nobifashion_home_icon_button" href="https://www.uniqlo.com/vn/vi/member"
-          aria-label="Thành viên / Lịch sử mua hàng">
+        <a class="nobifashion_home_icon_button" href="{{ auth('web')->check() ? route('client.profile.index') : route('client.auth.login') }}"
+          aria-label="{{ auth('web')->check() ? 'Thông tin tài khoản' : 'Đăng nhập / Đăng ký' }}">
           <svg class="nobifashion_home_icon nobifashion_home_icon_solid" viewbox="0 0 24 24" aria-hidden="true">
             <path fill="currentColor"
               d="M15.727 10.787c.513-.7.82-1.548.82-2.464C16.546 5.94 14.506 4 12 4S7.454 5.94 7.454 8.323c0 .916.306 1.763.82 2.464L5 12.983V20h14v-7.017zM12 5.178c1.824 0 3.306 1.412 3.306 3.145S13.823 11.468 12 11.468s-3.306-1.411-3.306-3.145S10.177 5.178 12 5.178m5.76 13.644H6.24v-5.227l2.894-1.942a4.64 4.64 0 0 0 2.865.994 4.65 4.65 0 0 0 2.865-.994l2.895 1.941z">
             </path>
           </svg>
         </a>
-        <a class="nobifashion_home_icon_button" href="https://www.uniqlo.com/vn/vi/cart" aria-label="Xe đẩy">
+        <a class="nobifashion_home_icon_button" href="{{ route('client.cart.index') }}" aria-label="Giỏ hàng">
           <svg class="nobifashion_home_icon nobifashion_home_icon_solid" viewbox="0 0 24 24" aria-hidden="true">
             <path fill="currentColor"
               d="m7.044 6.566-.004-3.06H2.008v1.199h3.834l.014 10.754h12.897l2.24-8.894zm.01 7.694-.007-6.495h12.407l-1.635 6.495zm9.915 6.242a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3m-9.516 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3">
             </path>
           </svg>
+          <span class="nobifashion_home_count" id="nobifashion_home_cart_count" {{ ($cartCount ?? 0) > 0 ? '' : 'hidden' }}>{{ $cartCount ?? 0 }}</span>
         </a>
         <button class="nobifashion_home_icon_button" type="button" aria-label="Danh Mục Sản Phẩm / Tìm Kiếm Sản Phẩm"
           data-nobifashion-open="menu" aria-controls="nobifashion_home_menu" aria-expanded="false">
@@ -84,7 +85,7 @@
       @if(isset($categories) && $categories->isNotEmpty())
           @foreach($categories->take(5) as $cat)
               <a class="nobifashion_home_tab" 
-                 href="/{{ $cat->slug }}" 
+                 href="{{ route('client.product.category.index', $cat->slug) }}" 
                  @if(request()->is($cat->slug)) aria-current="page" @endif>
                   {{ $cat->name }}
               </a>

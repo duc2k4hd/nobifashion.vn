@@ -620,6 +620,306 @@
                 height: 300px;
             }
         }
+
+        /* Modern Product Showcase - Tinh Tế & Thanh Lịch */
+        .contact-showcase {
+            margin-top: 56px;
+            margin-bottom: 24px;
+        }
+
+        .contact-showcase-header {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+            margin-bottom: 28px;
+            padding-bottom: 18px;
+            border-bottom: 1px solid var(--ct-border);
+        }
+
+        .contact-showcase-title-wrap {
+            max-width: 620px;
+        }
+
+        .contact-showcase-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--ct-dark);
+            background: #f1f5f9;
+            padding: 4px 12px;
+            border-radius: 999px;
+            margin-bottom: 10px;
+            border: 1px solid var(--ct-border);
+        }
+
+        .contact-showcase-badge svg {
+            color: #e11d48;
+        }
+
+        .contact-showcase-title {
+            font-size: clamp(20px, 2.5vw, 26px);
+            font-weight: 800;
+            color: var(--ct-dark);
+            margin: 0 0 6px;
+            letter-spacing: -0.02em;
+        }
+
+        .contact-showcase-desc {
+            font-size: 14px;
+            color: var(--ct-text-muted);
+            margin: 0;
+            line-height: 1.5;
+        }
+
+        .contact-showcase-viewall {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: var(--ct-dark);
+            text-decoration: none !important;
+            padding: 10px 18px;
+            border-radius: 999px;
+            border: 1px solid var(--ct-border);
+            background: #ffffff;
+            transition: all 0.2s ease;
+        }
+
+        .contact-showcase-viewall:hover {
+            background: var(--ct-dark);
+            color: #ffffff;
+            border-color: var(--ct-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+        }
+
+        .contact-showcase-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+        }
+
+        .contact-product-card {
+            background: #ffffff;
+            border: 1px solid var(--ct-border);
+            border-radius: 14px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            text-decoration: none !important;
+            color: inherit;
+        }
+
+        .contact-product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px -10px rgba(15, 23, 42, 0.12);
+            border-color: #cbd5e1;
+        }
+
+        .contact-product-thumb {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 3 / 4;
+            overflow: hidden;
+            background: #f8fafc;
+        }
+
+        .contact-product-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top center;
+            transition: transform 0.45s ease;
+            display: block;
+        }
+
+        .contact-product-card:hover .contact-product-thumb img {
+            transform: scale(1.05);
+        }
+
+        .contact-product-tags {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .contact-tag-pill {
+            font-size: 10.5px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            line-height: 1.2;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+        }
+
+        .contact-tag-new {
+            background: #0f172a;
+            color: #ffffff;
+        }
+
+        .contact-tag-discount {
+            background: #e11d48;
+            color: #ffffff;
+        }
+
+        .contact-product-body {
+            padding: 14px 16px 16px;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            gap: 8px;
+            background: #ffffff;
+        }
+
+        .contact-product-brand {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--ct-text-muted);
+        }
+
+        .contact-product-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--ct-dark);
+            margin: 0;
+            line-height: 1.45;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            min-height: 40px;
+            transition: color 0.2s ease;
+        }
+
+        .contact-product-card:hover .contact-product-name {
+            color: #2563eb;
+        }
+
+        .contact-product-footer {
+            margin-top: auto;
+            padding-top: 10px;
+            border-top: 1px dashed #e2e8f0;
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .contact-product-pricing {
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .contact-product-price {
+            font-size: 15px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .contact-product-old-price {
+            font-size: 12.5px;
+            color: #94a3b8;
+            text-decoration: line-through;
+            font-weight: 400;
+        }
+
+        .contact-product-cta {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--ct-text-muted);
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            transition: transform 0.2s ease, color 0.2s ease;
+        }
+
+        .contact-product-card:hover .contact-product-cta {
+            color: var(--ct-dark);
+            transform: translateX(3px);
+        }
+
+        .contact-showcase-bottom-cta {
+            margin-top: 36px;
+            text-align: center;
+        }
+
+        .contact-showcase-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #ffffff;
+            background: var(--ct-dark);
+            padding: 12px 28px;
+            border-radius: 999px;
+            text-decoration: none !important;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+        }
+
+        .contact-showcase-btn:hover {
+            background: #1e293b;
+            color: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 18px rgba(15, 23, 42, 0.2);
+        }
+
+        @media (max-width: 1024px) {
+            .contact-showcase-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 16px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .contact-showcase-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+
+            .contact-product-body {
+                padding: 10px 12px 12px;
+            }
+
+            .contact-product-name {
+                font-size: 13px;
+                min-height: 36px;
+            }
+
+            .contact-product-price {
+                font-size: 14px;
+            }
+
+            .contact-product-cta {
+                display: none;
+            }
+
+            .contact-showcase-header {
+                margin-bottom: 20px;
+            }
+        }
     </style>
 @endpush
 
@@ -895,11 +1195,90 @@
             </div>
         </section>
 
-        {{-- Gợi Ý Sản Phẩm Mới --}}
-        @if (isset($productNew) && count($productNew) > 0)
-            <div class="contact-product" style="margin-top: 40px;">
-                @include('clients.templates.product_new')
-            </div>
+        {{-- Gợi Ý Sản Phẩm Mới (Thiết kế trực tiếp, tinh tế, sang trọng, không màu mè) --}}
+        @if (isset($productNew) && $productNew->isNotEmpty())
+            <section class="contact-showcase" aria-label="Sản phẩm mới tại NOBI FASHION">
+                <div class="contact-showcase-header">
+                    <div class="contact-showcase-title-wrap">
+                        <span class="contact-showcase-badge">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                            </svg>
+                            Sản phẩm mới nổi bật
+                        </span>
+                        <h2 class="contact-showcase-title">Gợi ý trang phục cho bạn</h2>
+                        <p class="contact-showcase-desc">
+                            Khám phá những mẫu thiết kế mới nhất vừa cập bến tại NOBI FASHION với phong cách hiện đại và chất liệu cao cấp.
+                        </p>
+                    </div>
+                    <a href="{{ route('client.product.shop.index') }}" class="contact-showcase-viewall" title="Xem tất cả sản phẩm">
+                        <span>Khám phá toàn bộ shop</span>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                    </a>
+                </div>
+
+                <div class="contact-showcase-grid">
+                    @foreach ($productNew->take(8) as $item)
+                        @php
+                            $imgUrl = $item->primaryImage?->url;
+                            $thumbSrc = $imgUrl
+                                ? (str_starts_with($imgUrl, 'http') ? $imgUrl : asset('clients/assets/img/clothes/' . $imgUrl))
+                                : asset('clients/assets/img/clothes/no-image.webp');
+                            
+                            $price = (float) ($item->price ?? 0);
+                            $salePrice = (float) ($item->sale_price ?? 0);
+                            $hasDiscount = $price > 0 && $salePrice > 0 && $salePrice < $price;
+                            $currentPrice = $hasDiscount ? $salePrice : ($price > 0 ? $price : $salePrice);
+                            $discountPercent = $hasDiscount ? round((($price - $salePrice) / $price) * 100) : 0;
+                            $isNew = $item->created_at ? $item->created_at->diffInDays(now()) <= 45 : true;
+                            $brandName = $item->brand?->name ?? 'NOBI FASHION';
+                        @endphp
+                        <a href="{{ route('client.product.detail', $item->slug) }}" class="contact-product-card" title="{{ $item->name }}">
+                            <div class="contact-product-thumb">
+                                <img loading="lazy" decoding="async" src="{{ $thumbSrc }}" alt="{{ $item->name }}">
+                                <div class="contact-product-tags">
+                                    @if ($hasDiscount)
+                                        <span class="contact-tag-pill contact-tag-discount">-{{ $discountPercent }}%</span>
+                                    @elseif ($isNew)
+                                        <span class="contact-tag-pill contact-tag-new">Mới</span>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="contact-product-body">
+                                <span class="contact-product-brand">{{ $brandName }}</span>
+                                <h3 class="contact-product-name">{{ $item->name }}</h3>
+                                <div class="contact-product-footer">
+                                    <div class="contact-product-pricing">
+                                        <span class="contact-product-price">{{ number_format($currentPrice, 0, ',', '.') }}đ</span>
+                                        @if ($hasDiscount)
+                                            <span class="contact-product-old-price">{{ number_format($price, 0, ',', '.') }}đ</span>
+                                        @endif
+                                    </div>
+                                    <span class="contact-product-cta">
+                                        Xem
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                            <polyline points="9 18 15 12 9 6"></polyline>
+                                        </svg>
+                                    </span>
+                                </div>
+                            </div>
+                        </a>
+                    @endforeach
+                </div>
+
+                <div class="contact-showcase-bottom-cta">
+                    <a href="{{ route('client.product.shop.index') }}" class="contact-showcase-btn">
+                        <span>Xem thêm các sản phẩm khác</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                    </a>
+                </div>
+            </section>
         @endif
 
     </div>

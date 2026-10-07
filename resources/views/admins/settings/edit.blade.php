@@ -108,9 +108,26 @@
             <h3>Giá trị & mô tả</h3>
             <div class="grid-3">
                 <div style="grid-column: span 2;">
-                    <label>Giá trị</label>
-                    <textarea name="value" rows="6" class="form-control">{{ old('value', $setting->value) }}</textarea>
-                    <small style="color:#94a3b8;">Nhập đúng định dạng theo kiểu dữ liệu.</small>
+                    @if($setting->key === 'product_recommen')
+                        <label style="font-weight: 700; color: #1e293b; font-size: 14px;">🎯 Chọn danh mục sản phẩm gợi ý</label>
+                        <select name="value" class="form-control" style="font-size:14px; padding: 10px 12px; border: 2px solid #3b82f6; border-radius: 8px;">
+                            <option value="">-- Mặc định (Tự động lấy 50% Thời trang nam & 50% Thời trang nữ) --</option>
+                            @if(isset($categories))
+                                @foreach($categories as $cat)
+                                    <option value="{{ $cat->id }}" {{ (string)old('value', $setting->value) === (string)$cat->id ? 'selected' : '' }}>
+                                        {{ $cat->parent_id ? '　↳ ' : '📁 ' }}{{ $cat->name }} (ID: {{ $cat->id }} | Slug: {{ $cat->slug }})
+                                    </option>
+                                @endforeach
+                            @endif
+                        </select>
+                        <div style="margin-top: 8px; padding: 10px 14px; background: #eff6ff; border-radius: 8px; border-left: 4px solid #3b82f6; font-size: 13px; color: #1e40af; line-height: 1.5;">
+                            💡 <strong>Gợi ý:</strong> Giá trị lưu vào là <strong>ID danh mục</strong>. Hệ thống sẽ tự động hiển thị sản phẩm của danh mục này (kèm tất cả danh mục con của nó) trên các trang Giỏ hàng, Giới thiệu, Liên hệ... Nếu không chọn (hoặc danh mục không hợp lệ), hệ thống sẽ tự động cân bằng <strong>50% thời trang nam</strong> và <strong>50% thời trang nữ</strong>.
+                        </div>
+                    @else
+                        <label>Giá trị</label>
+                        <textarea name="value" rows="6" class="form-control">{{ old('value', $setting->value) }}</textarea>
+                        <small style="color:#94a3b8;">Nhập đúng định dạng theo kiểu dữ liệu.</small>
+                    @endif
                 </div>
                 <div>
                     <label>Mô tả</label>

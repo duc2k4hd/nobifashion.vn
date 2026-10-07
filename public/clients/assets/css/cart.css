@@ -372,87 +372,306 @@
     transform: translateY(-2px);
 }
 
-.nobifashion_single_product_new {
-    max-width: 90vw;
-    margin: 50px auto;
-    padding: 20px;
-    background: linear-gradient(135deg, #ffffff, #f9fbff);
-    border-radius: 20px;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
-    font-family: "Segoe UI", "Poppins", sans-serif;
+/* Cart Empty Showcase - Tinh Tế & Thanh Lịch */
+.cart-showcase {
+    max-width: 1200px;
+    margin: 50px auto 30px;
+    padding: 0 16px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-.nobifashion_single_product_new h2 {
-    text-align: center;
-    font-size: 28px;
-    color: #004a99;
-    margin-bottom: 30px;
-    position: relative;
+.cart-showcase-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 28px;
+    padding-bottom: 18px;
+    border-bottom: 1px solid #e2e8f0;
 }
 
-.nobifashion_single_product_new .product-list {
+.cart-showcase-title-wrap {
+    max-width: 620px;
+}
+
+.cart-showcase-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #0f172a;
+    background: #f1f5f9;
+    padding: 4px 12px;
+    border-radius: 999px;
+    margin-bottom: 10px;
+    border: 1px solid #e2e8f0;
+}
+
+.cart-showcase-badge svg {
+    color: #e11d48;
+}
+
+.cart-showcase-title {
+    font-size: clamp(20px, 2.5vw, 26px);
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 6px;
+    letter-spacing: -0.02em;
+}
+
+.cart-showcase-desc {
+    font-size: 14px;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.cart-showcase-viewall {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #0f172a;
+    text-decoration: none !important;
+    padding: 10px 18px;
+    border-radius: 999px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    transition: all 0.2s ease;
+}
+
+.cart-showcase-viewall:hover {
+    background: #0f172a;
+    color: #ffffff;
+    border-color: #0f172a;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+}
+
+.cart-showcase-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 25px;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
 }
 
-.nobifashion_single_product_new .product-item {
-    background-color: #fff;
-    border-radius: 16px;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+.cart-product-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
     overflow: hidden;
-    padding: 15px;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    transition: all 0.3s ease;
-    border: 1px solid #f0f0f0;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    text-decoration: none !important;
+    color: inherit;
 }
 
-.nobifashion_single_product_new .product-item:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 28px rgba(0, 74, 153, 0.15);
-    border-color: #dceeff;
+.cart-product-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px -10px rgba(15, 23, 42, 0.12);
+    border-color: #cbd5e1;
 }
 
-.nobifashion_single_product_new .product-item img {
+.cart-product-thumb {
+    position: relative;
     width: 100%;
-    border-radius: 12px;
-    margin-bottom: 15px;
-    transition: transform 0.3s ease;
+    aspect-ratio: 3 / 4;
+    overflow: hidden;
+    background: #f8fafc;
 }
 
-.nobifashion_single_product_new .product-item:hover img {
+.cart-product-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+    transition: transform 0.45s ease;
+    display: block;
+}
+
+.cart-product-card:hover .cart-product-thumb img {
     transform: scale(1.05);
 }
 
-.nobifashion_single_product_new .product-item h3 {
-    font-size: 18px;
-    color: #333;
-    margin-bottom: 8px;
+.cart-product-tags {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.cart-tag-pill {
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    line-height: 1.2;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+
+.cart-tag-new {
+    background: #0f172a;
+    color: #ffffff;
+}
+
+.cart-tag-discount {
+    background: #e11d48;
+    color: #ffffff;
+}
+
+.cart-product-body {
+    padding: 14px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    gap: 8px;
+    background: #ffffff;
+}
+
+.cart-product-brand {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #64748b;
+}
+
+.cart-product-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+    margin: 0;
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 40px;
+    transition: color 0.2s ease;
+}
+
+.cart-product-card:hover .cart-product-name {
+    color: #2563eb;
+}
+
+.cart-product-footer {
+    margin-top: auto;
+    padding-top: 10px;
+    border-top: 1px dashed #e2e8f0;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.cart-product-pricing {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.cart-product-price {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+.cart-product-old-price {
+    font-size: 12.5px;
+    color: #94a3b8;
+    text-decoration: line-through;
+    font-weight: 400;
+}
+
+.cart-product-cta {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+.cart-product-card:hover .cart-product-cta {
+    color: #0f172a;
+    transform: translateX(3px);
+}
+
+.cart-showcase-bottom-cta {
+    margin-top: 36px;
     text-align: center;
 }
 
-.nobifashion_single_product_new .product-item .price {
-    color: #e60023;
-    font-weight: bold;
-    margin-bottom: 12px;
-    font-size: 17px;
-}
-
-.nobifashion_single_product_new .product-item a {
-    display: inline-block;
-    padding: 8px 18px;
-    background-color: #004a99;
-    color: #fff;
-    border-radius: 30px;
-    text-decoration: none;
+.cart-showcase-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     font-size: 14px;
-    transition: background-color 0.3s ease;
+    font-weight: 600;
+    color: #ffffff;
+    background: #0f172a;
+    padding: 12px 28px;
+    border-radius: 999px;
+    text-decoration: none !important;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
 }
 
-.nobifashion_single_product_new .product-item a:hover {
-    background-color: #0073e6;
+.cart-showcase-btn:hover {
+    background: #1e293b;
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.2);
+}
+
+@media (max-width: 1024px) {
+    .cart-showcase-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .cart-showcase-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .cart-product-body {
+        padding: 10px 12px 12px;
+    }
+
+    .cart-product-name {
+        font-size: 13px;
+        min-height: 36px;
+    }
+
+    .cart-product-price {
+        font-size: 14px;
+    }
+
+    .cart-product-cta {
+        display: none;
+    }
+
+    .cart-showcase-header {
+        margin-bottom: 20px;
+    }
 }
 
 .nobifashion_cart_disabled {

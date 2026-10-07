@@ -125,7 +125,18 @@
                     <td>{{ $setting->group ?: 'general' }}</td>
                     <td>{{ ucfirst($setting->type) }}</td>
                     <td style="max-width:260px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                        {{ \Illuminate\Support\Str::limit(strip_tags($setting->value), 60) }}
+                        @if($setting->key === 'product_recommen')
+                            @php
+                                $catName = !empty($setting->value) ? \App\Models\Category::where('id', $setting->value)->value('name') : null;
+                            @endphp
+                            @if($catName)
+                                <span style="font-weight:600; color:#2563eb;">📁 {{ $catName }}</span> <small style="color:#94a3b8;">(ID: {{ $setting->value }})</small>
+                            @else
+                                <span style="color:#10b981; font-style:italic;">50% Nam & 50% Nữ (Mặc định)</span>
+                            @endif
+                        @else
+                            {{ \Illuminate\Support\Str::limit(strip_tags($setting->value), 60) }}
+                        @endif
                     </td>
                     <td>
                         @if($setting->is_public)
