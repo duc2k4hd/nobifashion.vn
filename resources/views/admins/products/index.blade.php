@@ -5,6 +5,7 @@
 
 @push('head')
     <link rel="shortcut icon" href="{{ asset('admins/img/icons/products-icon.png') }}" type="image/x-icon">
+    <link rel="stylesheet" href="{{ asset('admins/vendor/slimselect/slimselect.css') }}">
 @endpush
 
 @push('styles')
@@ -204,6 +205,108 @@
             color: #94a3b8;
             font-size: 13px;
             pointer-events: none;
+        }
+
+        /* SlimSelect Custom Styling for Filter */
+        .filter-field .ss-main {
+            width: 100% !important;
+            height: 38px !important;
+            min-height: 38px !important;
+            padding: 0 10px !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 6px !important;
+            background-color: #f8fafc !important;
+            font-size: 13px !important;
+            color: #1e293b !important;
+            box-sizing: border-box !important;
+            transition: all 0.15s ease;
+        }
+        .filter-field .ss-main:focus,
+        .filter-field .ss-main.ss-open-below,
+        .filter-field .ss-main.ss-open-above {
+            background-color: #ffffff !important;
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15) !important;
+        }
+        .filter-field .ss-main .ss-single {
+            font-size: 13px !important;
+            color: #1e293b !important;
+            line-height: 36px !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .filter-field .ss-main .ss-placeholder {
+            color: #64748b !important;
+            font-size: 13px !important;
+            line-height: 36px !important;
+            padding: 0 !important;
+        }
+        .filter-field .ss-main .ss-deselect {
+            margin-left: 6px !important;
+            color: #94a3b8 !important;
+        }
+        .filter-field .ss-main .ss-deselect:hover {
+            color: #ef4444 !important;
+        }
+        .filter-field .ss-main .ss-arrow path {
+            stroke: #64748b !important;
+            stroke-width: 2 !important;
+        }
+        .ss-content {
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 8px !important;
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.15) !important;
+            font-size: 13px !important;
+            z-index: 1060 !important;
+            overflow: hidden !important;
+        }
+        .ss-content .ss-search {
+            padding: 8px !important;
+            background-color: #f8fafc !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+        }
+        .ss-content .ss-search input {
+            height: 34px !important;
+            font-size: 13px !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 6px !important;
+            padding: 6px 10px !important;
+            box-shadow: none !important;
+            background-color: #ffffff !important;
+        }
+        .ss-content .ss-search input:focus {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15) !important;
+        }
+        .ss-content .ss-list {
+            max-height: 320px !important;
+        }
+        .ss-content .ss-list .ss-option {
+            padding: 7px 12px !important;
+            font-size: 13px !important;
+            transition: background 0.12s ease;
+        }
+        .ss-content .ss-list .ss-option.is-root-category {
+            font-weight: 700 !important;
+            color: #0f172a !important;
+            background-color: #f8fafc;
+            border-top: 1px solid #f1f5f9;
+        }
+        .ss-content .ss-list .ss-option.is-child-category {
+            color: #334155 !important;
+        }
+        .ss-content .ss-list .ss-option:hover,
+        .ss-content .ss-list .ss-option.ss-highlighted {
+            background-color: #eff6ff !important;
+            color: #1d4ed8 !important;
+        }
+        .ss-content .ss-list .ss-option.ss-selected {
+            background-color: #dbeafe !important;
+            color: #1e40af !important;
+            font-weight: 600 !important;
         }
         .filter-actions-group {
             display: flex;
@@ -801,7 +904,7 @@
                 <div class="filter-field">
                     <label for="filter-brand">Hãng / Thương hiệu</label>
                     <select id="filter-brand" name="brand_id">
-                        <option value="">Tất cả hãng</option>
+                        <option data-placeholder="true" value="">Tất cả hãng</option>
                         @foreach($brands as $brand)
                             <option value="{{ $brand->id }}" {{ (string) request('brand_id') === (string) $brand->id ? 'selected' : '' }}>
                                 {{ $brand->name }}
@@ -814,10 +917,12 @@
                 <div class="filter-field">
                     <label for="filter-category">Danh mục</label>
                     <select id="filter-category" name="category_id">
-                        <option value="">Tất cả danh mục</option>
+                        <option data-placeholder="true" value="">Tất cả danh mục</option>
                         @foreach($categories as $category)
-                            <option value="{{ $category->id }}" {{ (string) request('category_id') === (string) $category->id ? 'selected' : '' }}>
-                                {{ $category->name }}
+                            <option value="{{ $category->id }}"
+                                    class="{{ ($category->depth ?? 0) === 0 ? 'is-root-category' : 'is-child-category' }}"
+                                    {{ (string) request('category_id') === (string) $category->id ? 'selected' : '' }}>
+                                {{ $category->hierarchical_name ?? $category->name }}
                             </option>
                         @endforeach
                     </select>
@@ -1754,6 +1859,38 @@
 
         if (modalBtnExportExcel) {
             modalBtnExportExcel.addEventListener('click', exportSelectedToExcel);
+        }
+    });
+</script>
+<script src="{{ asset('admins/vendor/slimselect/slimselect.min.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        if (typeof SlimSelect !== 'undefined') {
+            const brandSelectEl = document.getElementById('filter-brand');
+            if (brandSelectEl) {
+                new SlimSelect({
+                    select: brandSelectEl,
+                    settings: {
+                        placeholderText: 'Tất cả hãng',
+                        allowDeselect: true,
+                        searchPlaceholder: 'Tìm kiếm hãng/thương hiệu...',
+                        searchText: 'Không tìm thấy hãng nào',
+                    }
+                });
+            }
+
+            const categorySelectEl = document.getElementById('filter-category');
+            if (categorySelectEl) {
+                new SlimSelect({
+                    select: categorySelectEl,
+                    settings: {
+                        placeholderText: 'Tất cả danh mục',
+                        allowDeselect: true,
+                        searchPlaceholder: 'Tìm kiếm danh mục...',
+                        searchText: 'Không tìm thấy danh mục nào',
+                    }
+                });
+            }
         }
     });
 </script>

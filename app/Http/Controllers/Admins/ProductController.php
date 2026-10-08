@@ -135,13 +135,59 @@ class ProductController extends Controller
             ->paginate($perPage)
             ->appends($request->query());
 
-        $categories = Category::select('id', 'name')->orderBy('name')->get();
+        $rawCategories = Category::select('id', 'name', 'parent_id', 'sort_order')
+            ->orderBy('sort_order', 'asc')
+            ->orderBy('name', 'asc')
+            ->get();
+
+        $categories = $this->buildCategoryTree($rawCategories);
         $brands = Brand::select('id', 'name')
             ->orderBy('sort_order')
             ->orderBy('name')
             ->get();
 
         return view('admins.products.index', compact('products', 'categories', 'brands', 'perPageOptions', 'perPage', 'searchMeta', 'stats'));
+    }
+
+    /**
+     * Xây dựng danh sách danh mục theo dạng cây phân cấp (cha -> con -> cháu)
+     */
+    protected function buildCategoryTree($categories, $parentId = null, $depth = 0): array
+    {
+        $branch = [];
+        $items = $categories->where('parent_id', $parentId);
+
+        foreach ($items as $category) {
+            $prefix = '';
+            if ($depth === 1) {
+                $prefix = '↳ ';
+            } elseif ($depth === 2) {
+                $prefix = '   ↳ ';
+            } elseif ($depth > 2) {
+                $prefix = str_repeat('   ', $depth - 1) . '↳ ';
+            }
+
+            $category->depth = $depth;
+            $category->hierarchical_name = $prefix . $category->name;
+            $branch[] = $category;
+
+            $children = $this->buildCategoryTree($categories, $category->id, $depth + 1);
+            foreach ($children as $child) {
+                $branch[] = $child;
+            }
+        }
+
+        if ($parentId === null) {
+            $usedIds = collect($branch)->pluck('id')->all();
+            $orphans = $categories->whereNotIn('id', $usedIds);
+            foreach ($orphans as $orphan) {
+                $orphan->depth = 0;
+                $orphan->hierarchical_name = $orphan->name;
+                $branch[] = $orphan;
+            }
+        }
+
+        return $branch;
     }
 
     public function create()
