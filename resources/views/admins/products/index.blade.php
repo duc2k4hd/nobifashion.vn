@@ -702,6 +702,9 @@
         </div>
 
         <div class="header-actions">
+            <a href="{{ route('admin.products.export-excel') }}" class="btn-modern-green" title="Xuất toàn bộ danh sách sản phẩm ra file Excel">
+                <i class="fa-solid fa-file-arrow-down"></i> Xuất Excel
+            </a>
             <a href="{{ route('admin.products.import-excel') }}" class="btn-modern-excel" title="Nhập danh sách sản phẩm từ file Excel">
                 <i class="fa-solid fa-file-excel"></i> Import Excel
             </a>
@@ -932,7 +935,20 @@
 
             {{-- Bulk Actions Bar (Tự động hiện khi tick checkbox) --}}
             <div class="bulk-actions-bar" id="bulkActionsBar">
-                <span><strong id="selectedCountText">0</strong> sản phẩm được chọn:</span>
+                <span class="d-inline-flex align-items-center gap-1">
+                    <strong id="selectedCountText">0</strong> sản phẩm được chọn:
+                </span>
+
+                {{-- Nút "Những sản phẩm đã chọn" --}}
+                <button type="button" class="btn btn-sm btn-outline-primary bg-white fw-semibold" id="btnOpenSelectedModal" title="Xem và quản lý danh sách sản phẩm đã chọn">
+                    <i class="fa-solid fa-list-check"></i> Những sản phẩm đã chọn (<span id="btnSelectedCount">0</span>)
+                </button>
+
+                {{-- Nút "Xuất Excel đã chọn" --}}
+                <button type="button" class="btn btn-sm btn-outline-success bg-white fw-semibold" id="btnExportSelectedProducts" title="Xuất file Excel cho những sản phẩm đang được chọn">
+                    <i class="fa-solid fa-file-arrow-down text-success"></i> Xuất Excel đã chọn
+                </button>
+
                 <form action="{{ route('admin.products.bulk-action') }}" method="POST" id="bulk-action-form" class="d-inline-flex gap-1 m-0">
                     @csrf
 
@@ -968,6 +984,17 @@
                     @endif
                 </form>
             </div>
+        </div>
+
+        {{-- Banner khi kích hoạt chế độ chỉ xem sản phẩm đã chọn trên bảng --}}
+        <div id="filterSelectedBanner" class="alert alert-primary py-2 px-3 mx-3 mt-3 mb-0 d-none align-items-center justify-content-between" style="font-size: 13px; border-radius: 6px;">
+            <div class="d-flex align-items-center gap-2">
+                <i class="fa-solid fa-filter text-primary"></i>
+                <span>Đang chỉ hiển thị <strong><span id="filterBannerCount">0</span></strong> sản phẩm bạn đã chọn.</span>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-primary bg-white py-0 px-2" id="btnCancelTableFilter" style="font-size: 12px; font-weight: 500;">
+                <i class="fa-solid fa-xmark"></i> Bỏ lọc (Hiện toàn bộ sản phẩm)
+            </button>
         </div>
 
         <div class="table-responsive">
@@ -1008,6 +1035,18 @@
                                     class="product-checkbox form-check-input mt-0"
                                     form="bulk-action-form"
                                     style="cursor: pointer;"
+                                    data-id="{{ $product->id }}"
+                                    data-name="{{ e($product->name) }}"
+                                    data-sku="{{ e($product->sku ?? '') }}"
+                                    data-brand="{{ e($product->brand?->name ?? '—') }}"
+                                    data-category="{{ e($product->primaryCategory?->name ?? '—') }}"
+                                    data-image="{{ $imgUrl ?? asset('clients/assets/img/clothes/no-image.webp') }}"
+                                    data-price="{{ number_format($product->price, 0, ',', '.') }}đ"
+                                    data-sale-price="{{ $hasDiscount ? number_format($product->sale_price, 0, ',', '.') . 'đ' : '' }}"
+                                    data-stock="{{ number_format($product->stock_quantity) }}"
+                                    data-status-label="{{ $product->trashed() ? 'Đã xóa' : ($product->is_active ? 'Đang bán' : 'Tạm ẩn') }}"
+                                    data-status-badge="{{ $product->trashed() ? 'status-badge-trash' : ($product->is_active ? 'status-badge-active' : 'status-badge-inactive') }}"
+                                    data-status-icon="{{ $product->trashed() ? 'fa-trash-can' : ($product->is_active ? 'fa-circle-check' : 'fa-eye-slash') }}"
                                 >
                             </td>
 
@@ -1281,6 +1320,85 @@
         </div>
     </div>
 
+    {{-- Modal: Những sản phẩm đã chọn --}}
+    <div class="modal fade" id="selectedProductsModal" tabindex="-1" aria-labelledby="selectedProductsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-light py-3">
+                    <h5 class="modal-title fs-6 fw-bold text-dark m-0 d-flex align-items-center gap-2" id="selectedProductsModalLabel">
+                        <i class="fa-solid fa-boxes-stacked text-primary"></i>
+                        Những sản phẩm đã chọn
+                        <span class="badge bg-primary rounded-pill px-2" id="modalSelectedBadge">0</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+                </div>
+                <div class="modal-body p-3">
+                    {{-- Thanh công cụ trong modal --}}
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom flex-wrap gap-2">
+                        <div class="small text-muted">
+                            <i class="fa-regular fa-circle-check text-success me-1"></i> Danh sách các sản phẩm đang được tích chọn.
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-danger" id="modalBtnDeselectAll">
+                                <i class="fa-solid fa-xmark"></i> Bỏ chọn tất cả
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" id="modalBtnToggleTableFilter">
+                                <i class="fa-solid fa-filter"></i> <span id="modalFilterButtonText">Chỉ hiện trên bảng chính</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- Bảng danh sách sản phẩm trong modal --}}
+                    <div class="table-responsive" style="max-height: 380px;">
+                        <table class="table table-hover align-middle mb-0" style="font-size: 13px;">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th style="width: 40px; text-align: center;">#</th>
+                                    <th>Sản phẩm</th>
+                                    <th style="width: 110px;">Hãng</th>
+                                    <th style="width: 120px;">Danh mục</th>
+                                    <th style="width: 120px;">Giá bán</th>
+                                    <th style="width: 90px; text-align: center;">Tồn kho</th>
+                                    <th style="width: 110px; text-align: center;">Trạng thái</th>
+                                    <th style="width: 70px; text-align: center;">Bỏ chọn</th>
+                                </tr>
+                            </thead>
+                            <tbody id="selectedProductsTableBody">
+                                {{-- Render qua JS --}}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2 px-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <div class="d-inline-flex gap-2 align-items-center">
+                        <button type="button" class="btn btn-sm btn-outline-success bg-white" id="modalBtnExportExcel" title="Tải file Excel các sản phẩm đang chọn">
+                            <i class="fa-solid fa-file-arrow-down text-success"></i> Xuất Excel (<span id="modalExportCount">0</span>)
+                        </button>
+                        @if(request('status') === 'trash')
+                            <button type="button" class="btn btn-sm btn-success" onclick="triggerBulkSubmit('restore')">
+                                <i class="fa-solid fa-rotate-left"></i> Khôi phục đã chọn
+                            </button>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="triggerBulkSubmit('force_delete')">
+                                <i class="fa-solid fa-trash-can"></i> Xóa vĩnh viễn đã chọn
+                            </button>
+                        @else
+                            <button type="button" class="btn btn-sm btn-success" onclick="triggerBulkSubmit('show')">
+                                <i class="fa-solid fa-eye"></i> Hiện
+                            </button>
+                            <button type="button" class="btn btn-sm btn-secondary" onclick="triggerBulkSubmit('hide')">
+                                <i class="fa-solid fa-eye-slash"></i> Ẩn
+                            </button>
+                            <button type="button" class="btn btn-sm btn-danger" onclick="triggerBulkSubmit('delete')">
+                                <i class="fa-regular fa-trash-can"></i> Bỏ vào thùng rác
+                            </button>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 @endsection
 
@@ -1291,14 +1409,43 @@
         const productCheckboxes = document.querySelectorAll('.product-checkbox');
         const bulkActionsBar = document.getElementById('bulkActionsBar');
         const selectedCountText = document.getElementById('selectedCountText');
+        const btnSelectedCount = document.getElementById('btnSelectedCount');
+        const btnExportSelectedProducts = document.getElementById('btnExportSelectedProducts');
         const bulkForm = document.getElementById('bulk-action-form');
+        const btnOpenSelectedModal = document.getElementById('btnOpenSelectedModal');
+        const modalElement = document.getElementById('selectedProductsModal');
+        const modalSelectedBadge = document.getElementById('modalSelectedBadge');
+        const modalExportCount = document.getElementById('modalExportCount');
+        const modalBtnExportExcel = document.getElementById('modalBtnExportExcel');
+        const selectedProductsTableBody = document.getElementById('selectedProductsTableBody');
+        const modalBtnDeselectAll = document.getElementById('modalBtnDeselectAll');
+        const modalBtnToggleTableFilter = document.getElementById('modalBtnToggleTableFilter');
+        const modalFilterButtonText = document.getElementById('modalFilterButtonText');
+        const filterSelectedBanner = document.getElementById('filterSelectedBanner');
+        const filterBannerCount = document.getElementById('filterBannerCount');
+        const btnCancelTableFilter = document.getElementById('btnCancelTableFilter');
+
+        let isTableFiltered = false;
+
+        function getCheckedBoxes() {
+            return Array.from(productCheckboxes).filter(cb => cb.checked);
+        }
 
         function updateBulkBar() {
-            const checkedBoxes = Array.from(productCheckboxes).filter(cb => cb.checked);
+            const checkedBoxes = getCheckedBoxes();
             const count = checkedBoxes.length;
 
             if (selectedCountText) {
                 selectedCountText.textContent = count;
+            }
+            if (btnSelectedCount) {
+                btnSelectedCount.textContent = count;
+            }
+            if (modalSelectedBadge) {
+                modalSelectedBadge.textContent = count;
+            }
+            if (modalExportCount) {
+                modalExportCount.textContent = count;
             }
 
             if (bulkActionsBar) {
@@ -1306,6 +1453,9 @@
                     bulkActionsBar.classList.add('active');
                 } else {
                     bulkActionsBar.classList.remove('active');
+                    if (isTableFiltered) {
+                        clearTableFilter();
+                    }
                 }
             }
 
@@ -1313,29 +1463,297 @@
                 selectAll.checked = (productCheckboxes.length > 0 && count === productCheckboxes.length);
                 selectAll.indeterminate = (count > 0 && count < productCheckboxes.length);
             }
+
+            // Nếu đang trong chế độ lọc bảng thì cập nhật lại visibility
+            if (isTableFiltered) {
+                applyTableFilter();
+            }
         }
 
+        function renderSelectedModal() {
+            const checkedBoxes = getCheckedBoxes();
+            if (!selectedProductsTableBody) return;
+
+            if (checkedBoxes.length === 0) {
+                selectedProductsTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="8" class="text-center py-4 text-muted">
+                            <i class="fa-solid fa-inbox fs-3 mb-2 d-block text-secondary"></i>
+                            Chưa có sản phẩm nào được chọn.
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            let html = '';
+            checkedBoxes.forEach((cb, index) => {
+                const id = cb.value;
+                const name = cb.dataset.name || 'Sản phẩm #' + id;
+                const sku = cb.dataset.sku ? `<small class="text-muted d-block">SKU: ${cb.dataset.sku}</small>` : '';
+                const brand = cb.dataset.brand || '—';
+                const category = cb.dataset.category || '—';
+                const image = cb.dataset.image || '';
+                const price = cb.dataset.price || '—';
+                const salePrice = cb.dataset.salePrice ? `<small class="text-danger d-block">${cb.dataset.salePrice}</small>` : '';
+                const stock = cb.dataset.stock || '0';
+                const statusLabel = cb.dataset.statusLabel || '—';
+                const statusBadge = cb.dataset.statusBadge || 'badge bg-secondary';
+                const statusIcon = cb.dataset.statusIcon || 'fa-circle-dot';
+
+                html += `
+                    <tr id="modal-row-${id}">
+                        <td style="text-align: center; color: #94a3b8; font-weight: 500;">${index + 1}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <img src="${image}" alt="${name}" style="width: 36px; height: 36px; object-fit: cover; border-radius: 6px; border: 1px solid #e2e8f0; flex-shrink: 0;" onerror="this.src='/clients/assets/img/clothes/no-image.webp'">
+                                <div style="min-width: 0;">
+                                    <div class="fw-semibold text-dark text-truncate" style="max-width: 260px;" title="${name}">${name}</div>
+                                    ${sku}
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="text-secondary">${brand}</span></td>
+                        <td><span class="text-secondary">${category}</span></td>
+                        <td>
+                            <span class="fw-bold">${price}</span>
+                            ${salePrice}
+                        </td>
+                        <td style="text-align: center;"><span class="badge bg-light text-dark border">${stock} sp</span></td>
+                        <td style="text-align: center;">
+                            <span class="status-badge ${statusBadge}" style="font-size: 11px; padding: 2px 8px;">
+                                <i class="fa-solid ${statusIcon}"></i> ${statusLabel}
+                            </span>
+                        </td>
+                        <td style="text-align: center;">
+                            <button type="button" class="btn btn-sm btn-outline-danger p-1 rounded btn-unselect-item" data-id="${id}" title="Bỏ chọn sản phẩm này" style="width: 28px; height: 28px; line-height: 1;">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            selectedProductsTableBody.innerHTML = html;
+
+            // Gắn sự kiện bỏ chọn từng dòng trong modal
+            selectedProductsTableBody.querySelectorAll('.btn-unselect-item').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = btn.dataset.id;
+                    const targetCb = Array.from(productCheckboxes).find(cb => cb.value == id);
+                    if (targetCb) {
+                        targetCb.checked = false;
+                        updateBulkBar();
+                        renderSelectedModal();
+                        if (getCheckedBoxes().length === 0 && modalElement) {
+                            const modal = bootstrap.Modal.getInstance(modalElement);
+                            if (modal) modal.hide();
+                        }
+                    }
+                });
+            });
+        }
+
+        function applyTableFilter() {
+            const checkedBoxes = getCheckedBoxes();
+            const checkedIds = new Set(checkedBoxes.map(cb => cb.value));
+
+            productCheckboxes.forEach(cb => {
+                const tr = cb.closest('tr');
+                if (tr) {
+                    if (checkedIds.has(cb.value)) {
+                        tr.style.display = '';
+                    } else {
+                        tr.style.display = 'none';
+                    }
+                }
+            });
+
+            isTableFiltered = true;
+            if (filterSelectedBanner) {
+                filterSelectedBanner.classList.remove('d-none');
+                filterSelectedBanner.classList.add('d-flex');
+            }
+            if (filterBannerCount) {
+                filterBannerCount.textContent = checkedBoxes.length;
+            }
+            if (modalFilterButtonText) {
+                modalFilterButtonText.textContent = 'Bỏ lọc (Hiện toàn bộ bảng)';
+            }
+        }
+
+        function clearTableFilter() {
+            productCheckboxes.forEach(cb => {
+                const tr = cb.closest('tr');
+                if (tr) {
+                    tr.style.display = '';
+                }
+            });
+
+            isTableFiltered = false;
+            if (filterSelectedBanner) {
+                filterSelectedBanner.classList.add('d-none');
+                filterSelectedBanner.classList.remove('d-flex');
+            }
+            if (modalFilterButtonText) {
+                modalFilterButtonText.textContent = 'Chỉ hiện trên bảng chính';
+            }
+        }
+
+        // Mở Modal xem những sản phẩm đã chọn
+        if (btnOpenSelectedModal) {
+            btnOpenSelectedModal.addEventListener('click', () => {
+                const checkedBoxes = getCheckedBoxes();
+                if (checkedBoxes.length === 0) {
+                    alert('Chưa có sản phẩm nào được chọn.');
+                    return;
+                }
+                renderSelectedModal();
+                if (modalElement) {
+                    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+                    modal.show();
+                }
+            });
+        }
+
+        // Bỏ chọn tất cả từ Modal
+        if (modalBtnDeselectAll) {
+            modalBtnDeselectAll.addEventListener('click', () => {
+                productCheckboxes.forEach(cb => {
+                    cb.checked = false;
+                });
+                updateBulkBar();
+                clearTableFilter();
+                if (modalElement) {
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) modal.hide();
+                }
+            });
+        }
+
+        // Chuyển đổi lọc bảng từ Modal
+        if (modalBtnToggleTableFilter) {
+            modalBtnToggleTableFilter.addEventListener('click', () => {
+                if (isTableFiltered) {
+                    clearTableFilter();
+                } else {
+                    applyTableFilter();
+                }
+                if (modalElement) {
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) modal.hide();
+                }
+            });
+        }
+
+        // Nút hủy lọc từ banner trên bảng
+        if (btnCancelTableFilter) {
+            btnCancelTableFilter.addEventListener('click', () => {
+                clearTableFilter();
+            });
+        }
+
+        // Chọn tất cả
         if (selectAll) {
             selectAll.addEventListener('change', () => {
                 productCheckboxes.forEach(cb => {
-                    cb.checked = selectAll.checked;
+                    // Nếu đang lọc chỉ chọn những hàng đang hiển thị
+                    const tr = cb.closest('tr');
+                    if (!isTableFiltered || (tr && tr.style.display !== 'none')) {
+                        cb.checked = selectAll.checked;
+                    }
                 });
                 updateBulkBar();
             });
         }
 
+        // Checkbox từng sản phẩm
         productCheckboxes.forEach(cb => {
             cb.addEventListener('change', updateBulkBar);
         });
 
+        // Kiểm tra trước khi submit form thao tác hàng loạt
         if (bulkForm) {
             bulkForm.addEventListener('submit', (e) => {
-                const checkedBoxes = Array.from(productCheckboxes).filter(cb => cb.checked);
+                const checkedBoxes = getCheckedBoxes();
                 if (checkedBoxes.length === 0) {
                     e.preventDefault();
                     alert('Vui lòng chọn ít nhất một sản phẩm để thực hiện thao tác.');
                 }
             });
+        }
+
+        // Hàm trigger submit từ Modal
+        window.triggerBulkSubmit = function (action) {
+            const checkedBoxes = getCheckedBoxes();
+            if (checkedBoxes.length === 0) {
+                alert('Vui lòng chọn ít nhất một sản phẩm.');
+                return;
+            }
+
+            if (action === 'delete') {
+                if (!confirm(`Chuyển ${checkedBoxes.length} sản phẩm đã chọn vào Thùng rác? Bạn vẫn có thể khôi phục sau.`)) {
+                    return;
+                }
+            } else if (action === 'force_delete') {
+                if (!confirm(`CẢNH BÁO: Xóa VĨNH VIỄN ${checkedBoxes.length} sản phẩm đã chọn? Dữ liệu này KHÔNG thể khôi phục!`)) {
+                    return;
+                }
+            }
+
+            if (bulkForm) {
+                // Xóa action input cũ nếu có
+                const oldInput = bulkForm.querySelector('input[name="bulk_action"]');
+                if (oldInput) oldInput.remove();
+
+                const actionInput = document.createElement('input');
+                actionInput.type = 'hidden';
+                actionInput.name = 'bulk_action';
+                actionInput.value = action;
+                bulkForm.appendChild(actionInput);
+
+                bulkForm.submit();
+            }
+        };
+
+        // Hàm thực hiện xuất file Excel cho các sản phẩm đã chọn
+        function exportSelectedToExcel() {
+            const checkedBoxes = getCheckedBoxes();
+            if (checkedBoxes.length === 0) {
+                alert('Vui lòng chọn ít nhất một sản phẩm để xuất Excel.');
+                return;
+            }
+
+            const exportForm = document.createElement('form');
+            exportForm.method = 'POST';
+            exportForm.action = '{{ route('admin.products.export-excel') }}';
+            exportForm.style.display = 'none';
+
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = '{{ csrf_token() }}';
+            exportForm.appendChild(csrfInput);
+
+            checkedBoxes.forEach(cb => {
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'ids[]';
+                input.value = cb.value;
+                exportForm.appendChild(input);
+            });
+
+            document.body.appendChild(exportForm);
+            exportForm.submit();
+            setTimeout(() => exportForm.remove(), 2000);
+        }
+
+        if (btnExportSelectedProducts) {
+            btnExportSelectedProducts.addEventListener('click', exportSelectedToExcel);
+        }
+
+        if (modalBtnExportExcel) {
+            modalBtnExportExcel.addEventListener('click', exportSelectedToExcel);
         }
     });
 </script>

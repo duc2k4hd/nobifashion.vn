@@ -70,6 +70,10 @@ class ImportExcelController extends Controller
         }
 
         $request->validate([
+            'ids' => 'nullable|array',
+            'ids.*' => 'integer|exists:products,id',
+            'product_ids' => 'nullable|array',
+            'product_ids.*' => 'integer|exists:products,id',
             'category_ids' => 'nullable|array',
             'category_ids.*' => 'integer|exists:categories,id',
             'brand_ids' => 'nullable|array',
@@ -3064,6 +3068,17 @@ class ImportExcelController extends Controller
     protected function buildFilterQuery(Request $request)
     {
         $query = Product::query();
+
+        // Filter theo danh sách ID cụ thể (dùng khi xuất sản phẩm đã chọn)
+        $productIds = $request->input('ids', $request->input('product_ids', []));
+        if (is_array($productIds) && !empty($productIds)) {
+            $productIds = array_filter(array_map('intval', $productIds), function ($id) {
+                return $id > 0;
+            });
+            if (!empty($productIds)) {
+                $query->whereIn('id', $productIds);
+            }
+        }
 
         // Filter theo category (sử dụng primary_category_id hoặc category_ids JSON)
         $categoryIds = $request->input('category_ids', []);
