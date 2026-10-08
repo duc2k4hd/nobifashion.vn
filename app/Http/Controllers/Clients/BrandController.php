@@ -127,7 +127,7 @@ class BrandController extends Controller
 
         $validCategoryIds = array_keys(array_filter($categoryCounts, fn ($cnt) => $cnt > 0));
 
-        $categories = empty($validCategoryIds)
+        $brandCategories = empty($validCategoryIds)
             ? collect()
             : Category::active()
                 ->whereNotNull('parent_id') // BỎ QUA CHA (CHA LÀ ROOT, PARENT_ID LÀ NULL)
@@ -158,7 +158,7 @@ class BrandController extends Controller
             'currentSlug' => $slug,
             'totalProductsCount' => $totalProductsCount,
             'bestsellerProducts' => $bestsellerProducts,
-            'categories' => $categories,
+            'brandCategories' => $brandCategories,
             'recommendProducts' => $recommendProducts,
         ]);
     }

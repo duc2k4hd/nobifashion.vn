@@ -284,7 +284,7 @@
             </section>
 
             <!-- 2. Danh mục sản phẩm -->
-            @if(isset($categories) && $categories->isNotEmpty())
+            @if(isset($brandCategories) && $brandCategories->isNotEmpty())
                 <section class="nobifashion_brand_section nobifashion_brand_category_section">
                     <div class="nobifashion_brand_heading">
                         <h2>Danh mục sản phẩm</h2>
@@ -305,7 +305,7 @@
                             </span>
                             <span class="nobifashion_brand_category_arrow">›</span>
                         </button>
-                        @foreach($categories as $category)
+                        @foreach($brandCategories as $category)
                             <button class="nobifashion_brand_category" data-category-id="{{ $category->id }}" type="button">
                                 <span class="nobifashion_brand_category_thumb">
                                     <img src="{{ $category->display_image }}" alt="{{ $category->name }}" loading="lazy" onerror="this.src='{{ asset('clients/assets/img/categories/no-image.webp') }}'">
