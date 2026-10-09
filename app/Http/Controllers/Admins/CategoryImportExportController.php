@@ -884,6 +884,17 @@ class CategoryImportExportController extends Controller
     {
         $query = Category::query();
 
+        // Lọc theo danh sách ID cụ thể (dành cho xuất danh mục đang chọn)
+        $ids = $request->input('ids');
+        if ($ids) {
+            if (is_string($ids)) {
+                $ids = array_filter(array_map('intval', explode(',', $ids)));
+            }
+            if (is_array($ids) && !empty($ids)) {
+                $query->whereIn('id', $ids);
+            }
+        }
+
         // Lọc từ khóa
         if ($keyword = $request->input('keyword', $request->input('search'))) {
             $keyword = trim((string) $keyword);

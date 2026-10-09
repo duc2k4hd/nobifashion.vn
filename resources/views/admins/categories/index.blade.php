@@ -798,19 +798,24 @@
             {{-- Bulk Actions Bar (Hiện khi có checkbox được chọn) --}}
             <div class="bulk-actions-bar" id="bulkActionsBar">
                 <span><strong id="selectedCountText">0</strong> danh mục được chọn:</span>
-                <form action="{{ route('admin.categories.bulk-action') }}" method="POST" id="category-bulk-form" class="d-inline-flex gap-1 m-0">
-                    @csrf
-                    <button type="submit" class="btn btn-sm btn-outline-success bg-white" name="bulk_action" value="show">
-                        <i class="fa-solid fa-check"></i> Hiện
+                <div class="d-inline-flex gap-1 m-0 align-items-center">
+                    <button type="button" class="btn btn-sm btn-outline-primary bg-white fw-semibold" id="btnExportSelected">
+                        <i class="fa-solid fa-file-export me-1 text-primary"></i> Xuất đang chọn
                     </button>
-                    <button type="submit" class="btn btn-sm btn-outline-secondary bg-white" name="bulk_action" value="hide">
-                        <i class="fa-solid fa-eye-slash"></i> Ẩn
-                    </button>
-                    <button type="submit" class="btn btn-sm btn-outline-danger bg-white" name="bulk_action" value="delete"
-                            onclick="return confirm('Xác nhận xóa các danh mục đã chọn? Các danh mục có sản phẩm hoặc danh mục con sẽ được tự động bỏ qua để đảm bảo an toàn.');">
-                        <i class="fa-regular fa-trash-can"></i> Xóa
-                    </button>
-                </form>
+                    <form action="{{ route('admin.categories.bulk-action') }}" method="POST" id="category-bulk-form" class="d-inline-flex gap-1 m-0">
+                        @csrf
+                        <button type="submit" class="btn btn-sm btn-outline-success bg-white" name="bulk_action" value="show">
+                            <i class="fa-solid fa-check"></i> Hiện
+                        </button>
+                        <button type="submit" class="btn btn-sm btn-outline-secondary bg-white" name="bulk_action" value="hide">
+                            <i class="fa-solid fa-eye-slash"></i> Ẩn
+                        </button>
+                        <button type="submit" class="btn btn-sm btn-outline-danger bg-white" name="bulk_action" value="delete"
+                                onclick="return confirm('Xác nhận xóa các danh mục đã chọn? Các danh mục có sản phẩm hoặc danh mục con sẽ được tự động bỏ qua để đảm bảo an toàn.');">
+                            <i class="fa-regular fa-trash-can"></i> Xóa
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
 
@@ -1173,6 +1178,12 @@
                 <div class="mb-3">
                     <label class="form-label fw-bold small text-muted text-uppercase">1. Phạm vi danh mục</label>
                     <div class="d-flex flex-wrap gap-3 p-3 bg-light rounded border">
+                        <div class="form-check" id="scopeSelectedWrapper">
+                            <input class="form-check-input" type="radio" name="exportScope" id="scopeSelected" value="selected">
+                            <label class="form-check-label fw-semibold small text-primary" for="scopeSelected">
+                                <i class="fa-solid fa-check-double me-1"></i> Chỉ các danh mục đang chọn (<span id="exportSelectedCount">0</span> danh mục)
+                            </label>
+                        </div>
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="exportScope" id="scopeAll" value="all" checked>
                             <label class="form-check-label fw-semibold small" for="scopeAll">
@@ -1452,12 +1463,50 @@
             // ===== CHECKBOX & BULK ACTIONS BAR =====
             function updateBulkBar() {
                 const checked = Array.from(categoryCheckboxes).filter(cb => cb.checked);
+                const scopeSelectedRadio = document.getElementById('scopeSelected');
+                const exportSelectedCountEl = document.getElementById('exportSelectedCount');
+
+                if (exportSelectedCountEl) {
+                    exportSelectedCountEl.textContent = checked.length;
+                }
+
                 if (checked.length > 0) {
                     bulkActionsBar.classList.add('active');
                     if (selectedCountText) selectedCountText.textContent = checked.length;
+                    if (scopeSelectedRadio) {
+                        scopeSelectedRadio.disabled = false;
+                    }
                 } else {
                     bulkActionsBar.classList.remove('active');
+                    if (scopeSelectedRadio) {
+                        scopeSelectedRadio.disabled = true;
+                        if (scopeSelectedRadio.checked) {
+                            const scopeAllRadio = document.getElementById('scopeAll');
+                            if (scopeAllRadio) scopeAllRadio.checked = true;
+                        }
+                    }
                 }
+            }
+
+            // Nút Xuất đang chọn trên thanh bulk actions bar
+            const btnExportSelected = document.getElementById('btnExportSelected');
+            if (btnExportSelected) {
+                btnExportSelected.addEventListener('click', () => {
+                    const checked = Array.from(categoryCheckboxes).filter(cb => cb.checked);
+                    if (checked.length === 0) {
+                        alert('Vui lòng chọn ít nhất một danh mục để xuất.');
+                        return;
+                    }
+                    const scopeSelectedRadio = document.getElementById('scopeSelected');
+                    if (scopeSelectedRadio) {
+                        scopeSelectedRadio.disabled = false;
+                        scopeSelectedRadio.checked = true;
+                    }
+                    if (typeof bootstrap !== 'undefined' && exportModalEl) {
+                        const modalInstance = bootstrap.Modal.getInstance(exportModalEl) || new bootstrap.Modal(exportModalEl);
+                        modalInstance.show();
+                    }
+                });
             }
 
             if (selectAllCheckbox) {
@@ -1779,7 +1828,14 @@
                     selectedCols.forEach(col => params.append('columns[]', col));
                     params.append('format', format);
 
-                    if (scope === 'filter') {
+                    if (scope === 'selected') {
+                        const checkedIds = Array.from(document.querySelectorAll('.category-checkbox:checked')).map(cb => cb.value);
+                        if (checkedIds.length === 0) {
+                            alert('Vui lòng chọn ít nhất một danh mục để xuất.');
+                            return;
+                        }
+                        checkedIds.forEach(id => params.append('ids[]', id));
+                    } else if (scope === 'filter') {
                         const currentUrlParams = new URLSearchParams(window.location.search);
                         for (const [key, val] of currentUrlParams.entries()) {
                             if (val && key !== 'page') params.append(key, val);
@@ -1791,7 +1847,30 @@
                         modalInstance.hide();
                     }
 
-                    window.location.href = "{{ route('admin.categories.export') }}?" + params.toString();
+                    // Tải tệp thông qua form POST để không bị giới hạn độ dài URL
+                    const exportForm = document.createElement('form');
+                    exportForm.method = 'POST';
+                    exportForm.action = "{{ route('admin.categories.export') }}";
+                    exportForm.style.display = 'none';
+
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '{{ csrf_token() }}';
+                    const csrfInput = document.createElement('input');
+                    csrfInput.type = 'hidden';
+                    csrfInput.name = '_token';
+                    csrfInput.value = csrfToken;
+                    exportForm.appendChild(csrfInput);
+
+                    for (const [key, val] of params.entries()) {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = key;
+                        input.value = val;
+                        exportForm.appendChild(input);
+                    }
+
+                    document.body.appendChild(exportForm);
+                    exportForm.submit();
+                    setTimeout(() => exportForm.remove(), 2500);
                 });
             }
 

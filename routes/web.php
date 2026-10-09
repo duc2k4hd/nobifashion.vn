@@ -387,8 +387,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/api/parents', [CategoryController::class, 'getParents'])->name('api.parents');
 
             // Standard CRUD routes
-            Route::get('/export', [CategoryImportExportController::class, 'export'])->name('export');
-            Route::get('/export-data', [CategoryImportExportController::class, 'getExportData'])->name('export-data');
+            Route::match(['get', 'post'], '/export', [CategoryImportExportController::class, 'export'])->name('export');
+            Route::match(['get', 'post'], '/export-data', [CategoryImportExportController::class, 'getExportData'])->name('export-data');
             Route::get('/sample', [CategoryImportExportController::class, 'downloadSample'])->name('sample');
             Route::get('/import-excel', [CategoryImportExportController::class, 'importForm'])->name('import-excel');
             Route::post('/import-batch', [CategoryImportExportController::class, 'importBatch'])->name('import-batch');
