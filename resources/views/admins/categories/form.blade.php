@@ -603,26 +603,36 @@
     <script src="{{ asset('admins/vendor/slimselect/slimselect.min.js') }}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Auto-generate slug from name
+            // Auto-generate slug from name chuẩn tiếng Việt
             const nameInput = document.getElementById('name');
             const slugInput = document.getElementById('slug');
-            
+
+            function convertToSlug(text) {
+                return (text || '').toString().toLowerCase().trim()
+                    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                    .replace(/[đĐ]/g, 'd')
+                    .replace(/[^a-z0-9\s-]/g, '')
+                    .replace(/[\s_]+/g, '-')
+                    .replace(/-+/g, '-')
+                    .replace(/^-+|-+$/g, '');
+            }
+
             if (nameInput && slugInput) {
-                let slugManuallyEdited = false;
-                
+                let slugManuallyEdited = {{ $isEdit && !empty($category->slug) ? 'true' : 'false' }};
+
                 nameInput.addEventListener('input', () => {
-                    if (!slugManuallyEdited && !slugInput.value) {
-                        slugInput.value = nameInput.value
-                            .toLowerCase()
-                            .normalize('NFD')
-                            .replace(/[\u0300-\u036f]/g, '')
-                            .replace(/[^a-z0-9]+/g, '-')
-                            .replace(/^-+|-+$/g, '');
+                    if (!slugManuallyEdited) {
+                        slugInput.value = convertToSlug(nameInput.value);
                     }
                 });
-                
+
                 slugInput.addEventListener('input', () => {
-                    slugManuallyEdited = slugInput.value.length > 0;
+                    if (slugInput.value.trim() === '') {
+                        slugManuallyEdited = false;
+                        slugInput.value = convertToSlug(nameInput.value);
+                    } else {
+                        slugManuallyEdited = true;
+                    }
                 });
             }
             
