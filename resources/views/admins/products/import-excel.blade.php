@@ -396,9 +396,8 @@
             <div>
                 <h1>Import sản phẩm từ Excel</h1>
                 <p>
-                    Trang này dùng để tạo mới hoặc cập nhật sản phẩm hàng loạt bằng file Excel. Toàn bộ hình ảnh được điền
-                    trực tiếp vào cột <code>images</code> (hoặc <code>Hình ảnh</code>) trong sheet <code>products</code>, ngăn cách bởi dấu phẩy.
-                    Ảnh đầu tiên là ảnh chính, các ảnh sau là ảnh phụ. Hệ thống đã <strong>bỏ hẳn sheet images</strong> giúp thao tác nhanh và tiện lợi hơn.
+                    Trang này dùng để tạo mới hoặc cập nhật sản phẩm hàng loạt bằng file Excel. Toàn bộ hình ảnh, màu sắc và kích thước được điền
+                    trực tiếp trong sheet <code>products</code>. Hệ thống đã <strong>bỏ hoàn toàn sheet images và sheet variants</strong> giúp file siêu nhẹ, xuất tải cực nhanh và thao tác đơn giản nhất.
                 </p>
             </div>
 
@@ -458,13 +457,32 @@
             </ul>
         </div>
 
+        <div class="import-note import-note-info" style="border-left: 5px solid #0284c7; background: #f0f9ff;">
+            <h3 style="color: #0369a1; margin-top: 0;">⚡ Mới: Nhập biến thể cực nhanh ngay trong sheet products (Không cần sheet variants)</h3>
+            <p style="margin-bottom: 8px; color: #0c4a6e;">
+                Bạn không cần phải tạo sheet <code>product_variants</code> phức tạp. Chỉ cần điền 2 cột trực tiếp trong sheet <code>products</code>:
+            </p>
+            <ul style="color: #0c4a6e;">
+                <li><strong>Danh Sách Màu Sắc (hoặc colors)</strong>: Điền các màu cách nhau dấu phẩy. Ví dụ: <code>Xanh Navy, Xám Melange, Trắng, Đen</code> hoặc <code>Trắng, Đen</code>.</li>
+                <li><strong>Danh Sách Kích Thước (Size) (hoặc sizes)</strong>: Điền các size cách nhau dấu phẩy. Ví dụ: <code>S, M, L, XL, 2XL</code> (Nếu sản phẩm chỉ có màu không có size, chỉ cần <strong>để trống</strong> cột này).</li>
+                <li><strong>Hệ thống tự động</strong>:
+                    <ul>
+                        <li>Tự tạo tổ hợp biến thể (Màu x Size, hoặc chỉ Màu nếu size trống).</li>
+                        <li>Tự phân bổ số lượng tồn kho đều cho từng biến thể và đồng bộ tổng tồn kho lên sản phẩm cha.</li>
+                        <li>Biến thể không có SKU riêng (để trống/null), tự động lấy giá và giá khuyến mãi theo sản phẩm chung nếu có.</li>
+                        <li>Khi xuất file Excel (Export), hệ thống cũng tự động tổng hợp danh sách Màu và Size vào 2 cột này.</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
         <div class="import-card">
             <h2>Quy trình chuẩn để tạo / cập nhật sản phẩm</h2>
             <ol>
-                <li>Bấm <strong>Export toàn bộ sản phẩm</strong> để lấy template chuẩn mới nhất của hệ thống (đã có sẵn cột <code>images</code>).</li>
-                <li>Điền thông tin và hình ảnh trong sheet <code>products</code>.</li>
+                <li>Bấm <strong>Export toàn bộ sản phẩm</strong> để lấy template chuẩn mới nhất của hệ thống (đã có sẵn cột <code>images</code>, <code>colors</code>, <code>sizes</code>).</li>
+                <li>Điền thông tin, hình ảnh, màu sắc và kích thước trực tiếp trong sheet <code>products</code>.</li>
                 <li>Chuẩn bị sẵn file ảnh trong thư mục <code>public/clients/assets/img/clothes/</code> hoặc <code>public/clients/assets/img/imports/</code>.</li>
-                <li>Nếu sản phẩm có biến thể, điền thêm sheet <code>product_variants</code>. Nếu cần FAQ hoặc hướng dẫn sử dụng, điền thêm <code>product_faqs</code> và <code>product_how_tos</code>.</li>
+                <li>Nếu cần tạo câu hỏi thường gặp hoặc hướng dẫn sử dụng, điền thêm sheet <code>product_faqs</code> và <code>product_how_tos</code> (không bắt buộc).</li>
                 <li>Upload file Excel tại form bên dưới và kiểm tra kết quả ngay lập tức.</li>
             </ol>
         </div>
@@ -504,12 +522,7 @@
                     <tr>
                         <td><code>products</code></td>
                         <td>Có</td>
-                        <td>Tạo hoặc cập nhật thông tin sản phẩm và danh sách hình ảnh trực tiếp.</td>
-                    </tr>
-                    <tr>
-                        <td><code>product_variants</code></td>
-                        <td>Không</td>
-                        <td>Tạo hoặc cập nhật biến thể theo SKU sản phẩm cha.</td>
+                        <td>Tạo hoặc cập nhật thông tin sản phẩm, hình ảnh, màu sắc và kích thước trực tiếp.</td>
                     </tr>
                     <tr>
                         <td><code>product_faqs</code></td>
@@ -532,7 +545,7 @@
                 <summary>Sheet <code>products</code></summary>
                 <div class="import-details-body">
                     <p>Các cột đúng thứ tự:</p>
-                    <div class="import-code">sku | name | slug | description | short_description | price | sale_price | cost_price | stock_quantity | meta_title | meta_description | meta_keywords | meta_canonical | primary_category_slug | category_slugs | tag_slugs | is_featured | has_variants | created_by | is_active | brand_slug | link_shopee | images</div>
+                    <div class="import-code">sku | name | slug | description | short_description | price | sale_price | cost_price | stock_quantity | meta_title | meta_description | meta_keywords | meta_canonical | primary_category_slug | category_slugs | tag_slugs | is_featured | has_variants | created_by | is_active | brand_slug | link_shopee | images | colors | sizes</div>
 
                     <table class="import-table">
                         <thead>
@@ -557,6 +570,16 @@
                                 <td><code>images</code> / <code>Hình ảnh</code></td>
                                 <td>Danh sách tên ảnh có đuôi cách nhau dấu phẩy. <strong>Ảnh đầu tiên là ảnh chính</strong>, các ảnh sau là ảnh phụ. Bắt buộc có khi tạo mới.</td>
                                 <td><code>polo-nam-1.webp, polo-nam-2.webp, polo-nam-3.webp</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>colors</code> / <code>Danh Sách Màu Sắc</code></td>
+                                <td>(Tùy chọn) Danh sách màu sắc cách nhau dấu phẩy. Hệ thống tự động sinh các biến thể và SKU theo màu.</td>
+                                <td><code>Xanh Navy, Xám Melange, Trắng, Đen</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>sizes</code> / <code>Danh Sách Kích Thước (Size)</code></td>
+                                <td>(Tùy chọn) Danh sách kích thước cách nhau dấu phẩy. Nếu không có size thì để trống.</td>
+                                <td><code>S, M, L, XL, 2XL</code></td>
                             </tr>
                             <tr>
                                 <td><code>price</code></td>
@@ -590,7 +613,7 @@
                             </tr>
                             <tr>
                                 <td><code>has_variants</code></td>
-                                <td><code>1</code> nếu có biến thể, <code>0</code> nếu không.</td>
+                                <td><code>1</code> nếu có biến thể, <code>0</code> nếu không (hệ thống tự động bật 1 nếu có nhập màu/size).</td>
                                 <td><code>1</code></td>
                             </tr>
                             <tr>
@@ -601,26 +624,7 @@
                         </tbody>
                     </table>
 
-                    <div class="import-code">AOPOLO-NAM-001 | Áo polo nam basic | ao-polo-nam-basic | Mô tả dài... | Mô tả ngắn... | 390000 | 331500 | 250000 | 30 | Áo polo nam basic | Polo nam cotton | polo,cotton,nam |  | ao-polo-nam | ao-nam,ao-polo-nam | Hàng mới,Áo polo,Cotton | 1 | 0 | 1 | 1 | yody |  | polo-1.webp, polo-2.webp</div>
-                </div>
-            </details>
-
-            <details class="import-details">
-                <summary>Sheet <code>product_variants</code></summary>
-                <div class="import-details-body">
-                    <p>Các cột tối thiểu:</p>
-                    <div class="import-code">sku | price | stock_quantity | attributes_color | attributes_size | image_key</div>
-
-                    <ul>
-                        <li><code>sku</code> ở đây là SKU của sản phẩm cha, không phải SKU riêng của variant.</li>
-                        <li>Hệ thống đọc mọi cột bắt đầu bằng <code>attributes_</code>, ví dụ <code>attributes_color</code>, <code>attributes_size</code>, <code>attributes_material</code>.</li>
-                        <li><code>image_key</code> phải trỏ về một key đã có trong sheet <code>images</code>.</li>
-                        <li>Nếu một sản phẩm có 5 variant trong file thì sau import, DB sẽ còn đúng 5 variant đó.</li>
-                    </ul>
-
-                    <div class="import-code">AOPOLO-NAM-001 | 331500 | 12 | Xám | M | IMG_AOPOLO_01
-AOPOLO-NAM-001 | 331500 | 8 | Xám | L | IMG_AOPOLO_01
-AOPOLO-NAM-001 | 331500 | 10 | Đen | M | IMG_AOPOLO_03</div>
+                    <div class="import-code">AOPOLO-NAM-001 | Áo polo nam basic | ao-polo-nam-basic | Mô tả dài... | Mô tả ngắn... | 390000 | 331500 | 250000 | 30 | Áo polo nam basic | Polo nam cotton | polo,cotton,nam |  | ao-polo-nam | ao-nam,ao-polo-nam | Hàng mới,Áo polo,Cotton | 1 | 0 | 1 | 1 | yody |  | polo-1.webp, polo-2.webp | Trắng, Đen | M, L, XL, 2XL</div>
                 </div>
             </details>
 

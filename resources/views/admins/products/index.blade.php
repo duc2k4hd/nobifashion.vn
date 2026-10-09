@@ -769,6 +769,7 @@
             color: #0f172a;
             border-color: #94a3b8;
         }
+        .btn-modern-green,
         .btn-modern-excel {
             display: inline-flex;
             align-items: center;
@@ -783,6 +784,7 @@
             border: 1px solid #bbf7d0;
             transition: all 0.15s ease;
         }
+        .btn-modern-green:hover,
         .btn-modern-excel:hover {
             background: #15803d;
             color: #ffffff;

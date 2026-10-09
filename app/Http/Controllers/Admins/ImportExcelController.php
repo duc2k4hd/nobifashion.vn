@@ -299,7 +299,10 @@ class ImportExcelController extends Controller
 
                 $productRow = 2;
                 $this->buildFilterQuery($request)
-                    ->with(['images' => fn ($q) => $q->orderBy('is_primary', 'desc')->orderBy('order', 'asc')->orderBy('id', 'asc')])
+                    ->with([
+                        'images' => fn ($q) => $q->orderBy('is_primary', 'desc')->orderBy('order', 'asc')->orderBy('id', 'asc'),
+                        'variants',
+                    ])
                     ->select([
                         'id',
                         'sku',
@@ -417,43 +420,6 @@ class ImportExcelController extends Controller
                             }
 
                             unset($howTos);
-                        }
-
-                        unset($products, $productsById, $productIds);
-                        gc_collect_cycles();
-                    });
-
-                $variantsSheet = $spreadsheet->createSheet();
-                $variantsSheet->setTitle(ProductWorkbookSchema::SHEET_VARIANTS);
-                $variantsSheet->fromArray(ProductWorkbookSchema::variantHeaders(), null, 'A1');
-                $variantRow = 2;
-
-                $this->buildFilterQuery($request)
-                    ->select(['id', 'sku'])
-                    ->chunkById($chunkSize, function ($products) use ($variantsSheet, &$variantRow) {
-                        $productsById = $products->keyBy('id');
-                        $productIds = $productsById->keys()->all();
-
-                        if ($productIds !== []) {
-                            $variants = ProductVariant::query()
-                                ->whereIn('product_id', $productIds)
-                                ->orderBy('product_id')
-                                ->orderBy('id')
-                                ->get();
-
-                            foreach ($variants as $variant) {
-                                $sku = $productsById[$variant->product_id]->sku ?? '';
-                                if ($sku === '') {
-                                    continue;
-                                }
-
-                                $variantsSheet->fromArray([
-                                    $this->buildVariantExportRow($sku, $variant),
-                                ], null, 'A'.$variantRow);
-                                $variantRow++;
-                            }
-
-                            unset($variants);
                         }
 
                         unset($products, $productsById, $productIds);
@@ -722,6 +688,24 @@ class ImportExcelController extends Controller
             // Ánh xạ các alias tiếng Việt phổ biến cho cột hình ảnh
             if (in_array($normalized, ['hình ảnh', 'hinh_anh', 'hinh anh', 'ảnh', 'anh', 'image', 'photos'], true)) {
                 $headerIndex['images'] = $index;
+            }
+
+            // Ánh xạ các alias cho cột Màu sắc
+            if (in_array($normalized, [
+                'danh sách màu sắc', 'danh sach mau sac', 'màu sắc', 'mau sac',
+                'màu', 'mau', 'colors', 'color', 'danh_sach_mau_sac'
+            ], true)) {
+                $headerIndex['colors'] = $index;
+            }
+
+            // Ánh xạ các alias cho cột Kích thước
+            if (in_array($normalized, [
+                'danh sách kích thước (size)', 'danh sách kích thước',
+                'danh sach kich thuoc (size)', 'danh sach kich thuoc',
+                'kích thước (size)', 'kích thước', 'kich thuoc', 'kich_thuoc',
+                'sizes', 'size', 'danh_sach_kich_thuoc'
+            ], true)) {
+                $headerIndex['sizes'] = $index;
             }
         }
 
@@ -1016,6 +1000,28 @@ class ImportExcelController extends Controller
             }
         }
 
+        // Trích xuất danh sách Màu sắc và Kích thước từ các biến thể (variants) của sản phẩm
+        $colorsList = [];
+        $sizesList = [];
+        $productVariants = $product->relationLoaded('variants')
+            ? $product->variants
+            : $product->variants()->get();
+
+        foreach ($productVariants as $v) {
+            $attrs = is_array($v->attributes) ? $v->attributes : (json_decode($v->attributes, true) ?: []);
+            $colorVal = trim((string) ($attrs['color'] ?? ''));
+            $sizeVal = trim((string) ($attrs['size'] ?? ''));
+
+            if ($colorVal !== '' && !in_array($colorVal, $colorsList, true)) {
+                $colorsList[] = $colorVal;
+            }
+            if ($sizeVal !== '' && !in_array($sizeVal, $sizesList, true)) {
+                $sizesList[] = $sizeVal;
+            }
+        }
+        $colorsString = implode(', ', $colorsList);
+        $sizesString = implode(', ', $sizesList);
+
         return [
             $product->sku,
             $product->name,
@@ -1040,6 +1046,8 @@ class ImportExcelController extends Controller
             $brandSlug,
             $product->link_shopee,
             $imagesString,
+            $colorsString,
+            $sizesString,
         ];
     }
 
@@ -1719,7 +1727,208 @@ class ImportExcelController extends Controller
             }
         }
 
-        $this->clearProductCacheEntry($product);
+        Cache::forget('product_detail_'.$product->slug);
+        Cache::forget('slug_type_'.$product->slug);
+    }
+
+    /**
+     * Chuyển giá trị thuộc tính (màu, size) thành mã viết hoa không dấu ngắn gọn phục vụ sinh SKU
+     */
+    private function generateVariantAttributeCode(string $value): string
+    {
+        $ascii = Str::ascii($value);
+        $clean = preg_replace('/[^a-zA-Z0-9]+/', '', $ascii);
+        $code = strtoupper($clean);
+        if ($code === '') {
+            $code = strtoupper(substr(md5($value), 0, 4));
+        }
+
+        return substr($code, 0, 10);
+    }
+
+    /**
+     * Tự động đồng bộ biến thể (variants) từ 2 cột Danh Sách Màu Sắc và Danh Sách Kích Thước (Size)
+     */
+    private function syncProductVariantsFromAttributes(Product $product, string $colorsRaw, string $sizesRaw, array &$errors, array $context = []): void
+    {
+        $colorsRaw = trim($colorsRaw);
+        $sizesRaw = trim($sizesRaw);
+
+        // Nếu cả hai cột đều trống, không can thiệp biến thể của sản phẩm
+        if ($colorsRaw === '' && $sizesRaw === '') {
+            return;
+        }
+
+        $splitValues = function (string $raw): array {
+            $parts = preg_split('/[,;\r\n]+/', $raw);
+            $result = [];
+            foreach ($parts as $p) {
+                $trimmed = trim($p);
+                if ($trimmed !== '' && !in_array($trimmed, $result, true)) {
+                    $result[] = $trimmed;
+                }
+            }
+            return $result;
+        };
+
+        $colors = $splitValues($colorsRaw);
+        $sizes = $splitValues($sizesRaw);
+
+        // Xây dựng danh sách tổ hợp biến thể
+        $combinations = [];
+        if (!empty($colors) && !empty($sizes)) {
+            // Tổ hợp Màu x Size
+            foreach ($colors as $c) {
+                foreach ($sizes as $s) {
+                    $combinations[] = [
+                        'name' => "{$product->name} - {$c} - {$s}",
+                        'attributes' => ['color' => $c, 'size' => $s],
+                        'color' => $c,
+                        'size' => $s,
+                    ];
+                }
+            }
+        } elseif (!empty($colors)) {
+            // Chỉ có màu
+            foreach ($colors as $c) {
+                $combinations[] = [
+                    'name' => "{$product->name} - {$c}",
+                    'attributes' => ['color' => $c],
+                    'color' => $c,
+                    'size' => null,
+                ];
+            }
+        } elseif (!empty($sizes)) {
+            // Chỉ có size
+            foreach ($sizes as $s) {
+                $combinations[] = [
+                    'name' => "{$product->name} - {$s}",
+                    'attributes' => ['size' => $s],
+                    'color' => null,
+                    'size' => $s,
+                ];
+            }
+        }
+
+        $totalCombos = count($combinations);
+        if ($totalCombos === 0) {
+            return;
+        }
+
+        // Phân bổ tồn kho từ sản phẩm cha
+        $parentStock = (int) ($product->stock_quantity ?? 0);
+        $defaultStockPerVariant = 50;
+
+        $allocatedStocks = [];
+        if ($parentStock > 0) {
+            $baseStock = intdiv($parentStock, $totalCombos);
+            $remainder = $parentStock % $totalCombos;
+            foreach ($combinations as $index => $combo) {
+                $allocatedStocks[$index] = $baseStock + ($index === 0 ? $remainder : 0);
+            }
+        } else {
+            // Nếu sản phẩm cha có stock = 0, mặc định gán 50 cho mỗi biến thể
+            foreach ($combinations as $index => $combo) {
+                $allocatedStocks[$index] = $defaultStockPerVariant;
+            }
+        }
+
+        // Lấy ảnh chính của sản phẩm (nếu có) để gán cho biến thể
+        $primaryImageId = Image::where('product_id', $product->id)
+            ->where('is_primary', true)
+            ->value('id')
+            ?? Image::where('product_id', $product->id)->value('id');
+
+        // Lấy toàn bộ biến thể hiện có của sản phẩm
+        $existingVariants = ProductVariant::where('product_id', $product->id)->get();
+        $keepVariantIds = [];
+
+        $baseProductSku = !empty($product->sku) ? $product->sku : ('NF-PRD' . str_pad((string) $product->id, 6, '0', STR_PAD_LEFT));
+
+        foreach ($combinations as $index => $combo) {
+            $color = $combo['color'];
+            $size = $combo['size'];
+            $stockForThis = $allocatedStocks[$index];
+
+            // Tìm biến thể cũ khớp thuộc tính
+            $matchedVariant = null;
+            foreach ($existingVariants as $exV) {
+                $attrs = is_array($exV->attributes) ? $exV->attributes : (json_decode($exV->attributes, true) ?: []);
+                $exColor = trim((string) ($attrs['color'] ?? ''));
+                $exSize = trim((string) ($attrs['size'] ?? ''));
+
+                $colorMatches = ($color === null && $exColor === '') || (mb_strtolower(trim((string)$color)) === mb_strtolower($exColor));
+                $sizeMatches = ($size === null && $exSize === '') || (mb_strtolower(trim((string)$size)) === mb_strtolower($exSize));
+
+                if ($colorMatches && $sizeMatches) {
+                    $matchedVariant = $exV;
+                    break;
+                }
+            }
+
+            // Giá và giá khuyến mãi lấy từ sản phẩm chung nếu có
+            $variantPrice = (float) ($product->price ?? 0);
+            $variantSalePrice = ($product->sale_price !== null && $product->sale_price !== '')
+                ? (float) $product->sale_price
+                : null;
+
+            if ($matchedVariant) {
+                // Cập nhật biến thể cũ: không có SKU riêng, đồng bộ giá từ sản phẩm chung
+                $matchedVariant->update([
+                    'sku' => null,
+                    'name' => $combo['name'],
+                    'price' => $variantPrice,
+                    'sale_price' => $variantSalePrice,
+                    'stock_quantity' => $stockForThis,
+                    'attributes' => $combo['attributes'],
+                    'is_active' => (bool) $product->is_active,
+                    'image_id' => $matchedVariant->image_id ?: $primaryImageId,
+                ]);
+                $keepVariantIds[] = $matchedVariant->id;
+            } else {
+                // Tạo mới biến thể: không có SKU riêng, đồng bộ giá từ sản phẩm chung
+                $newVariant = ProductVariant::create([
+                    'product_id' => $product->id,
+                    'sku' => null,
+                    'name' => $combo['name'],
+                    'price' => $variantPrice,
+                    'sale_price' => $variantSalePrice,
+                    'stock_quantity' => $stockForThis,
+                    'attributes' => $combo['attributes'],
+                    'is_active' => (bool) $product->is_active,
+                    'image_id' => $primaryImageId,
+                ]);
+                $keepVariantIds[] = $newVariant->id;
+            }
+        }
+
+        // Xử lý các biến thể cũ không còn trong danh sách tổ hợp mới
+        $obsoleteVariants = $existingVariants->whereNotIn('id', $keepVariantIds);
+        foreach ($obsoleteVariants as $obsV) {
+            $hasOrders = $obsV->orderItems()->exists();
+            if ($hasOrders) {
+                // Nếu đã có đơn hàng thì không xóa, chỉ tắt kích hoạt và đưa tồn kho về 0
+                $obsV->update([
+                    'is_active' => false,
+                    'stock_quantity' => 0,
+                ]);
+            } else {
+                $obsV->delete();
+            }
+        }
+
+        // Tính lại tổng tồn kho từ tất cả biến thể đang hoạt động và cập nhật lại sản phẩm cha
+        $totalActiveStock = (int) ProductVariant::where('product_id', $product->id)
+            ->where('is_active', true)
+            ->sum('stock_quantity');
+
+        $product->update([
+            'has_variants' => true,
+            'stock_quantity' => $totalActiveStock,
+        ]);
+
+        Cache::forget('product_detail_'.$product->slug);
+        Cache::forget('slug_type_'.$product->slug);
     }
 
     /**
@@ -1786,6 +1995,8 @@ class ImportExcelController extends Controller
                 : (Auth::check() ? Auth::id() : 1);
             $linkShopee = $this->getTrimmedRowValueByHeader($row, $headerIndex, ['link_shopee'], trim((string) ($row[21] ?? $row[22] ?? '')));
             $imagesRaw = $this->getTrimmedRowValueByHeader($row, $headerIndex, ['images', 'image', 'hinh_anh', 'hình ảnh', 'hinh anh', 'photos'], trim((string) ($row[22] ?? '')));
+            $colorsRaw = $this->getTrimmedRowValueByHeader($row, $headerIndex, ['colors', 'color', 'danh sách màu sắc', 'màu sắc', 'màu', 'mau'], trim((string) ($row[23] ?? '')));
+            $sizesRaw = $this->getTrimmedRowValueByHeader($row, $headerIndex, ['sizes', 'size', 'danh sách kích thước (size)', 'danh sách kích thước', 'kích thước (size)', 'kích thước'], trim((string) ($row[24] ?? '')));
 
             $imageNames = [];
             if ($imagesRaw !== '') {
@@ -2064,6 +2275,10 @@ class ImportExcelController extends Controller
                 $hasOtherData = true;
             }
 
+            if ($colorsRaw !== '' || $sizesRaw !== '') {
+                $hasOtherData = true;
+            }
+
             // KIỂM TRA: Nếu hàng quá trống (chỉ có SKU và name, không có dữ liệu khác) → bỏ qua
             if (empty($name) || !$hasOtherData) {
                 // Không có dữ liệu để xử lý, bỏ qua hàng này
@@ -2207,6 +2422,15 @@ class ImportExcelController extends Controller
                         }
                     }
                 }
+
+                // Tự động đồng bộ biến thể nếu cột Danh Sách Màu Sắc hoặc Danh Sách Kích Thước có dữ liệu
+                if ($colorsRaw !== '' || $sizesRaw !== '') {
+                    $this->syncProductVariantsFromAttributes($product, $colorsRaw, $sizesRaw, $errors, [
+                        'sku' => $sku,
+                        'row' => $rowIndex + 2,
+                        'sheet' => $sheetTitle,
+                    ]);
+                }
                 } else {
                     // Create: tạo mới với SKU
                     // Đảm bảo có đủ dữ liệu tối thiểu (đã check ở trên)
@@ -2220,6 +2444,15 @@ class ImportExcelController extends Controller
                         'row' => $rowIndex + 2,
                         'sheet' => $sheetTitle,
                     ]);
+
+                    // Tự động đồng bộ biến thể nếu cột Danh Sách Màu Sắc hoặc Danh Sách Kích Thước có dữ liệu
+                    if ($colorsRaw !== '' || $sizesRaw !== '') {
+                        $this->syncProductVariantsFromAttributes($newProduct, $colorsRaw, $sizesRaw, $errors, [
+                            'sku' => $sku,
+                            'row' => $rowIndex + 2,
+                            'sheet' => $sheetTitle,
+                        ]);
+                    }
 
                     // Cập nhật usage_count cho tags (tăng cho tags mới)
                     $newTagIds = $data['tag_ids'] ?? [];
@@ -3573,7 +3806,10 @@ class ImportExcelController extends Controller
                 
                 // Query products từ chunk này - dùng chunkById để tránh OOM
                 Product::whereIn('id', $productIds)
-                    ->with(['images' => fn ($q) => $q->orderBy('is_primary', 'desc')->orderBy('order', 'asc')->orderBy('id', 'asc')])
+                    ->with([
+                        'images' => fn ($q) => $q->orderBy('is_primary', 'desc')->orderBy('order', 'asc')->orderBy('id', 'asc'),
+                        'variants',
+                    ])
                     ->select([
                         'id', 'sku', 'name', 'slug', 'description', 'short_description',
                         'price', 'sale_price', 'cost_price', 'stock_quantity',
@@ -3710,53 +3946,7 @@ class ImportExcelController extends Controller
                 unset($productIds);
                 gc_collect_cycles();
             }
-            unset($chunkFilesForHowTos);
-
-            // =========================
-            // Sheet 5: Variants
-            // =========================
-            $variantsSheet = $writer->addNewSheetAndMakeItCurrent();
-            $variantsSheet->setName(ProductWorkbookSchema::SHEET_VARIANTS);
-            
-            $variantsHeaders = ProductWorkbookSchema::variantHeaders();
-            $variantsHeaderCells = array_map(fn($value) => Cell::fromValue($value), $variantsHeaders);
-            $writer->addRow(new Row($variantsHeaderCells));
-
-            // Đọc lại từ chunk files - KHÔNG load tất cả IDs
-            $chunkFilesForVariants = glob("{$exportDir}/{$sessionId}_chunk_*.json");
-            sort($chunkFilesForVariants);
-            
-            foreach ($chunkFilesForVariants as $chunkFile) {
-                if (!file_exists($chunkFile)) {
-                    continue;
-                }
-                
-                $productIds = json_decode(file_get_contents($chunkFile), true);
-                if (!is_array($productIds) || empty($productIds)) {
-                    unset($productIds);
-                    continue;
-                }
-                
-                ProductVariant::whereIn('product_id', $productIds)
-                ->orderBy('product_id')
-                ->chunkById(200, function ($variantsChunk) use ($writer, $productIdToSku) {
-                    foreach ($variantsChunk as $variant) {
-                        $sku = $productIdToSku[$variant->product_id] ?? '';
-
-                        $rowValues = $this->buildVariantExportRow($sku, $variant);
-                        
-                        $rowCells = array_map(fn($value) => Cell::fromValue($value), $rowValues);
-                        $writer->addRow(new Row($rowCells));
-                    }
-
-                    unset($variantsChunk);
-                    gc_collect_cycles();
-                    });
-                
-                unset($productIds);
-                gc_collect_cycles();
-            }
-            unset($chunkFilesForVariants, $productIdToSku); // Cleanup
+            unset($chunkFilesForHowTos, $productIdToSku);
 
             // Close writer
             $writer->close();

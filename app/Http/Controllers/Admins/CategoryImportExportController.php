@@ -915,12 +915,19 @@ class CategoryImportExportController extends Controller
             }
         }
 
-        // Lọc cấp bậc (level: root hoặc child)
+        // Lọc cấp bậc (level: root, all_children/child, direct_child, descendant/sub_child)
         if ($level = $request->input('level')) {
             if ($level === 'root') {
                 $query->whereNull('parent_id');
-            } elseif ($level === 'child') {
+            } elseif ($level === 'all_children' || $level === 'child') {
+                // Toàn bộ con + cháu chắt chút chít
                 $query->whereNotNull('parent_id');
+            } elseif ($level === 'direct_child') {
+                // Danh mục con trực tiếp sau gốc
+                $query->whereIn('parent_id', Category::whereNull('parent_id')->select('id'));
+            } elseif ($level === 'descendant' || $level === 'sub_child') {
+                // Toàn bộ cháu chắt chút chít
+                $query->whereIn('parent_id', Category::whereNotNull('parent_id')->select('id'));
             }
         }
 

@@ -20,7 +20,7 @@ class CategoryController extends Controller
                 'meta_title', 'meta_description', 'meta_keywords',
                 'created_at', 'updated_at'
             ])
-            ->with(['parent:id,name,slug'])
+            ->with(['parent:id,name,slug,parent_id'])
             ->withCount([
                 'primaryProducts as product_count',
                 'allChildren as child_count'
@@ -45,8 +45,15 @@ class CategoryController extends Controller
         if ($level = $request->get('level')) {
             if ($level === 'root') {
                 $query->whereNull('parent_id');
-            } elseif ($level === 'child') {
+            } elseif ($level === 'all_children' || $level === 'child') {
+                // Toàn bộ con + cháu chắt chút chít (tất cả danh mục không phải gốc)
                 $query->whereNotNull('parent_id');
+            } elseif ($level === 'direct_child') {
+                // Danh mục con trực tiếp sau gốc (cha của nó là danh mục gốc)
+                $query->whereIn('parent_id', Category::whereNull('parent_id')->select('id'));
+            } elseif ($level === 'descendant' || $level === 'sub_child') {
+                // Toàn bộ cháu chắt chút chít (các cấp con sâu hơn từ cháu trở xuống)
+                $query->whereIn('parent_id', Category::whereNotNull('parent_id')->select('id'));
             }
         }
 

@@ -985,6 +985,10 @@ class YodyCrawlerService
                 $row[18] ?? null,
                 $row[19] ?? null,
                 $row[20] ?? null,
+                $row[21] ?? null,
+                $row[22] ?? null,
+                $row[23] ?? null,
+                $row[24] ?? null,
             ];
         }, $rows);
     }

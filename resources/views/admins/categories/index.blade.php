@@ -738,8 +738,10 @@
                 <label for="filter-level">Cấp bậc</label>
                 <select id="filter-level" name="level">
                     <option value="">-- Tất cả cấp --</option>
-                    <option value="root" {{ request('level') === 'root' ? 'selected' : '' }}>📁 Danh mục gốc (Cha)</option>
-                    <option value="child" {{ request('level') === 'child' ? 'selected' : '' }}>↳ Danh mục con</option>
+                    <option value="root" {{ request('level') === 'root' ? 'selected' : '' }}>📁 Danh mục gốc</option>
+                    <option value="all_children" {{ request('level') === 'all_children' || request('level') === 'child' ? 'selected' : '' }}>↳ Toàn bộ con + cháu chắt chút chít</option>
+                    <option value="direct_child" {{ request('level') === 'direct_child' ? 'selected' : '' }}>↳ Danh mục con sau gốc</option>
+                    <option value="descendant" {{ request('level') === 'descendant' || request('level') === 'sub_child' ? 'selected' : '' }}>↳↳ Toàn bộ cháu chắt chút chít</option>
                 </select>
             </div>
 
@@ -877,7 +879,11 @@
                                     <div class="cat-info">
                                         <div class="cat-name">
                                             @if($category->parent_id)
-                                                <span class="tree-indent" title="Danh mục con">↳</span>
+                                                @if($category->parent?->parent_id)
+                                                    <span class="tree-indent text-muted" title="Danh mục cháu chắt chút chít" style="font-size: 11px; letter-spacing: -2px; margin-right: 2px;">↳↳</span>
+                                                @else
+                                                    <span class="tree-indent" title="Danh mục con sau gốc">↳</span>
+                                                @endif
                                             @endif
                                             <span>{{ $category->name }}</span>
                                             @if(!$category->parent_id)
