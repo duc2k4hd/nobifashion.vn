@@ -1614,39 +1614,80 @@ class ImportExcelController extends Controller
     /**
      * Xác thực và tìm file ảnh nhanh chóng.
      * Kiểm tra trong public/clients/assets/img/clothes trước, nếu chưa có thì tìm trong imports rồi copy sang.
+     * Hỗ trợ chuẩn hóa URL và tải link ảnh online nếu có.
      */
     private function resolveImageFile(string $fileName): ?string
     {
-        $fileName = basename(trim($fileName));
-        if ($fileName === '') {
+        $rawName = trim($fileName);
+        if ($rawName === '') {
             return null;
         }
 
-        if (array_key_exists($fileName, self::$imageFileExistenceCache)) {
-            return self::$imageFileExistenceCache[$fileName];
+        // Tách lấy filename nếu là URL hoặc path
+        $parsedPath = parse_url($rawName, PHP_URL_PATH);
+        $cleanFileName = basename($parsedPath ?: $rawName);
+        $cleanFileName = trim($cleanFileName);
+
+        if ($cleanFileName === '' || $cleanFileName === '/' || $cleanFileName === '.') {
+            return null;
+        }
+
+        // Kiểm tra cache kiểm tra file tĩnh để tăng tốc O(1)
+        if (array_key_exists($cleanFileName, self::$imageFileExistenceCache)) {
+            $cached = self::$imageFileExistenceCache[$cleanFileName];
+            if ($cached !== null) {
+                return $cached;
+            }
         }
 
         $clothesDir = public_path('clients/assets/img/clothes');
-        $clothesPath = $clothesDir . DIRECTORY_SEPARATOR . $fileName;
+        $clothesPath = $clothesDir . DIRECTORY_SEPARATOR . $cleanFileName;
 
-        if (is_file($clothesPath)) {
-            return self::$imageFileExistenceCache[$fileName] = $fileName;
+        if (is_file($clothesPath) && @filesize($clothesPath) > 0) {
+            return self::$imageFileExistenceCache[$cleanFileName] = $cleanFileName;
         }
 
         $importsDir = public_path('clients/assets/img/imports');
-        $importsPath = $importsDir . DIRECTORY_SEPARATOR . $fileName;
+        $importsPath = $importsDir . DIRECTORY_SEPARATOR . $cleanFileName;
 
-        if (is_file($importsPath)) {
+        if (is_file($importsPath) && @filesize($importsPath) > 0) {
             if (! is_dir($clothesDir)) {
                 @mkdir($clothesDir, 0755, true);
             }
             @copy($importsPath, $clothesPath);
-            if (is_file($clothesPath)) {
-                return self::$imageFileExistenceCache[$fileName] = $fileName;
+            if (is_file($clothesPath) && @filesize($clothesPath) > 0) {
+                return self::$imageFileExistenceCache[$cleanFileName] = $cleanFileName;
             }
         }
 
-        return self::$imageFileExistenceCache[$fileName] = null;
+        // Nếu là URL online hợp lệ (bắt đầu bằng http:// hoặc https://)
+        if (Str::startsWith($rawName, ['http://', 'https://'])) {
+            $host = parse_url($rawName, PHP_URL_HOST);
+            if ($host && in_array(strtolower($host), ['nobifashion.vn', 'www.nobifashion.vn', 'localhost', '127.0.0.1'], true)) {
+                // Link trỏ về máy chủ hiện tại nhưng file vật lý không có trên đĩa -> coi như file không tồn tại
+                return self::$imageFileExistenceCache[$cleanFileName] = null;
+            }
+
+            try {
+                $response = \Illuminate\Support\Facades\Http::timeout(3)->get($rawName);
+                if ($response->successful()) {
+                    $body = $response->body();
+                    if (strlen($body) > 0) {
+                        if (! is_dir($clothesDir)) {
+                            @mkdir($clothesDir, 0755, true);
+                        }
+                        file_put_contents($clothesPath, $body);
+                        if (is_file($clothesPath) && @filesize($clothesPath) > 0) {
+                            return self::$imageFileExistenceCache[$cleanFileName] = $cleanFileName;
+                        }
+                    }
+                }
+            } catch (\Throwable) {
+                // Link hỏng, lỗi mạng, timeout
+            }
+        }
+
+        return self::$imageFileExistenceCache[$cleanFileName] = null;
     }
 
     /**
@@ -1999,14 +2040,28 @@ class ImportExcelController extends Controller
             $colorsRaw = $this->getTrimmedRowValueByHeader($row, $headerIndex, ['colors', 'color', 'danh sách màu sắc', 'màu sắc', 'màu', 'mau'], trim((string) ($row[23] ?? '')));
             $sizesRaw = $this->getTrimmedRowValueByHeader($row, $headerIndex, ['sizes', 'size', 'danh sách kích thước (size)', 'danh sách kích thước', 'kích thước (size)', 'kích thước'], trim((string) ($row[24] ?? '')));
 
-            $imageNames = [];
+            $rawImageParts = [];
             if ($imagesRaw !== '') {
-                $rawImageParts = array_map('trim', explode(',', $imagesRaw));
-                foreach ($rawImageParts as $imgPart) {
-                    $cleanImg = basename(trim((string) $imgPart));
-                    if ($cleanImg !== '' && ! in_array($cleanImg, $imageNames, true)) {
-                        $imageNames[] = $cleanImg;
+                $parts = preg_split('/[\r\n,]+/', $imagesRaw);
+                foreach ($parts as $p) {
+                    $p = trim((string) $p);
+                    if ($p !== '' && ! in_array($p, $rawImageParts, true)) {
+                        $rawImageParts[] = $p;
                     }
+                }
+            }
+
+            // Lọc danh sách các ảnh dùng được (file tồn tại trên máy chủ hoặc tải được) theo đúng thứ tự
+            $usableImages = [];
+            $invalidImages = [];
+            foreach ($rawImageParts as $rawImg) {
+                $resolvedFile = $this->resolveImageFile($rawImg);
+                if ($resolvedFile !== null) {
+                    if (! in_array($resolvedFile, $usableImages, true)) {
+                        $usableImages[] = $resolvedFile;
+                    }
+                } else {
+                    $invalidImages[] = $rawImg;
                 }
             }
 
@@ -2305,27 +2360,34 @@ class ImportExcelController extends Controller
                     continue;
                 }
 
-                // Kiểm tra ảnh: Nếu không có ảnh hoặc ảnh chưa có sẵn trên đĩa thì cảnh báo nhưng VẪN TIẾP TỤC tạo sản phẩm và biến thể
-                if (empty($imageNames)) {
+                // Kiểm tra ảnh theo yêu cầu:
+                // - Nếu không có ảnh nào dùng được (hoặc không chỉ định ảnh) -> bỏ qua sản phẩm không tạo mới!
+                // - Nếu chỉ có 1 ảnh mà dùng được -> tạo bình thường, nếu không dùng được cũng bỏ qua.
+                // - Nếu có nhiều ảnh mà ảnh đầu bị lỗi -> lấy ảnh tiếp theo dùng được làm ảnh chính cho đến hết.
+                if (empty($usableImages)) {
+                    $reason = empty($rawImageParts)
+                        ? "Không có hình ảnh được chỉ định trong file Excel."
+                        : "Tất cả ảnh/link chỉ định đều không tồn tại file vật lý trên hệ thống hoặc bị lỗi: [" . implode(', ', $invalidImages) . "].";
+
                     $errors[] = [
-                        'type' => 'IMAGE_WARNING',
-                        'sku' => $sku,
-                        'message' => "Sản phẩm '{$name}' (SKU: {$sku}): Không có hình ảnh được chỉ định.",
+                        'type' => 'PRODUCT_SKIPPED_NO_VALID_IMAGE',
+                        'sku' => $sku ?: 'N/A',
+                        'message' => "BỎ QUA SẢN PHẨM '{$name}' (SKU: {$sku}): {$reason}",
                         'row' => $rowIndex + 2,
                         'sheet' => $sheetTitle,
                     ];
-                } else {
-                    $primaryImageName = $imageNames[0];
-                    $resolvedPrimary = $this->resolveImageFile($primaryImageName);
-                    if (! $resolvedPrimary) {
-                        $errors[] = [
-                            'type' => 'PRIMARY_IMAGE_WARNING',
-                            'sku' => $sku,
-                            'message' => "Sản phẩm '{$name}' (SKU: {$sku}): Ảnh chính '{$primaryImageName}' chưa có sẵn trên đĩa (thư mục clothes hoặc imports). Đã tạo sản phẩm và biến thể, vui lòng bổ sung file ảnh sau.",
-                            'row' => $rowIndex + 2,
-                            'sheet' => $sheetTitle,
-                        ];
-                    }
+                    continue; // BỎ QUA SẢN PHẨM KHÔNG TẠO MỚI
+                }
+
+                // Nếu ảnh đầu tiên trong file Excel bị lỗi/thiếu và hệ thống tự động chọn ảnh tiếp theo làm ảnh chính
+                if (! empty($invalidImages) && count($rawImageParts) > 0 && ! in_array($rawImageParts[0], $usableImages, true)) {
+                    $errors[] = [
+                        'type' => 'PRIMARY_IMAGE_FALLBACK',
+                        'sku' => $sku ?: 'N/A',
+                        'message' => "Sản phẩm '{$name}' (SKU: {$sku}): Ảnh đầu '{$rawImageParts[0]}' không tồn tại file. Đã tự động chọn ảnh tiếp theo hợp lệ '{$usableImages[0]}' làm ảnh chính.",
+                        'row' => $rowIndex + 2,
+                        'sheet' => $sheetTitle,
+                    ];
                 }
 
                 // Đảm bảo có giá trị mặc định cho các trường bắt buộc khi tạo mới
@@ -2406,24 +2468,29 @@ class ImportExcelController extends Controller
 
                 // Đồng bộ lại hình ảnh nếu cột Hình ảnh có truyền vào
                 if ($imagesRaw !== '') {
-                    if (! empty($imageNames)) {
-                        $primaryImageName = $imageNames[0];
-                        $resolvedPrimary = $this->resolveImageFile($primaryImageName);
-                        if (! $resolvedPrimary) {
+                    if (! empty($usableImages)) {
+                        if (! empty($invalidImages) && count($rawImageParts) > 0 && ! in_array($rawImageParts[0], $usableImages, true)) {
                             $errors[] = [
-                                'type' => 'PRIMARY_IMAGE_INVALID',
+                                'type' => 'PRIMARY_IMAGE_FALLBACK',
                                 'sku' => $sku,
-                                'message' => "Sản phẩm '{$product->name}' (SKU: {$sku}): Ảnh chính '{$primaryImageName}' không tồn tại. Đã giữ nguyên bộ ảnh hiện tại.",
+                                'message' => "Sản phẩm '{$product->name}' (SKU: {$sku}): Ảnh đầu '{$rawImageParts[0]}' không tồn tại file. Đã dùng ảnh tiếp theo hợp lệ '{$usableImages[0]}' làm ảnh chính.",
                                 'row' => $rowIndex + 2,
                                 'sheet' => $sheetTitle,
                             ];
-                        } else {
-                            $this->syncProductImagesFromList($product, $imageNames, $errors, [
-                                'sku' => $sku,
-                                'row' => $rowIndex + 2,
-                                'sheet' => $sheetTitle,
-                            ]);
                         }
+                        $this->syncProductImagesFromList($product, $usableImages, $errors, [
+                            'sku' => $sku,
+                            'row' => $rowIndex + 2,
+                            'sheet' => $sheetTitle,
+                        ]);
+                    } else {
+                        $errors[] = [
+                            'type' => 'IMAGE_UPDATE_SKIPPED',
+                            'sku' => $sku,
+                            'message' => "Sản phẩm '{$product->name}' (SKU: {$sku}): Các ảnh chỉ định không tồn tại file trên hệ thống. Giữ nguyên bộ ảnh hiện tại.",
+                            'row' => $rowIndex + 2,
+                            'sheet' => $sheetTitle,
+                        ];
                     }
                 }
 
@@ -2442,8 +2509,8 @@ class ImportExcelController extends Controller
                     
                     $newProduct = Product::create($data);
 
-                    // Đồng bộ bộ ảnh cho sản phẩm mới tạo
-                    $this->syncProductImagesFromList($newProduct, $imageNames, $errors, [
+                    // Đồng bộ bộ ảnh cho sản phẩm mới tạo (ảnh đầu tiên trong $usableImages luôn là ảnh chính)
+                    $this->syncProductImagesFromList($newProduct, $usableImages, $errors, [
                         'sku' => $sku,
                         'row' => $rowIndex + 2,
                         'sheet' => $sheetTitle,
