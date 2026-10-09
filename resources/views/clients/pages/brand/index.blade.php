@@ -30,7 +30,7 @@
 @section('title', renderMeta($pageTitle))
 
 @section('head')
-    <link rel="stylesheet" href="{{ asset('clients/assets/css/brand.css') }}?v={{ env('APP_VERSION', '1.0') }}">
+    <link rel="stylesheet" href="{{ asset('clients/assets/css/brand.css') }}?v={{ file_exists(public_path('clients/assets/css/brand.css')) ? filemtime(public_path('clients/assets/css/brand.css')) : env('APP_VERSION', '1.0') }}">
 
     <!-- 🔑 SEO Meta Tags -->
     <meta name="description" content="{{ renderMeta($pageDescription) }}">
