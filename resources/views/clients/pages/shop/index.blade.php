@@ -92,6 +92,8 @@
                             <span class="separator">>></span>
                         @endif
                     @endforeach
+                @elseif (!empty($keyword) || request('keyword'))
+                    <span class="breadcrumb-current">Tìm kiếm: "{{ $keyword ?? request('keyword') }}"</span>
                 @else
                     <span>Shop</span>
                 @endif
@@ -158,6 +160,9 @@
                     <div class="nobifashion_shop_products_filter_categories_form">
                         {{-- Form lọc duy nhất đồng bộ tất cả tiêu chí --}}
                         <form id="nobifashion_shop_filter_form" action="{{ url()->current() }}" method="GET">
+                            @if (!empty($keyword) || request('keyword'))
+                                <input type="hidden" name="keyword" value="{{ $keyword ?? request('keyword') }}">
+                            @endif
                             <input type="hidden" name="page" id="shop-filter-page" value="{{ request('page', 1) }}">
                             <input type="hidden" name="perPage" id="shop-filter-perPage" value="{{ $perPage ?? 30 }}">
                             <input type="hidden" name="sort" id="shop-filter-sort" value="{{ $sort ?? 'default' }}">
@@ -438,9 +443,13 @@
                                 </div>
                             @else
                                 <div class="nobifashion_shop_products_content_list_empty">
-                                    <p>Không có sản phẩm nào phù hợp với bộ lọc của bạn.</p>
-                                    <p>Hãy thử chọn màu sắc hoặc khoảng giá khác.</p>
-                                    <a href="{{ url()->current() }}" class="nobifashion_shop_products_content_list_empty_button" onclick="if(window.resetAllShopFilters){ window.resetAllShopFilters(); return false; }">
+                                    @if (!empty($keyword) || request('keyword'))
+                                        <p>Không tìm thấy sản phẩm nào phù hợp với từ khóa "<strong>{{ $keyword ?? request('keyword') }}</strong>".</p>
+                                    @else
+                                        <p>Không có sản phẩm nào phù hợp với bộ lọc của bạn.</p>
+                                    @endif
+                                    <p>Hãy thử tìm kiếm với từ khóa khác hoặc chọn mức giá khác.</p>
+                                    <a href="{{ !empty($keyword) || request('keyword') ? route('client.product.shop.search.keyword', ['keyword' => $keyword ?? request('keyword')]) : url()->current() }}" class="nobifashion_shop_products_content_list_empty_button" onclick="if(window.resetAllShopFilters){ window.resetAllShopFilters(); return false; }">
                                         Xóa bộ lọc
                                     </a>
                                 </div>

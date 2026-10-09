@@ -159,17 +159,21 @@
                 <a href="{{ route('client.policy.privacy') }}">Chính sách bảo mật dữ liệu</a>
                 <a href="{{ route('client.policy.editorial') }}">Chính sách biên tập và đính chính thông tin</a>
                 @if (!empty($settings->dmca))
-                    <a style="position: relative;" href="{!! $settings->dmca !!}" target="_blank" rel="noopener noreferrer" title="DMCA.com Protection Status" class="dmca-badge"> <img style="position: relative; object-fit: cover; max-width: 150px; height: auto;" loading="lazy" width="150" height="30" src ="{!! ($settings->dmca_logo ?? null) ?: asset('clients/assets/img/other/DMCA.webp') !!}"  alt="DMCA.com Protection Status" /></a>
-                    <script>
-                        window.addEventListener('load', function() {
-                            setTimeout(function() {
-                                var s = document.createElement('script');
-                                s.src = 'https://images.dmca.com/Badges/DMCABadgeHelper.min.js';
-                                s.async = true;
-                                document.body.appendChild(s);
-                            }, 2500);
-                        });
-                    </script>
+                    <img
+                        class="dmca-badge"
+                        style="position: relative; object-fit: cover; max-width: 150px; height: auto; cursor: pointer;"
+                        loading="lazy"
+                        width="150"
+                        height="30"
+                        src="{{ $settings->dmca_logo ?: asset('clients/assets/img/other/DMCA.webp') }}"
+                        alt="DMCA.com Protection Status"
+                        title="DMCA.com Protection Status"
+                        data-dmca-url="{{ $settings->dmca }}"
+                        role="link"
+                        tabindex="0"
+                        onclick="window.open(this.dataset.dmcaUrl, '_blank', 'noopener,noreferrer')"
+                        onkeydown="if(event.key === 'Enter' || event.key === ' ') { event.preventDefault(); this.click(); }"
+                    >
                 @endif
                 <a style="position: relative;" href="{{ route('client.policy.sale') }}">
                     <img loading="lazy" style="position: relative; object-fit: cover; max-width: 90%;" src="{{ asset('clients/assets/img/other/sales-policy.png') }}" alt="Chính sách bán hàng được chứng nhận">
@@ -209,7 +213,15 @@
                     {{ route('client.auth.login') }}
                 @endauth">Thông tin thanh toán</a>
                 <a href="{{ route('client.blog.index') }}">Nobi Blog</a>
-                {{-- <img loading="lazy" width="50%" src="{{ asset('clients/assets/img/other/tai-khoan-da-xac-thuc.png') }}" alt="Chính sách bán hàng được chứng nhận"> --}}
+                <img
+                    style="position: relative; object-fit: cover; max-width: 150px; height: auto; cursor: pointer;"
+                    loading="lazy"
+                    width="150"
+                    height="30"
+                    src="https://nobifashion.vn/clients/assets/img/other/dmca-compliant-white-bg.png"
+                    alt="DMCA Compliance Statement for: nobifashion.vn"
+                    onclick="window.open('https://www.dmca.com/compliance/nobifashion.vn', '_blank', 'noopener,noreferrer')"
+                >
             </div>
         </div>
 
@@ -226,6 +238,7 @@
                 <a href="{{ route('client.policy.payment') }}">Chính sách thanh toán doanh nghiệp</a>
                 <a href="{{ route('client.policy.privacy') }}">Chính sách bảo mật thông tin doanh nghiệp</a>
                 <a href="{{ route('client.policy.privacy') }}">Chính sách bảo mật dữ liệu doanh nghiệp</a>
+                <img style="position: relative; object-fit: cover; max-width: 250px; height: auto; cursor: pointer;" src="https://nobifashion.vn/clients/assets/img/other/TRUSTe.avif" alt="TRUSTe Privacy Certification">
             </div>
         </div>
 
@@ -243,7 +256,7 @@
                 <a href="{{ route('client.policy.privacy') }}">Hướng dẫn bảo mật thông tin</a>
                 <a href="{{ route('client.policy.privacy') }}">Hướng dẫn bảo mật dữ liệu</a>
                 <a href="{{ route('client.sitemap.html') }}">🗺️ Sitemap</a>
-                <img loading="lazy" width="240" height="35" style="max-width: 100%; height: auto; object-fit: contain;" src="{{ asset('clients/assets/img/other/footer_trustbadge.jpg') }}"
+                <img loading="lazy" width="240" height="35" style="max-width: 250px; height: auto; object-fit: contain;" src="{{ asset('clients/assets/img/other/footer_trustbadge.jpg') }}"
                     alt="Các phương thức thanh toán được tin cậy bởi Nobifashion.vn">
             </div>
         </div>
