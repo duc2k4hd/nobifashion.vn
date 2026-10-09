@@ -13,7 +13,103 @@
 @endpush
 
 @push('styles')
+    <link rel="stylesheet" href="{{ asset('admins/vendor/slimselect/slimselect.css') }}">
     <style>
+        /* Tùy biến SlimSelect danh mục cha: Sang trọng, tối giản, chuyên nghiệp */
+        .category-parent-select-box .ss-main {
+            width: 100% !important;
+            min-height: 44px !important;
+            padding: 4px 12px !important;
+            border: 1.5px solid #cbd5e1 !important;
+            border-radius: 8px !important;
+            background-color: #ffffff !important;
+            font-size: 14px !important;
+            color: #1e293b !important;
+            box-sizing: border-box !important;
+            transition: all 0.2s ease !important;
+        }
+        .category-parent-select-box .ss-main:focus,
+        .category-parent-select-box .ss-main.ss-open-below,
+        .category-parent-select-box .ss-main.ss-open-above {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12) !important;
+        }
+        .category-parent-select-box .ss-main .ss-single {
+            font-size: 14px !important;
+            color: #1e293b !important;
+            line-height: 34px !important;
+            font-weight: 500 !important;
+        }
+        .category-parent-select-box .ss-main .ss-arrow path {
+            stroke: #64748b !important;
+            stroke-width: 2 !important;
+        }
+        .ss-content.category-parent-dropdown {
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 8px !important;
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.08) !important;
+            font-size: 13.5px !important;
+            z-index: 1060 !important;
+            background: #ffffff !important;
+            overflow: hidden !important;
+        }
+        .ss-content.category-parent-dropdown .ss-search {
+            padding: 8px 10px !important;
+            background-color: #f8fafc !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+        }
+        .ss-content.category-parent-dropdown .ss-search input {
+            height: 36px !important;
+            font-size: 13.5px !important;
+            border: 1px solid #cbd5e1 !important;
+            border-radius: 6px !important;
+            padding: 6px 12px !important;
+            background-color: #ffffff !important;
+        }
+        .ss-content.category-parent-dropdown .ss-search input:focus {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15) !important;
+        }
+        .ss-content.category-parent-dropdown .ss-list {
+            max-height: 360px !important;
+            padding: 4px 0 !important;
+        }
+        .ss-content.category-parent-dropdown .ss-optgroup-label {
+            padding: 8px 14px !important;
+            font-size: 12px !important;
+            font-weight: 700 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.5px !important;
+            color: #475569 !important;
+            background-color: #f1f5f9 !important;
+            border-top: 1px solid #e2e8f0 !important;
+            border-bottom: 1px solid #e2e8f0 !important;
+            margin-top: 4px !important;
+        }
+        .ss-content.category-parent-dropdown .ss-optgroup:first-child .ss-optgroup-label {
+            margin-top: 0 !important;
+            border-top: none !important;
+        }
+        .ss-content.category-parent-dropdown .ss-option {
+            padding: 8px 14px !important;
+            font-size: 13.5px !important;
+            color: #1e293b !important;
+            transition: background 0.15s ease !important;
+            font-family: inherit !important;
+        }
+        .ss-content.category-parent-dropdown .ss-option:hover {
+            background-color: #f8fafc !important;
+            color: #0f172a !important;
+        }
+        .ss-content.category-parent-dropdown .ss-option.ss-selected {
+            background-color: #eff6ff !important;
+            color: #1d4ed8 !important;
+            font-weight: 600 !important;
+        }
+        .ss-content.category-parent-dropdown .ss-option.ss-highlighted {
+            background-color: #f1f5f9 !important;
+        }
+
         .card {
             background: #fff;
             border-radius: 12px;
@@ -258,29 +354,41 @@
         <div class="card">
             <h3>Thông tin cơ bản</h3>
             
-            {{-- Parent Category Selection - Prominent Position --}}
-            <div class="form-group" style="margin-bottom:24px;padding:16px;background:#f8fafc;border-radius:8px;border:2px solid #e2e8f0;">
-                <label for="parent_id" style="font-weight:600;font-size:15px;color:#1e293b;margin-bottom:8px;display:block;">
-                    📂 Danh mục cha <span style="color:#64748b;font-weight:400;font-size:13px;">(Tùy chọn - Chọn để tạo danh mục con)</span>
-                </label>
-                <select name="parent_id" id="parent_id" class="form-control" style="min-height:48px;font-size:14px;border:2px solid #cbd5e1;border-radius:6px;padding:10px 12px;">
+            {{-- Parent Category Selection - Prominent Position with SlimSelect --}}
+            <div class="form-group category-parent-select-box" style="margin-bottom:24px;padding:16px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <label for="parent_id" style="font-weight:600;font-size:14.5px;color:#1e293b;margin:0;">
+                        📂 Danh mục cha <span style="color:#64748b;font-weight:400;font-size:13px;">(Tùy chọn - Chọn để tạo danh mục con)</span>
+                    </label>
+                    <span style="font-size:12px;color:#64748b;background:#e2e8f0;padding:2px 8px;border-radius:12px;">Hỗ trợ tìm kiếm nhanh</span>
+                </div>
+                <select name="parent_id" id="parent_id" class="form-control" style="width:100%;">
                     @php
                         $currentParentId = old('parent_id', $category->parent_id);
-                        // Normalize: empty string, 0, or null should be treated as null
                         if ($currentParentId === '' || $currentParentId === 0 || $currentParentId === null) {
                             $currentParentId = null;
                         } else {
                             $currentParentId = (int) $currentParentId;
                         }
                     @endphp
-                    <option value="" {{ $currentParentId === null ? 'selected' : '' }} style="font-weight:600;color:#475569;">
-                        🏠 Không có (Danh mục gốc)
+                    <option value="" {{ $currentParentId === null ? 'selected' : '' }}>
+                        🏠 Không có (Tạo làm Danh mục gốc)
                     </option>
-                    @if(!empty($parentOptions))
-                        @foreach($parentOptions as $option)
-                            <option value="{{ $option['value'] }}"
-                                {{ $currentParentId === $option['value'] ? 'selected' : '' }}>
-                                {{ $option['label'] }}
+                    @if(!empty($parentGroups))
+                        @foreach($parentGroups as $group)
+                            <optgroup label="📂 {{ $group['label'] }}">
+                                @foreach($group['options'] as $opt)
+                                    <option value="{{ $opt['value'] }}"
+                                        {{ $currentParentId === $opt['value'] ? 'selected' : '' }}>
+                                        {{ $opt['label'] }}
+                                    </option>
+                                @endforeach
+                            </optgroup>
+                        @endforeach
+                    @elseif(!empty($parents))
+                        @foreach($parents as $p)
+                            <option value="{{ $p->id }}" {{ $currentParentId === $p->id ? 'selected' : '' }}>
+                                {{ method_exists($p, 'fullPath') ? $p->fullPath() : $p->name }}
                             </option>
                         @endforeach
                     @else
@@ -492,6 +600,7 @@
 @endsection
 
 @push('scripts')
+    <script src="{{ asset('admins/vendor/slimselect/slimselect.min.js') }}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             // Auto-generate slug from name
@@ -551,6 +660,24 @@
                         ],
                         shouldNotGroupWhenFull: true
                 }
+                });
+            }
+            // Khởi tạo SlimSelect cho dropdown danh mục cha
+            const parentSelectEl = document.getElementById('parent_id');
+            if (parentSelectEl && typeof SlimSelect !== 'undefined') {
+                new SlimSelect({
+                    select: parentSelectEl,
+                    settings: {
+                        placeholderText: '🏠 Không có (Tạo làm Danh mục gốc)',
+                        allowDeselect: true,
+                        searchPlaceholder: '🔍 Tìm kiếm danh mục cha...',
+                        searchText: 'Không tìm thấy danh mục phù hợp',
+                        searchHighlight: true,
+                        closeOnSelect: true,
+                    },
+                    cssClasses: {
+                        content: 'ss-content category-parent-dropdown',
+                    }
                 });
             }
         });

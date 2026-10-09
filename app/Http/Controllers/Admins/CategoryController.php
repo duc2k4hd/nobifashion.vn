@@ -85,9 +85,10 @@ class CategoryController extends Controller
     public function create()
     {
         $category = new Category();
+        $parentGroups = $this->getCategoryTreeGroups();
         $parents = $this->getParentCategories();
 
-        return view('admins.categories.form', compact('category', 'parents'));
+        return view('admins.categories.form', compact('category', 'parents', 'parentGroups'));
     }
 
     public function store(CategoryRequest $request)
@@ -141,9 +142,10 @@ class CategoryController extends Controller
             ]);
         }
 
+        $parentGroups = $this->getCategoryTreeGroups($category->id);
         $parents = $this->getParentCategories($category->id);
 
-        return view('admins.categories.form', compact('category', 'parents'));
+        return view('admins.categories.form', compact('category', 'parents', 'parentGroups'));
     }
 
     public function update(CategoryRequest $request, Category $category)
@@ -334,6 +336,78 @@ class CategoryController extends Controller
                 SORT_NATURAL
             )
             ->values();
+    }
+
+    /**
+     * Xây dựng cấu trúc cây danh mục theo nhóm optgroup và thụt lề phân cấp trực quan
+     */
+    private function getCategoryTreeGroups(?int $excludeId = null): array
+    {
+        $all = Category::query()
+            ->when($excludeId, fn ($q) => $q->where('id', '!=', $excludeId))
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+
+        $childrenMap = [];
+        foreach ($all as $cat) {
+            $pId = $cat->parent_id ?? 0;
+            $childrenMap[$pId][] = $cat;
+        }
+
+        $groups = [];
+        $rootCategories = $childrenMap[0] ?? [];
+
+        $flatten = function ($parentId, $prefix = '') use (&$flatten, &$childrenMap, $excludeId) {
+            $result = [];
+            $children = $childrenMap[$parentId] ?? [];
+            $total = count($children);
+
+            foreach ($children as $index => $child) {
+                if ($excludeId && $child->id === $excludeId) {
+                    continue;
+                }
+                $isChildLast = ($index === $total - 1);
+                $branch = $isChildLast ? '└─ ' : '├─ ';
+                $nextPrefix = $prefix . ($isChildLast ? '    ' : '│   ');
+
+                $result[] = [
+                    'value' => $child->id,
+                    'label' => $prefix . $branch . $child->name,
+                    'name' => $child->name,
+                    'level' => 1,
+                ];
+
+                $sub = $flatten($child->id, $nextPrefix);
+                foreach ($sub as $s) {
+                    $result[] = $s;
+                }
+            }
+
+            return $result;
+        };
+
+        foreach ($rootCategories as $root) {
+            $groupOptions = [];
+            $groupOptions[] = [
+                'value' => $root->id,
+                'label' => '📁 [Gốc] ' . $root->name,
+                'name' => $root->name,
+                'level' => 0,
+            ];
+
+            $childrenOptions = $flatten($root->id, '   ');
+            foreach ($childrenOptions as $cOpt) {
+                $groupOptions[] = $cOpt;
+            }
+
+            $groups[] = [
+                'label' => $root->name,
+                'options' => $groupOptions,
+            ];
+        }
+
+        return $groups;
     }
 
     /**
