@@ -379,6 +379,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::post('/import-excel/start', [ImportExcelController::class, 'startImportWithFile'])->name('import-excel.start');
             Route::post('/import-excel/process-chunk', [ImportExcelController::class, 'processImportChunk'])->name('import-excel.process-chunk');
             Route::get('/import-excel/progress', [ImportExcelController::class, 'getImportProgress'])->name('import-excel.progress');
+            Route::post('/import-excel/cancel', [ImportExcelController::class, 'cancelImport'])->name('import-excel.cancel');
             Route::match(['get', 'post'], '/export-excel', [ImportExcelController::class, 'export'])->name('export-excel');
         });
 
