@@ -174,16 +174,19 @@ class CategoryImportExportController extends Controller
                     ->getStartColor()->setARGB('FFF1F5F9');
 
                 $rowIndex = 2;
-                $query->orderBy('id', 'asc')->chunkById(1000, function ($categories) use ($sheet, $selectedColumns, &$rowIndex) {
-                    $chunkData = [];
-                    foreach ($categories as $cat) {
-                        $chunkData[] = $this->formatCategoryRow($cat, $selectedColumns);
-                    }
-                    if (!empty($chunkData)) {
+                $chunkData = [];
+                foreach ($query->lazy(1000) as $cat) {
+                    $chunkData[] = $this->formatCategoryRow($cat, $selectedColumns);
+                    if (count($chunkData) >= 1000) {
                         $sheet->fromArray($chunkData, null, "A{$rowIndex}");
                         $rowIndex += count($chunkData);
+                        $chunkData = [];
                     }
-                });
+                }
+                if (!empty($chunkData)) {
+                    $sheet->fromArray($chunkData, null, "A{$rowIndex}");
+                    $rowIndex += count($chunkData);
+                }
 
                 // Auto-width
                 foreach (range(1, count($selectedColumns)) as $colIndex) {
@@ -213,13 +216,11 @@ class CategoryImportExportController extends Controller
             // Ghi header cột
             fputcsv($handle, $selectedColumns);
 
-            // Stream từng chunk 1000 dòng
-            $query->orderBy('id', 'asc')->chunkById(1000, function ($categories) use ($handle, $selectedColumns) {
-                foreach ($categories as $cat) {
-                    fputcsv($handle, $this->formatCategoryRow($cat, $selectedColumns));
-                }
-                fflush($handle);
-            });
+            // Stream toàn bộ bản ghi khớp bộ lọc siêu tốc, 0MB RAM
+            foreach ($query->lazy(1000) as $cat) {
+                fputcsv($handle, $this->formatCategoryRow($cat, $selectedColumns));
+            }
+            fflush($handle);
 
             fclose($handle);
         }, 200, [
@@ -914,14 +915,36 @@ class CategoryImportExportController extends Controller
             }
         }
 
+        // Lọc cấp bậc (level: root hoặc child)
+        if ($level = $request->input('level')) {
+            if ($level === 'root') {
+                $query->whereNull('parent_id');
+            } elseif ($level === 'child') {
+                $query->whereNotNull('parent_id');
+            }
+        }
+
+        // Lọc theo danh mục cha
+        if ($parentId = $request->input('parent_id')) {
+            if ($parentId === 'root') {
+                $query->whereNull('parent_id');
+            } else {
+                $query->where('parent_id', $parentId);
+            }
+        }
+
         // Sắp xếp
         $sort = $request->input('sort', 'sort_order');
         $direction = strtolower((string) $request->input('direction', 'asc')) === 'desc' ? 'desc' : 'asc';
 
         if (in_array($sort, ['id', 'name', 'sort_order', 'created_at', 'updated_at'], true)) {
-            $query->orderBy($sort, $direction);
+            if ($sort === 'sort_order') {
+                $query->orderByRaw('CASE WHEN parent_id IS NULL THEN id ELSE parent_id END ASC, parent_id ASC, sort_order ' . $direction);
+            } else {
+                $query->orderBy($sort, $direction);
+            }
         } else {
-            $query->orderBy('sort_order', 'asc')->orderBy('id', 'asc');
+            $query->orderByRaw('CASE WHEN parent_id IS NULL THEN id ELSE parent_id END ASC, parent_id ASC, sort_order ASC');
         }
 
         return $query;

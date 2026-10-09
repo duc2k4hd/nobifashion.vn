@@ -782,6 +782,12 @@
                     <a href="{{ route('admin.categories.index') }}" class="btn btn-outline-secondary d-inline-flex align-items-center" style="height: 38px;" title="Xóa bộ lọc">
                         <i class="fa-solid fa-rotate-left"></i>
                     </a>
+                    @if($categories->total() > 0)
+                        <button type="button" class="btn btn-outline-primary d-inline-flex align-items-center gap-1 fw-semibold text-nowrap" id="btnExportFiltered" style="height: 38px;" title="Xuất toàn bộ {{ $categories->total() }} danh mục đang lọc trên tất cả các trang">
+                            <i class="fa-solid fa-file-export text-primary"></i>
+                            <span>Xuất kết quả lọc ({{ $categories->total() }})</span>
+                        </button>
+                    @endif
                 @endif
             </div>
         </form>
@@ -1184,16 +1190,19 @@
                                 <i class="fa-solid fa-check-double me-1"></i> Chỉ các danh mục đang chọn (<span id="exportSelectedCount">0</span> danh mục)
                             </label>
                         </div>
-                        <div class="form-check">
-                            <input class="form-check-input" type="radio" name="exportScope" id="scopeAll" value="all" checked>
-                            <label class="form-check-label fw-semibold small" for="scopeAll">
-                                Tất cả danh mục trong hệ thống
+                        @php
+                            $hasActiveFilter = request()->hasAny(['keyword', 'status', 'level', 'sort', 'direction']) && (request('keyword') || request('status') || request('level') || request('sort') || request('direction'));
+                        @endphp
+                        <div class="form-check" id="scopeFilterWrapper">
+                            <input class="form-check-input" type="radio" name="exportScope" id="scopeFilter" value="filter" {{ $hasActiveFilter ? 'checked' : '' }}>
+                            <label class="form-check-label fw-semibold small text-success" for="scopeFilter">
+                                <i class="fa-solid fa-filter me-1"></i> Toàn bộ kết quả lọc hiện tại (<strong id="exportFilteredTotalCount">{{ $categories->total() }}</strong> danh mục trên tất cả các trang)
                             </label>
                         </div>
                         <div class="form-check">
-                            <input class="form-check-input" type="radio" name="exportScope" id="scopeFilter" value="filter">
-                            <label class="form-check-label fw-semibold small" for="scopeFilter">
-                                Theo bộ lọc tìm kiếm hiện tại trên trang
+                            <input class="form-check-input" type="radio" name="exportScope" id="scopeAll" value="all" {{ !$hasActiveFilter ? 'checked' : '' }}>
+                            <label class="form-check-label fw-semibold small text-secondary" for="scopeAll">
+                                <i class="fa-solid fa-database me-1"></i> Tất cả danh mục trong hệ thống ({{ $stats['total'] ?? \App\Models\Category::count() }} danh mục)
                             </label>
                         </div>
                     </div>
@@ -1501,6 +1510,21 @@
                     if (scopeSelectedRadio) {
                         scopeSelectedRadio.disabled = false;
                         scopeSelectedRadio.checked = true;
+                    }
+                    if (typeof bootstrap !== 'undefined' && exportModalEl) {
+                        const modalInstance = bootstrap.Modal.getInstance(exportModalEl) || new bootstrap.Modal(exportModalEl);
+                        modalInstance.show();
+                    }
+                });
+            }
+
+            // Nút Xuất kết quả lọc trên thanh bộ lọc
+            const btnExportFiltered = document.getElementById('btnExportFiltered');
+            if (btnExportFiltered) {
+                btnExportFiltered.addEventListener('click', () => {
+                    const scopeFilterRadio = document.getElementById('scopeFilter');
+                    if (scopeFilterRadio) {
+                        scopeFilterRadio.checked = true;
                     }
                     if (typeof bootstrap !== 'undefined' && exportModalEl) {
                         const modalInstance = bootstrap.Modal.getInstance(exportModalEl) || new bootstrap.Modal(exportModalEl);
@@ -1836,9 +1860,22 @@
                         }
                         checkedIds.forEach(id => params.append('ids[]', id));
                     } else if (scope === 'filter') {
+                        // Thu thập toàn bộ giá trị bộ lọc từ form lọc trên trang
+                        const filterForm = document.querySelector('.filter-form-grid');
+                        if (filterForm) {
+                            const formData = new FormData(filterForm);
+                            for (const [key, val] of formData.entries()) {
+                                if (val && key !== 'page' && key !== '_token') {
+                                    params.set(key, val);
+                                }
+                            }
+                        }
+                        // Bổ sung các tham số lọc từ URL nếu có (loại trừ page)
                         const currentUrlParams = new URLSearchParams(window.location.search);
                         for (const [key, val] of currentUrlParams.entries()) {
-                            if (val && key !== 'page') params.append(key, val);
+                            if (val && key !== 'page' && !params.has(key)) {
+                                params.set(key, val);
+                            }
                         }
                     }
 
