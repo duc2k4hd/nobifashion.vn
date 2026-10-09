@@ -11,7 +11,7 @@
     ($settings->site_name ?? 'NOBI FASHION'))
 
 @section('head')
-    <link rel="stylesheet" href="{{ asset('clients/assets/css/single.min.css') }}?v={{ env('APP_VERSION') }}">
+    <link rel="stylesheet" href="{{ asset('clients/assets/css/single.min.css') }}?v={{ file_exists(public_path('clients/assets/css/single.min.css')) ? filemtime(public_path('clients/assets/css/single.min.css')) : env('APP_VERSION') }}">
     @if ($product?->primaryImage?->url)
         <link rel="preload" as="image"
             href="{{ asset('clients/assets/img/clothes/' . ($product?->primaryImage?->url ?? 'no-image.webp')) }}"

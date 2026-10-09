@@ -86,8 +86,8 @@ class MinifyAssetsCommand extends Command
         $css = preg_replace('!/\*[^*]*\*+([^/][^*]*\*+)*/!', '', $css);
         // Chuyển newline và tab thành khoảng trắng
         $css = str_replace(["\r\n", "\r", "\n", "\t"], ' ', $css);
-        // Xóa khoảng trắng quanh các ký tự đặc biệt
-        $css = preg_replace('/\s*([\{\}:;,>~+])\s*/', '$1', $css);
+        // Xóa khoảng trắng quanh các ký tự đặc biệt (giữ dấu + để không lỗi hàm calc)
+        $css = preg_replace('/\s*([\{\}:;,>~])\s*/', '$1', $css);
         // Xóa dấu chấm phẩy thừa trước dấu đóng ngoặc
         $css = str_replace(';}', '}', $css);
         // Rút gọn nhiều khoảng trắng liên tiếp

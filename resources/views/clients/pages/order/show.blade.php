@@ -369,7 +369,5 @@
             </div>
         </section>
     </div>
-
-    @include('clients.templates.chat')
 @endsection
 

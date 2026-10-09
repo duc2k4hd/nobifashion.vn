@@ -3,7 +3,7 @@
 @section('title', renderMeta($pageTitle))
 
 @section('head')
-    <link rel="stylesheet" href="{{ asset('clients/assets/css/shop.css') }}?v={{ env('APP_VERSION') }}">
+    <link rel="stylesheet" href="{{ asset('clients/assets/css/shop.css') }}?v={{ file_exists(public_path('clients/assets/css/shop.css')) ? filemtime(public_path('clients/assets/css/shop.css')) : env('APP_VERSION') }}">
 
     <!-- 🔑 Keywords -->
     <meta name="keywords" content="{{ renderMeta($pageKeywords) }}">
@@ -55,7 +55,7 @@
 
 
 @section('foot')
-    <script src="{{ asset('clients/assets/js/shop.js') }}?v={{ env('APP_VERSION') }}"></script>
+    <script src="{{ asset('clients/assets/js/shop.js') }}?v={{ file_exists(public_path('clients/assets/js/shop.js')) ? filemtime(public_path('clients/assets/js/shop.js')) : env('APP_VERSION') }}"></script>
 @endsection
 
 @section('schema')
@@ -456,8 +456,6 @@
                 </div>
             </div>
         </section>
-
-        @include('clients.templates.chat')
     </main>
 
     @include('clients.templates.call')

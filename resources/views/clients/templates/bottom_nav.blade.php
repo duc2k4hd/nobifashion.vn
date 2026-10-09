@@ -1,3 +1,6 @@
+<!-- Spacer chống che nội dung bởi thanh bottom nav trên mobile -->
+<div class="nobifashion_bottom_nav_spacer" aria-hidden="true"></div>
+
 <!-- Mobile Bottom Navigation Bar -->
 <nav class="nobifashion_bottom_nav" aria-label="Thanh điều hướng nhanh">
     <!-- 1. Trang chủ -->

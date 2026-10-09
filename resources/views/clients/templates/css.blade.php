@@ -27,12 +27,16 @@
         {!! @file_get_contents(public_path('clients/assets/css/' . $responsiveCssFile)) !!}
     </style>
 @else
-    <link rel="preload" href="{{ asset('clients/assets/css/' . $mainCssFile) }}?v={{ env('APP_VERSION') }}"
+    @php
+        $mainCssVer = file_exists(public_path('clients/assets/css/' . $mainCssFile)) ? filemtime(public_path('clients/assets/css/' . $mainCssFile)) : env('APP_VERSION');
+        $responsiveCssVer = file_exists(public_path('clients/assets/css/' . $responsiveCssFile)) ? filemtime(public_path('clients/assets/css/' . $responsiveCssFile)) : env('APP_VERSION');
+    @endphp
+    <link rel="preload" href="{{ asset('clients/assets/css/' . $mainCssFile) }}?v={{ $mainCssVer }}"
         as="style">
-    <link rel="stylesheet" href="{{ asset('clients/assets/css/' . $mainCssFile) }}?v={{ env('APP_VERSION') }}">
-    <link rel="preload" href="{{ asset('clients/assets/css/' . $responsiveCssFile) }}?v={{ env('APP_VERSION') }}"
+    <link rel="stylesheet" href="{{ asset('clients/assets/css/' . $mainCssFile) }}?v={{ $mainCssVer }}">
+    <link rel="preload" href="{{ asset('clients/assets/css/' . $responsiveCssFile) }}?v={{ $responsiveCssVer }}"
         as="style">
-    <link rel="stylesheet" href="{{ asset('clients/assets/css/' . $responsiveCssFile) }}?v={{ env('APP_VERSION') }}">
+    <link rel="stylesheet" href="{{ asset('clients/assets/css/' . $responsiveCssFile) }}?v={{ $responsiveCssVer }}">
 @endif
 
 

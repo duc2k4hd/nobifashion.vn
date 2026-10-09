@@ -961,8 +961,8 @@ img.nobifashion_single_info_images_main_image.nobifashion_single_image_clickable
 
 @media (max-width: 991px) {
     main#main-content {
-        position: relative;
-        top: 95px;
+        position: static;
+        top: auto;
     }
 
     .nobifashion_single_info_wrapper {

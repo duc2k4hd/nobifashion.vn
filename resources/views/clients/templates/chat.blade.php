@@ -50,7 +50,7 @@
     </div>
 
     <!-- Cửa sổ Chat Popup (Bung mở từ góc trái) -->
-    <div id="nobiChatPopup" class="nobi-chat-popup" role="dialog" aria-modal="true" aria-label="Cửa sổ trò chuyện CSKH Nobi Fashion" style="display: none;">
+    <div id="nobiChatPopup" class="nobi-chat-popup" role="dialog" aria-modal="true" aria-label="Cửa sổ trò chuyện CSKH Nobi Fashion">
         <!-- Header -->
         <div class="nobi-chat-header">
             <div class="nobi-chat-header-profile">

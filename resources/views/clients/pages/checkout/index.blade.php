@@ -532,6 +532,4 @@
             <p>Vui lòng liên hệ quản trị viên để biết thêm chi tiết.</p>
         </div>
     @endif
-
-    @include('clients.templates.chat')
 @endsection

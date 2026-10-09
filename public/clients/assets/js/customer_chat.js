@@ -15,7 +15,7 @@
     let isLoadingOlder = false;
     let oldestMessageId = null;
 
-    document.addEventListener('DOMContentLoaded', () => {
+    function boot() {
         const metaCsrf = document.querySelector('meta[name="csrf-token"]');
         if (metaCsrf) {
             csrfToken = metaCsrf.getAttribute('content');
@@ -24,7 +24,13 @@
         // Khởi tạo hoặc lấy lại Session ID UUID duy nhất của khách
         sessionId = getOrCreateSessionId();
         initChatWidget();
-    });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', boot);
+    } else {
+        boot();
+    }
 
     /**
      * Sinh hoặc lấy UUID Session định danh khách hàng
@@ -51,7 +57,7 @@
 
     function initChatWidget() {
         const launcherContainer = document.getElementById('nobiChatLauncherContainer');
-        const launcherBtn = document.getElementById('nobiChatLauncherBtn');
+        const launcherBtns = document.querySelectorAll('#nobiChatLauncherBtn, .nobifashion_chat_ai, #nobifashionBottomAiBtn, .nobifashion_bottom_nav_btn_ai');
         const welcomePill = document.getElementById('nobiChatWelcomePill');
         const chatPopup = document.getElementById('nobiChatPopup');
         const btnClose = document.getElementById('nobiChatBtnClose');
@@ -60,17 +66,18 @@
         const chatInput = document.getElementById('nobiChatInput');
         const btnSend = document.getElementById('nobiChatBtnSend');
 
-        if (!launcherBtn || !chatPopup) return;
+        if (!chatPopup) return;
 
         // 1. Sự kiện đóng/mở Popup
         let isFirstOpen = true;
         const toggleChat = () => {
             const isOpen = chatPopup.classList.toggle('is-open');
+            chatPopup.style.display = isOpen ? 'flex' : 'none';
+            chatPopup.setAttribute('aria-hidden', !isOpen);
+
+            launcherBtns.forEach(btn => btn.classList.toggle('is-active', isOpen));
             if (launcherContainer) {
                 launcherContainer.classList.toggle('is-active', isOpen);
-            }
-            if (launcherBtn) {
-                launcherBtn.classList.toggle('is-active', isOpen);
             }
 
             if (welcomePill) {
@@ -83,23 +90,27 @@
                     loadMessagesFromDatabase();
                 }
                 if (chatInput) {
-                    setTimeout(() => chatInput.focus(), 300);
+                    setTimeout(() => chatInput.focus(), 250);
                 }
                 scrollChatToBottom();
             }
         };
 
-        launcherBtn.addEventListener('click', toggleChat);
+        launcherBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                toggleChat();
+            });
+        });
+
         if (welcomePill) {
-            welcomePill.addEventListener('click', toggleChat);
+            welcomePill.addEventListener('click', (e) => {
+                e.preventDefault();
+                toggleChat();
+            });
         }
         if (btnClose) {
-            btnClose.addEventListener('click', toggleChat);
-        }
-
-        const bottomAiBtn = document.getElementById('nobifashionBottomAiBtn');
-        if (bottomAiBtn) {
-            bottomAiBtn.addEventListener('click', (e) => {
+            btnClose.addEventListener('click', (e) => {
                 e.preventDefault();
                 toggleChat();
             });

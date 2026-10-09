@@ -128,7 +128,11 @@
 
     .nobifashion_footer {
         position: relative;
-        padding: 10px !important;
+        padding: 24px 16px 20px 16px !important;
+    }
+
+    .nobifashion_footer_bottom {
+        padding-bottom: 0 !important;
     }
 
     .nobifashion_footer .nobifashion_footer_content_business img:first-of-type {
@@ -787,10 +791,6 @@
 
     .nobifashion_shop_products {
         grid-template-columns: 1fr !important;
-    }
-
-    .nobifashion_shop_products_filter {
-        margin-bottom: 1rem !important;
     }
 
     .nobifashion_shop_products_content_filter {
