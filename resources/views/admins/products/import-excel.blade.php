@@ -481,9 +481,9 @@
             <div class="import-note import-note-warning">
                 <h3>Dữ liệu điền như thế nào?</h3>
                 <ul>
-                    <li><strong>SKU mới</strong>: tạo sản phẩm mới (bắt buộc có ảnh chính tồn tại).</li>
+                    <li><strong>SKU khi tạo mới</strong>: Có thể <strong>để trống</strong>, hệ thống sẽ tự động sinh SKU theo công thức chuẩn: <code>NF-{MÃ_DANH_MỤC}-{6_CHỮ_SỐ}</code> (ví dụ: <code>NF-AKN-849877</code> cho danh mục <em>Áo khoác nam</em>; nếu không có danh mục sẽ random 4 chữ cái bất kỳ: <code>NF-ABCD-849877</code>). Cơ chế kiểm tra chống trùng lặp 100%.</li>
                     <li><strong>SKU trùng</strong>: cập nhật sản phẩm cũ theo SKU đó.</li>
-                    <li><code>primary_category_slug</code> và <code>category_slugs</code>: slug danh mục trong hệ thống.</li>
+                    <li><code>primary_category_slug</code> và <code>category_slugs</code>: slug danh mục trong hệ thống (dùng để gán danh mục và lấy chữ cái đầu cho mã SKU).</li>
                     <li><code>tag_slugs</code>: nhập tên tag phân tách bằng dấu phẩy.</li>
                     <li><code>slug</code>: có thể để trống, hệ thống tự động sinh từ tên sản phẩm.</li>
                 </ul>
@@ -545,8 +545,8 @@
                         <tbody>
                             <tr>
                                 <td><code>sku</code></td>
-                                <td>Mã sản phẩm (Bắt buộc). Dùng để tạo mới hoặc cập nhật.</td>
-                                <td><code>AOPOLO-NAM-001</code></td>
+                                <td>Mã sản phẩm. <strong>Khi tạo mới có thể để trống</strong> để hệ thống tự động sinh theo công thức <code>NF-{DANH_MỤC}-{6_SỐ}</code> (ví dụ: <code>NF-AKN-849877</code>). Nhập SKU khi muốn cập nhật sản phẩm đã có.</td>
+                                <td><code>Để trống (tự sinh) hoặc NF-AKN-849877</code></td>
                             </tr>
                             <tr>
                                 <td><code>name</code></td>

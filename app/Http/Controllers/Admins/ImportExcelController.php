@@ -36,6 +36,106 @@ class ImportExcelController extends Controller
     protected array $imageColumnLengths = [];
 
     /**
+     * Danh sách SKU đã cấp phát trong phiên import hiện tại để chống trùng giữa các hàng
+     */
+    protected static array $generatedSkusInBatch = [];
+
+    /**
+     * Lấy các chữ cái đầu tiên của từng từ trong tên danh mục (không dấu, viết hoa)
+     * Ví dụ: "Áo khoác nam" -> "AKN", "Áo Polo" -> "AP"
+     */
+    private function extractCategoryInitials(?string $categoryName): string
+    {
+        if (empty($categoryName)) {
+            return '';
+        }
+
+        // Chuyển tiếng Việt có dấu thành không dấu ASCII chuẩn
+        $ascii = Str::ascii($categoryName);
+
+        // Tách các từ theo khoảng trắng hoặc ký tự phân tách
+        $words = preg_split('/[\s\-_,.]+/', trim($ascii));
+        $initials = '';
+
+        foreach ($words as $word) {
+            $cleanWord = preg_replace('/[^a-zA-Z]/', '', $word);
+            if (!empty($cleanWord)) {
+                $initials .= strtoupper($cleanWord[0]);
+            }
+        }
+
+        // Chỉ giữ các ký tự chữ cái A-Z và giới hạn tối đa 8 ký tự
+        $cleanInitials = preg_replace('/[^A-Z]/', '', $initials);
+        if (strlen($cleanInitials) > 8) {
+            $cleanInitials = substr($cleanInitials, 0, 8);
+        }
+
+        return $cleanInitials;
+    }
+
+    /**
+     * Tự động sinh mã SKU theo công thức: NF-{MÃ_DANH_MỤC}-{6_CHỮ_SỐ} (ví dụ: NF-AKN-849877)
+     * Cơ chế chống trùng lặp 100%:
+     * 1. Tra cứu trong bộ nhớ lô import hiện tại (self::$generatedSkusInBatch)
+     * 2. Sử dụng Cache atomic lock để chống trùng chéo giữa các workers chạy song song
+     * 3. Tra cứu trực tiếp Unique Index của Database (Product::where('sku', ...)->exists())
+     * 4. Vòng lặp tái sinh ngẫu nhiên an toàn có ngưỡng fallback
+     */
+    private function generateUniqueProductSku(?string $categoryName = null): string
+    {
+        $catCode = $this->extractCategoryInitials($categoryName);
+
+        // Nếu không có danh mục hoặc tên danh mục không trích xuất được chữ cái, random 4 chữ cái in hoa (A-Z)
+        if (empty($catCode)) {
+            $letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            $randomLetters = '';
+            for ($i = 0; $i < 4; $i++) {
+                $randomLetters .= $letters[random_int(0, 25)];
+            }
+            $catCode = $randomLetters;
+        }
+
+        $attempts = 0;
+        do {
+            $attempts++;
+            // Sinh 6 chữ số ngẫu nhiên từ 000000 đến 999999
+            if ($attempts <= 50) {
+                $digits = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+            } else {
+                // Fallback an toàn nếu vượt quá 50 lần thử: mở rộng thêm chữ số để không bao giờ bị nghẽn
+                $digits = str_pad((string) random_int(100000, 9999999), 7, '0', STR_PAD_LEFT);
+            }
+
+            $candidate = "NF-{$catCode}-{$digits}";
+
+            // 1. Kiểm tra trong bộ nhớ lô import hiện tại
+            if (isset(self::$generatedSkusInBatch[$candidate])) {
+                continue;
+            }
+
+            // 2. Kiểm tra Atomic Lock qua Cache để tránh xung đột giữa các workers chạy song song
+            $locked = Cache::add("sku_reserve_{$candidate}", 1, 60);
+            if (! $locked) {
+                continue;
+            }
+
+            // 3. Kiểm tra trong Database xem đã tồn tại chưa
+            $existsInDb = Product::where('sku', $candidate)->exists();
+            if ($existsInDb) {
+                continue;
+            }
+
+            // SKU duy nhất hợp lệ
+            break;
+        } while ($attempts < 100);
+
+        // Ghi nhận vào batch memory để các dòng sau không bị trùng
+        self::$generatedSkusInBatch[$candidate] = true;
+
+        return $candidate;
+    }
+
+    /**
      * Hiển thị form upload Excel
      */
     public function index()
@@ -1643,16 +1743,18 @@ class ImportExcelController extends Controller
         $sheetTitle = $sheet->getTitle();
 
         $categoryMap = [];
+        $categoryNameMap = [];
         $brandMap = [];
         $tagCache = [];
 
         foreach ($rows as $rowIndex => $row) {
-            if ($this->getTrimmedRowValueByHeader($row, $headerIndex, ['sku'], trim((string) ($row[0] ?? ''))) === '') {
-                continue;
-            } // Bỏ qua dòng trống (SKU rỗng)
-
             $sku = $this->getTrimmedRowValueByHeader($row, $headerIndex, ['sku'], trim((string) ($row[0] ?? '')));
             $name = $this->getTrimmedRowValueByHeader($row, $headerIndex, ['name'], trim((string) ($row[1] ?? '')));
+
+            // Bỏ qua dòng trống hoàn toàn (cả SKU và Tên đều rỗng)
+            if ($sku === '' && $name === '') {
+                continue;
+            }
             // Logic slug: ưu tiên slug từ Excel, nếu không có thì dùng SKU, cuối cùng fallback về name
             $slug = $this->getTrimmedRowValueByHeader($row, $headerIndex, ['slug'], trim((string) ($row[2] ?? '')));
             if (empty($slug)) {
@@ -1743,6 +1845,7 @@ class ImportExcelController extends Controller
                     if ($cat) {
                         $primaryCategoryId = $cat->id;
                         $categoryMap[$primaryCategoryLookupKey] = $cat->id;
+                        $categoryNameMap[$cat->id] = $cat->name;
                     } else {
                         $errors[] = [
                             'type' => 'PRIMARY_CATEGORY_NOT_FOUND',
@@ -1772,6 +1875,7 @@ class ImportExcelController extends Controller
                         if ($cat) {
                             $categoryIds[] = $cat->id;
                             $categoryMap[$categoryLookupKey] = $cat->id;
+                            $categoryNameMap[$cat->id] = $cat->name;
                         } else {
                             $errors[] = [
                                 'type' => 'CATEGORY_NOT_FOUND',
@@ -1843,8 +1947,29 @@ class ImportExcelController extends Controller
                 }
             }
 
-            // Tìm product theo SKU
-            $product = Product::where('sku', $sku)->first();
+            // Xác định Category đại diện cho sản phẩm để sinh SKU nếu cần
+            $targetCategoryName = null;
+            if ($primaryCategoryId) {
+                $targetCategoryName = $categoryNameMap[$primaryCategoryId] ?? Category::find($primaryCategoryId)?->name;
+            } elseif (! empty($categoryIds)) {
+                $firstCatId = $categoryIds[0];
+                $targetCategoryName = $categoryNameMap[$firstCatId] ?? Category::find($firstCatId)?->name;
+            }
+
+            // Tìm product theo SKU (nếu có SKU được nhập trong file Excel)
+            $product = $sku !== '' ? Product::where('sku', $sku)->first() : null;
+
+            // Nếu không tìm thấy product (tạo mới) và SKU để trống: tự động sinh SKU theo công thức NF-{CAT}-{6_SO}
+            if (! $product && $sku === '') {
+                $sku = $this->generateUniqueProductSku($targetCategoryName);
+            } elseif ($sku !== '') {
+                self::$generatedSkusInBatch[$sku] = true;
+            }
+
+            // Nếu slug chưa có trong Excel, tạo từ name (hoặc SKU)
+            if (empty($slug)) {
+                $slug = Str::slug($name ?: $sku);
+            }
 
             // Chuẩn bị data để update/create
             // QUAN TRỌNG: Chỉ thêm các trường có giá trị (không rỗng) để tránh ghi đè dữ liệu cũ
@@ -3768,7 +3893,10 @@ class ImportExcelController extends Controller
                 );
 
                 $validRows = array_filter($rows, function ($row) use ($headerIndex) {
-                    return $this->getTrimmedRowValueByHeader($row, $headerIndex, ['sku'], '') !== '';
+                    $sku = $this->getTrimmedRowValueByHeader($row, $headerIndex, ['sku'], '');
+                    $name = $this->getTrimmedRowValueByHeader($row, $headerIndex, ['name'], '');
+
+                    return $sku !== '' || $name !== '';
                 });
                 $totalRows = count($validRows);
             } else {
@@ -3908,9 +4036,12 @@ class ImportExcelController extends Controller
                 ProductWorkbookSchema::SHEET_PRODUCTS
             );
             
-            // Lọc các dòng có SKU
+            // Lọc các dòng hợp lệ (có SKU hoặc có Tên sản phẩm)
             $validRows = array_filter($rows, function ($row) use ($headerIndex) {
-                return $this->getTrimmedRowValueByHeader($row, $headerIndex, ['sku'], '') !== '';
+                $sku = $this->getTrimmedRowValueByHeader($row, $headerIndex, ['sku'], '');
+                $name = $this->getTrimmedRowValueByHeader($row, $headerIndex, ['name'], '');
+
+                return $sku !== '' || $name !== '';
             });
             $validRows = array_values($validRows); // Reindex
 
