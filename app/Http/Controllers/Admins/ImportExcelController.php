@@ -199,6 +199,7 @@ class ImportExcelController extends Controller
 
                 $productRow = 2;
                 $this->buildFilterQuery($request)
+                    ->with(['images' => fn ($q) => $q->orderBy('is_primary', 'desc')->orderBy('order', 'asc')->orderBy('id', 'asc')])
                     ->select([
                         'id',
                         'sku',
@@ -236,44 +237,6 @@ class ImportExcelController extends Controller
                         }
 
                         unset($products);
-                        gc_collect_cycles();
-                    });
-
-                $imagesSheet = $spreadsheet->createSheet();
-                $imagesSheet->setTitle(ProductWorkbookSchema::SHEET_IMAGES);
-                $imagesSheet->fromArray(ProductWorkbookSchema::imageHeaders(), null, 'A1');
-                $imageRow = 2;
-
-                $this->buildFilterQuery($request)
-                    ->select(['id', 'sku'])
-                    ->chunkById($chunkSize, function ($products) use ($imagesSheet, &$imageRow) {
-                        $productsById = $products->keyBy('id');
-                        $productIds = $productsById->keys()->all();
-
-                        if ($productIds !== []) {
-                            $images = Image::query()
-                                ->whereIn('product_id', $productIds)
-                                ->orderBy('product_id')
-                                ->orderBy('order')
-                                ->orderBy('id')
-                                ->get();
-
-                            foreach ($images as $image) {
-                                $sku = $productsById[$image->product_id]->sku ?? '';
-                                if ($sku === '') {
-                                    continue;
-                                }
-
-                                $imagesSheet->fromArray([
-                                    $this->buildImageExportRow($sku, $image),
-                                ], null, 'A'.$imageRow);
-                                $imageRow++;
-                            }
-
-                            unset($images);
-                        }
-
-                        unset($products, $productsById, $productIds);
                         gc_collect_cycles();
                     });
 
@@ -444,19 +407,16 @@ class ImportExcelController extends Controller
 
             DB::beginTransaction();
 
-            // Import Products (Sheet 1)
+            // Import Products (đã bao gồm xử lý ảnh chính và phụ trực tiếp từ cột images)
             $this->importProducts($spreadsheet, $errors);
 
-            // Import Images (Sheet 2)
-            $this->importImages($spreadsheet, $errors);
-
-            // Import FAQs (Sheet 3)
+            // Import FAQs (Sheet 2)
             $this->importFaqs($spreadsheet, $errors);
 
-            // Import How-Tos (Sheet 4)
+            // Import How-Tos (Sheet 3)
             $this->importHowTos($spreadsheet, $errors);
 
-            // Import Variants (Sheet 5)
+            // Import Variants (Sheet 4)
             $this->importVariants($spreadsheet, $errors);
 
             DB::commit();
@@ -658,6 +618,11 @@ class ImportExcelController extends Controller
             }
 
             $headerIndex[$normalized] = $index;
+
+            // Ánh xạ các alias tiếng Việt phổ biến cho cột hình ảnh
+            if (in_array($normalized, ['hình ảnh', 'hinh_anh', 'hinh anh', 'ảnh', 'anh', 'image', 'photos'], true)) {
+                $headerIndex['images'] = $index;
+            }
         }
 
         return $headerIndex;
@@ -681,17 +646,27 @@ class ImportExcelController extends Controller
     {
         $rows = $sheet->toArray();
         $headers = array_shift($rows) ?? [];
+        $headerIndex = $this->buildHeaderIndex($headers);
 
-        $normalizedHeaders = $this->normalizeHeaderRow($headers);
-        $normalizedExpectedHeaders = $this->normalizeHeaderRow($expectedHeaders);
+        // Kiểm tra tối thiểu: nếu là sheet products, bắt buộc phải có cột SKU và Tên sản phẩm
+        if ($sheetLabel === ProductWorkbookSchema::SHEET_PRODUCTS || $sheetLabel === 'products') {
+            if (! $this->hasHeader($headerIndex, ['sku']) || ! $this->hasHeader($headerIndex, ['name'])) {
+                throw new \InvalidArgumentException(
+                    'Sheet "' . $sheetLabel . '" không đúng cấu trúc: bắt buộc phải có cột "sku" và "name".'
+                );
+            }
+        } else {
+            $normalizedHeaders = $this->normalizeHeaderRow($headers);
+            $normalizedExpectedHeaders = $this->normalizeHeaderRow($expectedHeaders);
 
-        if ($normalizedHeaders !== $normalizedExpectedHeaders) {
-            throw new \InvalidArgumentException(
-                'Sheet "' . $sheetLabel . '" không đúng cấu trúc file export chuẩn.'
-            );
+            if ($normalizedHeaders !== $normalizedExpectedHeaders && ! $this->hasHeader($headerIndex, ['sku', 'product_sku'])) {
+                throw new \InvalidArgumentException(
+                    'Sheet "' . $sheetLabel . '" không đúng cấu trúc file export chuẩn.'
+                );
+            }
         }
 
-        return [$headers, $this->buildHeaderIndex($headers), $rows];
+        return [$headers, $headerIndex, $rows];
     }
 
     private function hasHeader(array $headerIndex, $columns): bool
@@ -915,6 +890,32 @@ class ImportExcelController extends Controller
             ? implode(',', $product->meta_keywords)
             : ($product->meta_keywords ?? '');
 
+        $imagesString = '';
+        if ($product->relationLoaded('images') ? $product->images : $product->images()->get()) {
+            $productImages = $product->relationLoaded('images') ? $product->images : $product->images()->get();
+            if ($productImages && $productImages->isNotEmpty()) {
+                // Sắp xếp: ảnh chính (is_primary = true) lên đầu, tiếp đến là order asc, id asc
+                $sortedImages = $productImages->sort(function ($a, $b) {
+                    if ((bool) $a->is_primary !== (bool) $b->is_primary) {
+                        return $b->is_primary <=> $a->is_primary;
+                    }
+                    if ($a->order !== $b->order) {
+                        return $a->order <=> $b->order;
+                    }
+                    return $a->id <=> $b->id;
+                });
+
+                $imageNames = [];
+                foreach ($sortedImages as $img) {
+                    $name = basename(trim((string) ($img->url ?: $img->path)));
+                    if ($name !== '' && ! in_array($name, $imageNames, true)) {
+                        $imageNames[] = $name;
+                    }
+                }
+                $imagesString = implode(', ', $imageNames);
+            }
+        }
+
         return [
             $product->sku,
             $product->name,
@@ -938,6 +939,7 @@ class ImportExcelController extends Controller
             $product->is_active ? 1 : 0,
             $brandSlug,
             $product->link_shopee,
+            $imagesString,
         ];
     }
 
@@ -1499,10 +1501,125 @@ class ImportExcelController extends Controller
         $this->clearProductCacheEntry($product);
     }
 
-    private function clearProductCacheEntry(Product $product): void
+    protected static array $imageFileExistenceCache = [];
+
+    /**
+     * Xác thực và tìm file ảnh nhanh chóng.
+     * Kiểm tra trong public/clients/assets/img/clothes trước, nếu chưa có thì tìm trong imports rồi copy sang.
+     */
+    private function resolveImageFile(string $fileName): ?string
     {
-        Cache::forget('product_detail_'.$product->slug);
-        Cache::forget('slug_type_'.$product->slug);
+        $fileName = basename(trim($fileName));
+        if ($fileName === '') {
+            return null;
+        }
+
+        if (array_key_exists($fileName, self::$imageFileExistenceCache)) {
+            return self::$imageFileExistenceCache[$fileName];
+        }
+
+        $clothesDir = public_path('clients/assets/img/clothes');
+        $clothesPath = $clothesDir . DIRECTORY_SEPARATOR . $fileName;
+
+        if (is_file($clothesPath)) {
+            return self::$imageFileExistenceCache[$fileName] = $fileName;
+        }
+
+        $importsDir = public_path('clients/assets/img/imports');
+        $importsPath = $importsDir . DIRECTORY_SEPARATOR . $fileName;
+
+        if (is_file($importsPath)) {
+            if (! is_dir($clothesDir)) {
+                @mkdir($clothesDir, 0755, true);
+            }
+            @copy($importsPath, $clothesPath);
+            if (is_file($clothesPath)) {
+                return self::$imageFileExistenceCache[$fileName] = $fileName;
+            }
+        }
+
+        return self::$imageFileExistenceCache[$fileName] = null;
+    }
+
+    /**
+     * Đồng bộ danh sách ảnh cho sản phẩm từ chuỗi tên ảnh.
+     * Ảnh đầu tiên luôn là ảnh chính (is_primary = true, role = 'primary').
+     * Các ảnh tiếp theo là ảnh phụ (is_primary = false, role = 'gallery').
+     */
+    private function syncProductImagesFromList(Product $product, array $imageNames, array &$errors, array $context = []): void
+    {
+        $keepImageIds = [];
+        $order = 0;
+
+        foreach ($imageNames as $index => $rawName) {
+            $fileName = $this->resolveImageFile($rawName);
+            if (! $fileName) {
+                if ($index > 0) {
+                    $errors[] = [
+                        'type' => 'GALLERY_IMAGE_MISSING',
+                        'sku' => $product->sku,
+                        'message' => "Ảnh phụ '{$rawName}' không tìm thấy trên hệ thống, đã bỏ qua ảnh phụ này.",
+                        'row' => $context['row'] ?? null,
+                        'sheet' => $context['sheet'] ?? ProductWorkbookSchema::SHEET_PRODUCTS,
+                    ];
+                }
+                continue;
+            }
+
+            $isPrimary = ($index === 0);
+            $role = $isPrimary ? 'primary' : 'gallery';
+
+            $image = Image::where('product_id', $product->id)
+                ->where('url', $fileName)
+                ->first();
+
+            $payload = [
+                'product_id' => $product->id,
+                'entity_type' => 'product',
+                'entity_id' => $product->id,
+                'role' => $role,
+                'context' => 'product',
+                'name' => $fileName,
+                'url' => $fileName,
+                'path' => $fileName,
+                'thumbnail_url' => $fileName,
+                'medium_url' => $fileName,
+                'is_primary' => $isPrimary,
+                'order' => $order++,
+            ];
+
+            if ($image) {
+                $image->update($payload);
+            } else {
+                $image = Image::create($payload);
+            }
+
+            $keepImageIds[] = $image->id;
+        }
+
+        if (! empty($keepImageIds)) {
+            // Xóa các ảnh cũ không còn trong danh sách
+            Image::where('product_id', $product->id)
+                ->whereNotIn('id', $keepImageIds)
+                ->delete();
+
+            // Đảm bảo chỉ có ảnh đầu tiên là primary
+            $primaryId = $keepImageIds[0] ?? null;
+            if ($primaryId) {
+                Image::where('product_id', $product->id)
+                    ->where('id', '!=', $primaryId)
+                    ->update([
+                        'is_primary' => false,
+                        'role' => 'gallery',
+                    ]);
+                Image::where('id', $primaryId)->update([
+                    'is_primary' => true,
+                    'role' => 'primary',
+                ]);
+            }
+        }
+
+        $this->clearProductCacheEntry($product);
     }
 
     /**
@@ -1566,6 +1683,18 @@ class ImportExcelController extends Controller
                 ? (int) $createdByRaw
                 : (Auth::check() ? Auth::id() : 1);
             $linkShopee = $this->getTrimmedRowValueByHeader($row, $headerIndex, ['link_shopee'], trim((string) ($row[21] ?? $row[22] ?? '')));
+            $imagesRaw = $this->getTrimmedRowValueByHeader($row, $headerIndex, ['images', 'image', 'hinh_anh', 'hình ảnh', 'hinh anh', 'photos'], trim((string) ($row[22] ?? '')));
+
+            $imageNames = [];
+            if ($imagesRaw !== '') {
+                $rawImageParts = array_map('trim', explode(',', $imagesRaw));
+                foreach ($rawImageParts as $imgPart) {
+                    $cleanImg = basename(trim((string) $imgPart));
+                    if ($cleanImg !== '' && ! in_array($cleanImg, $imageNames, true)) {
+                        $imageNames[] = $cleanImg;
+                    }
+                }
+            }
 
             if (empty($name)) {
                 continue;
@@ -1806,13 +1935,17 @@ class ImportExcelController extends Controller
                 $data['meta_canonical'] = $resolvedMetaCanonical;
             }
 
+            if ($imagesRaw !== '') {
+                $hasOtherData = true;
+            }
+
             // KIỂM TRA: Nếu hàng quá trống (chỉ có SKU và name, không có dữ liệu khác) → bỏ qua
             if (empty($name) || !$hasOtherData) {
                 // Không có dữ liệu để xử lý, bỏ qua hàng này
                 continue;
             }
 
-            // Nếu là CREATE mới, cần có ít nhất name và price
+            // Nếu là CREATE mới, cần có ít nhất name, price và hình ảnh hợp lệ
             if (!$product) {
                 if (empty($name) || !isset($data['price']) || $data['price'] <= 0) {
                     // Không đủ dữ liệu để tạo mới, bỏ qua
@@ -1825,6 +1958,32 @@ class ImportExcelController extends Controller
                     ];
                     continue;
                 }
+
+                // QUY TẮC: Tạo mới BẮT BUỘC phải có ảnh và ảnh chính phải tồn tại
+                if (empty($imageNames)) {
+                    $errors[] = [
+                        'type' => 'IMAGE_REQUIRED',
+                        'sku' => $sku,
+                        'message' => "Bỏ qua sản phẩm '{$name}' (SKU: {$sku}): Không có hình ảnh. Sản phẩm tạo mới bắt buộc phải có ít nhất ảnh chính.",
+                        'row' => $rowIndex + 2,
+                        'sheet' => $sheetTitle,
+                    ];
+                    continue; // BỎ QUA HOÀN TOÀN, KHÔNG TẠO MỚI!
+                }
+
+                $primaryImageName = $imageNames[0];
+                $resolvedPrimary = $this->resolveImageFile($primaryImageName);
+                if (! $resolvedPrimary) {
+                    $errors[] = [
+                        'type' => 'PRIMARY_IMAGE_INVALID',
+                        'sku' => $sku,
+                        'message' => "Bỏ qua sản phẩm '{$name}' (SKU: {$sku}): Ảnh chính '{$primaryImageName}' không tồn tại trên hệ thống (thư mục clothes hoặc imports).",
+                        'row' => $rowIndex + 2,
+                        'sheet' => $sheetTitle,
+                    ];
+                    continue; // BỎ QUA HOÀN TOÀN, KHÔNG TẠO MỚI!
+                }
+
                 // Đảm bảo có giá trị mặc định cho các trường bắt buộc khi tạo mới
                 if (!isset($data['stock_quantity'])) {
                     $data['stock_quantity'] = $stockQuantity ?? 0;
@@ -1871,7 +2030,7 @@ class ImportExcelController extends Controller
                     }
                 }
 
-                // Nếu có thay đổi → xóa cache
+                // Nếu có thay đổi → cập nhật và xóa cache
                 if (! empty($updateData)) {
                     // Lưu oldTagIds trước khi update để cập nhật usage_count
                     $oldTagIds = is_array($product->tag_ids) ? $product->tag_ids : json_decode($product->tag_ids, true) ?? [];
@@ -1900,13 +2059,42 @@ class ImportExcelController extends Controller
                         Cache::forget('slug_type_'.$newSlug);
                     }
                 }
-                // Nếu không có thay đổi → giữ nguyên cache
+
+                // Đồng bộ lại hình ảnh nếu cột Hình ảnh có truyền vào
+                if ($imagesRaw !== '') {
+                    if (! empty($imageNames)) {
+                        $primaryImageName = $imageNames[0];
+                        $resolvedPrimary = $this->resolveImageFile($primaryImageName);
+                        if (! $resolvedPrimary) {
+                            $errors[] = [
+                                'type' => 'PRIMARY_IMAGE_INVALID',
+                                'sku' => $sku,
+                                'message' => "Sản phẩm '{$product->name}' (SKU: {$sku}): Ảnh chính '{$primaryImageName}' không tồn tại. Đã giữ nguyên bộ ảnh hiện tại.",
+                                'row' => $rowIndex + 2,
+                                'sheet' => $sheetTitle,
+                            ];
+                        } else {
+                            $this->syncProductImagesFromList($product, $imageNames, $errors, [
+                                'sku' => $sku,
+                                'row' => $rowIndex + 2,
+                                'sheet' => $sheetTitle,
+                            ]);
+                        }
+                    }
+                }
                 } else {
                     // Create: tạo mới với SKU
                     // Đảm bảo có đủ dữ liệu tối thiểu (đã check ở trên)
                     $data['sku'] = $sku;
                     
                     $newProduct = Product::create($data);
+
+                    // Đồng bộ bộ ảnh cho sản phẩm mới tạo
+                    $this->syncProductImagesFromList($newProduct, $imageNames, $errors, [
+                        'sku' => $sku,
+                        'row' => $rowIndex + 2,
+                        'sheet' => $sheetTitle,
+                    ]);
 
                     // Cập nhật usage_count cho tags (tăng cho tags mới)
                     $newTagIds = $data['tag_ids'] ?? [];
@@ -3260,6 +3448,7 @@ class ImportExcelController extends Controller
                 
                 // Query products từ chunk này - dùng chunkById để tránh OOM
                 Product::whereIn('id', $productIds)
+                    ->with(['images' => fn ($q) => $q->orderBy('is_primary', 'desc')->orderBy('order', 'asc')->orderBy('id', 'asc')])
                     ->select([
                         'id', 'sku', 'name', 'slug', 'description', 'short_description',
                         'price', 'sale_price', 'cost_price', 'stock_quantity',
@@ -3292,57 +3481,7 @@ class ImportExcelController extends Controller
             unset($chunkFiles); // Giải phóng chunk files
 
             // =========================
-            // Sheet 2: Images
-            // =========================
-            $imagesSheet = $writer->addNewSheetAndMakeItCurrent();
-            $imagesSheet->setName(ProductWorkbookSchema::SHEET_IMAGES);
-            
-            $imagesHeaders = ProductWorkbookSchema::imageHeaders();
-            $imagesHeaderCells = array_map(fn($value) => Cell::fromValue($value), $imagesHeaders);
-            $writer->addRow(new Row($imagesHeaderCells));
-
-            // Đọc lại từ chunk files - KHÔNG load tất cả IDs
-            $chunkFilesForImages = glob("{$exportDir}/{$sessionId}_chunk_*.json");
-            sort($chunkFilesForImages);
-            
-            foreach ($chunkFilesForImages as $chunkFile) {
-                if (!file_exists($chunkFile)) {
-                    continue;
-                }
-                
-                $productIds = json_decode(file_get_contents($chunkFile), true);
-                if (!is_array($productIds) || empty($productIds)) {
-                    unset($productIds);
-                    continue;
-                }
-                
-                Image::whereIn('product_id', $productIds)
-                    ->orderBy('product_id')
-                    ->orderBy('order')
-                    ->orderBy('id')
-                    ->chunkById(200, function ($imagesChunk) use ($writer, $productIdToSku) {
-                        foreach ($imagesChunk as $image) {
-                            $sku = $productIdToSku[$image->product_id] ?? '';
-                            if ($sku === '') {
-                                continue;
-                            }
-
-                            $rowValues = $this->buildImageExportRow($sku, $image);
-                            $rowCells = array_map(fn($value) => Cell::fromValue($value), $rowValues);
-                            $writer->addRow(new Row($rowCells));
-                        }
-
-                        unset($imagesChunk);
-                        gc_collect_cycles();
-                    });
-                
-                unset($productIds);
-                gc_collect_cycles();
-            }
-            unset($chunkFilesForImages);
-
-            // =========================
-            // Sheet 3: FAQs
+            // Sheet 2: FAQs
             // =========================
             $faqsSheet = $writer->addNewSheetAndMakeItCurrent();
             $faqsSheet->setName(ProductWorkbookSchema::SHEET_FAQS);
@@ -4234,22 +4373,7 @@ class ImportExcelController extends Controller
             if (file_exists($groupData['file_path'])) {
                 $spreadsheet = IOFactory::load($groupData['file_path']);
                 
-                // Import Images (Sheet 2)
-                try {
-                    $this->importImages($spreadsheet, $allErrors);
-                } catch (\Exception $e) {
-                    Log::error('Finalize import group: Lỗi khi import images', [
-                        'group_id' => $groupId,
-                        'error' => $e->getMessage(),
-                    ]);
-                    $allErrors[] = [
-                        'type' => 'IMAGES_IMPORT_ERROR',
-                        'sku' => 'N/A',
-                        'message' => $e->getMessage(),
-                    ];
-                }
-
-                // Import FAQs (Sheet 3)
+                // Import FAQs (Sheet 2)
                 try {
                     $this->importFaqs($spreadsheet, $allErrors);
                 } catch (\Exception $e) {
@@ -4367,21 +4491,7 @@ class ImportExcelController extends Controller
             if (file_exists($importData['file_path'])) {
                 $spreadsheet = IOFactory::load($importData['file_path']);
                 
-                // Import Images (Sheet 2)
-                try {
-                    $this->importImages($spreadsheet, $errors);
-                } catch (\Exception $e) {
-                    Log::error('Finalize import: Lỗi khi import images', [
-                        'error' => $e->getMessage(),
-                    ]);
-                    $errors[] = [
-                        'type' => 'IMAGES_IMPORT_ERROR',
-                        'sku' => 'N/A',
-                        'message' => $e->getMessage(),
-                    ];
-                }
-
-                // Import FAQs (Sheet 3)
+                // Import FAQs (Sheet 2)
                 try {
                     $this->importFaqs($spreadsheet, $errors);
                 } catch (\Exception $e) {

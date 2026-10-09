@@ -396,9 +396,9 @@
             <div>
                 <h1>Import sản phẩm từ Excel</h1>
                 <p>
-                    Trang này dùng để tạo mới hoặc cập nhật sản phẩm hàng loạt bằng file Excel. Hệ thống hỗ trợ import
-                    5 sheet: sản phẩm, ảnh, biến thể, FAQ và hướng dẫn sử dụng. Nên dùng file export hiện tại làm template
-                    rồi sửa dữ liệu trên đó để tránh lệch cột.
+                    Trang này dùng để tạo mới hoặc cập nhật sản phẩm hàng loạt bằng file Excel. Toàn bộ hình ảnh được điền
+                    trực tiếp vào cột <code>images</code> (hoặc <code>Hình ảnh</code>) trong sheet <code>products</code>, ngăn cách bởi dấu phẩy.
+                    Ảnh đầu tiên là ảnh chính, các ảnh sau là ảnh phụ. Hệ thống đã <strong>bỏ hẳn sheet images</strong> giúp thao tác nhanh và tiện lợi hơn.
                 </p>
             </div>
 
@@ -449,22 +449,23 @@
         @endif
 
         <div class="import-note import-note-warning">
-            <h3>Schema bắt buộc</h3>
+            <h3>Quy tắc bắt buộc về hình ảnh</h3>
             <ul>
-                <li>File import phải đúng workbook export hiện tại với các sheet <code>products</code>, <code>images</code>, <code>faqs</code>, <code>how_tos</code>, <code>variants</code>.</li>
-                <li>Header phải khớp tuyệt đối với file export. Nếu đang dùng file cũ, hãy export lại template mới rồi sửa dữ liệu trên đó.</li>
+                <li><strong>Cột images</strong>: Nhập các tên file ảnh kèm đuôi cách nhau dấu phẩy, ví dụ: <code>ao-thun-1.webp, ao-thun-2.webp, ao-thun-3.jpg</code>.</li>
+                <li><strong>Ảnh đầu tiên luôn là ảnh chính</strong>, các ảnh tiếp theo là ảnh phụ.</li>
+                <li><strong>Khi TẠO MỚI</strong>: Bắt buộc phải có ảnh. Nếu không có ảnh hoặc ảnh chính không tồn tại trên hệ thống, hệ thống sẽ <strong>bỏ qua hoàn toàn sản phẩm đó</strong> (không tạo mới lên database).</li>
+                <li><strong>Khi CẬP NHẬT</strong>: Nếu để trống cột images, hệ thống giữ nguyên bộ ảnh hiện tại. Nếu điền ảnh mới thì ảnh chính phải tồn tại để đồng bộ.</li>
             </ul>
         </div>
 
         <div class="import-card">
-            <h2>Quy trình chuẩn để tạo sản phẩm mới</h2>
+            <h2>Quy trình chuẩn để tạo / cập nhật sản phẩm</h2>
             <ol>
-                <li>Bấm <strong>Export toàn bộ sản phẩm</strong> để lấy đúng template 5 sheet hệ thống đang dùng.</li>
-                <li>Điền sheet <code>products</code> trước. Đây là sheet bắt buộc để tạo sản phẩm.</li>
-                <li>Chuẩn bị ảnh nguồn và điền sheet <code>images</code> nếu muốn tạo ảnh cho sản phẩm.</li>
-                <li>Nếu sản phẩm có biến thể, điền thêm sheet <code>product_variants</code> và map đúng <code>image_key</code>.</li>
-                <li>Nếu cần FAQ hoặc hướng dẫn sử dụng, điền thêm <code>product_faqs</code> và <code>product_how_tos</code>.</li>
-                <li>Upload file Excel tại form bên dưới và kiểm tra file log nếu hệ thống báo có lỗi.</li>
+                <li>Bấm <strong>Export toàn bộ sản phẩm</strong> để lấy template chuẩn mới nhất của hệ thống (đã có sẵn cột <code>images</code>).</li>
+                <li>Điền thông tin và hình ảnh trong sheet <code>products</code>.</li>
+                <li>Chuẩn bị sẵn file ảnh trong thư mục <code>public/clients/assets/img/clothes/</code> hoặc <code>public/clients/assets/img/imports/</code>.</li>
+                <li>Nếu sản phẩm có biến thể, điền thêm sheet <code>product_variants</code>. Nếu cần FAQ hoặc hướng dẫn sử dụng, điền thêm <code>product_faqs</code> và <code>product_how_tos</code>.</li>
+                <li>Upload file Excel tại form bên dưới và kiểm tra kết quả ngay lập tức.</li>
             </ol>
         </div>
 
@@ -472,38 +473,25 @@
             <div class="import-note import-note-info">
                 <h3>Ảnh để ở đâu?</h3>
                 <ul>
-                    <li>Ảnh nguồn để trong <code>public/clients/assets/img/imports/</code>.</li>
-                    <li>Trong Excel, cột <code>local_path</code> nên điền chỉ tên file hoặc path con nằm trong <code>imports</code>, ví dụ <code>ao-polo-nam-xam.webp</code> hoặc <code>yody/ao-polo-nam-xam.webp</code>.</li>
-                    <li>Nếu file nguồn là <code>.webp</code> hoặc <code>.avif</code>, hệ thống chỉ copy sang <code>public/clients/assets/img/clothes/</code>, giữ nguyên kích thước và nội dung file.</li>
-                    <li>Nếu file nguồn là <code>.jpg</code>, <code>.jpeg</code>, <code>.png</code>, <code>.gif</code>, <code>.bmp</code>..., hệ thống sẽ convert sang <code>.webp</code> và xuất ra kích thước chuẩn <code>400x600</code>.</li>
-                    <li>Import Excel chỉ đọc ảnh từ thư mục <code>imports</code>. Nếu ảnh đang nằm ở nơi khác như <code>storage/app/tmp/yody/</code> thì cần tự chuyển vào <code>imports</code> trước khi import.</li>
+                    <li>Ảnh để trong <code>public/clients/assets/img/clothes/</code> (thư mục ảnh chính) hoặc <code>public/clients/assets/img/imports/</code> (hệ thống sẽ tự động copy sang clothes khi import).</li>
+                    <li>Trong file Excel, chỉ cần điền tên file kèm đuôi, ví dụ: <code>ao-polo-xam-1.webp, ao-polo-xam-2.webp</code>.</li>
                 </ul>
             </div>
 
             <div class="import-note import-note-warning">
                 <h3>Dữ liệu điền như thế nào?</h3>
                 <ul>
-                    <li><strong>SKU mới</strong>: tạo sản phẩm mới.</li>
+                    <li><strong>SKU mới</strong>: tạo sản phẩm mới (bắt buộc có ảnh chính tồn tại).</li>
                     <li><strong>SKU trùng</strong>: cập nhật sản phẩm cũ theo SKU đó.</li>
-                    <li><code>primary_category_slug</code> và <code>category_slugs</code> phải là slug category đã có sẵn trong DB.</li>
-                    <li><code>tag_slugs</code> thực tế đang nhập theo <strong>tên tag</strong>, phân tách bằng dấu phẩy. Hệ thống tự tạo slug tag.</li>
-                    <li><code>slug</code> có thể để trống, hệ thống sẽ tự sinh từ tên sản phẩm và tự tránh trùng.</li>
+                    <li><code>primary_category_slug</code> và <code>category_slugs</code>: slug danh mục trong hệ thống.</li>
+                    <li><code>tag_slugs</code>: nhập tên tag phân tách bằng dấu phẩy.</li>
+                    <li><code>slug</code>: có thể để trống, hệ thống tự động sinh từ tên sản phẩm.</li>
                 </ul>
             </div>
         </div>
 
-        <div class="import-note import-note-danger">
-            <h3>Lưu ý để tránh mất dữ liệu</h3>
-            <ul>
-                <li>Sheet <code>product_variants</code> được hiểu là <strong>danh sách biến thể cuối cùng</strong>. Variant cũ dư ra so với file sẽ bị xóa.</li>
-                <li>Sheet <code>images</code> dùng để thay bộ ảnh của SKU đó. Nếu cập nhật sản phẩm cũ và muốn thay ảnh, nên chuẩn bị đầy đủ toàn bộ ảnh muốn giữ.</li>
-                <li>FAQ được cập nhật theo cặp <code>SKU + question</code>. How-to được cập nhật theo cặp <code>SKU + title</code>.</li>
-                <li>Nếu category slug không tồn tại, hệ thống sẽ bỏ qua category đó và ghi vào log lỗi.</li>
-            </ul>
-        </div>
-
         <div class="import-card">
-            <h2>5 sheet hệ thống đang hỗ trợ</h2>
+            <h2>Các sheet hệ thống đang hỗ trợ</h2>
             <table class="import-table">
                 <thead>
                     <tr>
@@ -516,12 +504,7 @@
                     <tr>
                         <td><code>products</code></td>
                         <td>Có</td>
-                        <td>Tạo hoặc cập nhật thông tin sản phẩm chính.</td>
-                    </tr>
-                    <tr>
-                        <td><code>images</code></td>
-                        <td>Không</td>
-                        <td>Import ảnh sản phẩm và tạo key để map sang variant.</td>
+                        <td>Tạo hoặc cập nhật thông tin sản phẩm và danh sách hình ảnh trực tiếp.</td>
                     </tr>
                     <tr>
                         <td><code>product_variants</code></td>
@@ -543,13 +526,13 @@
         </div>
 
         <div class="import-card">
-            <h2>Chi tiết từng sheet</h2>
+            <h2>Chi tiết cấu trúc sheet products</h2>
 
             <details class="import-details" open>
                 <summary>Sheet <code>products</code></summary>
                 <div class="import-details-body">
                     <p>Các cột đúng thứ tự:</p>
-                    <div class="import-code">sku | name | slug | description | short_description | price | sale_price | cost_price | stock_quantity | meta_title | meta_description | meta_keywords | meta_canonical | primary_category_slug | category_slugs | tag_slugs | is_featured | has_variants | created_by | is_active | brand_slug</div>
+                    <div class="import-code">sku | name | slug | description | short_description | price | sale_price | cost_price | stock_quantity | meta_title | meta_description | meta_keywords | meta_canonical | primary_category_slug | category_slugs | tag_slugs | is_featured | has_variants | created_by | is_active | brand_slug | link_shopee | images</div>
 
                     <table class="import-table">
                         <thead>
@@ -562,13 +545,28 @@
                         <tbody>
                             <tr>
                                 <td><code>sku</code></td>
-                                <td>Mã sản phẩm. Dùng để tạo mới hoặc cập nhật.</td>
+                                <td>Mã sản phẩm (Bắt buộc). Dùng để tạo mới hoặc cập nhật.</td>
                                 <td><code>AOPOLO-NAM-001</code></td>
                             </tr>
                             <tr>
                                 <td><code>name</code></td>
-                                <td>Tên sản phẩm.</td>
+                                <td>Tên sản phẩm (Bắt buộc).</td>
                                 <td><code>Áo polo nam basic</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>images</code> / <code>Hình ảnh</code></td>
+                                <td>Danh sách tên ảnh có đuôi cách nhau dấu phẩy. <strong>Ảnh đầu tiên là ảnh chính</strong>, các ảnh sau là ảnh phụ. Bắt buộc có khi tạo mới.</td>
+                                <td><code>polo-nam-1.webp, polo-nam-2.webp, polo-nam-3.webp</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>price</code></td>
+                                <td>Giá bán sản phẩm.</td>
+                                <td><code>390000</code></td>
+                            </tr>
+                            <tr>
+                                <td><code>sale_price</code></td>
+                                <td>Giá khuyến mãi (nếu có).</td>
+                                <td><code>320000</code></td>
                             </tr>
                             <tr>
                                 <td><code>slug</code></td>
@@ -603,27 +601,7 @@
                         </tbody>
                     </table>
 
-                    <div class="import-code">AOPOLO-NAM-001 | Áo polo nam basic | ao-polo-nam-basic | Mô tả dài... | Mô tả ngắn... | 390000 | 331500 | 250000 | 30 | Áo polo nam basic | Polo nam cotton | polo,cotton,nam |  | ao-polo-nam | ao-nam,ao-polo-nam | Hàng mới,Áo polo,Cotton | 1 | 1 | 1 | 1</div>
-                </div>
-            </details>
-
-            <details class="import-details">
-                <summary>Sheet <code>images</code></summary>
-                <div class="import-details-body">
-                    <p>Các cột đúng thứ tự:</p>
-                    <div class="import-code">sku | image_key | local_path | title | notes | alt | is_primary | order</div>
-
-                    <ul>
-                        <li><code>image_key</code> phải là key duy nhất trong sheet này, ví dụ <code>IMG_AOPOLO_01</code>.</li>
-                        <li><code>local_path</code> nên là tên file trong <code>public/clients/assets/img/imports/</code>.</li>
-                        <li>Tên file sau import sẽ giữ nguyên đuôi nếu nguồn là <code>webp/avif</code>; các định dạng khác sẽ đổi sang <code>.webp</code>.</li>
-                        <li>Ảnh không phải <code>webp/avif</code> sẽ được chuẩn hóa về kích thước <code>400x600</code> khi import.</li>
-                        <li><code>is_primary</code> dùng <code>1</code> cho ảnh đại diện.</li>
-                        <li><code>order</code> là thứ tự hiển thị ảnh.</li>
-                    </ul>
-
-                    <div class="import-code">AOPOLO-NAM-001 | IMG_AOPOLO_01 | ao-polo-nam-basic-xam.webp | Ảnh chính |  | Áo polo nam màu xám | 1 | 1
-AOPOLO-NAM-001 | IMG_AOPOLO_02 | ao-polo-nam-basic-xam-mat-sau.webp | Ảnh sau |  | Áo polo nam mặt sau | 0 | 2</div>
+                    <div class="import-code">AOPOLO-NAM-001 | Áo polo nam basic | ao-polo-nam-basic | Mô tả dài... | Mô tả ngắn... | 390000 | 331500 | 250000 | 30 | Áo polo nam basic | Polo nam cotton | polo,cotton,nam |  | ao-polo-nam | ao-nam,ao-polo-nam | Hàng mới,Áo polo,Cotton | 1 | 0 | 1 | 1 | yody |  | polo-1.webp, polo-2.webp</div>
                 </div>
             </details>
 

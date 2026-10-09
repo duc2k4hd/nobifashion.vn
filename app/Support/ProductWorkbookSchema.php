@@ -35,6 +35,7 @@ final class ProductWorkbookSchema
             'is_active',
             'brand_slug',
             'link_shopee',
+            'images',
         ];
     }
 
