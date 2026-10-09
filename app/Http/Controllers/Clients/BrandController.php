@@ -152,6 +152,27 @@ class BrandController extends Controller
             ->orderByDesc('id')
             ->paginate(15, ['*'], 'page', 1);
 
+        // 4. Khởi tạo SEO Meta với dữ liệu từ bảng brands và cơ chế Fallback
+        $siteName = $settings->site_name ?? ($settings->subname ?? 'NOBI FASHION');
+        $brandName = $brand->name ?? 'NOBIFASHION';
+        $brandSlug = $slug ?: ($brand->slug ?? 'nobifashion');
+
+        $pageTitle = !empty($brand->meta_title)
+            ? $brand->meta_title
+            : ($brandName . ' – Gian Hàng Thương Hiệu Chính Hãng | ' . $siteName);
+
+        $pageDescription = !empty($brand->meta_description)
+            ? $brand->meta_description
+            : \Illuminate\Support\Str::limit(strip_tags($brand->description ?: ('Khám phá gian hàng thương hiệu ' . $brandName . ' chính hãng tại ' . $siteName . ': thời trang cao cấp, uy tín, chính hãng, giá tốt và giao hàng toàn quốc.')), 160);
+
+        $pageKeywords = !empty($brand->meta_keywords)
+            ? $brand->meta_keywords
+            : ('thương hiệu ' . mb_strtolower($brandName, 'UTF-8') . ', gian hàng ' . mb_strtolower($brandName, 'UTF-8') . ', ' . mb_strtolower($brandName, 'UTF-8') . ' chính hãng, thời trang ' . mb_strtolower($brandName, 'UTF-8') . ', mua sắm online, ' . mb_strtolower($siteName, 'UTF-8'));
+
+        $canonicalUrl = !empty($brand->meta_canonical)
+            ? $brand->meta_canonical
+            : route('client.brand.show', $brandSlug);
+
         return view('clients.pages.brand.index', [
             'settings' => $settings,
             'brand' => $brand,
@@ -160,6 +181,10 @@ class BrandController extends Controller
             'bestsellerProducts' => $bestsellerProducts,
             'brandCategories' => $brandCategories,
             'recommendProducts' => $recommendProducts,
+            'pageTitle' => $pageTitle,
+            'pageDescription' => $pageDescription,
+            'pageKeywords' => $pageKeywords,
+            'canonicalUrl' => $canonicalUrl,
         ]);
     }
 

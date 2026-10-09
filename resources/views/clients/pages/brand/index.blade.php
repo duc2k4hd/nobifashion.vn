@@ -3,16 +3,28 @@
 @php
     $brandName = $brand->name ?? 'NOBIFASHION';
     $brandSlug = $currentSlug ?? ($brand->slug ?? 'nobifashion');
-    $brandCanonicalUrl = route('client.brand.show', $brandSlug);
     $siteName = $settings->site_name ?? ($settings->subname ?? 'NOBI FASHION');
 
     $brandImageUrl = !empty($brand->logo) && file_exists(public_path('clients/assets/img/brands/' . $brand->logo))
         ? asset('clients/assets/img/brands/' . $brand->logo)
         : asset('clients/assets/img/banners/' . ($settings->site_banner ?? 'default-banner.jpg'));
 
-    $pageTitle = ($brandName) . ' – Gian Hàng Thương Hiệu Chính Hãng | ' . $siteName;
-    $pageDescription = Str::limit($brand->description ?? ('Khám phá gian hàng thương hiệu ' . $brandName . ' chính hãng tại ' . $siteName . ': thời trang cao cấp, uy tín, chính hãng, giá tốt và giao hàng toàn quốc.'), 160);
-    $pageKeywords = 'thương hiệu ' . strtolower($brandName) . ', gian hàng ' . strtolower($brandName) . ', ' . strtolower($brandName) . ' chính hãng, thời trang ' . strtolower($brandName) . ', mua sắm online, nobi fashion';
+    // Ưu tiên biến truyền từ Controller -> dữ liệu DB bảng brands -> Fallback mặc định
+    $pageTitle = $pageTitle. " | Nobi Fashion" ?? (!empty($brand->meta_title)
+        ? $brand->meta_title. " | Nobi Fashion"
+        : ($brandName . ' – Gian Hàng Thương Hiệu Chính Hãng | ' . $siteName));
+
+    $pageDescription = $pageDescription ?? (!empty($brand->meta_description)
+        ? $brand->meta_description
+        : Str::limit(strip_tags($brand->description ?? ('Khám phá gian hàng thương hiệu ' . $brandName . ' chính hãng tại ' . $siteName . ': thời trang cao cấp, uy tín, chính hãng, giá tốt và giao hàng toàn quốc.')), 160));
+
+    $pageKeywords = $pageKeywords ?? (!empty($brand->meta_keywords)
+        ? $brand->meta_keywords
+        : ('thương hiệu ' . mb_strtolower($brandName, 'UTF-8') . ', gian hàng ' . mb_strtolower($brandName, 'UTF-8') . ', ' . mb_strtolower($brandName, 'UTF-8') . ' chính hãng, thời trang ' . mb_strtolower($brandName, 'UTF-8') . ', mua sắm online, ' . mb_strtolower($siteName, 'UTF-8')));
+
+    $brandCanonicalUrl = $canonicalUrl ?? (!empty($brand->meta_canonical)
+        ? $brand->meta_canonical
+        : route('client.brand.show', $brandSlug));
 @endphp
 
 @section('title', renderMeta($pageTitle))
@@ -35,7 +47,7 @@
     <!-- 🌐 Open Graph (Facebook, Zalo) -->
     <meta property="og:locale" content="vi_VN">
     <meta property="og:type" content="website">
-    <meta property="og:title" content="{{ renderMeta($brandName . ' – Gian Hàng Thương Hiệu Chính Hãng') }}">
+    <meta property="og:title" content="{{ renderMeta($pageTitle) }}">
     <meta property="og:description" content="{{ renderMeta($pageDescription) }}">
     <meta property="og:url" content="{{ $brandCanonicalUrl }}">
     <meta property="og:site_name" content="{{ renderMeta($siteName) }}">
@@ -47,7 +59,7 @@
 
     <!-- 🐦 Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{{ renderMeta($brandName . ' – Gian Hàng Thương Hiệu Chính Hãng') }}">
+    <meta name="twitter:title" content="{{ renderMeta($pageTitle) }}">
     <meta name="twitter:description" content="{{ renderMeta($pageDescription) }}">
     <meta name="twitter:image" content="{{ $brandImageUrl }}">
     <meta name="twitter:creator" content="{{ renderMeta($siteName) }}">
