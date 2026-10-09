@@ -1660,18 +1660,19 @@ class ImportExcelController extends Controller
         $order = 0;
 
         foreach ($imageNames as $index => $rawName) {
-            $fileName = $this->resolveImageFile($rawName);
-            if (! $fileName) {
-                if ($index > 0) {
-                    $errors[] = [
-                        'type' => 'GALLERY_IMAGE_MISSING',
-                        'sku' => $product->sku,
-                        'message' => "Ảnh phụ '{$rawName}' không tìm thấy trên hệ thống, đã bỏ qua ảnh phụ này.",
-                        'row' => $context['row'] ?? null,
-                        'sheet' => $context['sheet'] ?? ProductWorkbookSchema::SHEET_PRODUCTS,
-                    ];
-                }
+            $resolvedName = $this->resolveImageFile($rawName);
+            $fileName = $resolvedName ?: basename(trim($rawName));
+            if ($fileName === '') {
                 continue;
+            }
+            if (! $resolvedName && $index > 0) {
+                $errors[] = [
+                    'type' => 'GALLERY_IMAGE_MISSING',
+                    'sku' => $product->sku,
+                    'message' => "Ảnh phụ '{$rawName}' chưa có sẵn file trên hệ thống.",
+                    'row' => $context['row'] ?? null,
+                    'sheet' => $context['sheet'] ?? ProductWorkbookSchema::SHEET_PRODUCTS,
+                ];
             }
 
             $isPrimary = ($index === 0);
@@ -2170,6 +2171,11 @@ class ImportExcelController extends Controller
             // Tìm product theo SKU (nếu có SKU được nhập trong file Excel)
             $product = $sku !== '' ? Product::where('sku', $sku)->first() : null;
 
+            // Nếu không tìm theo SKU và có slug, tìm theo slug để cập nhật sản phẩm đã có
+            if (! $product && ! empty($slug)) {
+                $product = Product::where('slug', $slug)->first();
+            }
+
             // Nếu không tìm thấy product (tạo mới) và SKU để trống: tự động sinh SKU theo công thức NF-{CAT}-{6_SO}
             if (! $product && $sku === '') {
                 $sku = $this->generateUniqueProductSku($targetCategoryName);
@@ -2299,29 +2305,27 @@ class ImportExcelController extends Controller
                     continue;
                 }
 
-                // QUY TẮC: Tạo mới BẮT BUỘC phải có ảnh và ảnh chính phải tồn tại
+                // Kiểm tra ảnh: Nếu không có ảnh hoặc ảnh chưa có sẵn trên đĩa thì cảnh báo nhưng VẪN TIẾP TỤC tạo sản phẩm và biến thể
                 if (empty($imageNames)) {
                     $errors[] = [
-                        'type' => 'IMAGE_REQUIRED',
+                        'type' => 'IMAGE_WARNING',
                         'sku' => $sku,
-                        'message' => "Bỏ qua sản phẩm '{$name}' (SKU: {$sku}): Không có hình ảnh. Sản phẩm tạo mới bắt buộc phải có ít nhất ảnh chính.",
+                        'message' => "Sản phẩm '{$name}' (SKU: {$sku}): Không có hình ảnh được chỉ định.",
                         'row' => $rowIndex + 2,
                         'sheet' => $sheetTitle,
                     ];
-                    continue; // BỎ QUA HOÀN TOÀN, KHÔNG TẠO MỚI!
-                }
-
-                $primaryImageName = $imageNames[0];
-                $resolvedPrimary = $this->resolveImageFile($primaryImageName);
-                if (! $resolvedPrimary) {
-                    $errors[] = [
-                        'type' => 'PRIMARY_IMAGE_INVALID',
-                        'sku' => $sku,
-                        'message' => "Bỏ qua sản phẩm '{$name}' (SKU: {$sku}): Ảnh chính '{$primaryImageName}' không tồn tại trên hệ thống (thư mục clothes hoặc imports).",
-                        'row' => $rowIndex + 2,
-                        'sheet' => $sheetTitle,
-                    ];
-                    continue; // BỎ QUA HOÀN TOÀN, KHÔNG TẠO MỚI!
+                } else {
+                    $primaryImageName = $imageNames[0];
+                    $resolvedPrimary = $this->resolveImageFile($primaryImageName);
+                    if (! $resolvedPrimary) {
+                        $errors[] = [
+                            'type' => 'PRIMARY_IMAGE_WARNING',
+                            'sku' => $sku,
+                            'message' => "Sản phẩm '{$name}' (SKU: {$sku}): Ảnh chính '{$primaryImageName}' chưa có sẵn trên đĩa (thư mục clothes hoặc imports). Đã tạo sản phẩm và biến thể, vui lòng bổ sung file ảnh sau.",
+                            'row' => $rowIndex + 2,
+                            'sheet' => $sheetTitle,
+                        ];
+                    }
                 }
 
                 // Đảm bảo có giá trị mặc định cho các trường bắt buộc khi tạo mới
@@ -3658,15 +3662,66 @@ class ImportExcelController extends Controller
             }
         }
 
+        // Filter theo tình trạng ảnh (thiếu/lỗi hoặc hợp lệ)
+        if ($request->filled('image_status')) {
+            $imageStatus = (string) $request->input('image_status');
+            $validIds = $this->getValidImageProductIds();
+            if ($imageStatus === 'missing_or_invalid') {
+                $query->whereNotIn('id', $validIds);
+            } elseif ($imageStatus === 'has_valid') {
+                $query->whereIn('id', $validIds);
+            }
+        }
+
         // Log để debug
         Log::info('Build filter query', [
             'category_ids' => $categoryIds ?? [],
             'brand_ids' => $brandIds ?? [],
+            'image_status' => $request->input('image_status'),
             'has_category_filter' => !empty($categoryIds),
             'has_brand_filter' => !empty($brandIds),
         ]);
 
         return $query->orderBy('id');
+    }
+
+    /**
+     * Lấy danh sách ID các sản phẩm có ảnh chính hợp lệ (tồn tại file vật lý trên đĩa hoặc là URL online)
+     */
+    protected function getValidImageProductIds(): array
+    {
+        $dirClothes = public_path('clients/assets/img/clothes');
+        $files = is_dir($dirClothes) ? scandir($dirClothes) : [];
+        $existingFiles = array_flip($files);
+
+        $dirImports = public_path('clients/assets/img/imports');
+        if (is_dir($dirImports)) {
+            $existingFiles += array_flip(scandir($dirImports));
+        }
+
+        $primaryImages = DB::table('images')
+            ->where('is_primary', true)
+            ->whereNotNull('product_id')
+            ->select('product_id', 'url')
+            ->get();
+
+        $validProductIds = [];
+        foreach ($primaryImages as $img) {
+            $url = trim((string) $img->url);
+            if ($url === '') {
+                continue;
+            }
+            if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://')) {
+                $validProductIds[$img->product_id] = true;
+                continue;
+            }
+            $baseName = basename($url);
+            if (isset($existingFiles[$baseName])) {
+                $validProductIds[$img->product_id] = true;
+            }
+        }
+
+        return array_keys($validProductIds);
     }
 
     /**

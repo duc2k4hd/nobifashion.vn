@@ -985,6 +985,20 @@
                     </select>
                 </div>
 
+                {{-- Tình trạng ảnh --}}
+                <div class="filter-field">
+                    <label for="filter-image-status">Tình trạng ảnh</label>
+                    <select id="filter-image-status" name="image_status">
+                        <option value="">Tất cả ảnh</option>
+                        <option value="missing_or_invalid" {{ request('image_status') === 'missing_or_invalid' ? 'selected' : '' }}>
+                            ⚠️ Thiếu / lỗi ảnh chính
+                        </option>
+                        <option value="has_valid" {{ request('image_status') === 'has_valid' ? 'selected' : '' }}>
+                            ✅ Đủ ảnh chính hợp lệ
+                        </option>
+                    </select>
+                </div>
+
                 {{-- Sắp xếp --}}
                 <div class="filter-field">
                     <label for="filter-sort">Sắp xếp theo</label>
@@ -1201,6 +1215,12 @@
                                             @if($product->has_variants)
                                                 <span class="feature-badge badge-variants" title="Có nhiều biến thể phân loại">
                                                     <i class="fa-solid fa-layer-group"></i> Biến thể
+                                                </span>
+                                            @endif
+
+                                            @if(!isset($validImageMap[$product->id]))
+                                                <span class="feature-badge" style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;" title="Chưa có ảnh chính hoặc file ảnh vật lý bị thiếu / lỗi trên máy chủ">
+                                                    <i class="fa-solid fa-triangle-exclamation"></i> Thiếu/lỗi ảnh
                                                 </span>
                                             @endif
                                         </div>

@@ -12,6 +12,7 @@ use App\Models\Tag;
 use App\Services\Admin\ProgressiveSearchService;
 use App\Services\Admin\ProductService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -111,6 +112,9 @@ class ProductController extends Controller
             } elseif ($request->input('flash_sale_status') === '0') {
                 $query->whereDoesntHave('currentFlashSaleItem');
             }
+        })
+        ->when($request->filled('image_status'), function ($query) use ($request) {
+            $this->applyImageStatusFilter($query, (string) $request->input('image_status'));
         });
 
         $searchMeta = $this->progressiveSearchService->apply(
@@ -146,7 +150,9 @@ class ProductController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('admins.products.index', compact('products', 'categories', 'brands', 'perPageOptions', 'perPage', 'searchMeta', 'stats'));
+        $validImageMap = array_flip($this->getValidImageProductIds());
+
+        return view('admins.products.index', compact('products', 'categories', 'brands', 'perPageOptions', 'perPage', 'searchMeta', 'stats', 'validImageMap'));
     }
 
     /**
@@ -469,5 +475,58 @@ class ProductController extends Controller
                 ];
             })->values(),
         ]);
+    }
+
+    /**
+     * Lấy danh sách ID các sản phẩm có ảnh chính hợp lệ (tồn tại file vật lý trên đĩa hoặc là URL online).
+     */
+    protected function getValidImageProductIds(): array
+    {
+        $dirClothes = public_path('clients/assets/img/clothes');
+        $files = is_dir($dirClothes) ? scandir($dirClothes) : [];
+        $existingFiles = array_flip($files);
+
+        $dirImports = public_path('clients/assets/img/imports');
+        if (is_dir($dirImports)) {
+            $existingFiles += array_flip(scandir($dirImports));
+        }
+
+        $primaryImages = DB::table('images')
+            ->where('is_primary', true)
+            ->whereNotNull('product_id')
+            ->select('product_id', 'url')
+            ->get();
+
+        $validProductIds = [];
+        foreach ($primaryImages as $img) {
+            $url = trim((string) $img->url);
+            if ($url === '') {
+                continue;
+            }
+            if (str_starts_with($url, 'http://') || str_starts_with($url, 'https://')) {
+                $validProductIds[$img->product_id] = true;
+                continue;
+            }
+            $baseName = basename($url);
+            if (isset($existingFiles[$baseName])) {
+                $validProductIds[$img->product_id] = true;
+            }
+        }
+
+        return array_keys($validProductIds);
+    }
+
+    /**
+     * Áp dụng điều kiện lọc theo tình trạng ảnh sản phẩm.
+     */
+    protected function applyImageStatusFilter($query, string $status): void
+    {
+        $validIds = $this->getValidImageProductIds();
+
+        if ($status === 'missing_or_invalid') {
+            $query->whereNotIn('products.id', $validIds);
+        } elseif ($status === 'has_valid') {
+            $query->whereIn('products.id', $validIds);
+        }
     }
 }
