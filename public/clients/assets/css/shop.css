@@ -202,9 +202,10 @@
     border-color: #2196f3;
 }
 
-/* .nobifashion_shop_products_filter_color_checkbox {
-    display: none;
-} */
+.nobifashion_shop_products_filter_color_checkbox,
+.nobifashion_shop_products_filter_size_checkbox {
+    display: none !important;
+}
 
 /* Hiển thị ô màu vuông nhỏ */
 /* .nobifashion_shop_products_filter_color_form label::before {
@@ -757,3 +758,155 @@
 .nobifashion_shop_products_content_pagination .page-item.active .page-link svg {
     fill: #fff;
 }
+
+/* Tối ưu thanh cuộn cho danh sách màu sắc phong phú */
+.shop-filter-color-scroll::-webkit-scrollbar {
+    width: 4px;
+}
+.shop-filter-color-scroll::-webkit-scrollbar-track {
+    background: #f5f5f5;
+    border-radius: 4px;
+}
+.shop-filter-color-scroll::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+}
+.shop-filter-color-scroll::-webkit-scrollbar-thumb:hover {
+    background: #999;
+}
+
+/* Nút xóa bộ lọc */
+.nobifashion_shop_products_content_filter_delete_all_btn {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.nobifashion_shop_products_content_filter_delete_all_btn:hover {
+    opacity: 0.85;
+}
+
+/* Container danh sách sản phẩm */
+.nobifashion_shop_products_container {
+    position: relative;
+    min-height: 200px;
+    transition: opacity 0.15s ease;
+}
+
+/* Tiêu đề & số lượng nhóm bộ lọc */
+.nobifashion_shop_filter_header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.nobifashion_shop_filter_header h4 {
+    margin: 0;
+}
+
+.nobifashion_shop_filter_count {
+    font-size: 11.5px;
+    color: #888;
+    font-weight: 500;
+}
+
+/* Ô tìm kiếm nhanh màu sắc */
+.nobifashion_shop_filter_search_box {
+    margin-bottom: 8px;
+}
+
+.nobifashion_shop_filter_search_input {
+    width: 100%;
+    padding: 5px 10px;
+    font-size: 12px;
+    border: 1px solid #ddd;
+    border-radius: 14px;
+    outline: none;
+    background: #fff;
+    box-sizing: border-box;
+}
+
+/* Khung cuộn màu sắc và kích cỡ */
+.shop-filter-color-scroll {
+    max-height: 240px;
+    overflow-y: auto;
+    padding-right: 4px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.shop-filter-size-scroll {
+    max-height: 200px;
+    overflow-y: auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+}
+
+.shop-filter-color-pill,
+.shop-filter-size-pill {
+    cursor: pointer;
+}
+
+.nobifashion_shop_hide {
+    display: none !important;
+}
+
+/* Trạng thái Loading Overlay tinh tế & chuyên nghiệp */
+.nobifashion_shop_products_container {
+    position: relative;
+    min-height: 240px;
+    transition: opacity 0.2s ease;
+}
+
+.nobifashion_shop_products_container.nobifashion_shop_loading {
+    pointer-events: none;
+    user-select: none;
+}
+
+/* Lớp phủ mờ sang trọng */
+.nobifashion_shop_products_container.nobifashion_shop_loading::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.65);
+    backdrop-filter: blur(1.5px);
+    -webkit-backdrop-filter: blur(1.5px);
+    z-index: 20;
+    border-radius: 8px;
+    animation: nobifashionFadeIn 0.2s ease-in-out;
+}
+
+/* Spinner tối giản phong cách cao cấp */
+.nobifashion_shop_products_container.nobifashion_shop_loading::after {
+    content: '';
+    position: absolute;
+    top: 180px;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 38px;
+    height: 38px;
+    border: 3.5px solid rgba(0, 0, 0, 0.08);
+    border-top-color: var(--primary-color, #111);
+    border-radius: 50%;
+    z-index: 21;
+    animation: nobifashionSpin 0.65s linear infinite;
+}
+
+@keyframes nobifashionSpin {
+    to {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+@keyframes nobifashionFadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+
+
