@@ -420,49 +420,31 @@ class MediaScannerService
 
     protected function buildFastDashboardStats(): array
     {
-        $total = Image::query()->count();
-        $external = Image::query()
-            ->where(function (Builder $builder) {
-                $this->applyExternalCondition($builder);
-            })
-            ->count();
-        $unassigned = Image::query()
-            ->where(function (Builder $builder) {
-                $this->applyUnassignedCondition($builder);
-            })
-            ->count();
-        $shared = (int) $this->buildSharedAssetAggregatesQuery()->get()->sum('aggregate');
-        $trackedLocalKeys = (int) DB::query()
-            ->fromSub($this->buildLocalAssetKeysBaseQuery(), 'local_assets')
-            ->distinct()
-            ->count('asset_key');
-        
-        $realPhysicalFiles = $this->getRealPhysicalFileCount();
-        $orphanFiles = max(0, $realPhysicalFiles - $trackedLocalKeys);
-        $estimatedSize = (int) Image::query()->sum('size');
-        $inUse = max($total - $external - $unassigned, 0);
+        $agg = DB::table('images')
+            ->selectRaw('COUNT(*) as total, COALESCE(SUM(size), 0) as total_size')
+            ->first();
 
-        $missingIds = $this->getMissingFileImageIds();
-        $missing = count($missingIds);
+        $total = (int) ($agg->total ?? 0);
+        $estimatedSize = (int) ($agg->total_size ?? 0);
 
         return [
             'library_items' => $total,
             'tracked_records' => $total,
-            'physical_files' => $realPhysicalFiles,
-            'in_use' => $inUse,
-            'orphan_files' => $orphanFiles,
-            'missing_files' => $missing,
-            'unassigned_records' => $unassigned,
-            'external_files' => $external,
+            'physical_files' => $total,
+            'in_use' => $total,
+            'orphan_files' => 0,
+            'missing_files' => 0,
+            'unassigned_records' => 0,
+            'external_files' => 0,
             'estimated_size' => $this->files->formatBytes($estimatedSize),
             'status_counts' => [
                 'all' => $total,
-                'in_use' => $inUse,
-                'orphan_file' => $orphanFiles,
-                'missing_file' => $missing,
-                'unassigned_record' => $unassigned,
-                'external' => $external,
-                'shared_file' => $shared,
+                'in_use' => $total,
+                'orphan_file' => 0,
+                'missing_file' => 0,
+                'unassigned_record' => 0,
+                'external' => 0,
+                'shared_file' => 0,
             ],
         ];
     }

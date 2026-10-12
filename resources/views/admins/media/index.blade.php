@@ -6,82 +6,66 @@
 @push('head')
     <link rel="shortcut icon" href="{{ asset('admins/img/icons/media-icon.png') }}" type="image/x-icon">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css">
-    <link rel="stylesheet" href="{{ asset('admins/css/media-manager.css') }}?v={{ env('APP_VERSION') }}">
+    <link rel="stylesheet" href="{{ asset('admins/css/media-manager.css') }}?v={{ time() }}">
 @endpush
 
 @section('content')
     <div class="media-manager-page">
-        <section class="media-page-header">
-            <div>
-                <p class="media-page-eyebrow">Thư viện phương tiện</p>
-                <h1>Quản lý ảnh tập trung</h1>
-                <p class="media-page-description">
-                    Theo dõi ảnh đang dùng, file mồ côi, file thiếu và thao tác gán lại ảnh trong một màn hình duy nhất.
-                </p>
+        {{-- Header tối giản --}}
+        <header class="media-header">
+            <div class="media-header-left">
+                <div class="media-header-title-wrap">
+                    <h1 class="media-title">Thư viện Media</h1>
+                    <span class="media-badge-count" id="mediaTotalCountBadge">
+                        {{ number_format($initialPagination['total'] ?? 0) }} tệp • {{ $stats['estimated_size'] ?? '0 B' }}
+                    </span>
+                </div>
+                <p class="media-subtitle">Quản lý, tải lên và sao chép liên kết hình ảnh nhanh chóng</p>
             </div>
-            <div class="media-page-actions">
-                <button type="button" class="media-btn media-btn-secondary" id="mediaSyncPostsBtn" title="Quét toàn bộ ảnh trong bài viết và tự động gán đối tượng">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px; vertical-align: -2px;">
+            <div class="media-header-actions">
+                <button type="button" class="media-btn media-btn-outline" id="mediaSyncPostsBtn" title="Quét toàn bộ ảnh trong bài viết và tự động gán đối tượng">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
                     </svg>
-                    Đồng bộ ảnh bài viết
+                    Đồng bộ bài viết
                 </button>
-                <button type="button" class="media-btn media-btn-secondary" id="mediaRefreshBtn">Quét lại dữ liệu</button>
-                <button type="button" class="media-btn media-btn-secondary" id="mediaCleanupBtn">Dọn file lỗi</button>
-                <button type="button" class="media-btn media-btn-primary" id="mediaToggleUploadBtn">Tải ảnh mới</button>
+                <button type="button" class="media-btn media-btn-outline" id="mediaCleanupBtn" title="Dọn dẹp file rác và lỗi">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                    </svg>
+                    Dọn file rác
+                </button>
+                <button type="button" class="media-btn media-btn-primary" id="mediaToggleUploadBtn">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    Tải ảnh lên
+                </button>
             </div>
-        </section>
+        </header>
 
-        <section class="media-stats-grid" id="mediaStatsGrid">
-            <article class="media-stat-card">
-                <span class="media-stat-label">Mục trong thư viện</span>
-                <strong class="media-stat-value" data-stat-key="library_items">{{ number_format($stats['library_items']) }}</strong>
-            </article>
-            <article class="media-stat-card">
-                <span class="media-stat-label">Bản ghi đang theo dõi</span>
-                <strong class="media-stat-value" data-stat-key="tracked_records">{{ number_format($stats['tracked_records']) }}</strong>
-            </article>
-            <article class="media-stat-card">
-                <span class="media-stat-label">Tệp vật lý trên ổ đĩa</span>
-                <strong class="media-stat-value" data-stat-key="physical_files">{{ number_format($stats['physical_files']) }}</strong>
-            </article>
-            <article class="media-stat-card media-stat-warning">
-                <span class="media-stat-label">File mồ côi</span>
-                <strong class="media-stat-value" data-stat-key="orphan_files">{{ number_format($stats['orphan_files']) }}</strong>
-            </article>
-            <article class="media-stat-card media-stat-danger">
-                <span class="media-stat-label">File thiếu</span>
-                <strong class="media-stat-value" data-stat-key="missing_files">{{ number_format($stats['missing_files']) }}</strong>
-            </article>
-            <article class="media-stat-card media-stat-warning">
-                <span class="media-stat-label">Record chưa gắn</span>
-                <strong class="media-stat-value" data-stat-key="unassigned_records">{{ number_format($stats['unassigned_records']) }}</strong>
-            </article>
-            <article class="media-stat-card media-stat-accent">
-                <span class="media-stat-label">Dung lượng ước tính</span>
-                <strong class="media-stat-value" data-stat-key="estimated_size">{{ $stats['estimated_size'] }}</strong>
-            </article>
-        </section>
-
+        {{-- Panel Upload kéo thả (Ẩn/Hiện nhẹ nhàng khi bấm Tải ảnh lên) --}}
         <section class="media-upload-panel is-collapsed" id="mediaUploadPanel">
-            <div class="media-panel-head">
+            <div class="media-upload-header">
                 <div>
-                    <h2>Upload ảnh vào thư viện</h2>
-                    <p>Chọn thư mục lưu ảnh rồi tải lên. Nếu cần gán vào sản phẩm, bài viết hoặc banner, hãy chọn ảnh sau khi upload và gán từ inspector bên phải.</p>
+                    <h3 class="media-upload-title">Tải ảnh lên hệ thống</h3>
+                    <p class="media-upload-desc">Hỗ trợ định dạng JPG, PNG, WEBP, AVIF, GIF (tối đa 5MB mỗi ảnh)</p>
                 </div>
-                <button type="button" class="media-panel-close" id="mediaCollapseUploadBtn" aria-label="Đóng panel upload">×</button>
+                <button type="button" class="media-panel-close" id="mediaCollapseUploadBtn" aria-label="Đóng">×</button>
             </div>
 
             <form id="mediaUploadForm" class="media-upload-form">
                 @csrf
-                <div class="media-form-grid">
-                    <div class="media-field">
-                        <label for="mediaUploadFolder">Thư mục đích</label>
-                        <select name="folder" id="mediaUploadFolder" required>
+                <div class="media-upload-row">
+                    <div class="media-field media-field-folder">
+                        <label for="mediaUploadFolder">Lưu vào thư mục:</label>
+                        <select name="folder" id="mediaUploadFolder" class="media-select" required>
                             @foreach($folders->groupBy('scope') as $scope => $items)
                                 <optgroup label="{{ $scope }}">
                                     @foreach($items as $folder)
-                                        <option value="{{ $folder['key'] }}">
+                                        <option value="{{ $folder['key'] }}" {{ $folder['key'] === 'clothes' ? 'selected' : '' }}>
                                             {{ $folder['label'] }} ({{ $folder['path'] }})
                                         </option>
                                     @endforeach
@@ -89,240 +73,288 @@
                             @endforeach
                         </select>
                     </div>
-                </div>
 
-                <div class="media-dropzone" id="mediaDropzone">
-                    <input type="file" name="files[]" id="mediaFileInput" accept="image/*" multiple hidden>
-                    <div>
-                        <strong>Kéo thả ảnh vào đây</strong>
-                        <p>hoặc bấm để chọn nhiều file. Hỗ trợ JPG, PNG, GIF, WEBP, AVIF tối đa 5MB mỗi file.</p>
-                        <span id="mediaSelectedFiles">Chưa chọn file nào.</span>
+                    <div class="media-dropzone" id="mediaDropzone">
+                        <input type="file" name="files[]" id="mediaFileInput" accept="image/*" multiple hidden>
+                        <div class="media-dropzone-content">
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" class="media-dropzone-icon">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                            <p class="media-dropzone-text"><strong>Kéo thả ảnh vào đây</strong> hoặc <span class="media-dropzone-link">chọn file từ máy tính</span></p>
+                            <span class="media-dropzone-hint" id="mediaSelectedFiles">Chưa có file nào được chọn</span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="media-form-actions">
-                    <button type="submit" class="media-btn media-btn-primary">Upload vào thư viện</button>
+                <div class="media-upload-actions">
+                    <button type="submit" class="media-btn media-btn-primary" id="mediaSubmitUploadBtn">Bắt đầu tải lên</button>
                 </div>
             </form>
         </section>
 
-        <section class="media-workspace">
-            <aside class="media-sidebar">
-                <div class="media-sidebar-section">
-                    <h3>Trạng thái quản lý</h3>
-                    <div class="media-status-list" id="mediaStatusList">
-                        @foreach($statusFilters as $key => $label)
-                            @continue($key === 'shared_file')
-                            <button type="button"
-                                    class="media-status-filter {{ $key === 'all' ? 'is-active' : '' }}"
-                                    data-status="{{ $key }}">
-                                <span>{{ $label }}</span>
-                                <strong data-status-count="{{ $key }}">
-                                    {{ number_format($stats['status_counts'][$key] ?? 0) }}
-                                </strong>
-                            </button>
-                        @endforeach
-                    </div>
+        {{-- Thanh công cụ lọc & tìm kiếm (Toolbar) --}}
+        <section class="media-toolbar-card">
+            <div class="media-toolbar">
+                <div class="media-search-box">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="media-search-icon">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="search" id="mediaKeyword" class="media-search-input" placeholder="Tìm theo tên file, tiêu đề, đường dẫn...">
                 </div>
 
-                <div class="media-sidebar-section">
-                    <h3>Thư mục đang theo dõi</h3>
-                    <ul class="media-folder-list">
-                        @foreach($folders as $folder)
-                            <li>
-                                <button type="button" class="media-folder-filter" data-folder="{{ $folder['key'] }}">
-                                    <span>
-                                        {{ $folder['label'] }}
-                                        <small class="text-muted ms-1">({{ $folder['file_count'] ?? 0 }})</small>
-                                    </span>
-                                    <small>{{ $folder['path'] }}</small>
-                                </button>
-                            </li>
-                        @endforeach
-                    </ul>
-                </div>
-
-                <div class="media-sidebar-section media-sidebar-note">
-                    <h3>Nguyên tắc an toàn</h3>
-                    <p>
-                        Nếu một file đang được nhiều bản ghi cùng dùng, hệ thống chỉ xóa record và giữ lại file vật lý để tránh làm gãy ảnh ở nơi khác.
-                    </p>
-                    <p>
-                        Tool dọn file lỗi sẽ xem trước và xử lý record DB bị mất file, record chưa gắn đối tượng và file vật lý không còn bản ghi tham chiếu.
-                    </p>
-                </div>
-            </aside>
-
-            <main class="media-browser">
-                <div class="media-toolbar">
-                    <div class="media-toolbar-search">
-                        <input type="search" id="mediaKeyword" placeholder="Tìm theo tên file, tiêu đề, alt, đường dẫn, đối tượng...">
-                    </div>
-
-                    <div class="media-toolbar-filters">
-                        <select id="mediaFilterType">
-                            @foreach($typeFilters as $key => $label)
-                                <option value="{{ $key }}">{{ $label }}</option>
-                            @endforeach
-                        </select>
-
-                        <select id="mediaFilterFolder">
+                <div class="media-filters">
+                    <div class="media-filter-item">
+                        <select id="mediaFilterFolder" class="media-select">
                             <option value="all">Tất cả thư mục</option>
                             @foreach($folders as $folder)
                                 <option value="{{ $folder['key'] }}">{{ $folder['label'] }}</option>
                             @endforeach
                         </select>
+                    </div>
 
-                        <select id="mediaFilterStatus">
+                    <div class="media-filter-item">
+                        <select id="mediaFilterType" class="media-select">
+                            @foreach($typeFilters as $key => $label)
+                                <option value="{{ $key }}">{{ $label }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
+                    <div class="media-filter-item" style="display: none;">
+                        <select id="mediaFilterStatus" class="media-select">
                             @foreach($statusFilters as $key => $label)
                                 <option value="{{ $key }}">{{ $label }}</option>
                             @endforeach
                         </select>
+                    </div>
 
-                        <select id="mediaSort">
+                    <div class="media-filter-item">
+                        <select id="mediaSort" class="media-select">
                             <option value="created_at">Mới cập nhật</option>
-                            <option value="file_name">Tên file</option>
-                            <option value="size">Dung lượng</option>
-                            <option value="entity_id">ID đối tượng</option>
+                            <option value="file_name">Tên file A-Z</option>
+                            <option value="size">Dung lượng lớn nhất</option>
                         </select>
+                    </div>
 
-                        <select id="mediaPerPage">
-                            <option value="50" selected>50 / trang</option>
-                            <option value="200">200 / trang</option>
-                            <option value="500">500 / trang</option>
-                            <option value="2000">2000 / trang</option>
-                            <option value="5000">5000 / trang</option>
-                            <option value="10000">10000 / trang</option>
+                    <div class="media-filter-item">
+                        <select id="mediaPerPage" class="media-select">
+                            <option value="48" selected>48 / trang</option>
+                            <option value="96">96 / trang</option>
+                            <option value="192">192 / trang</option>
                         </select>
-
-                        <div class="media-view-switch">
-                            <button type="button" class="is-active" data-view="grid" id="mediaViewGridBtn">Lưới</button>
-                            <button type="button" data-view="list" id="mediaViewListBtn">Danh sách</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="media-bulkbar" id="mediaBulkBar" hidden>
-                    <div>
-                        <strong id="mediaBulkCount">0</strong>
-                        <span>mục đang được chọn</span>
-                    </div>
-                    <div class="media-bulkbar-actions">
-                        <button type="button" class="media-btn media-btn-secondary" id="mediaSelectVisibleBtn">Chọn tất cả đang hiển thị</button>
-                        <button type="button" class="media-btn media-btn-secondary" id="mediaClearSelectionBtn">Bỏ chọn</button>
-                        <button type="button" class="media-btn media-btn-danger" id="mediaBulkDeleteBtn">Xóa các mục đã chọn</button>
-                    </div>
-                </div>
-
-                <div class="media-results-meta">
-                    <div id="mediaResultsSummary">
-                        Hiển thị {{ number_format($initialPagination['from'] ?? 0) }} - {{ number_format($initialPagination['to'] ?? 0) }}
-                        trên {{ number_format($initialPagination['total'] ?? 0) }} mục
-                    </div>
-                    <div id="mediaCurrentFilterText">Bộ lọc hiện tại: Tất cả</div>
-                </div>
-
-                <div class="media-grid is-grid" id="mediaGrid"></div>
-
-                <div class="media-empty-state" id="mediaEmptyState" hidden>
-                    <h3>Không có media phù hợp</h3>
-                    <p>Thử đổi bộ lọc hoặc từ khóa để xem thêm kết quả.</p>
-                </div>
-
-                <div class="media-pagination" id="mediaPagination">
-                    <button type="button" class="media-btn media-btn-secondary" id="mediaPrevBtn">Trang trước</button>
-                    <span id="mediaPaginationText">
-                        Trang {{ $initialPagination['current_page'] ?? 1 }} / {{ $initialPagination['last_page'] ?? 1 }}
-                    </span>
-                    <button type="button" class="media-btn media-btn-secondary" id="mediaNextBtn">Trang sau</button>
-                </div>
-            </main>
-
-            <aside class="media-inspector" id="mediaInspector">
-                <div class="media-inspector-empty" id="mediaInspectorEmpty">
-                    <h3>Chọn một ảnh để xem chi tiết</h3>
-                    <p>Inspector bên phải sẽ hiển thị metadata, tình trạng file, vị trí sử dụng và các thao tác gán/xóa.</p>
-                </div>
-
-                <div class="media-inspector-content" id="mediaInspectorContent" hidden>
-                    <div class="media-inspector-preview">
-                        <img src="" alt="" id="mediaInspectorImage">
                     </div>
 
-                    <div class="media-inspector-head">
-                        <div>
-                            <h3 id="mediaInspectorTitle">-</h3>
-                            <p id="mediaInspectorSubtitle">-</p>
-                        </div>
-                        <div class="media-inspector-badges" id="mediaInspectorBadges"></div>
+                    <div class="media-view-switch">
+                        <button type="button" class="media-view-btn is-active" data-view="grid" id="mediaViewGridBtn" title="Xem lưới">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="14" width="7" height="7"></rect>
+                                <rect x="3" y="14" width="7" height="7"></rect>
+                            </svg>
+                        </button>
+                        <button type="button" class="media-view-btn" data-view="list" id="mediaViewListBtn" title="Xem danh sách">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <line x1="8" y1="6" x2="21" y2="6"></line>
+                                <line x1="8" y1="12" x2="21" y2="12"></line>
+                                <line x1="8" y1="18" x2="21" y2="18"></line>
+                                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                            </svg>
+                        </button>
                     </div>
 
-                    <form id="mediaInspectorForm" class="media-inspector-form">
-                        @csrf
-                        <input type="hidden" id="mediaInspectorSource">
-                        <input type="hidden" id="mediaInspectorId">
-
-                        <div class="media-field">
-                            <label for="mediaInspectorTitleInput">Tiêu đề</label>
-                            <input type="text" id="mediaInspectorTitleInput" name="title">
-                        </div>
-
-                        <div class="media-field">
-                            <label for="mediaInspectorAltInput">Alt text</label>
-                            <input type="text" id="mediaInspectorAltInput" name="alt">
-                        </div>
-
-                        <div class="media-field">
-                            <label for="mediaInspectorDescriptionInput">Ghi chú</label>
-                            <textarea id="mediaInspectorDescriptionInput" name="description" rows="3"></textarea>
-                        </div>
-
-                        <label class="media-checkbox">
-                            <input type="checkbox" id="mediaInspectorPrimaryInput" name="is_primary" value="1">
-                            <span>Đặt làm ảnh chính nếu là ảnh sản phẩm</span>
-                        </label>
-
-                        <div class="media-inspector-actions">
-                            <button type="submit" class="media-btn media-btn-primary" id="mediaSaveBtn">Lưu metadata</button>
-                            <button type="button" class="media-btn media-btn-secondary" id="mediaCopyPathBtn">Chép đường dẫn</button>
-                            <button type="button" class="media-btn media-btn-secondary" id="mediaOpenOriginalBtn">Mở file</button>
-                            <button type="button" class="media-btn media-btn-danger" id="mediaDeleteBtn">Xóa mục này</button>
-                        </div>
-                    </form>
-
-                    <div class="media-inspector-meta" id="mediaInspectorMeta"></div>
-
-                    <div class="media-assign-box">
-                        <div class="media-assign-head">
-                            <h4>Gán ảnh vào đối tượng khác</h4>
-                            <p>Hữu ích với file mồ côi hoặc khi tái sử dụng cùng một ảnh cho nhiều nơi.</p>
-                        </div>
-
-                        <form id="mediaAssignForm" class="media-assign-form">
-                            @csrf
-                            <input type="hidden" id="mediaAssignSource" name="source">
-                            <input type="hidden" id="mediaAssignMediaId" name="media_id">
-
-                            <div class="media-field">
-                                <label for="mediaAssignTargetType">Loại đối tượng</label>
-                                <select id="mediaAssignTargetType" name="target_type">
-                                    @foreach($uploadTargets as $key => $label)
-                                        <option value="{{ $key }}">{{ $label }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div class="media-field">
-                                <label for="mediaAssignTargetId">Đối tượng cụ thể</label>
-                                <select id="mediaAssignTargetId" name="target_id"></select>
-                            </div>
-
-                            <button type="submit" class="media-btn media-btn-primary" id="mediaAssignBtn">Gán ngay</button>
-                        </form>
-                    </div>
+                    <button type="button" class="media-btn-icon" id="mediaRefreshBtn" title="Làm mới danh sách">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <polyline points="1 20 1 14 7 14"></polyline>
+                            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                        </svg>
+                    </button>
                 </div>
-            </aside>
+            </div>
+
+            {{-- Thanh thao tác chọn nhiều (Bulk Action Bar) --}}
+            <div class="media-bulkbar" id="mediaBulkBar" hidden>
+                <div class="media-bulkbar-info">
+                    <span class="media-bulkbar-badge" id="mediaBulkCount">0</span>
+                    <span>ảnh đã được chọn</span>
+                </div>
+                <div class="media-bulkbar-actions">
+                    <button type="button" class="media-btn media-btn-sm media-btn-outline" id="mediaSelectVisibleBtn">Chọn tất cả trang này</button>
+                    <button type="button" class="media-btn media-btn-sm media-btn-outline" id="mediaClearSelectionBtn">Bỏ chọn</button>
+                    <button type="button" class="media-btn media-btn-sm media-btn-danger" id="mediaBulkDeleteBtn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px; vertical-align: -2px;">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                        </svg>
+                        Xóa các ảnh đã chọn
+                    </button>
+                </div>
+            </div>
         </section>
+
+        {{-- Lưới hiển thị hình ảnh chính (Toàn màn hình) --}}
+        <main class="media-canvas">
+            <div class="media-meta-bar">
+                <div class="media-meta-count" id="mediaResultsSummary">
+                    Hiển thị {{ number_format($initialPagination['from'] ?? 0) }} - {{ number_format($initialPagination['to'] ?? 0) }} trên {{ number_format($initialPagination['total'] ?? 0) }} mục
+                </div>
+                <div class="media-meta-filter" id="mediaCurrentFilterText">Tất cả thư mục</div>
+            </div>
+
+            {{-- Lưới ảnh --}}
+            <div class="media-grid is-grid" id="mediaGrid"></div>
+
+            {{-- Trạng thái rỗng --}}
+            <div class="media-empty-state" id="mediaEmptyState" hidden>
+                <div class="media-empty-icon">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                        <circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                </div>
+                <h3>Không tìm thấy hình ảnh nào</h3>
+                <p>Thử tìm kiếm với từ khóa khác hoặc chuyển sang thư mục khác.</p>
+            </div>
+
+            {{-- Phân trang --}}
+            <div class="media-pagination" id="mediaPagination">
+                <button type="button" class="media-btn media-btn-outline" id="mediaPrevBtn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                    Trang trước
+                </button>
+                <span class="media-pagination-text" id="mediaPaginationText">
+                    Trang {{ $initialPagination['current_page'] ?? 1 }} / {{ $initialPagination['last_page'] ?? 1 }}
+                </span>
+                <button type="button" class="media-btn media-btn-outline" id="mediaNextBtn">
+                    Trang sau
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: 4px;">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
+            </div>
+        </main>
+
+        {{-- Backdrop khi mở Drawer xem chi tiết --}}
+        <div class="media-drawer-backdrop" id="mediaDrawerBackdrop"></div>
+
+        {{-- Drawer xem chi tiết ảnh trượt từ bên phải (Slide-over Drawer) --}}
+        <aside class="media-drawer" id="mediaInspector">
+            <div class="media-drawer-header">
+                <h3 class="media-drawer-title">Chi tiết hình ảnh</h3>
+                <button type="button" class="media-drawer-close" id="mediaCloseInspectorBtn" aria-label="Đóng chi tiết">×</button>
+            </div>
+
+            <div class="media-inspector-empty" id="mediaInspectorEmpty">
+                <p>Chọn một ảnh để xem chi tiết</p>
+            </div>
+
+            <div class="media-drawer-body" id="mediaInspectorContent" hidden>
+                {{-- Ảnh xem trước lớn --}}
+                <div class="media-drawer-preview">
+                    <img src="" alt="" id="mediaInspectorImage">
+                </div>
+
+                {{-- Thông tin tệp --}}
+                <div class="media-drawer-meta-list" id="mediaInspectorMeta">
+                    <div class="media-drawer-meta-item">
+                        <span class="media-meta-label">Tên file:</span>
+                        <strong class="media-meta-val" id="mediaInspectorTitle">-</strong>
+                    </div>
+                    <div class="media-drawer-meta-item">
+                        <span class="media-meta-label">Dung lượng & Kích thước:</span>
+                        <span class="media-meta-val" id="mediaInspectorSubtitle">-</span>
+                    </div>
+                    <div class="media-inspector-badges" id="mediaInspectorBadges"></div>
+                </div>
+
+                {{-- Nút sao chép link siêu tiện lợi --}}
+                <div class="media-drawer-copy-box">
+                    <button type="button" class="media-btn media-btn-primary media-btn-block" id="mediaCopyPathBtn">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        Sao chép đường dẫn (Copy URL)
+                    </button>
+                    <button type="button" class="media-btn media-btn-outline media-btn-block" id="mediaOpenOriginalBtn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                        Mở ảnh trong tab mới
+                    </button>
+                </div>
+
+                {{-- Form sửa thông tin nhanh --}}
+                <form id="mediaInspectorForm" class="media-drawer-form">
+                    @csrf
+                    <input type="hidden" id="mediaInspectorSource">
+                    <input type="hidden" id="mediaInspectorId">
+
+                    <div class="media-field">
+                        <label for="mediaInspectorTitleInput">Tiêu đề (Title)</label>
+                        <input type="text" id="mediaInspectorTitleInput" name="title" class="media-input" placeholder="Tiêu đề hiển thị...">
+                    </div>
+
+                    <div class="media-field">
+                        <label for="mediaInspectorAltInput">Văn bản thay thế (Alt text cho SEO)</label>
+                        <input type="text" id="mediaInspectorAltInput" name="alt" class="media-input" placeholder="Mô tả ảnh cho công cụ tìm kiếm...">
+                    </div>
+
+                    <div class="media-field" style="display: none;">
+                        <textarea id="mediaInspectorDescriptionInput" name="description"></textarea>
+                        <input type="checkbox" id="mediaInspectorPrimaryInput" name="is_primary" value="1">
+                    </div>
+
+                    <div class="media-drawer-form-actions">
+                        <button type="submit" class="media-btn media-btn-outline" id="mediaSaveBtn">Lưu thông tin</button>
+                        <button type="button" class="media-btn media-btn-danger-outline" id="mediaDeleteBtn">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 4px;">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                            </svg>
+                            Xóa ảnh này
+                        </button>
+                    </div>
+                </form>
+
+                {{-- Gán ảnh vào đối tượng khác (Thu gọn mặc định) --}}
+                <details class="media-assign-details">
+                    <summary class="media-assign-summary">Gán ảnh vào Sản phẩm / Bài viết</summary>
+                    <form id="mediaAssignForm" class="media-assign-form" style="margin-top: 12px;">
+                        @csrf
+                        <input type="hidden" id="mediaAssignSource" name="source">
+                        <input type="hidden" id="mediaAssignMediaId" name="media_id">
+
+                        <div class="media-field">
+                            <label for="mediaAssignTargetType">Loại đối tượng</label>
+                            <select id="mediaAssignTargetType" name="target_type" class="media-select">
+                                @foreach($uploadTargets as $key => $label)
+                                    <option value="{{ $key }}">{{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div class="media-field">
+                            <label for="mediaAssignTargetId">Chọn đối tượng</label>
+                            <select id="mediaAssignTargetId" name="target_id" class="media-select"></select>
+                        </div>
+
+                        <button type="submit" class="media-btn media-btn-primary media-btn-block" id="mediaAssignBtn" style="margin-top: 10px;">Xác nhận gán</button>
+                    </form>
+                </details>
+            </div>
+        </aside>
     </div>
 
     <div class="media-loading-overlay" id="mediaLoadingOverlay" hidden aria-live="assertive" aria-busy="true">

@@ -33,7 +33,7 @@ class AdminMediaSearchController extends Controller
                 'from' => $results->firstItem(),
                 'to' => $results->lastItem(),
             ],
-            'stats' => $scanner->getDashboardStats($validated),
+            'stats' => $request->boolean('include_stats') ? $scanner->getDashboardStats($validated) : null,
         ]);
     }
 }

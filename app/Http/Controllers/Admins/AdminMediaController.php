@@ -35,22 +35,13 @@ class AdminMediaController extends Controller
         $folders = $directories->map(function ($path, $key) {
             $label = Str::headline(str_replace('_', ' ', $key));
             $scope = str_starts_with($path, 'clients/') ? 'Frontend' : 'Admin';
-            
-            $realPath = public_path($path);
-            $fileCount = 0;
-            if (is_dir($realPath)) {
-                // Sử dụng FilesystemIterator để đếm file trực tiếp ở tầng C/OS siêu nhanh
-                // Tránh dùng File::files() vì nó nạp toàn bộ SplFileInfo của tất cả files vào RAM gây chậm web.
-                $fi = new \FilesystemIterator($realPath, \FilesystemIterator::SKIP_DOTS);
-                $fileCount = iterator_count($fi);
-            }
 
             return [
                 'key' => $key,
                 'path' => $path,
                 'label' => $label,
                 'scope' => $scope,
-                'file_count' => $fileCount,
+                'file_count' => 0,
             ];
         })->values();
 

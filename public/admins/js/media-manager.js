@@ -125,6 +125,9 @@
                 inspector: document.getElementById('mediaInspector'),
                 inspectorEmpty: document.getElementById('mediaInspectorEmpty'),
                 inspectorContent: document.getElementById('mediaInspectorContent'),
+                closeInspectorBtn: document.getElementById('mediaCloseInspectorBtn'),
+                drawerBackdrop: document.getElementById('mediaDrawerBackdrop'),
+                totalCountBadge: document.getElementById('mediaTotalCountBadge'),
                 inspectorImage: document.getElementById('mediaInspectorImage'),
                 inspectorTitle: document.getElementById('mediaInspectorTitle'),
                 inspectorSubtitle: document.getElementById('mediaInspectorSubtitle'),
@@ -348,6 +351,17 @@
             this.elements.prevBtn?.addEventListener('click', () => this.changePage(-1));
             this.elements.nextBtn?.addEventListener('click', () => this.changePage(1));
             this.elements.grid?.addEventListener('click', (event) => {
+                const copyBtn = event.target.closest('.media-card-copy-btn');
+                if (copyBtn) {
+                    event.stopPropagation();
+                    event.preventDefault();
+                    const path = copyBtn.dataset.copyPath || '';
+                    if (path) {
+                        this.copyTextToClipboard(path);
+                    }
+                    return;
+                }
+
                 const checkbox = event.target.closest('.media-card-checkbox');
                 if (checkbox) {
                     return;
@@ -359,6 +373,13 @@
                 }
 
                 this.setActiveItem(card.dataset.key || '');
+            });
+            this.elements.closeInspectorBtn?.addEventListener('click', () => this.closeInspector());
+            this.elements.drawerBackdrop?.addEventListener('click', () => this.closeInspector());
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape' && this.elements.inspector?.classList.contains('is-open')) {
+                    this.closeInspector();
+                }
             });
             this.elements.grid?.addEventListener('change', (event) => {
                 const checkbox = event.target.closest('.media-card-checkbox');
@@ -1067,6 +1088,9 @@
                 const to = this.state.meta.to || 0;
                 const total = this.state.meta.total || 0;
                 this.elements.resultsSummary.textContent = `Hiển thị ${this.formatNumber(from)} - ${this.formatNumber(to)} trên ${this.formatNumber(total)} mục`;
+                if (this.elements.totalCountBadge) {
+                    this.elements.totalCountBadge.textContent = `${this.formatNumber(total)} tệp`;
+                }
             }
 
             if (this.elements.currentFilterText) {
@@ -1181,26 +1205,26 @@
             const isSelected = this.state.selectedKeys.has(item.key);
             const isActive = this.state.activeItemKey === item.key;
             const preview = this.escapeHtml(item.preview || this.fallbackImage || '');
-            const title = this.escapeHtml(item.title || item.file_name || 'Ảnh chưa đặt tên');
-            const path = this.escapeHtml(item.relative_path || item.original || '');
-            const size = this.escapeHtml(item.size_human || 'Không rõ dung lượng');
-            const typeLabel = this.escapeHtml(item.type_label || '');
-            const badgeHtml = (item.status_flags || [])
-                .slice(0, 3)
-                .map((status) => `<span class="media-tag ${this.statusClass(status)}">${this.escapeHtml(this.statusLabel(item, status))}</span>`)
-                .join('');
+            const title = this.escapeHtml(item.title || item.file_name || 'Ảnh');
+            const path = this.escapeHtml(item.original || item.relative_path || '');
+            const size = this.escapeHtml(item.size_human || '');
 
             return `
                 <article class="media-card ${isActive ? 'is-selected' : ''}" data-key="${this.escapeHtml(item.key)}">
                     <div class="media-card-thumb">
-                        <input type="checkbox" class="media-card-checkbox" data-key="${this.escapeHtml(item.key)}" ${isSelected ? 'checked' : ''}>
+                        <input type="checkbox" class="media-card-checkbox" data-key="${this.escapeHtml(item.key)}" ${isSelected ? 'checked' : ''} title="Chọn ảnh">
+                        <button type="button" class="media-card-copy-btn" data-copy-path="${path}" title="Sao chép liên kết ảnh">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                        </button>
                         <img src="${preview}" alt="${title}" loading="lazy" onerror="this.onerror=null; this.src='${this.escapeHtml(this.fallbackImage || '')}'">
                     </div>
                     <div class="media-card-body">
-                        <h3 class="media-card-title">${title}</h3>
+                        <h4 class="media-card-title" title="${title}">${title}</h4>
                         <div class="media-card-path">${path}</div>
-                        <div class="media-card-meta">${typeLabel} · ${size}</div>
-                        <div class="media-card-tags">${badgeHtml}</div>
+                        <div class="media-card-meta">${size}</div>
                     </div>
                 </article>
             `;
@@ -1955,7 +1979,7 @@
         }
 
         setActiveItem(key) {
-            if (!key || this.state.activeItemKey === key) {
+            if (!key) {
                 return;
             }
 
@@ -1963,6 +1987,18 @@
             this.state.activeItemKey = key;
             this.syncActiveCardState(previousKey);
             this.renderInspector();
+
+            this.elements.inspector?.classList.add('is-open');
+            this.elements.drawerBackdrop?.classList.add('is-open');
+        }
+
+        closeInspector() {
+            this.state.activeItemKey = null;
+            this.elements.inspector?.classList.remove('is-open');
+            this.elements.drawerBackdrop?.classList.remove('is-open');
+            this.syncActiveCardState();
+            if (this.elements.inspectorEmpty) this.elements.inspectorEmpty.hidden = false;
+            if (this.elements.inspectorContent) this.elements.inspectorContent.hidden = true;
         }
 
         ensureActiveItem() {
@@ -1980,32 +2016,47 @@
 
         copyActivePath() {
             const item = this.getActiveItem();
-            const text = item?.relative_path || item?.original;
+            const text = item?.original || item?.relative_path;
             if (!text) {
                 this.showToast('Không có đường dẫn để sao chép.', 'warning');
                 return;
             }
+            this.copyTextToClipboard(text);
+        }
 
-            if (navigator.clipboard?.writeText) {
-                navigator.clipboard.writeText(text)
-                    .then(() => this.showToast('Đã chép đường dẫn.', 'success'))
-                    .catch(() => this.showToast('Không thể chép đường dẫn.', 'error'));
+        copyTextToClipboard(text) {
+            if (!text) {
                 return;
             }
 
+            const url = text.startsWith('http://') || text.startsWith('https://')
+                ? text
+                : (window.location.origin + '/' + text.replace(/^\/+/, ''));
+
+            if (navigator.clipboard?.writeText) {
+                navigator.clipboard.writeText(url)
+                    .then(() => this.showToast('Đã sao chép liên kết ảnh!', 'success'))
+                    .catch(() => this.fallbackCopy(url));
+                return;
+            }
+
+            this.fallbackCopy(url);
+        }
+
+        fallbackCopy(text) {
             const input = document.createElement('textarea');
             input.value = text;
             input.setAttribute('readonly', 'readonly');
-            input.style.position = 'absolute';
+            input.style.position = 'fixed';
             input.style.left = '-9999px';
             document.body.appendChild(input);
             input.select();
 
             try {
                 document.execCommand('copy');
-                this.showToast('Đã chép đường dẫn.', 'success');
+                this.showToast('Đã sao chép liên kết ảnh!', 'success');
             } catch (error) {
-                this.showToast('Không thể chép đường dẫn.', 'error');
+                this.showToast('Không thể sao chép liên kết.', 'error');
             } finally {
                 document.body.removeChild(input);
             }
