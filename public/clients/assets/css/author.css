@@ -6,7 +6,7 @@
 .nobifashion_author_page {
     background-color: #fafafa;
     min-height: 80vh;
-    padding: 16px 0 60px;
+    padding: 0 0 60px;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     color: #0f172a;
     box-sizing: border-box;
@@ -904,7 +904,7 @@
 
 @media (max-width: 768px) {
     .nobifashion_author_container {
-        margin: 80px auto 0 auto;
+        margin: 0 auto;
         padding: 0 10px;
     }
 
@@ -935,7 +935,7 @@
     }
 
     .nobifashion_author_breadcrumb {
-        margin-bottom: 12px;
+        margin: 5px 0;
         width: 100%;
     }
 
