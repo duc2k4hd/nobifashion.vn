@@ -1029,6 +1029,7 @@ svg.nobifashion_home_icon_solid,
     .nobifashion_home_tabs.nobifashion_home_mobile_tabs .nobifashion_home_tab {
         flex-shrink: 0 !important;
         white-space: nowrap !important;
+        font-size: 16px !important;
     }
 
     .nobifashion_home_header[data-tone="light"] .nobifashion_home_mobile_tabs {

@@ -932,7 +932,7 @@
     }
 
     .nobifashion_author_breadcrumb {
-        margin: 5px 0;
+        margin: 0;
         width: 100%;
     }
 
@@ -945,7 +945,7 @@
         -webkit-overflow-scrolling: touch;
         scrollbar-width: none;
         -ms-overflow-style: none;
-        padding: 2px 0;
+        padding: 5px 0 10px 0;
     }
 
     .nobifashion_author_breadcrumb_list::-webkit-scrollbar {
