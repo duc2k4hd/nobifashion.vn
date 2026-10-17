@@ -57,7 +57,7 @@ class SettingsTableSeeder extends Seeder
             [
                 'id' => 4,
                 'key' => 'site_announcement',
-                'value' => 'MIỄN PHÍ VẬN CHUYỂN VỚI ĐƠN HÀNG NỘI THÀNH > 300K - ĐỔI TRẢ TRONG 30 NGÀY - ĐẢM BẢO CHẤT LƯỢNG',
+                'value' => 'MIỄN PHÍ VẬN CHUYỂN TỪ 499K - ĐỔI TRẢ TRONG 15 NGÀY - BẢO HÀNH 30 NGÀY',
                 'type' => 'text',
                 'group' => 'general',
                 'label' => '',

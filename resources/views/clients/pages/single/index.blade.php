@@ -25,14 +25,14 @@
         content="{{ is_array($product->meta_keywords ?? null) ? implode(', ', $product->meta_keywords) : 'quần áo, phụ kiện, thời trang nam, thời trang nữ, áo phông, sơ mi, quần jean, váy, mũ nón, thắt lưng, NOBI FASHION' }}">
 
     <meta name="description"
-        content="{{ renderMeta($product->meta_description ?? ($product->meta_title ?? ($product->name ?? 'Cửa hàng thời trang NOBI FASHION: quần áo & phụ kiện chính hãng, chất liệu đẹp, form chuẩn, giao nhanh 1–3 ngày, đổi size 7 ngày.'))) }}">
+        content="{{ renderMeta($product->meta_description ?? ($product->meta_title ?? ($product->name ?? 'Cửa hàng thời trang NOBI FASHION: quần áo & phụ kiện chính hãng, chất liệu đẹp, form chuẩn, giao nhanh 1–3 ngày, đổi size 15 ngày.'))) }}">
 
     <meta http-equiv="date" content="{{ \Carbon\Carbon::parse('2025-06-11 13:10:59')->format('d/m/y') }}" />
 
     <meta property="og:title"
         content="{{ renderMeta($product->meta_title ?? ($product->name ?? 'NOBI FASHION - Quần áo & phụ kiện thời trang')) }}">
     <meta property="og:description"
-        content="{{ renderMeta($product->meta_description ?? 'NOBI FASHION: Mua sắm quần áo & phụ kiện thời trang nam nữ. Hàng mới, giá tốt, giao nhanh 1–3 ngày, đổi size 7 ngày.') }}">
+        content="{{ renderMeta($product->meta_description ?? 'NOBI FASHION: Mua sắm quần áo & phụ kiện thời trang nam nữ. Hàng mới, giá tốt, giao nhanh 1–3 ngày, đổi size 15 ngày.') }}">
     <meta property="og:url"
         content="{{ $product->canonical_url ?? ($settings->site_url ?? 'https://nobifashion.vn') . '/san-pham/' . ($product->slug ?? '') }}">
     <meta property="og:image"
@@ -51,7 +51,7 @@
     <meta name="twitter:title"
         content="{{ renderMeta($product->meta_title ?? ($product->name ?? 'NOBI FASHION - Quần áo & phụ kiện thời trang')) }}">
     <meta name="twitter:description"
-        content="{{ renderMeta($product->meta_description ?? 'NOBI FASHION: Mua sắm quần áo & phụ kiện thời trang nam nữ. Hàng mới, giá tốt, giao nhanh 1–3 ngày, đổi size 7 ngày.') }}">
+        content="{{ renderMeta($product->meta_description ?? 'NOBI FASHION: Mua sắm quần áo & phụ kiện thời trang nam nữ. Hàng mới, giá tốt, giao nhanh 1–3 ngày, đổi size 15 ngày.') }}">
     <meta name="twitter:image"
         content="{{ asset('clients/assets/img/clothes/' . ($product?->primaryImage?->url ?? 'no-image.webp')) }}">
     <meta name="twitter:creator" content="{{ $settings->seo_author ?? 'NOBI FASHION' }}">
@@ -469,7 +469,7 @@
                                     Sản phẩm chính hãng tại NOBI FASHION
                                 </div>
                                 <div class="nobifashion_single_policy_desc">
-                                    Đổi hàng 30 ngày • Miễn phí vận chuyển từ 399k • Hỗ trợ: {{ $settings->contact_phone ?? '0827786198' }}
+                                    Đổi hàng 15 ngày • Miễn phí vận chuyển từ 499k • Hỗ trợ: {{ $settings->contact_phone ?? '0827786198' }}
                                 </div>
                             </div>
                         </div>
@@ -810,14 +810,14 @@
                                                     <circle cx="5.5" cy="18.5" r="2.5"></circle>
                                                     <circle cx="18.5" cy="18.5" r="2.5"></circle>
                                                 </svg>
-                                                <span>Freeship từ 299k</span>
+                                                <span>Freeship từ 499k</span>
                                             </div>
                                             <div class="nobifashion_single_product_new_trust_item">
                                                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                                     <polyline points="23 4 23 10 17 10"></polyline>
                                                     <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
                                                 </svg>
-                                                <span>Đổi size 30 ngày tận nơi</span>
+                                                <span>Đổi size 15 ngày tận nơi</span>
                                             </div>
                                             <div class="nobifashion_single_product_new_trust_item">
                                                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">

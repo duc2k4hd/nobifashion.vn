@@ -35,7 +35,7 @@
       "@id": "{{ ($product->canonical_url ?? ($settings->site_url ?? 'https://nobifashion.vn')) }}#webpage",
       "url": "{{ ($product->canonical_url ?? ($settings->site_url ?? 'https://nobifashion.vn')) }}",
       "name": "{{ renderMeta($product->meta_title ?? ($product->name ?? 'NOBI FASHION - Mua sắm quần áo & phụ kiện thời trang nam nữ')) }}",
-      "description": "{{ renderMeta($product->meta_desc ?? 'Cửa hàng thời trang NOBI FASHION: quần áo nam nữ, áo phông, sơ mi, quần jean, váy, túi xách, thắt lưng, mũ nón. Hàng mới, giá tốt, đổi trả 7 ngày.') }}",
+      "description": "{{ renderMeta($product->meta_desc ?? 'Cửa hàng thời trang NOBI FASHION: quần áo nam nữ, áo phông, sơ mi, quần jean, váy, túi xách, thắt lưng, mũ nón. Hàng mới, giá tốt, đổi trả 15 ngày.') }}",
       "inLanguage": "{{ ($settings->site_language ?? 'vi') }}",
       "isPartOf": {
         "@id": "{{ ($product->canonical_url ?? ($settings->site_url ?? 'https://nobifashion.vn')) }}#website"
@@ -122,7 +122,7 @@
         "width": 500,
         "height": 500
       },
-      "description": "{{ renderMeta($product->meta_desc ?? 'Mẫu thời trang mới, chất liệu đẹp, form chuẩn, dễ phối đồ. Mua online tại NOBI FASHION, giao nhanh toàn quốc, hỗ trợ đổi size 7 ngày.') }}",
+      "description": "{{ renderMeta($product->meta_desc ?? 'Mẫu thời trang mới, chất liệu đẹp, form chuẩn, dễ phối đồ. Mua online tại NOBI FASHION, giao nhanh toàn quốc, hỗ trợ đổi size 15 ngày.') }}",
       "sku": "{{ ($product->sku ?? 'SKU-DEFAULT') }}",
       "mpn": "{{ ($product->sku ?? 'SKU-DEFAULT') }}",
       "productID": "sku:{{ ($product->sku ?? 'SKU-DEFAULT') }}",
@@ -174,7 +174,7 @@
         "hasMerchantReturnPolicy": {
           "@type": "MerchantReturnPolicy",
           "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
-          "merchantReturnDays": {{ ($settings->return_days ?? 7) }},
+          "merchantReturnDays": {{ ($settings->return_days ?? 15) }},
           "returnMethod": "https://schema.org/ReturnByMail",
           "returnFees": "https://schema.org/FreeReturn",
           "refundType": "https://schema.org/FullRefund",
@@ -192,14 +192,14 @@
           {
             "@type": "Question",
             "name": "{{ ($faq->question ?? 'Sản phẩm có bền màu, form chuẩn không?') }}",
-            "acceptedAnswer": { "@type": "Answer", "text": "{{ renderMeta($faq->answer ?? 'NOBI FASHION cam kết chất liệu đẹp, form chuẩn, hỗ trợ đổi size 7 ngày.') }}" }
+            "acceptedAnswer": { "@type": "Answer", "text": "{{ renderMeta($faq->answer ?? 'NOBI FASHION cam kết chất liệu đẹp, form chuẩn, hỗ trợ đổi size 15 ngày.') }}" }
           }{{ !$loop->last ? ',' : '' }}
           @endforeach
         @else
           {
             "@type": "Question",
             "name": "Sản phẩm này chất lượng thế nào vậy shop?",
-            "acceptedAnswer": { "@type": "Answer", "text": "Hàng mới chính hãng, chất liệu đẹp, đường may tỉ mỉ, bảo hành đổi size 7 ngày." }
+            "acceptedAnswer": { "@type": "Answer", "text": "Hàng mới chính hãng, chất liệu đẹp, đường may tỉ mỉ, bảo hành đổi size 15 ngày." }
           },
           {
             "@type": "Question",
@@ -209,7 +209,7 @@
           {
             "@type": "Question",
             "name": "Size có vừa không nếu đặt online?",
-            "acceptedAnswer": { "@type": "Answer", "text": "Có bảng size theo chiều cao/cân nặng. Không vừa hỗ trợ đổi size trong 7 ngày." }
+            "acceptedAnswer": { "@type": "Answer", "text": "Có bảng size theo chiều cao/cân nặng. Không vừa hỗ trợ đổi size trong 15 ngày." }
           },
           {
             "@type": "Question",

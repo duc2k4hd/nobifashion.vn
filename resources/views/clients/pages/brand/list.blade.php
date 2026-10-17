@@ -770,7 +770,7 @@
                         "name": "Chính sách đổi trả sản phẩm khi mua từ các thương hiệu như thế nào?",
                         "acceptedAnswer": {
                             "@type": "Answer",
-                            "text": "Khách hàng được hỗ trợ đổi size, đổi mẫu trong vòng 15 đến 30 ngày trên toàn quốc với thủ tục nhanh gọn và hỗ trợ tận nhà."
+                            "text": "Khách hàng được hỗ trợ đổi size, đổi mẫu trong vòng 15 ngày trên toàn quốc với thủ tục nhanh gọn và hỗ trợ tận nhà."
                         }
                     }
                 ]
@@ -1047,7 +1047,7 @@
                             <i class="fa-solid fa-chevron-down"></i>
                         </div>
                         <div class="nobi-faq-answer">
-                            Quý khách được hỗ trợ đổi size hoặc đổi mẫu trong vòng 15 đến 30 ngày kể từ ngày nhận hàng. Sản phẩm phải còn nguyên tem mác và chưa qua giặt tẩy. Đội ngũ giao vận sẽ hỗ trợ đổi trả tận nơi cực kỳ tiện lợi.
+                            Quý khách được hỗ trợ đổi size hoặc đổi mẫu trong vòng 15 ngày kể từ ngày nhận hàng. Sản phẩm phải còn nguyên tem mác và chưa qua giặt tẩy. Đội ngũ giao vận sẽ hỗ trợ đổi trả tận nơi cực kỳ tiện lợi.
                         </div>
                     </div>
 

@@ -187,7 +187,7 @@
                             'name' => 'Chính sách đổi size sản phẩm của NOBI FASHION ra sao?',
                             'acceptedAnswer' => [
                                 '@type' => 'Answer',
-                                'text' => 'NOBI FASHION hỗ trợ đổi size thuận tiện trong 7 ngày nếu trang phục chưa vừa vặn với vóc dáng, đảm bảo khách hàng luôn có sản phẩm ưng ý nhất.'
+                                'text' => 'NOBI FASHION hỗ trợ đổi size thuận tiện trong 15 ngày nếu trang phục chưa vừa vặn với vóc dáng, đảm bảo khách hàng luôn có sản phẩm ưng ý nhất.'
                             ]
                         ],
                         [
@@ -1298,7 +1298,7 @@
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 2v6h6"></path><path d="M21.5 22v-6h-6"></path><path d="M22 11.5A10 10 0 0 0 3.2 7.2L2.5 8"></path><path d="M2 12.5a10 10 0 0 0 18.8 4.2l.7-.7"></path></svg>
                 </div>
                 <h3 class="pillar-title">Hỗ Trợ Đổi Size Linh Hoạt</h3>
-                <p class="pillar-desc">Nếu chưa vừa vặn với vóc dáng, đội ngũ hỗ trợ nhanh chóng đổi size thuận tiện trong 7 ngày, đảm bảo bạn luôn có bộ đồ ưng ý nhất.</p>
+                <p class="pillar-desc">Nếu chưa vừa vặn với vóc dáng, đội ngũ hỗ trợ nhanh chóng đổi size thuận tiện trong 15 ngày, đảm bảo bạn luôn có bộ đồ ưng ý nhất.</p>
             </div>
         </section>
 
