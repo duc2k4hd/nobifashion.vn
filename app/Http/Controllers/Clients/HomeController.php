@@ -22,7 +22,7 @@ class HomeController extends Controller
         $kidsCategoryIds = $this->resolveBranchCategoryIds($rootCategories, 'tre-em');
         $householdCategoryIds = $this->resolveBranchCategoryIds($rootCategories, 'do-gia-dung');
 
-        $homeData = Cache::remember('home.page.payload.v8', now()->addMinutes(10), function () use (
+        $homeData = Cache::remember('home.page.payload.v11', now()->addMinutes(10), function () use (
             $rootCategories,
             $menCategoryIds,
             $womenCategoryIds,
@@ -56,6 +56,7 @@ class HomeController extends Controller
                     ->ordered()
                     ->get(),
                 'productsFeatured' => $this->baseHomeProductQuery()
+                    ->orderByRaw('CASE WHEN EXISTS (SELECT 1 FROM images WHERE images.product_id = products.id) THEN 0 ELSE 1 END ASC')
                     ->featured()
                     ->orderByDesc('id')
                     ->limit(18)
@@ -64,6 +65,7 @@ class HomeController extends Controller
                     ->when($clothingCategoryIds !== [], function (Builder $query) use ($clothingCategoryIds) {
                         $query->inCategory($clothingCategoryIds);
                     })
+                    ->orderByRaw('CASE WHEN EXISTS (SELECT 1 FROM images WHERE images.product_id = products.id) THEN 0 ELSE 1 END ASC')
                     ->orderByDesc('id')
                     ->limit(20)
                     ->get(),
@@ -189,6 +191,7 @@ class HomeController extends Controller
             ->when($categoryIds !== [], function (Builder $query) use ($categoryIds) {
                 $query->inCategory($categoryIds);
             })
+            ->orderByRaw('CASE WHEN EXISTS (SELECT 1 FROM images WHERE images.product_id = products.id) THEN 0 ELSE 1 END ASC')
             ->orderByDesc('id')
             ->limit($limit)
             ->get();

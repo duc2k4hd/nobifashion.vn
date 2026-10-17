@@ -59,22 +59,50 @@
     </div>
 </dialog>
 
-<dialog class="nobifashion_home_dialog" id="nobifashion_home_menu" aria-labelledby="nobifashion_home_menu_title">
-    <div class="nobifashion_home_dialog_shell">
+<dialog class="nobifashion_home_dialog nobifashion_mobile_menu_dialog" id="nobifashion_home_menu" aria-labelledby="nobifashion_home_menu_title">
+    <div class="nobifashion_home_dialog_shell nobifashion_menu_drawer_shell">
         <div class="nobifashion_home_dialog_header nobifashion_home_container">
-            <h2 class="nobifashion_home_dialog_title" id="nobifashion_home_menu_title">Danh mục sản phẩm</h2>
-            <button class="nobifashion_home_icon_button nobifashion_modal_close_btn" type="button" aria-label="Đóng" data-nobifashion-close
-                autofocus>
+            <div class="nobifashion_menu_header_left">
+                <span class="nobifashion_menu_logo_brand">NOBI FASHION</span>
+                <span class="nobifashion_menu_subtitle">MENU &amp; DANH MỤC</span>
+            </div>
+            <button class="nobifashion_home_icon_button nobifashion_modal_close_btn" type="button" aria-label="Đóng menu" data-nobifashion-close autofocus>
                 <svg class="nobifashion_home_icon" viewbox="0 0 24 24" aria-hidden="true">
                     <path d="m5 5 14 14M19 5 5 19"></path>
                 </svg>
             </button>
         </div>
-        <div class="nobifashion_home_dialog_content nobifashion_home_container">
+
+        <div class="nobifashion_home_dialog_content nobifashion_home_container nobifashion_menu_body_content">
+            {{-- 1. Thanh User Profile đồng bộ hệ thống tài khoản --}}
+            <div class="nobifashion_menu_user_card">
+                <div class="nobifashion_menu_user_avatar">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </div>
+                <div class="nobifashion_menu_user_meta">
+                    @if (auth('web')->check())
+                        <div class="nobifashion_menu_user_name">Chào, {{ auth('web')->user()->name }}</div>
+                        <a href="{{ route('client.profile.index') }}" class="nobifashion_menu_user_action">Quản lý tài khoản &amp; đơn hàng →</a>
+                    @else
+                        <div class="nobifashion_menu_user_name">Đăng nhập tài khoản</div>
+                        <div class="nobifashion_menu_user_desc">Tích lũy điểm &amp; nhận voucher độc quyền</div>
+                        <div class="nobifashion_menu_auth_btns">
+                            <a href="{{ route('client.auth.login') }}" class="nobifashion_menu_btn_login">Đăng nhập</a>
+                            <a href="{{ route('client.auth.register') }}" class="nobifashion_menu_btn_register">Đăng ký</a>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            {{-- 2. Dải Tabs Danh mục chính --}}
+            <div class="nobifashion_menu_tabs_heading">DANH MỤC SẢN PHẨM</div>
             <div class="nobifashion_home_tabs nobifashion_home_menu_tabs nobifashion_menu_tabs_bar" role="tablist" aria-label="Đối tượng mua sắm">
                 @if (isset($categories) && $categories->isNotEmpty())
                     @foreach ($categories as $rootIndex => $rootCat)
-                        <button class="nobifashion_home_tab nobifashion_home_menu_tab nobifashion_menu_tab_item" type="button"
+                        <button class="nobifashion_home_tab nobifashion_home_menu_tab nobifashion_menu_tab_item {{ $rootIndex === 0 ? 'nobifashion_tab_active' : '' }}" type="button"
                             id="nobifashion_home_menu_tab_{{ $rootCat->slug }}" role="tab"
                             aria-selected="{{ $rootIndex === 0 ? 'true' : 'false' }}"
                             aria-controls="nobifashion_home_menu_{{ $rootCat->slug }}"
@@ -86,50 +114,120 @@
                 @endif
             </div>
 
-            @if (isset($categories) && $categories->isNotEmpty())
-                @foreach ($categories as $rootIndex => $rootCat)
-                    <div class="nobifashion_home_menu_grid nobifashion_menu_grid_panel" id="nobifashion_home_menu_{{ $rootCat->slug }}"
-                        role="tabpanel" aria-labelledby="nobifashion_home_menu_tab_{{ $rootCat->slug }}"
-                        data-nobifashion-menu-panel="{{ $rootCat->slug }}"
-                        @if ($rootIndex !== 0) hidden @endif>
+            {{-- 3. Nội dung Accordion Danh mục theo Tab --}}
+            <div class="nobifashion_menu_categories_wrap">
+                @if (isset($categories) && $categories->isNotEmpty())
+                    @foreach ($categories as $rootIndex => $rootCat)
+                        <div class="nobifashion_home_menu_grid nobifashion_menu_grid_panel" id="nobifashion_home_menu_{{ $rootCat->slug }}"
+                            role="tabpanel" aria-labelledby="nobifashion_home_menu_tab_{{ $rootCat->slug }}"
+                            data-nobifashion-menu-panel="{{ $rootCat->slug }}"
+                            @if ($rootIndex !== 0) hidden @endif>
 
-                        @if ($rootCat->children && $rootCat->children->isNotEmpty())
-                            @foreach ($rootCat->children as $child)
-                                <details class="nobifashion_home_menu_group nobifashion_menu_accordion_group">
-                                    <summary>{{ mb_strtoupper($child->name, 'UTF-8') }}</summary>
-                                    <ul class="nobifashion_home_menu_links nobifashion_menu_links_list">
-                                        <li>
-                                            <a href="{{ route('client.product.category.index', $child->slug) }}"
-                                                class="nobifashion_menu_view_all_link">Xem tất cả</a>
-                                        </li>
-                                        @if ($child->children && $child->children->isNotEmpty())
-                                            @foreach ($child->children as $grandChild)
-                                                <li>
-                                                    <a href="{{ route('client.product.category.index', $grandChild->slug) }}" class="nobifashion_menu_sub_link">{{ $grandChild->name }}</a>
-                                                    @if ($grandChild->children && $grandChild->children->isNotEmpty())
-                                                        <ul class="nobifashion_menu_great_sublinks">
-                                                            @foreach ($grandChild->children as $greatChild)
-                                                                <li>
-                                                                    <a href="{{ route('client.product.category.index', $greatChild->slug) }}">
-                                                                        {{ $greatChild->name }}
-                                                                    </a>
-                                                                </li>
-                                                            @endforeach
-                                                        </ul>
-                                                    @endif
-                                                </li>
-                                            @endforeach
-                                        @endif
-                                    </ul>
-                                </details>
-                            @endforeach
-                        @else
-                            <p style="padding: 32px 0; color: #888; grid-column: 1 / -1; text-align: center;">Chưa có danh mục con.</p>
-                        @endif
+                            @if ($rootCat->children && $rootCat->children->isNotEmpty())
+                                @foreach ($rootCat->children as $child)
+                                    <details class="nobifashion_home_menu_group nobifashion_menu_accordion_group" {{ $loop->first ? 'open' : '' }}>
+                                        <summary>
+                                            <span class="nobifashion_summary_label">
+                                                <span class="nobifashion_summary_icon">✦</span>
+                                                <span>{{ mb_strtoupper($child->name, 'UTF-8') }}</span>
+                                            </span>
+                                        </summary>
+                                        <ul class="nobifashion_home_menu_links nobifashion_menu_links_list">
+                                            <li>
+                                                <a href="{{ route('client.product.category.index', $child->slug) }}"
+                                                    class="nobifashion_menu_view_all_link">
+                                                    <span>Xem tất cả {{ $child->name }}</span>
+                                                    <span class="nobifashion_view_all_arrow">→</span>
+                                                </a>
+                                            </li>
+                                            @if ($child->children && $child->children->isNotEmpty())
+                                                @foreach ($child->children as $grandChild)
+                                                    <li>
+                                                        <a href="{{ route('client.product.category.index', $grandChild->slug) }}" class="nobifashion_menu_sub_link">
+                                                            <span>{{ $grandChild->name }}</span>
+                                                        </a>
+                                                        @if ($grandChild->children && $grandChild->children->isNotEmpty())
+                                                            <ul class="nobifashion_menu_great_sublinks">
+                                                                @foreach ($grandChild->children as $greatChild)
+                                                                    <li>
+                                                                        <a href="{{ route('client.product.category.index', $greatChild->slug) }}">
+                                                                            {{ $greatChild->name }}
+                                                                        </a>
+                                                                    </li>
+                                                                @endforeach
+                                                            </ul>
+                                                        @endif
+                                                    </li>
+                                                @endforeach
+                                            @endif
+                                        </ul>
+                                    </details>
+                                @endforeach
+                            @else
+                                <p style="padding: 24px 0; color: #888; text-align: center;">Chưa có danh mục con.</p>
+                            @endif
 
+                        </div>
+                    @endforeach
+                @endif
+            </div>
+
+            {{-- 4. Khối Tiện ích & Điều hướng đồng bộ (Khắc phục hoàn toàn khoảng trống thừa ở đáy) --}}
+            <div class="nobifashion_menu_quick_nav_section">
+                <div class="nobifashion_menu_quick_heading">DỊCH VỤ &amp; TIỆN ÍCH</div>
+                <div class="nobifashion_menu_quick_links">
+                    <a href="{{ url('/thoi-trang-nam') }}" class="nobifashion_menu_quick_item nobifashion_quick_item_highlight">
+                        <span class="nobifashion_quick_icon">⚡</span>
+                        <div class="nobifashion_quick_info">
+                            <span class="nobifashion_quick_title">Flash Sale &amp; Giá Tốt Hôm Nay</span>
+                            <span class="nobifashion_quick_sub">Ưu đãi giảm tới 50%</span>
+                        </div>
+                        <span class="nobifashion_quick_arrow">→</span>
+                    </a>
+
+                    <a href="{{ route('client.blog.index') }}" class="nobifashion_menu_quick_item">
+                        <span class="nobifashion_quick_icon">📰</span>
+                        <div class="nobifashion_quick_info">
+                            <span class="nobifashion_quick_title">Tạp Chí Phong Cách (Blog)</span>
+                            <span class="nobifashion_quick_sub">Bí quyết phối đồ &amp; xu hướng mới</span>
+                        </div>
+                        <span class="nobifashion_quick_arrow">→</span>
+                    </a>
+
+                    <a href="{{ route('client.cart.index') }}" class="nobifashion_menu_quick_item">
+                        <span class="nobifashion_quick_icon">🛒</span>
+                        <div class="nobifashion_quick_info">
+                            <span class="nobifashion_quick_title">Giỏ Hàng Của Bạn</span>
+                            <span class="nobifashion_quick_sub">Xem các sản phẩm đã chọn</span>
+                        </div>
+                        <span class="nobifashion_quick_arrow">→</span>
+                    </a>
+
+                    <a href="{{ auth('web')->check() ? route('client.order.index') : route('client.auth.login') }}" class="nobifashion_menu_quick_item">
+                        <span class="nobifashion_quick_icon">📦</span>
+                        <div class="nobifashion_quick_info">
+                            <span class="nobifashion_quick_title">Tra Cứu Đơn Hàng</span>
+                            <span class="nobifashion_quick_sub">Theo dõi lộ trình giao nhận</span>
+                        </div>
+                        <span class="nobifashion_quick_arrow">→</span>
+                    </a>
+                </div>
+
+                {{-- Khối Cam kết bán hàng & Hotline chân menu --}}
+                <div class="nobifashion_menu_footer_box">
+                    <div class="nobifashion_menu_support_row">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                        </svg>
+                        <span>Hotline Hỗ Trợ: <strong>{{ $settings->phone ?? '098.666.8888' }}</strong> (8h - 22h)</span>
                     </div>
-                @endforeach
-            @endif
+                    <div class="nobifashion_menu_policies_row">
+                        <span>✓ Đổi hàng 15 ngày</span>
+                        <span>✓ Miễn phí ship từ 499k</span>
+                        <span>✓ Đồng kiểm 100%</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </dialog>

@@ -138,7 +138,7 @@
             </div>
             @if (!empty($settings->bo_cong_thuong))
                 <a href="{{ $settings->bo_cong_thuong }}" target="_blank" rel="noopener noreferrer">
-                    <img loading="lazy" style="object-fit: cover; height: 68px;" src="{{ asset('clients/assets/img/business/setting-bo_cong_thuong-1757497818.webp') }}"
+                    <img loading="lazy" style="object-fit: cover; height: 68px;" src="{{ asset('clients/assets/img/business/bo-cong-thuong.webp') }}"
                         alt="Bộ công thương">
                 </a>
             @endif

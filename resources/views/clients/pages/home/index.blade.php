@@ -2,15 +2,14 @@
 
 @section('body_class', 'nobifashion_home_page')
 
-@section('title', renderMeta(optional($settings)->site_title ?? (optional($settings)->site_name ?? 'NOBI FASHION - Shop
-    quần áo & phụ kiện thời trang')))
+@section('title', renderMeta(optional($settings)->site_title ?? (optional($settings)->site_name ?? 'NOBI FASHION - Thời trang hiện đại & Tinh tế')))
 
 @section('head')
     <link rel="stylesheet" href="{{ asset('clients/assets/css/home.css') }}?v={{ filemtime(public_path('clients/assets/css/home.css')) }}">
     <meta name="robots" content="follow, index, max-snippet:-1, max-video-preview:-1, max-image-preview:large" />
-    <meta name="keywords" content="{{ $settings->seo_keywords ?? 'NOBI FASHION, quần áo, phụ kiện, thời trang' }}">
+    <meta name="keywords" content="{{ $settings->seo_keywords ?? 'NOBI FASHION, quần áo, phụ kiện, thời trang nam nữ, áo khoác, quần jean' }}">
     <meta name="description"
-        content="{{ renderMeta($settings->site_description) ?? 'NOBI FASHION - Shop quần áo & phụ kiện thời trang' }}">
+        content="{{ renderMeta($settings->site_description) ?? 'NOBI FASHION - Thương hiệu thời trang nam nữ đương đại. Phom dáng chuẩn mực, chất liệu chọn lọc, tối ưu cho vóc dáng người Việt.' }}">
     <link rel="canonical" href="{{ $settings->site_url ?? '/' }}">
 @endsection
 
@@ -24,581 +23,630 @@
 
 @section('content')
     <main id="nobifashion_home_main" tabindex="-1">
-        <h1 class="nobifashion_home_sr_only">{{ $settings->site_name }} - Shop quần áo &amp; phụ kiện thời trang
-        </h1>
-        <section class="nobifashion_home_banner" data-nobifashion-tone="dark"
-            aria-labelledby="nobifashion_home_banner_0_title">
-            <a class="nobifashion_home_banner_link" href="#">
-                <picture class="nobifashion_home_banner_media">
-                    <source media="(max-width: 959px)"
-                        srcset="{{ asset('clients/assets/img/banners/phoi-do-mua-dong.webp') }}">
-                    <img src="{{ asset('clients/assets/img/banners/phoi-do-mua-dong.webp') }}"
-                        alt="Bộ Sưu Tập Phối Đồ Mùa Đông 2026 - {{ optional($settings)->site_name ?? 'NOBI FASHION' }}" width="1600" height="800" fetchpriority="high" decoding="async">
-                    </source>
-                </picture>
-                <video class="nobifashion_home_banner_video" id="nobifashion_home_banner_0_video" muted loop playsinline
-                    preload="none"
-                    data-nobifashion-video-desktop="{{ asset('clients/assets/img/banners/Trinh-dien-thoi-trang.mp4') }}"
-                    data-nobifashion-video-mobile="{{ asset('clients/assets/img/banners/Trinh-dien-thoi-trang.mp4') }}"
-                    aria-label="Trình diễn Bộ Sưu Tập Thời Trang Mùa Đông"></video>
-                <div class="nobifashion_home_banner_copy">
-                    <div class="nobifashion_home_banner_badge">
-                        <span class="nobifashion_home_banner_badge_text">WINTER COLLECTION 2026</span>
+        <h1 class="nobifashion_home_sr_only">{{ $settings->site_name ?? 'NOBI FASHION' }} - Thời Trang Đương Đại &amp; Phụ Kiện Chính Hãng</h1>
+
+        {{-- ====================================================================
+             1. HERO EDITORIAL SHOWCASE (Full-Bleed Campaign Slider)
+             ==================================================================== --}}
+        <section class="nobifashion_home_hero_section" aria-label="Chiến dịch thời trang tiêu điểm">
+            <div class="nobifashion_home_hero_slider" id="nobifashion_home_hero_slider">
+                {{-- Slide 1: Winter Editorial Campaign với Video Runway hoặc Ảnh Chiến Dịch --}}
+                <div class="nobifashion_home_hero_slide nobifashion_home_hero_slide_active" data-nobifashion-slide="0">
+                    <div class="nobifashion_home_hero_media">
+                        <picture class="nobifashion_home_hero_picture">
+                            <source media="(max-width: 768px)" srcset="{{ asset('clients/assets/img/banners/phoi-do-mua-dong.webp') }}">
+                            <img class="nobifashion_home_hero_img"
+                                 src="{{ asset('clients/assets/img/banners/phoi-do-mua-dong.webp') }}"
+                                 alt="Bộ Sưu Tập Thu Đông - NOBI FASHION"
+                                 width="1920" height="960" fetchpriority="high" decoding="async">
+                        </picture>
+                        <video class="nobifashion_home_hero_video" id="nobifashion_home_hero_video" muted loop playsinline preload="none"
+                               data-src="{{ asset('clients/assets/img/banners/Trinh-dien-thoi-trang.mp4') }}"
+                               aria-label="Video trình diễn thời trang"></video>
+                        <div class="nobifashion_home_hero_overlay"></div>
                     </div>
-                    <h2 class="nobifashion_home_banner_title" id="nobifashion_home_banner_0_title">Bộ Sưu Tập Phối Đồ Mùa Đông 2026</h2>
-                    <p class="nobifashion_home_banner_description">Cảm hứng thể thao mùa đông hiện đại & phong cách giữ nhiệt thời thượng. Khám phá những thiết kế áo khoác phao, áo len và trang phục ấm áp đẳng cấp nhất.</p>
+                    <div class="nobifashion_home_container nobifashion_home_hero_content_wrap">
+                        <div class="nobifashion_home_hero_content">
+                            <span class="nobifashion_home_hero_eyebrow">WINTER CAMPAIGN 2026</span>
+                            <h2 class="nobifashion_home_hero_title">NGHỆ THUẬT PHỐI ĐỒ<br>THỜI THƯỢNG</h2>
+                            <p class="nobifashion_home_hero_desc">
+                                Tinh thần tối giản đương đại kết hợp cùng chất liệu giữ nhiệt cao cấp, mang lại phom dáng chuẩn mực cho từng khoảnh khắc đời thường.
+                            </p>
+                            <div class="nobifashion_home_hero_cta_group">
+                                <a href="{{ url('/thoi-trang-nam') }}" class="nobifashion_home_btn nobifashion_home_btn_primary">
+                                    <span>Khám Phá Bộ Sưu Tập</span>
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                        <polyline points="12 5 19 12 12 19"></polyline>
+                                    </svg>
+                                </a>
+                                <button type="button" class="nobifashion_home_btn nobifashion_home_btn_outline nobifashion_home_video_trigger"
+                                        data-video-target="nobifashion_home_hero_video" aria-label="Xem video trình diễn">
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor" aria-hidden="true">
+                                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                                    </svg>
+                                    <span>Xem Trình Diễn</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </a>
-            <button class="nobifashion_home_icon_button nobifashion_home_video_toggle" type="button"
-                aria-label="Phát video" data-nobifashion-video-toggle="nobifashion_home_banner_0_video"
-                aria-controls="nobifashion_home_banner_0_video" aria-pressed="false">
-                <svg class="nobifashion_home_icon" viewbox="0 0 24 24" aria-hidden="true">
-                    <path d="m9 5 10 7-10 7Z"></path>
-                </svg>
-            </button>
+
+                {{-- Slide 2: Minimal Jeans Collection --}}
+                <div class="nobifashion_home_hero_slide" data-nobifashion-slide="1">
+                    <div class="nobifashion_home_hero_media">
+                        <picture class="nobifashion_home_hero_picture">
+                            <source media="(max-width: 768px)" srcset="{{ asset('clients/assets/img/banners/bo-suu-tap-quan-jeans.webp') }}">
+                            <img class="nobifashion_home_hero_img"
+                                 src="{{ asset('clients/assets/img/banners/bo-suu-tap-quan-jeans.webp') }}"
+                                 alt="Bộ sưu tập quần Jeans - NOBI FASHION"
+                                 width="1920" height="960" loading="lazy" decoding="async">
+                        </picture>
+                        <div class="nobifashion_home_hero_overlay"></div>
+                    </div>
+                    <div class="nobifashion_home_container nobifashion_home_hero_content_wrap">
+                        <div class="nobifashion_home_hero_content">
+                            <span class="nobifashion_home_hero_eyebrow">SIGNATURE DENIM</span>
+                            <h2 class="nobifashion_home_hero_title">ĐẲNG CẤP PHOM DÁNG<br>DENIM VIỆT</h2>
+                            <p class="nobifashion_home_hero_desc">
+                                Xử lý đường may tỉ mỉ, phom suông kinh điển tôn trọn chiều cao, bền bỉ cùng năm tháng.
+                            </p>
+                            <div class="nobifashion_home_hero_cta_group">
+                                <a href="{{ url('/thoi-trang-nam') }}" class="nobifashion_home_btn nobifashion_home_btn_primary">
+                                    <span>Xem Quần Jeans</span>
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                        <polyline points="12 5 19 12 12 19"></polyline>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {{-- Slide 3: Active & Streetwear Lifestyle --}}
+                <div class="nobifashion_home_hero_slide" data-nobifashion-slide="2">
+                    <div class="nobifashion_home_hero_media">
+                        <picture class="nobifashion_home_hero_picture">
+                            <source media="(max-width: 768px)" srcset="{{ asset('clients/assets/img/banners/bo-suu-tap-ao-khoac-gio.webp') }}">
+                            <img class="nobifashion_home_hero_img"
+                                 src="{{ asset('clients/assets/img/banners/bo-suu-tap-ao-khoac-gio.webp') }}"
+                                 alt="Áo khoác gió thời thượng - NOBI FASHION"
+                                 width="1920" height="960" loading="lazy" decoding="async">
+                        </picture>
+                        <div class="nobifashion_home_hero_overlay"></div>
+                    </div>
+                    <div class="nobifashion_home_container nobifashion_home_hero_content_wrap">
+                        <div class="nobifashion_home_hero_content">
+                            <span class="nobifashion_home_hero_eyebrow">URBAN ACTIVEWEAR</span>
+                            <h2 class="nobifashion_home_hero_title">LINH HOẠT TRONG MỌI<br>CHUYỂN ĐỘNG</h2>
+                            <p class="nobifashion_home_hero_desc">
+                                Áo khoác cản gió, trượt nước nhẹ nhàng và thoáng khí tối đa cho nhịp sống hiện đại năng động.
+                            </p>
+                            <div class="nobifashion_home_hero_cta_group">
+                                <a href="{{ url('/thoi-trang-nu') }}" class="nobifashion_home_btn nobifashion_home_btn_primary">
+                                    <span>Mua Ngay</span>
+                                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                        <polyline points="12 5 19 12 12 19"></polyline>
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Điều hướng Slider: Chỉ số trang tinh tế & Thanh tiến độ mỏng nhẹ --}}
+            <div class="nobifashion_home_hero_nav">
+                <div class="nobifashion_home_container nobifashion_home_hero_nav_inner">
+                    <div class="nobifashion_home_hero_pagination">
+                        <span class="nobifashion_home_hero_counter_current" id="nobifashion_home_hero_current">01</span>
+                        <div class="nobifashion_home_hero_progress">
+                            <div class="nobifashion_home_hero_progress_bar" id="nobifashion_home_hero_bar"></div>
+                        </div>
+                        <span class="nobifashion_home_hero_counter_total">03</span>
+                    </div>
+
+                    <div class="nobifashion_home_hero_arrows">
+                        <button type="button" class="nobifashion_home_hero_arrow nobifashion_home_hero_arrow_prev" id="nobifashion_home_hero_prev" aria-label="Slide trước">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <polyline points="15 18 9 12 15 6"></polyline>
+                            </svg>
+                        </button>
+                        <button type="button" class="nobifashion_home_hero_arrow nobifashion_home_hero_arrow_next" id="nobifashion_home_hero_next" aria-label="Slide tiếp theo">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </section>
 
         {{-- ====================================================================
-             3D COVERFLOW HERO BANNER MAIN
-             Dữ liệu lấy trực tiếp từ bảng banners (Controller query & cache)
-             Tất cả class đều chứa tiền tố: nobifashion_home_banner_main_
-             Phân trang dấu chấm to (Large Dots)
+             2. BRAND VALUES & ASSURANCE STRIP (Bảo chứng phong cách tối giản)
              ==================================================================== --}}
-        @if(!empty($homeMainBanners) && $homeMainBanners->isNotEmpty())
-        <section class="nobifashion_home_banner_main_section" aria-label="Bộ sưu tập nổi bật 3D Coverflow">
-            {{-- Lớp ánh sáng nền đổi màu mờ ảo theo banner trung tâm (Ambient Lighting Backdrop) --}}
-            <div class="nobifashion_home_banner_main_ambient" aria-hidden="true">
-                <div class="nobifashion_home_banner_main_ambient_glow" id="nobifashion_home_banner_main_ambient_glow"></div>
-            </div>
-
-            <div class="nobifashion_home_banner_main_container">
-                {{-- Sân khấu 3D Carousel --}}
-                <div class="nobifashion_home_banner_main_carousel" id="nobifashion_home_banner_main_carousel" tabindex="0" role="region" aria-roledescription="carousel" aria-label="Banner 3D Coverflow">
-                    <div class="nobifashion_home_banner_main_stage" id="nobifashion_home_banner_main_stage">
-                        @foreach($homeMainBanners as $bannerItem)
-                            @php
-                                $isFirst = $loop->first;
-                                $desktopFilename = basename($bannerItem->image_desktop ?: $bannerItem->image_mobile);
-                                $mobileFilename = basename($bannerItem->image_mobile ?: $bannerItem->image_desktop);
-
-                                $desktopUrl = $desktopFilename ? asset('clients/assets/img/banners/' . $desktopFilename) : asset('clients/assets/no-image.webp');
-                                $mobileUrl = $mobileFilename ? asset('clients/assets/img/banners/' . $mobileFilename) : $desktopUrl;
-                                $brandTitle = Str::upper($bannerItem->title ?? 'NOBI FASHION');
-                                $tagBadge = 'SALE';
-                            @endphp
-                            <article class="nobifashion_home_banner_main_card {{ $isFirst ? 'nobifashion_home_banner_main_card_active' : '' }}"
-                                     data-nobifashion-index="{{ $loop->index }}"
-                                     data-nobifashion-image="{{ $desktopUrl }}"
-                                     role="group"
-                                     aria-roledescription="slide"
-                                     aria-label="{{ $loop->iteration }} trên {{ $homeMainBanners->count() }}"
-                                     aria-hidden="{{ $isFirst ? 'false' : 'true' }}">
-                                <div class="nobifashion_home_banner_main_card_inner">
-                                    <a class="nobifashion_home_banner_main_card_link"
-                                       href="{{ $bannerItem->link ?: '#' }}"
-                                       target="{{ $bannerItem->taget ?: '_self' }}"
-                                       title="{{ $bannerItem->title }}"
-                                       data-nobifashion-index="{{ $loop->index }}">
-                                        <div class="nobifashion_home_banner_main_card_media">
-                                            <picture class="nobifashion_home_banner_main_picture">
-                                                @if($mobileUrl && $mobileUrl !== $desktopUrl)
-                                                    <source media="(max-width: 768px)" srcset="{{ $mobileUrl }}">
-                                                @endif
-                                                <img class="nobifashion_home_banner_main_card_img"
-                                                     src="{{ $desktopUrl }}"
-                                                     alt="{{ $bannerItem->title }}"
-                                                     width="740"
-                                                     height="420"
-                                                     loading="{{ $loop->iteration <= 2 ? 'eager' : 'lazy' }}"
-                                                     decoding="async"
-                                                     {{ $isFirst ? 'fetchpriority=high' : '' }}
-                                                     onerror="this.onerror=null; this.src='{{ asset('clients/assets/no-image.webp') }}';">
-                                            </picture>
-                                            <div class="nobifashion_home_banner_main_card_overlay" aria-hidden="true"></div>
-                                        </div>
-
-                                        {{-- Huy hiệu pill thương hiệu & tag SALE góc dưới bên trái --}}
-                                        <div class="nobifashion_home_banner_main_card_badge_box">
-                                            <span class="nobifashion_home_banner_main_card_brand_badge">{{ $brandTitle }}</span>
-                                            <span class="nobifashion_home_banner_main_card_sale_badge">{{ $tagBadge }}</span>
-                                        </div>
-
-                                        @if(!empty($bannerItem->description))
-                                        <div class="nobifashion_home_banner_main_card_info">
-                                            <span class="nobifashion_home_banner_main_card_desc">{{ $bannerItem->description }}</span>
-                                        </div>
-                                        @endif
-                                    </a>
-                                </div>
-                            </article>
-                        @endforeach
+        <section class="nobifashion_home_assurance_section" aria-label="Cam kết dịch vụ">
+            <div class="nobifashion_home_container">
+                <div class="nobifashion_home_assurance_grid">
+                    <div class="nobifashion_home_assurance_item">
+                        <div class="nobifashion_home_assurance_index">01</div>
+                        <div class="nobifashion_home_assurance_text">
+                            <h3 class="nobifashion_home_assurance_title">Miễn Phí Vận Chuyển</h3>
+                            <p class="nobifashion_home_assurance_desc">Áp dụng đơn hàng toàn quốc từ 499.000₫</p>
+                        </div>
                     </div>
-
-                    {{-- Nút mũi tên chuyển slide Trái / Phải dạng tròn glassmorphism --}}
-                    <button type="button"
-                            class="nobifashion_home_banner_main_nav_btn nobifashion_home_banner_main_nav_prev"
-                            id="nobifashion_home_banner_main_prev_btn"
-                            aria-label="Xem banner trước">
-                        <svg class="nobifashion_home_banner_main_nav_icon" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <polyline points="15 18 9 12 15 6"></polyline>
-                        </svg>
-                    </button>
-                    <button type="button"
-                            class="nobifashion_home_banner_main_nav_btn nobifashion_home_banner_main_nav_next"
-                            id="nobifashion_home_banner_main_next_btn"
-                            aria-label="Xem banner kế tiếp">
-                        <svg class="nobifashion_home_banner_main_nav_icon" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                            <polyline points="9 18 15 12 9 6"></polyline>
-                        </svg>
-                    </button>
+                    <div class="nobifashion_home_assurance_item">
+                        <div class="nobifashion_home_assurance_index">02</div>
+                        <div class="nobifashion_home_assurance_text">
+                            <h3 class="nobifashion_home_assurance_title">Đổi Hàng 15 Ngày</h3>
+                            <p class="nobifashion_home_assurance_desc">Hỗ trợ đổi size &amp; mẫu tận nơi linh hoạt</p>
+                        </div>
+                    </div>
+                    <div class="nobifashion_home_assurance_item">
+                        <div class="nobifashion_home_assurance_index">03</div>
+                        <div class="nobifashion_home_assurance_text">
+                            <h3 class="nobifashion_home_assurance_title">Đồng Kiểm 100%</h3>
+                            <p class="nobifashion_home_assurance_desc">Kiểm tra đường may &amp; chất vải trước thanh toán</p>
+                        </div>
+                    </div>
+                    <div class="nobifashion_home_assurance_item">
+                        <div class="nobifashion_home_assurance_index">04</div>
+                        <div class="nobifashion_home_assurance_text">
+                            <h3 class="nobifashion_home_assurance_title">Bảo Hành 30 Ngày</h3>
+                            <p class="nobifashion_home_assurance_desc">Chính hãng đường chỉ, khuy khóa &amp; phụ kiện</p>
+                        </div>
+                    </div>
                 </div>
+            </div>
+        </section>
 
-                {{-- Thanh phân trang dấu chấm to (Large Dots Pagination) theo yêu cầu --}}
-                <nav class="nobifashion_home_banner_main_pagination" aria-label="Điều hướng các mục banner">
-                    @foreach($homeMainBanners as $pageItem)
-                        <button type="button"
-                                class="nobifashion_home_banner_main_pagination_dot {{ $loop->first ? 'nobifashion_home_banner_main_pagination_dot_active' : '' }}"
-                                data-nobifashion-index="{{ $loop->index }}"
-                                aria-label="Chuyển tới slide {{ $loop->iteration }}"
-                                aria-current="{{ $loop->first ? 'true' : 'false' }}">
-                            <span class="nobifashion_home_banner_main_pagination_dot_inner"></span>
-                        </button>
-                    @endforeach
-                </nav>
+        {{-- ====================================================================
+             FLASH DEALS / GIÁ TỐT HÔM NAY (Phong cách Dosi-in năng động)
+             ==================================================================== --}}
+        @if(isset($productsFeatured) && $productsFeatured->isNotEmpty())
+        <section class="nobifashion_home_flash_section" aria-label="Khuyến mãi chớp nhoáng">
+            <div class="nobifashion_home_container">
+                <div class="nobifashion_home_flash_box">
+                    <div class="nobifashion_home_flash_header">
+                        <div class="nobifashion_home_flash_title_wrap">
+                            <span class="nobifashion_home_flash_icon">⚡</span>
+                            <h2 class="nobifashion_home_flash_title">FLASH DEALS</h2>
+                            <div class="nobifashion_home_flash_timer" id="nobifashion_flash_countdown" data-end-time="{{ now()->addHours(6)->timestamp * 1000 }}">
+                                <span class="nobifashion_timer_label">Kết thúc trong</span>
+                                <span class="nobifashion_timer_box" id="nobifashion_timer_hours">06</span>
+                                <span class="nobifashion_timer_colon">:</span>
+                                <span class="nobifashion_timer_box" id="nobifashion_timer_minutes">34</span>
+                                <span class="nobifashion_timer_colon">:</span>
+                                <span class="nobifashion_timer_box" id="nobifashion_timer_seconds">29</span>
+                            </div>
+                        </div>
+                        <a href="{{ url('/thoi-trang-nam') }}" class="nobifashion_home_flash_all_link">
+                            <span>Xem tất cả Deal</span>
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                            </svg>
+                        </a>
+                    </div>
+                    <div class="nobifashion_home_flash_products_wrapper">
+                        @include('clients.templates.home_product_grid', ['products' => $productsFeatured->take(4)])
+                    </div>
+                </div>
             </div>
         </section>
         @endif
 
         {{-- ====================================================================
-             KHÁM PHÁ THEO DANH MỤC - MODERN TABS & AESTHETIC SQUIRCLE CARDS
+             3. CURATED DEPARTMENTS (Lối vào danh mục nghệ thuật Asymmetric Grid)
              ==================================================================== --}}
-        <section class="nobifashion_home_categories_section" id="nobifashion_home_categories" data-nobifashion-tone="light"
-            aria-labelledby="nobifashion_home_categories_title">
+        <section class="nobifashion_home_departments_section" aria-labelledby="nobifashion_home_dept_title">
             <div class="nobifashion_home_container">
-                <div class="nobifashion_home_categories_header">
-                    <div class="nobifashion_home_categories_title_box">
-                        <span class="nobifashion_home_categories_badge">BỘ SƯU TẬP NOBI</span>
-                        <h2 class="nobifashion_home_categories_title" id="nobifashion_home_categories_title">Khám Phá Danh Mục</h2>
-                        <p class="nobifashion_home_categories_subtitle">Lựa chọn trang phục & phụ kiện phù hợp theo phong cách của bạn</p>
+                <div class="nobifashion_home_section_header nobifashion_home_header_between">
+                    <div>
+                        <span class="nobifashion_home_section_eyebrow">DANH MỤC TUYỂN CHỌN</span>
+                        <h2 class="nobifashion_home_section_title" id="nobifashion_home_dept_title">Khám Phá Theo Phong Cách</h2>
                     </div>
+                    <a href="{{ url('/thoi-trang-nam') }}" class="nobifashion_home_link_editorial">
+                        <span>Xem Tất Cả Danh Mục</span>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </a>
+                </div>
 
-                    {{-- Bộ lọc Tabs phân loại hiện đại (Department Switcher) --}}
-                    <div class="nobifashion_home_categories_tabs" role="tablist" aria-label="Bộ lọc danh mục">
-                        @foreach ($categories as $rootCat)
-                            @php
-                                $slug = $rootCat->slug;
-                            @endphp
-                            <button type="button"
-                                    class="nobifashion_home_categories_tab_btn {{ $loop->first ? 'nobifashion_home_categories_tab_active' : '' }}"
-                                    data-nobifashion-tab="cat-{{ $rootCat->id }}"
-                                    role="tab"
-                                    aria-selected="{{ $loop->first ? 'true' : 'false' }}">
-                                @if(str_contains($slug, 'nam'))
-                                    <svg class="nobifashion_home_categories_tab_icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                        <circle cx="12" cy="7" r="4"></circle>
+                {{-- Bố cục bất đối xứng 3 khối phong cách --}}
+                <div class="nobifashion_home_dept_grid">
+                    {{-- Khối 1: Nam --}}
+                    <article class="nobifashion_home_dept_card nobifashion_home_dept_card_large">
+                        <a href="{{ url('/thoi-trang-nam') }}" class="nobifashion_home_dept_card_inner" title="Thời Trang Nam">
+                            <div class="nobifashion_home_dept_media">
+                                <img src="{{ asset('clients/assets/img/banners/bo-suu-tap-ao-khoac-gio.webp') }}"
+                                     alt="Thời trang Nam - NOBI FASHION"
+                                     width="800" height="960" loading="lazy" decoding="async">
+                                <div class="nobifashion_home_dept_overlay"></div>
+                            </div>
+                            <div class="nobifashion_home_dept_info">
+                                <span class="nobifashion_home_dept_tag">MEN'S COLLECTION</span>
+                                <h3 class="nobifashion_home_dept_name">Thời Trang Nam</h3>
+                                <p class="nobifashion_home_dept_sub">Áo khoác gió, Sơ mi chỉn chu, Quần âu &amp; Jeans hiện đại</p>
+                                <span class="nobifashion_home_dept_btn">
+                                    <span>Khám Phá Ngay</span>
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                        <polyline points="12 5 19 12 12 19"></polyline>
                                     </svg>
-                                @elseif(str_contains($slug, 'nu'))
-                                    <svg class="nobifashion_home_categories_tab_icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <path d="M6 3h12l4 6-10 12L2 9z"></path>
+                                </span>
+                            </div>
+                        </a>
+                    </article>
+
+                    {{-- Khối 2: Nữ --}}
+                    <article class="nobifashion_home_dept_card nobifashion_home_dept_card_medium">
+                        <a href="{{ url('/thoi-trang-nu') }}" class="nobifashion_home_dept_card_inner" title="Thời Trang Nữ">
+                            <div class="nobifashion_home_dept_media">
+                                <img src="{{ asset('clients/assets/img/banners/ao-len-nu.webp') }}"
+                                     alt="Thời trang Nữ - NOBI FASHION"
+                                     width="800" height="600" loading="lazy" decoding="async">
+                                <div class="nobifashion_home_dept_overlay"></div>
+                            </div>
+                            <div class="nobifashion_home_dept_info">
+                                <span class="nobifashion_home_dept_tag">WOMEN'S COLLECTION</span>
+                                <h3 class="nobifashion_home_dept_name">Thời Trang Nữ</h3>
+                                <p class="nobifashion_home_dept_sub">Dệt kim, Áo len mềm mại, Váy đầm &amp; Phom dáng thanh lịch</p>
+                                <span class="nobifashion_home_dept_btn">
+                                    <span>Khám Phá Ngay</span>
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                        <polyline points="12 5 19 12 12 19"></polyline>
                                     </svg>
-                                @elseif(str_contains($slug, 'tre-em'))
-                                    <svg class="nobifashion_home_categories_tab_icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <circle cx="12" cy="12" r="9"></circle>
-                                        <path d="M9 10h.01"></path>
-                                        <path d="M15 10h.01"></path>
-                                        <path d="M9.5 15a3.5 3.5 0 0 0 5 0"></path>
+                                </span>
+                            </div>
+                        </a>
+                    </article>
+
+                    {{-- Khối 3: Thể thao & Đồ mặc nhà --}}
+                    <article class="nobifashion_home_dept_card nobifashion_home_dept_card_small">
+                        <a href="{{ url('/do-gia-dung') }}" class="nobifashion_home_dept_card_inner" title="Thể Thao & Tiện Ích">
+                            <div class="nobifashion_home_dept_media">
+                                <img src="{{ asset('clients/assets/img/banners/do-chay-bo.webp') }}"
+                                     alt="Thể thao & Phụ kiện - NOBI FASHION"
+                                     width="800" height="600" loading="lazy" decoding="async">
+                                <div class="nobifashion_home_dept_overlay"></div>
+                            </div>
+                            <div class="nobifashion_home_dept_info">
+                                <span class="nobifashion_home_dept_tag">ACTIVE &amp; LIFESTYLE</span>
+                                <h3 class="nobifashion_home_dept_name">Thể Thao &amp; Mặc Nhà</h3>
+                                <p class="nobifashion_home_dept_sub">Đồ chạy bộ thoáng khí, Quần lót cao cấp &amp; Phụ kiện</p>
+                                <span class="nobifashion_home_dept_btn">
+                                    <span>Khám Phá Ngay</span>
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                        <polyline points="12 5 19 12 12 19"></polyline>
                                     </svg>
-                                @else
-                                    <svg class="nobifashion_home_categories_tab_icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
-                                    </svg>
-                                @endif
-                                <span class="nobifashion_home_categories_tab_name">{{ $rootCat->name }}</span>
-                                <span class="nobifashion_home_categories_tab_count">{{ $rootCat->children->count() }}</span>
-                            </button>
+                                </span>
+                            </div>
+                        </a>
+                    </article>
+                </div>
+
+                {{-- Dải Category Chips phân loại nhanh --}}
+                @if(isset($categories) && $categories->isNotEmpty())
+                <div class="nobifashion_home_category_chips_wrap">
+                    <span class="nobifashion_home_chips_label">Tìm nhanh:</span>
+                    <div class="nobifashion_home_category_chips">
+                        @foreach($categories->flatMap(fn($c) => $c->children)->take(10) as $childCat)
+                            <a href="{{ url('/' . $childCat->slug) }}" class="nobifashion_home_chip">
+                                <span>{{ $childCat->name }}</span>
+                            </a>
                         @endforeach
                     </div>
                 </div>
+                @endif
+            </div>
+        </section>
 
-                {{-- Khung hiển thị danh mục theo từng Tab --}}
-                <div class="nobifashion_home_categories_content">
-                    @foreach ($categories as $rootCat)
-                        <div class="nobifashion_home_categories_panel {{ $loop->first ? 'nobifashion_home_categories_panel_active' : '' }}"
-                             id="nobifashion_cat_panel_cat-{{ $rootCat->id }}"
-                             role="tabpanel"
-                             {!! $loop->first ? '' : 'style="display: none;"' !!}>
-                            <div class="nobifashion_home_categories_grid">
-                                @foreach ($rootCat->children as $category)
-                                    <a class="nobifashion_home_category_card" href="{{ url('/' . $category->slug) }}" title="{{ $category->name }}">
-                                        <div class="nobifashion_home_category_media">
-                                            <img class="nobifashion_home_category_img"
-                                                 src="{{ $category->image_url }}"
-                                                 alt="{{ $category->name }}"
-                                                 width="120"
-                                                 height="120"
-                                                 loading="lazy"
-                                                 decoding="async"
-                                                 onerror="this.onerror=null; this.src='{{ asset('clients/assets/img/categories/no-image.webp') }}';">
-                                        </div>
-                                        <span class="nobifashion_home_category_name">{{ $category->name }}</span>
-                                        <span class="nobifashion_home_category_explore" aria-hidden="true">
-                                            Khám phá
-                                            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                                <polyline points="9 18 15 12 9 6"></polyline>
-                                            </svg>
-                                        </span>
-                                    </a>
-                                @endforeach
-                            </div>
-                        </div>
-                    @endforeach
+        {{-- ====================================================================
+             4. THE CURATED DROPS (Bộ sưu tập nổi bật với Instant Tab Switcher)
+             ==================================================================== --}}
+        <section class="nobifashion_home_curated_section" id="nobifashion_home_curated" aria-labelledby="nobifashion_home_curated_title">
+            <div class="nobifashion_home_container">
+                <div class="nobifashion_home_section_header nobifashion_home_header_center">
+                    <span class="nobifashion_home_section_eyebrow">THE CURATED EDIT</span>
+                    <h2 class="nobifashion_home_section_title" id="nobifashion_home_curated_title">Bộ Sưu Tập Nổi Bật</h2>
+                    <p class="nobifashion_home_section_subtitle">
+                        Những thiết kế được săn đón nhất mùa này với chất vải cao cấp và đường may chuẩn mực
+                    </p>
+
+                    {{-- Tabs chuyển đổi sản phẩm tức thì không tải lại trang --}}
+                    <div class="nobifashion_home_curated_tabs" role="tablist" aria-label="Lọc nhóm sản phẩm">
+                        <button type="button" class="nobifashion_home_tab_pill nobifashion_home_tab_pill_active"
+                                data-nobifashion-filter="all" role="tab" aria-selected="true">
+                            Tất Cả Sản Phẩm
+                        </button>
+                        <button type="button" class="nobifashion_home_tab_pill"
+                                data-nobifashion-filter="men" role="tab" aria-selected="false">
+                            Thời Trang Nam
+                        </button>
+                        <button type="button" class="nobifashion_home_tab_pill"
+                                data-nobifashion-filter="women" role="tab" aria-selected="false">
+                            Thời Trang Nữ
+                        </button>
+                        <button type="button" class="nobifashion_home_tab_pill"
+                                data-nobifashion-filter="active" role="tab" aria-selected="false">
+                            Thể Thao &amp; Mặc Nhà
+                        </button>
+                    </div>
                 </div>
 
-                <div class="nobifashion_home_categories_footer">
-                    <button class="nobifashion_home_pill nobifashion_home_all_categories_btn" type="button"
-                        data-nobifashion-open="menu" aria-controls="nobifashion_home_menu" aria-expanded="false">
-                        <span>Xem tất cả danh mục sản phẩm</span>
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                {{-- Khung hiển thị các Tab sản phẩm --}}
+                <div class="nobifashion_home_curated_content">
+                    {{-- Panel: Tất Cả (Lấy từ Featured) --}}
+                    <div class="nobifashion_home_tab_panel nobifashion_home_tab_panel_active" id="curated-panel-all">
+                        @include('clients.templates.home_product_grid', ['products' => $productsFeatured->take(8)])
+                    </div>
+
+                    {{-- Panel: Thời Trang Nam --}}
+                    <div class="nobifashion_home_tab_panel" id="curated-panel-men" style="display: none;">
+                        @include('clients.templates.home_product_grid', ['products' => $menProducts->take(8)])
+                    </div>
+
+                    {{-- Panel: Thời Trang Nữ --}}
+                    <div class="nobifashion_home_tab_panel" id="curated-panel-women" style="display: none;">
+                        @include('clients.templates.home_product_grid', ['products' => $womenProducts->take(8)])
+                    </div>
+
+                    {{-- Panel: Thể thao / Mặc nhà --}}
+                    <div class="nobifashion_home_tab_panel" id="curated-panel-active" style="display: none;">
+                        @include('clients.templates.home_product_grid', ['products' => $productClothing->slice(0, 8)])
+                    </div>
+                </div>
+
+                <div class="nobifashion_home_curated_footer">
+                    <a href="{{ url('/thoi-trang-nam') }}" class="nobifashion_home_btn nobifashion_home_btn_outline_dark">
+                        <span>Xem Toàn Bộ {{ $productsFeatured->count() > 0 ? $productsFeatured->count() . '+' : '' }} Sản Phẩm</span>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <line x1="5" y1="12" x2="19" y2="12"></line>
                             <polyline points="12 5 19 12 12 19"></polyline>
                         </svg>
-                    </button>
+                    </a>
                 </div>
             </div>
         </section>
 
-        <section class="nobifashion_home_banner" data-nobifashion-tone="dark"
-            aria-labelledby="nobifashion_home_banner_1_title">
-            <a class="nobifashion_home_banner_link" href="#">
-                <picture class="nobifashion_home_banner_media">
-                    <source media="(max-width: 959px)"
-                        srcset="{{ asset('clients/assets/img/banners/ky-niem-mua-dong-2026.webp') }}">
-                    <img src="{{ asset('clients/assets/img/banners/ky-niem-mua-dong-2026.webp') }}"
-                        alt="Kỷ niệm đồ Thu/Đông 2026" width="1600" height="800" loading="lazy" decoding="async">
-                    </source>
-                </picture>
-                <div class="nobifashion_home_banner_copy">
-                    <h2 class="nobifashion_home_banner_title" id="nobifashion_home_banner_1_title">Kỷ niệm đồ Thu/Đông 2026</h2>
-                </div>
-            </a>
-        </section>
-        <div class="nobifashion_home_spacer" aria-hidden="true"></div>
-        <section class="nobifashion_home_banner" data-nobifashion-tone="dark"
-            aria-labelledby="nobifashion_home_banner_2_title">
-            <a class="nobifashion_home_banner_link" href="#">
-                <picture class="nobifashion_home_banner_media">
-                    <source media="(max-width: 959px)"
-                        srcset="{{ asset('clients/assets/img/banners/bo-suu-tap-quan-jeans.webp') }}">
-                    <img src="{{ asset('clients/assets/img/banners/bo-suu-tap-quan-jeans.webp') }}"
-                        alt="Bo Sưu Tập Quần Jeans" width="1600" height="800" loading="lazy" decoding="async">
-                    </source>
-                </picture>
-                <video class="nobifashion_home_banner_video" id="nobifashion_home_banner_2_video" muted loop playsinline
-                    preload="none"
-                    data-nobifashion-video-desktop="{{ asset('clients/assets/img/banners/bo-suu-tap-quan-jeans.webp') }}"
-                    data-nobifashion-video-mobile="{{ asset('clients/assets/img/banners/bo-suu-tap-quan-jeans.webp') }}"
-                    aria-label="WOMEN Jeans"></video>
-                <div class="nobifashion_home_banner_copy">
-                    <h2 class="nobifashion_home_banner_title" id="nobifashion_home_banner_2_title">Bộ Sưu Tập Quần Jeans
-                    </h2>
-                    <p class="nobifashion_home_banner_description">Đa dạng phom dáng cho bạn lựa chọn.
-                        *Áp dụng dịch vụ lên lai quần &amp; thêm lựa chọn kích cỡ tại Nobi Fashion online.</p>
-                </div>
-            </a>
-            <button class="nobifashion_home_icon_button nobifashion_home_video_toggle" type="button"
-                aria-label="Phát video" data-nobifashion-video-toggle="nobifashion_home_banner_2_video"
-                aria-controls="nobifashion_home_banner_2_video" aria-pressed="false">
-                <svg class="nobifashion_home_icon" viewbox="0 0 24 24" aria-hidden="true">
-                    <path d="m9 5 10 7-10 7Z"></path>
-                </svg>
-            </button>
-        </section>
-        <div class="nobifashion_home_spacer" aria-hidden="true"></div>
-        <section class="nobifashion_home_banner" data-nobifashion-tone="dark"
-            aria-labelledby="nobifashion_home_banner_3_title">
-            <a class="nobifashion_home_banner_link" href="#">
-                    <source media="(max-width: 959px)"
-                        srcset="{{ asset('clients/assets/img/banners/bo-suu-tap-ao-khoac-gio.webp') }}">
-                    <img src="{{ asset('clients/assets/img/banners/bo-suu-tap-ao-khoac-gio.webp') }}"
-                        alt="Sản Phẩm Hot Bán Chạy" width="1600" height="800" loading="lazy" decoding="async">
-                    </source>
-                </picture>
-                <div class="nobifashion_home_banner_copy">
-                    <div class="nobifashion_home_banner_badge">
-                        <img src="{{ asset('clients/assets/img/banners/bo-suu-tap-ao-khoac-gio.webp') }}"
-                            alt="Áo Khoác Gió" width="90" height="30" loading="lazy">
+        {{-- ====================================================================
+             5. ASYMMETRIC LOOKBOOK STORY ("Shop The Look" Editorial)
+             ==================================================================== --}}
+        <section class="nobifashion_home_lookbook_section" aria-label="Gợi ý phối đồ">
+            <div class="nobifashion_home_container">
+                <div class="nobifashion_home_lookbook_layout">
+                    {{-- Cột trái (Lookbook Image khổ lớn) --}}
+                    <div class="nobifashion_home_lookbook_feature">
+                        <div class="nobifashion_home_lookbook_visual">
+                            <picture>
+                                <source media="(max-width: 768px)" srcset="{{ asset('clients/assets/img/banners/ky-niem-mua-dong-2026.webp') }}">
+                                <img src="{{ asset('clients/assets/img/banners/ky-niem-mua-dong-2026.webp') }}"
+                                     alt="Lookbook Thu Đông 2026 - NOBI FASHION"
+                                     width="900" height="1200" loading="lazy" decoding="async">
+                            </picture>
+                            <div class="nobifashion_home_lookbook_tagline">
+                                <span>LOOKBOOK #04</span>
+                                <h4>THE WINTER NARRATIVE</h4>
+                            </div>
+                        </div>
                     </div>
-                    <h2 class="nobifashion_home_banner_title" id="nobifashion_home_banner_3_title">Áo Khoác Gió</h2>
-                    <p class="nobifashion_home_banner_description">Đa dạng phom dáng cho bạn lựa chọn. *Áp dụng dịch vụ
-                        lên lai quần &amp; thêm lựa chọn kích cỡ tại Nobi Fashion online.</p>
-                    <p class="nobifashion_home_banner_price">980.000 VND<del
-                            class="nobifashion_home_banner_old_price">1.275.000
-                            VND</del>
-                    </p>
-                </div>
-            </a>
-        </section>
-                                @include('clients.templates.home_product_grid', ['products' => $productsFeatured->take(4)])
 
-        <section class="nobifashion_home_banner" data-nobifashion-tone="dark"
-            aria-labelledby="nobifashion_home_banner_4_title">
-            <a class="nobifashion_home_banner_link" href="#">
-                <picture class="nobifashion_home_banner_media">
-                    <source media="(max-width: 959px)"
-                        srcset="{{ asset('clients/assets/img/banners/do-chay-bo.webp') }}">
-                    <img src="{{ asset('clients/assets/img/banners/do-chay-bo.webp') }}" alt="Đồ chạy bộ"
-                        width="1600" height="800" loading="lazy" decoding="async">
-                    </source>
-                </picture>
-                <div class="nobifashion_home_banner_copy">
-                    <div class="nobifashion_home_banner_badge">
-                        <img src="{{ asset('clients/assets/img/banners/do-chay-bo.webp') }}"
-                            alt="NEW COLOR" width="90" height="30" loading="lazy">
-                    </div>
-                    <h2 class="nobifashion_home_banner_title" id="nobifashion_home_banner_4_title">Bộ Sưu Tập Đồ Chạy Bộ
-                    </h2>
-                    <p class="nobifashion_home_banner_description">Đắm chìm trong thiết kế tinh xảo của các vận động viên
-                    </p>
-                    <p class="nobifashion_home_banner_price">Từ 399.000 VND</p>
-                </div>
-            </a>
-        </section>
-        <div class="nobifashion_home_spacer" aria-hidden="true"></div>
-        <section class="nobifashion_home_banner" data-nobifashion-tone="dark"
-            aria-labelledby="nobifashion_home_banner_5_title">
-            <a class="nobifashion_home_banner_link" href="#">
-                <picture class="nobifashion_home_banner_media">
-                    <source media="(max-width: 959px)"
-                        srcset="{{ asset('clients/assets/img/banners/quan-lot-nam.webp') }}">
-                    <img src="{{ asset('clients/assets/img/banners/quan-lot-nam.webp') }}" alt="Quần lót nam"
-                        width="1600" height="800" loading="lazy" decoding="async">
-                    </source>
-                </picture>
-                <div class="nobifashion_home_banner_copy">
-                    <h2 class="nobifashion_home_banner_title" id="nobifashion_home_banner_5_title">Gợi Ý Trang Phục Mặc Nhà
-                    </h2>
-                    <p class="nobifashion_home_banner_description">Thoải Mái Nhưng Vẫn Chỉn Chu Với Những Lựa Chọn Này.
-                    </p>
-                    <p class="nobifashion_home_banner_price">399.000 VND<del
-                            class="nobifashion_home_banner_old_price">499.000
-                            VND</del>
-                    </p>
-                </div>
-            </a>
-        </section>
-                @include('clients.templates.home_product_grid', ['products' => $productClothing->slice(0, 4)])
+                    {{-- Cột phải (Câu chuyện phong cách + 2 Sản phẩm phối đồ) --}}
+                    <div class="nobifashion_home_lookbook_content">
+                        <div class="nobifashion_home_lookbook_header">
+                            <span class="nobifashion_home_section_eyebrow">STYLING INSPIRATION</span>
+                            <h2 class="nobifashion_home_lookbook_title">Bản Phối Thu Đông Tối Giản</h2>
+                            <p class="nobifashion_home_lookbook_text">
+                                Đơn giản nhưng không đơn điệu. Sự kết hợp giữa phom áo khoác thanh lịch và quần suông mang đến vẻ ngoài phóng khoáng, giữ ấm tối ưu mà vẫn tôn lên tỷ lệ cơ thể tự nhiên.
+                            </p>
+                        </div>
 
-        <section class="nobifashion_home_banner" data-nobifashion-tone="dark"
-            aria-labelledby="nobifashion_home_banner_6_title">
-            <a class="nobifashion_home_banner_link" href="#">
-                <picture class="nobifashion_home_banner_media">
-                    <source media="(max-width: 959px)"
-                        srcset="{{ asset('clients/assets/img/banners/ao-thun-nam-nu.webp') }}">
-                    <img src="{{ asset('clients/assets/img/banners/ao-thun-nam-nu.webp') }}" alt="WOMEN T-shirts"
-                        width="1600" height="800" loading="lazy" decoding="async">
-                    </source>
-                </picture>
-                <div class="nobifashion_home_banner_copy">
-                    <div class="nobifashion_home_banner_badge">
-                        <img src="{{ asset('clients/assets/img/banners/ao-thun-nam-nu.webp') }}"
-                            alt="Best seller" width="90" height="30" loading="lazy">
-                    </div>
-                    <h2 class="nobifashion_home_banner_title" id="nobifashion_home_banner_6_title">Bộ Sưu Tập Áo Thun Nam Nữ
-                    </h2>
-                    <p class="nobifashion_home_banner_description">Sản phẩm bán chạy trong tuần qua.</p>
-                    <p class="nobifashion_home_banner_price">399.000 VND<del
-                            class="nobifashion_home_banner_old_price">499.000
-                            VND</del>
-                    </p>
-                </div>
-            </a>
-        </section>
-        <div class="nobifashion_home_spacer" aria-hidden="true"></div>
-        <section class="nobifashion_home_banner" data-nobifashion-tone="dark"
-            aria-labelledby="nobifashion_home_banner_7_title">
-            <a class="nobifashion_home_banner_link"
-                href="#">
-                <picture class="nobifashion_home_banner_media">
-                    <source media="(max-width: 959px)"
-                        srcset="{{ asset('clients/assets/img/banners/ao-ni-nam-nu.webp') }}">
-                    <img src="{{ asset('clients/assets/img/banners/ao-ni-nam-nu.webp') }}"
-                        alt="WOMEN Sweatshirts &amp; Hoodies" width="1600" height="800" loading="lazy"
-                        decoding="async">
-                    </source>
-                </picture>
-                <div class="nobifashion_home_banner_copy">
-                    <div class="nobifashion_home_banner_badge">
-                        <img src="{{ asset('clients/assets/img/banners/ao-ni-nam-nu.webp') }}"
-                            alt="TRENDING" width="90" height="30" loading="lazy">
-                    </div>
-                    <h2 class="nobifashion_home_banner_title" id="nobifashion_home_banner_7_title">Áo Nỉ Nam Nữ</h2>
-                    <p class="nobifashion_home_banner_description">Mẫu mới trong tuần.</p>
-                    <p class="nobifashion_home_banner_price">399.000 VND<del
-                            class="nobifashion_home_banner_old_price">499.000
-                            VND</del>
-                    </p>
-                </div>
-            </a>
-        </section>
-        <div class="nobifashion_home_spacer" aria-hidden="true"></div>
-        <section class="nobifashion_home_banner" data-nobifashion-tone="dark"
-            aria-labelledby="nobifashion_home_banner_8_title">
-            <a class="nobifashion_home_banner_link"
-                href="#">
-                <picture class="nobifashion_home_banner_media">
-                    <source media="(max-width: 959px)"
-                        srcset="{{ asset('clients/assets/img/banners/ao-cardigan-lot-long-gia-long-cuu.webp') }}">
-                    <img src="{{ asset('clients/assets/img/banners/ao-cardigan-lot-long-gia-long-cuu.webp') }}"
-                        alt="WOMEN New Arrivals" width="1600" height="800" loading="lazy" decoding="async">
-                    </source>
-                </picture>
-                <div class="nobifashion_home_banner_copy">
-                    <div class="nobifashion_home_banner_badge">
-                        <img src="{{ asset('clients/assets/img/banners/ao-cardigan-lot-long-gia-long-cuu.webp') }}"
-                            alt="LifeWear magazine (White)" width="90" height="30" loading="lazy">
-                    </div>
-                    <h2 class="nobifashion_home_banner_title" id="nobifashion_home_banner_8_title">Áo Khoác Cardigan Lót Lông Giả Lông Cừu</h2>
-                    <p class="nobifashion_home_banner_description">Làm mới phong cách với Áo Cardigan Lót Lông Giả Lông
-                        Cừu Dáng
-                        Relax cùng những thiết kế mới vừa ra mắt.</p>
-                    <p class="nobifashion_home_banner_price">999.000 VND<del
-                            class="nobifashion_home_banner_old_price">1.299.000
-                            VND</del>
-                    </p>
-                </div>
-            </a>
-        </section>
-                @include('clients.templates.home_product_grid', ['products' => $womenProducts->take(4)])
+                        {{-- Gợi ý 2 sản phẩm phối hợp --}}
+                        <div class="nobifashion_home_lookbook_products">
+                            @if(isset($womenProducts) && $womenProducts->count() >= 2)
+                                @include('clients.templates.home_product_grid', ['products' => $womenProducts->take(2)])
+                            @elseif(isset($productsFeatured) && $productsFeatured->count() >= 2)
+                                @include('clients.templates.home_product_grid', ['products' => $productsFeatured->slice(8, 2)])
+                            @endif
+                        </div>
 
-        <section class="nobifashion_home_banner" data-nobifashion-tone="dark"
-            aria-labelledby="nobifashion_home_banner_9_title">
-            <a class="nobifashion_home_banner_link"
-                href="#">
-                <picture class="nobifashion_home_banner_media">
-                    <source media="(max-width: 959px)"
-                        srcset="{{ asset('clients/assets/img/banners/ao-len-nu.webp') }}">
-                    <img src="{{ asset('clients/assets/img/banners/ao-len-nu.webp') }}"
-                        alt="Sweaters &amp; Knitwear" width="1600" height="800" loading="lazy"
-                        decoding="async">
-                    </source>
-                </picture>
-                <div class="nobifashion_home_banner_copy">
-                    <h2 class="nobifashion_home_banner_title" id="nobifashion_home_banner_9_title">Áo Len Nữ</h2>
-                    <p class="nobifashion_home_banner_description">Khám phá đa dạng các thiết kế len chất lượng, từ áo len
-                        chống
-                        tia UV đến Cashmere mềm mại.</p>
-                    <p class="nobifashion_home_banner_price">250.000 VND<del
-                            class="nobifashion_home_banner_old_price">350.000
-                            VND</del>
-                    </p>
-                </div>
-            </a>
-        </section>
-                @include('clients.templates.home_product_grid', ['products' => $productsFeatured->slice(4, 4)])
-
-        <section class="nobifashion_home_banner" data-nobifashion-tone="dark"
-            aria-labelledby="nobifashion_home_banner_10_title">
-            <a class="nobifashion_home_banner_link"
-                href="#">
-                <picture class="nobifashion_home_banner_media">
-                    <source media="(max-width: 959px)"
-                        srcset="{{ asset('clients/assets/img/banners/do-lot-nu.webp') }}">
-                    <img src="{{ asset('clients/assets/img/banners/do-lot-nu.webp') }}"
-                        alt="Đồ lót nữ" width="1600" height="800" loading="lazy"
-                        decoding="async">
-                    </source>
-                </picture>
-                <div class="nobifashion_home_banner_copy">
-                    <div class="nobifashion_home_banner_badge">
-                        <img src="{{ asset('clients/assets/img/banners/do-lot-nu.webp') }}"
-                            alt="Đồ lót nữ" width="90" height="30" loading="lazy">
-                    </div>
-                    <h2 class="nobifashion_home_banner_title" id="nobifashion_home_banner_10_title">Đồ lót nữ</h2>
-                </div>
-            </a>
-        </section>
-
-        {{-- SECTION: BÀI VIẾT NỔI BẬT (SLIDER 2 HÀNG CHẠY VÔ TẬN) --}}
-        @if (!empty($featuredBlogPosts['row1']) && count($featuredBlogPosts['row1']) > 0)
-            <section class="nobifashion_home_blog_section" aria-labelledby="nobifashion_home_blog_title">
-                <div class="nobifashion_home_blog_header">
-                    <h2 class="nobifashion_home_blog_title" id="nobifashion_home_blog_title">Bài viết nổi bật</h2>
-                </div>
-
-                {{-- HÀNG 1: Chạy sang phải (Left to Right) --}}
-                <div class="nobifashion_home_blog_marquee nobifashion_marquee_ltr">
-                    <div class="nobifashion_home_blog_track">
-                        @foreach ($featuredBlogPosts['row1'] as $post)
-                            <a href="{{ $post['url'] }}" class="nobifashion_home_blog_card" title="{{ $post['title'] }}">
-                                <div class="nobifashion_home_blog_card_media">
-                                    <img src="{{ $post['image'] }}" alt="{{ $post['alt'] }}" loading="lazy" decoding="async">
-                                    <div class="nobifashion_home_blog_card_overlay"></div>
-                                </div>
-                                <div class="nobifashion_home_blog_card_content">
-                                    <h3 class="nobifashion_home_blog_card_title">{{ $post['title'] }}</h3>
-                                    @if (!empty($post['excerpt']))
-                                        <p class="nobifashion_home_blog_card_excerpt">{{ $post['excerpt'] }}</p>
-                                    @endif
-                                </div>
+                        <div class="nobifashion_home_lookbook_cta">
+                            <a href="{{ url('/thoi-trang-nu') }}" class="nobifashion_home_link_editorial">
+                                <span>Xem Hướng Dẫn Phối Đồ Trọn Bộ</span>
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <polyline points="9 18 15 12 9 6"></polyline>
+                                </svg>
                             </a>
-                        @endforeach
-                        {{-- Duplicate để chạy vòng lặp vô tận mượt mà --}}
-                        @foreach ($featuredBlogPosts['row1'] as $post)
-                            <a href="{{ $post['url'] }}" class="nobifashion_home_blog_card" aria-hidden="true" tabindex="-1">
-                                <div class="nobifashion_home_blog_card_media">
-                                    <img src="{{ $post['image'] }}" alt="{{ $post['alt'] }}" loading="lazy" decoding="async">
-                                    <div class="nobifashion_home_blog_card_overlay"></div>
-                                </div>
-                                <div class="nobifashion_home_blog_card_content">
-                                    <h3 class="nobifashion_home_blog_card_title">{{ $post['title'] }}</h3>
-                                    @if (!empty($post['excerpt']))
-                                        <p class="nobifashion_home_blog_card_excerpt">{{ $post['excerpt'] }}</p>
-                                    @endif
-                                </div>
-                            </a>
-                        @endforeach
+                        </div>
                     </div>
+                </div>
+            </div>
+        </section>
+
+        {{-- ====================================================================
+             6. SEASONAL DUAL CAPSULE (Khối song hành thời trang 50/50)
+             ==================================================================== --}}
+        <section class="nobifashion_home_capsule_section" aria-label="Tiêu điểm chất liệu">
+            <div class="nobifashion_home_container_fluid">
+                <div class="nobifashion_home_capsule_grid">
+                    {{-- Khối A: Áo Khoác Gió --}}
+                    <div class="nobifashion_home_capsule_card">
+                        <div class="nobifashion_home_capsule_media">
+                            <img src="{{ asset('clients/assets/img/banners/bo-suu-tap-ao-khoac-gio.webp') }}"
+                                 alt="Áo khoác gió thời thượng" width="960" height="720" loading="lazy" decoding="async">
+                            <div class="nobifashion_home_capsule_overlay"></div>
+                        </div>
+                        <div class="nobifashion_home_capsule_content">
+                            <span class="nobifashion_home_capsule_eyebrow">ESSENTIAL OUTERWEAR</span>
+                            <h3 class="nobifashion_home_capsule_title">ÁO KHOÁC GIÓ THỜI TRANG</h3>
+                            <p class="nobifashion_home_capsule_desc">Chất liệu trượt nước nhẹ, cản gió vượt trội, phom dáng đa ứng dụng từ đi làm đến du lịch.</p>
+                            <a href="{{ url('/thoi-trang-nam') }}" class="nobifashion_home_btn nobifashion_home_btn_primary">
+                                <span>Khám Phá Dòng Áo Gió</span>
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+
+                    {{-- Khối B: Cardigan & Dệt Kim --}}
+                    <div class="nobifashion_home_capsule_card">
+                        <div class="nobifashion_home_capsule_media">
+                            <img src="{{ asset('clients/assets/img/banners/ao-cardigan-lot-long-gia-long-cuu.webp') }}"
+                                 alt="Cardigan lót lông giả lông cừu" width="960" height="720" loading="lazy" decoding="async">
+                            <div class="nobifashion_home_capsule_overlay"></div>
+                        </div>
+                        <div class="nobifashion_home_capsule_content">
+                            <span class="nobifashion_home_capsule_eyebrow">COZY KNITWEAR</span>
+                            <h3 class="nobifashion_home_capsule_title">CARDIGAN &amp; DỆT KIM RELAX</h3>
+                            <p class="nobifashion_home_capsule_desc">Mềm mịn êm ái trên da, thiết kế vai rơi phóng khoáng cho những ngày chuyển mùa se lạnh.</p>
+                            <a href="{{ url('/thoi-trang-nu') }}" class="nobifashion_home_btn nobifashion_home_btn_primary">
+                                <span>Khám Phá Dòng Dệt Kim</span>
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        {{-- ====================================================================
+             7. MORE TO EXPLORE (Gợi ý trang phục theo nhóm sản phẩm tiếp theo)
+             ==================================================================== --}}
+        @if(isset($menProducts) && $menProducts->isNotEmpty())
+        <section class="nobifashion_home_secondary_section" aria-labelledby="nobifashion_home_men_title">
+            <div class="nobifashion_home_container">
+                <div class="nobifashion_home_section_header nobifashion_home_header_between">
+                    <div>
+                        <span class="nobifashion_home_section_eyebrow">DÀNH CHO PHÁI MẠNH</span>
+                        <h2 class="nobifashion_home_section_title" id="nobifashion_home_men_title">Trang Phục Nam Chuẩn Gu</h2>
+                    </div>
+                    <a href="{{ url('/thoi-trang-nam') }}" class="nobifashion_home_link_editorial">
+                        <span>Xem Tất Cả Đồ Nam</span>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </a>
                 </div>
 
-                {{-- HÀNG 2: Chạy sang trái (Right to Left) --}}
-                <div class="nobifashion_home_blog_marquee nobifashion_marquee_rtl">
-                    <div class="nobifashion_home_blog_track">
-                        @foreach ($featuredBlogPosts['row2'] as $post)
-                            <a href="{{ $post['url'] }}" class="nobifashion_home_blog_card" title="{{ $post['title'] }}">
-                                <div class="nobifashion_home_blog_card_media">
-                                    <img src="{{ $post['image'] }}" alt="{{ $post['alt'] }}" loading="lazy" decoding="async">
-                                    <div class="nobifashion_home_blog_card_overlay"></div>
-                                </div>
-                                <div class="nobifashion_home_blog_card_content">
-                                    <h3 class="nobifashion_home_blog_card_title">{{ $post['title'] }}</h3>
-                                    @if (!empty($post['excerpt']))
-                                        <p class="nobifashion_home_blog_card_excerpt">{{ $post['excerpt'] }}</p>
-                                    @endif
-                                </div>
-                            </a>
-                        @endforeach
-                        {{-- Duplicate để chạy vòng lặp vô tận mượt mà --}}
-                        @foreach ($featuredBlogPosts['row2'] as $post)
-                            <a href="{{ $post['url'] }}" class="nobifashion_home_blog_card" aria-hidden="true" tabindex="-1">
-                                <div class="nobifashion_home_blog_card_media">
-                                    <img src="{{ $post['image'] }}" alt="{{ $post['alt'] }}" loading="lazy" decoding="async">
-                                    <div class="nobifashion_home_blog_card_overlay"></div>
-                                </div>
-                                <div class="nobifashion_home_blog_card_content">
-                                    <h3 class="nobifashion_home_blog_card_title">{{ $post['title'] }}</h3>
-                                    @if (!empty($post['excerpt']))
-                                        <p class="nobifashion_home_blog_card_excerpt">{{ $post['excerpt'] }}</p>
-                                    @endif
-                                </div>
-                            </a>
-                        @endforeach
-                    </div>
-                </div>
-            </section>
+                @include('clients.templates.home_product_grid', ['products' => $menProducts->slice(0, 4)])
+            </div>
+        </section>
         @endif
+
+        {{-- ====================================================================
+             8. THE NOBI JOURNAL (Tạp chí phong cách & Bài viết nổi bật)
+             ==================================================================== --}}
+        @if (!empty($featuredBlogPosts['row1']) && count($featuredBlogPosts['row1']) > 0)
+        <section class="nobifashion_home_journal_section" aria-labelledby="nobifashion_home_journal_title">
+            <div class="nobifashion_home_container">
+                <div class="nobifashion_home_section_header nobifashion_home_header_between">
+                    <div>
+                        <span class="nobifashion_home_section_eyebrow">NOBI EDITORIAL</span>
+                        <h2 class="nobifashion_home_section_title" id="nobifashion_home_journal_title">Cảm Hứng Thời Trang &amp; Phong Cách</h2>
+                    </div>
+                    <a href="{{ url('/tin-tuc') }}" class="nobifashion_home_link_editorial">
+                        <span>Xem Tất Cả Bài Viết</span>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </a>
+                </div>
+
+                {{-- Tạp chí 4 bài viết phong cách tinh tế --}}
+                <div class="nobifashion_home_journal_grid">
+                    @php
+                        $leadPost = $featuredBlogPosts['row1'][0] ?? null;
+                        $sidePosts = array_slice($featuredBlogPosts['row1'], 1, 4);
+                    @endphp
+
+                    @if($leadPost)
+                    <article class="nobifashion_home_journal_lead">
+                        <a href="{{ $leadPost['url'] }}" class="nobifashion_home_journal_lead_link" title="{{ $leadPost['title'] }}">
+                            <div class="nobifashion_home_journal_lead_media">
+                                <img src="{{ $leadPost['image'] }}" alt="{{ $leadPost['alt'] }}" loading="lazy" decoding="async">
+                                <span class="nobifashion_home_journal_badge">TIÊU ĐIỂM</span>
+                            </div>
+                            <div class="nobifashion_home_journal_lead_content">
+                                <h3 class="nobifashion_home_journal_lead_title">{{ $leadPost['title'] }}</h3>
+                                @if(!empty($leadPost['excerpt']))
+                                    <p class="nobifashion_home_journal_lead_excerpt">{{ Str::limit($leadPost['excerpt'], 140) }}</p>
+                                @endif
+                                <span class="nobifashion_home_journal_read_btn">
+                                    <span>Đọc Bài Viết</span>
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                        <polyline points="12 5 19 12 12 19"></polyline>
+                                    </svg>
+                                </span>
+                            </div>
+                        </a>
+                    </article>
+                    @endif
+
+                    @if(!empty($sidePosts))
+                    <div class="nobifashion_home_journal_side_list">
+                        @foreach($sidePosts as $sideItem)
+                        <article class="nobifashion_home_journal_side_item">
+                            <a href="{{ $sideItem['url'] }}" class="nobifashion_home_journal_side_link" title="{{ $sideItem['title'] }}">
+                                <div class="nobifashion_home_journal_side_media">
+                                    <img src="{{ $sideItem['image'] }}" alt="{{ $sideItem['alt'] }}" loading="lazy" decoding="async">
+                                </div>
+                                <div class="nobifashion_home_journal_side_content">
+                                    <span class="nobifashion_home_journal_side_tag">XU HƯỚNG</span>
+                                    <h4 class="nobifashion_home_journal_side_title">{{ $sideItem['title'] }}</h4>
+                                    @if(!empty($sideItem['excerpt']))
+                                        <p class="nobifashion_home_journal_side_excerpt">{{ Str::limit($sideItem['excerpt'], 75) }}</p>
+                                    @endif
+                                </div>
+                            </a>
+                        </article>
+                        @endforeach
+                    </div>
+                    @endif
+                </div>
+            </div>
+        </section>
+        @endif
+
+        {{-- ====================================================================
+             9. NEWSLETTER & VIP CLUB (Đăng ký thành viên tối giản)
+             ==================================================================== --}}
+        <section class="nobifashion_home_newsletter_section" aria-label="Đăng ký nhận tin">
+            <div class="nobifashion_home_container">
+                <div class="nobifashion_home_newsletter_box">
+                    <span class="nobifashion_home_newsletter_eyebrow">NOBI FASHION CLUB</span>
+                    <h2 class="nobifashion_home_newsletter_title">Tham Gia Cùng Chúng Tôi</h2>
+                    <p class="nobifashion_home_newsletter_desc">
+                        Đăng ký nhận thông tin về các bộ sưu tập giới hạn, hướng dẫn phối đồ theo mùa và nhận đặc quyền giảm 10% cho đơn hàng đầu tiên.
+                    </p>
+                    <form class="nobifashion_home_newsletter_form" action="#" method="POST" onsubmit="event.preventDefault(); alert('Cảm ơn bạn đã đăng ký nhận tin từ NOBI FASHION!');">
+                        <div class="nobifashion_home_newsletter_input_wrap">
+                            <input type="email" class="nobifashion_home_newsletter_input" placeholder="Nhập địa chỉ email của bạn..." required aria-label="Địa chỉ email">
+                            <button type="submit" class="nobifashion_home_newsletter_submit" aria-label="Đăng ký nhận tin">
+                                <span>Đăng Ký</span>
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    <polyline points="12 5 19 12 12 19"></polyline>
+                                </svg>
+                            </button>
+                        </div>
+                    </form>
+                    <span class="nobifashion_home_newsletter_note">Bằng cách đăng ký, bạn đồng ý với Chính sách bảo mật của NOBI FASHION.</span>
+                </div>
+            </div>
+        </section>
+
         <div class="nobifashion_home_spacer" aria-hidden="true"></div>
     </main>
-
 @endsection
+

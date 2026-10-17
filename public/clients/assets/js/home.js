@@ -1,723 +1,292 @@
-/* Home Page Specialized Controller - Nobi Fashion (Chỉ xử lý banner & gallery sản phẩm trang chủ) */
+/**
+ * NOBI FASHION - HOME PAGE JAVASCRIPT CONTROLLER (VANILLA JS)
+ * Style: Modern Fashion Editorial x Minimal Luxury
+ * All events are optimized for maximum performance & zero layout thrashing.
+ */
 (() => {
-  "use strict";
+    'use strict';
 
-  const prefix = "nobifashion_home_";
-  let page = document.querySelector(`.${prefix}page`);
-  if (!page) {
-    document.body.classList.add(`${prefix}page`);
-    page = document.body;
-  }
-
-  const get = (name) => document.getElementById(prefix + name);
-  const all = (selector, root = page) => root ? [...root.querySelectorAll(selector)] : [];
-  const normalize = (value) =>
-    (value || "")
-      .normalize("NFD")
-      .replace(/\p{Diacritic}/gu, "")
-      .replace(/[đĐ]/g, "d")
-      .toLowerCase()
-      .trim();
-
-  const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-  const mobileMedia = window.matchMedia("(max-width: 959px)");
-
-  const safeJsonParse = (str, fallback = []) => {
-    try {
-      const parsed = JSON.parse(str);
-      return Array.isArray(parsed) ? parsed : fallback;
-    } catch {
-      return fallback;
-    }
-  };
-
-  const products = new Map();
-  try {
-    all("[data-nobifashion-product]").forEach((card) => {
-      try {
-        const id = card.dataset.nobifashionProduct || "";
-        if (!id) return;
-        const nameElem = card.querySelector(`.${prefix}product_name`);
-        const name = nameElem ? nameElem.textContent.trim() : "";
-        const galleryLink = card.querySelector(`.${prefix}product_gallery_link`);
-        const href = galleryLink ? galleryLink.href : "#";
-        const imgElem = card.querySelector(`.${prefix}product_image`);
-        const image = imgElem ? imgElem.getAttribute("src") : "";
-        const images = safeJsonParse(card.dataset.nobifashionImages, image ? [image] : []);
-        const price = Number(card.dataset.nobifashionPrice) || 0;
-
-        products.set(id, {
-          id,
-          name,
-          card,
-          price,
-          href,
-          image,
-          images: images.length ? images : (image ? [image] : []),
-          imageIndex: 0,
-        });
-      } catch (err) {}
+    document.addEventListener('DOMContentLoaded', () => {
+        initHeroSlider();
+        initCuratedTabs();
+        initProductGalleries();
+        initFavoriteButtons();
+        initFlashDealsCountdown();
     });
-  } catch (err) {}
 
-  // --- PRODUCT GALLERY & SWATCHES ---
-  function updateGallery(product, index) {
-    if (!product || !product.images || !product.images.length) return;
-    const total = product.images.length;
-    product.imageIndex = (index + total) % total;
-    const image = product.card.querySelector(`.${prefix}product_image`);
-    if (image && product.images[product.imageIndex]) {
-      image.src = product.images[product.imageIndex];
-    }
-    const gallery = product.card.querySelector(`.${prefix}product_gallery`);
-    if (gallery) {
-      gallery.setAttribute(
-        "aria-label",
-        `${product.name}, ảnh ${product.imageIndex + 1} trên ${total}`,
-      );
-    }
-    const dots = product.card.querySelector(`.${prefix}gallery_dots`);
-    if (dots) {
-      dots.replaceChildren();
-      product.images.forEach((_, position) => {
-        const dot = document.createElement("span");
-        dot.className = `${prefix}gallery_dot`;
-        dot.setAttribute("aria-current", String(position === product.imageIndex));
-        dots.append(dot);
-      });
-      dots.hidden = total < 2;
-    }
-    all("[data-nobifashion-gallery]", product.card).forEach((button) => {
-      button.hidden = total < 2;
-    });
-  }
+    /* --------------------------------------------------------------------------
+       1. HERO EDITORIAL SLIDER
+       -------------------------------------------------------------------------- */
+    function initHeroSlider() {
+        const slider = document.getElementById('nobifashion_home_hero_slider');
+        if (!slider) return;
 
-  products.forEach((product) => {
-    try {
-      const gallery = product.card.querySelector(`.${prefix}product_gallery`);
-      const swatches = product.card.querySelector(`.${prefix}swatches`);
-      if (swatches) {
-        const updateSwatches = () => {
-          const prevArrow = product.card.querySelector('[data-nobifashion-swatch-scroll="-1"]');
-          const nextArrow = product.card.querySelector('[data-nobifashion-swatch-scroll="1"]');
-          if (prevArrow) prevArrow.hidden = swatches.scrollLeft < 2;
-          if (nextArrow) {
-            nextArrow.hidden =
-              swatches.scrollLeft + swatches.clientWidth >= swatches.scrollWidth - 2;
-          }
-        };
-        swatches.addEventListener("scroll", updateSwatches, { passive: true });
-        if ("ResizeObserver" in window) {
-          new ResizeObserver(updateSwatches).observe(swatches);
-        } else {
-          window.addEventListener("resize", updateSwatches, { passive: true });
+        const slides = Array.from(slider.querySelectorAll('.nobifashion_home_hero_slide'));
+        if (slides.length <= 1) return;
+
+        const prevBtn = document.getElementById('nobifashion_home_hero_prev');
+        const nextBtn = document.getElementById('nobifashion_home_hero_next');
+        const currentCounter = document.getElementById('nobifashion_home_hero_current');
+        const progressBar = document.getElementById('nobifashion_home_hero_bar');
+
+        let currentIndex = 0;
+        let slideInterval = null;
+        const totalSlides = slides.length;
+        const autoSlideDuration = 7000; // 7s mỗi slide
+
+        function updateSlide(newIndex) {
+            // Dừng video ở slide cũ nếu đang phát
+            const currentSlide = slides[currentIndex];
+            if (currentSlide) {
+                const oldVideo = currentSlide.querySelector('video');
+                if (oldVideo && !oldVideo.paused) {
+                    oldVideo.pause();
+                    oldVideo.classList.remove('nobifashion_home_video_playing');
+                }
+            }
+
+            slides[currentIndex].classList.remove('nobifashion_home_hero_slide_active');
+            currentIndex = (newIndex + totalSlides) % totalSlides;
+            slides[currentIndex].classList.add('nobifashion_home_hero_slide_active');
+
+            // Cập nhật số trang
+            if (currentCounter) {
+                currentCounter.textContent = String(currentIndex + 1).padStart(2, '0');
+            }
+
+            // Cập nhật thanh tiến độ
+            if (progressBar) {
+                const percent = ((currentIndex + 1) / totalSlides) * 100;
+                progressBar.style.width = `${percent}%`;
+            }
         }
-        updateSwatches();
-      }
 
-      let touchStart;
-      let swiped = false;
-      updateGallery(product, 0);
-
-      if (gallery) {
-        gallery.addEventListener("keydown", (event) => {
-          if (
-            event.target !== gallery ||
-            !["ArrowLeft", "ArrowRight"].includes(event.key)
-          )
-            return;
-          event.preventDefault();
-          updateGallery(
-            product,
-            product.imageIndex + (event.key === "ArrowRight" ? 1 : -1),
-          );
-        });
-        gallery.addEventListener(
-          "touchstart",
-          (event) => {
-            if (event.touches?.[0]) {
-              touchStart = {
-                x: event.touches[0].clientX,
-                y: event.touches[0].clientY,
-              };
-            }
-            swiped = false;
-          },
-          { passive: true },
-        );
-        gallery.addEventListener(
-          "touchend",
-          (event) => {
-            if (!touchStart || !event.changedTouches?.[0]) return;
-            const dx = event.changedTouches[0].clientX - touchStart.x;
-            const dy = event.changedTouches[0].clientY - touchStart.y;
-            if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
-              updateGallery(product, product.imageIndex + (dx < 0 ? 1 : -1));
-              swiped = true;
-            }
-            touchStart = null;
-          },
-          { passive: true },
-        );
-        gallery.addEventListener(
-          "click",
-          (event) => {
-            if (swiped) {
-              event.preventDefault();
-              swiped = false;
-            }
-          },
-          true,
-        );
-      }
-    } catch (err) {}
-  });
-
-  // --- BANNER VIDEO CONTROLS ---
-  const videos = all(`.${prefix}banner_video`);
-  function syncVideoButton(video) {
-    if (!video || !video.id) return;
-    const button = page.querySelector(
-      `[data-nobifashion-video-toggle="${video.id}"]`,
-    );
-    if (!button) return;
-    button.setAttribute(
-      "aria-label",
-      video.paused ? "Phát video" : "Tạm dừng video",
-    );
-    button.setAttribute("aria-pressed", String(!video.paused));
-    const path = button.querySelector("path");
-    if (path) {
-      path.setAttribute(
-        "d",
-        video.paused ? "m9 5 10 7-10 7Z" : "M9 6v12M15 6v12",
-      );
-    }
-  }
-  function videoSource(video) {
-    if (!video) return;
-    const src = mobileMedia.matches
-      ? video.dataset.nobifashionVideoMobile
-      : video.dataset.nobifashionVideoDesktop;
-    if (src && video.getAttribute("src") !== src) {
-      video.src = src;
-      video.load();
-    }
-  }
-  function playVideo(video) {
-    if (!video) return;
-    videoSource(video);
-    video.muted = true;
-    try {
-      const playPromise = video.play();
-      if (playPromise) playPromise.catch(() => syncVideoButton(video));
-    } catch {}
-  }
-  function updateVideos() {
-    const canPlay = !document.hidden && !all("dialog[open]").length;
-    videos.forEach((video) => {
-      if (
-        canPlay &&
-        video.dataset.nobifashionVisible === "true" &&
-        video.dataset.nobifashionPaused !== "true" &&
-        !reducedMotion.matches &&
-        !navigator.connection?.saveData
-      )
-        playVideo(video);
-      else {
-        try { video.pause(); } catch {}
-      }
-    });
-  }
-  videos.forEach((video) => {
-    video.addEventListener("play", () => syncVideoButton(video));
-    video.addEventListener("pause", () => syncVideoButton(video));
-    video.addEventListener("error", () => {
-      video.hidden = true;
-      syncVideoButton(video);
-    });
-    video.addEventListener("loadeddata", () => {
-      video.hidden = false;
-    });
-  });
-  if ("IntersectionObserver" in window) {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach(({ target, isIntersecting }) => {
-          target.dataset.nobifashionVisible = String(isIntersecting);
-        });
-        updateVideos();
-      },
-      { threshold: 0.2 },
-    );
-    videos.forEach((video) => observer.observe(video));
-  }
-  mobileMedia.addEventListener("change", () => {
-    videos.forEach((video) => {
-      if (video.hasAttribute("src")) videoSource(video);
-    });
-    updateVideos();
-  });
-  reducedMotion.addEventListener("change", updateVideos);
-  document.addEventListener("visibilitychange", updateVideos);
-
-  // --- HEADER TONE ADAPTATION ON HOME ---
-  let scrollPending = false;
-  function updateHeaderTone() {
-    scrollPending = false;
-    const header = get("header");
-    if (header) {
-      const offset = header.offsetHeight / 2;
-      const section = all("[data-nobifashion-tone]").find((item) => {
-        const bounds = item.getBoundingClientRect();
-        return bounds.height && bounds.top <= offset && bounds.bottom > offset;
-      });
-      header.dataset.tone = section?.dataset.nobifashionTone || "light";
-    }
-  }
-  function scheduleHeaderTone() {
-    if (!scrollPending) {
-      scrollPending = true;
-      requestAnimationFrame(updateHeaderTone);
-    }
-  }
-  window.addEventListener("scroll", scheduleHeaderTone, { passive: true });
-  window.addEventListener("resize", scheduleHeaderTone, { passive: true });
-  scheduleHeaderTone();
-
-  // --- HOME DELEGATE FOR GALLERY, SWATCH, VIDEO ---
-  page.addEventListener("click", (event) => {
-    const swatchArrow = event.target.closest(
-      "[data-nobifashion-swatch-scroll]",
-    );
-    if (swatchArrow) {
-      const swatches = swatchArrow.parentElement?.querySelector(
-        `.${prefix}swatches`,
-      );
-      if (swatches) {
-        swatches.scrollBy({
-          left:
-            swatches.clientWidth *
-            0.75 *
-            Number(swatchArrow.dataset.nobifashionSwatchScroll),
-          behavior: reducedMotion.matches ? "instant" : "smooth",
-        });
-      }
-      return;
-    }
-    const arrow = event.target.closest("[data-nobifashion-gallery]");
-    if (arrow) {
-      const prodCard = arrow.closest("[data-nobifashion-product]");
-      if (prodCard) {
-        const product = products.get(prodCard.dataset.nobifashionProduct);
-        if (product) {
-          updateGallery(
-            product,
-            product.imageIndex + Number(arrow.dataset.direction || 0),
-          );
+        function nextSlide() {
+            updateSlide(currentIndex + 1);
         }
-      }
-      return;
+
+        function prevSlide() {
+            updateSlide(currentIndex - 1);
+        }
+
+        function startAutoplay() {
+            stopAutoplay();
+            slideInterval = setInterval(nextSlide, autoSlideDuration);
+        }
+
+        function stopAutoplay() {
+            if (slideInterval) {
+                clearInterval(slideInterval);
+                slideInterval = null;
+            }
+        }
+
+        if (nextBtn) nextBtn.addEventListener('click', () => { nextSlide(); startAutoplay(); });
+        if (prevBtn) prevBtn.addEventListener('click', () => { prevSlide(); startAutoplay(); });
+
+        slider.addEventListener('mouseenter', stopAutoplay);
+        slider.addEventListener('mouseleave', startAutoplay);
+
+        // Hỗ trợ Touch Swipe trên Mobile
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        slider.addEventListener('touchstart', (e) => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, { passive: true });
+
+        slider.addEventListener('touchend', (e) => {
+            touchEndX = e.changedTouches[0].screenX;
+            const diff = touchStartX - touchEndX;
+            if (Math.abs(diff) > 45) {
+                if (diff > 0) nextSlide();
+                else prevSlide();
+                startAutoplay();
+            }
+        }, { passive: true });
+
+        // Video Trigger modal/inline
+        const videoTriggers = document.querySelectorAll('.nobifashion_home_video_trigger');
+        videoTriggers.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const videoId = btn.getAttribute('data-video-target');
+                const video = document.getElementById(videoId);
+                if (!video) return;
+
+                if (!video.src && video.dataset.src) {
+                    video.src = video.dataset.src;
+                }
+
+                if (video.paused) {
+                    video.classList.add('nobifashion_home_video_playing');
+                    video.play().catch(() => {});
+                    stopAutoplay();
+                } else {
+                    video.pause();
+                    video.classList.remove('nobifashion_home_video_playing');
+                    startAutoplay();
+                }
+            });
+        });
+
+        startAutoplay();
     }
-    const color = event.target.closest("[data-nobifashion-color]");
-    if (color) {
-      const prodCard = color.closest("[data-nobifashion-product]");
-      if (prodCard) {
-        const product = products.get(prodCard.dataset.nobifashionProduct);
-        if (product) {
-          all("[data-nobifashion-color]", product.card).forEach((button) =>
-            button.setAttribute("aria-pressed", String(button === color)),
-          );
-          if (color.dataset.nobifashionImages) {
-            product.images = safeJsonParse(color.dataset.nobifashionImages, product.images);
-          }
-          all(
-            `.${prefix}product_gallery_link, .${prefix}product_name a`,
-            product.card,
-          ).forEach((link) => {
+
+    /* --------------------------------------------------------------------------
+       2. CURATED DROPS - INSTANT TAB SWITCHER
+       -------------------------------------------------------------------------- */
+    function initCuratedTabs() {
+        const tabBtns = document.querySelectorAll('.nobifashion_home_tab_pill');
+        const panels = document.querySelectorAll('.nobifashion_home_tab_panel');
+        if (!tabBtns.length || !panels.length) return;
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const targetFilter = btn.getAttribute('data-nobifashion-filter');
+
+                // Update active tab buttons
+                tabBtns.forEach(b => {
+                    b.classList.remove('nobifashion_home_tab_pill_active');
+                    b.setAttribute('aria-selected', 'false');
+                });
+                btn.classList.add('nobifashion_home_tab_pill_active');
+                btn.setAttribute('aria-selected', 'true');
+
+                // Switch panels
+                panels.forEach(panel => {
+                    if (panel.id === `curated-panel-${targetFilter}`) {
+                        panel.style.display = 'block';
+                        panel.classList.add('nobifashion_home_tab_panel_active');
+                    } else {
+                        panel.style.display = 'none';
+                        panel.classList.remove('nobifashion_home_tab_panel_active');
+                    }
+                });
+            });
+        });
+    }
+
+    /* --------------------------------------------------------------------------
+       3. PRODUCT CARD GALLERY & COLOR SWATCHES
+       -------------------------------------------------------------------------- */
+    function initProductGalleries() {
+        const products = document.querySelectorAll('[data-nobifashion-product]');
+
+        products.forEach(card => {
+            const imgPrimary = card.querySelector('.nobifashion_home_product_image_primary');
+            if (!imgPrimary) return;
+
+            let images = [];
             try {
-              const destination = new URL(product.href, window.location.origin);
-              if (color.dataset.nobifashionColor) {
-                destination.searchParams.set(
-                  "colorDisplayCode",
-                  color.dataset.nobifashionColor,
-                );
-              }
-              link.href = destination.href;
-            } catch {}
-          });
-          updateGallery(product, 0);
-        }
-      }
-      return;
+                images = JSON.parse(card.dataset.nobifashionImages || '[]');
+            } catch (e) {
+                images = [imgPrimary.src];
+            }
+
+            let currentIndex = 0;
+
+            const arrows = card.querySelectorAll('[data-nobifashion-gallery]');
+            arrows.forEach(arrow => {
+                arrow.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    const dir = parseInt(arrow.dataset.direction || '1', 10);
+                    currentIndex = (currentIndex + dir + images.length) % images.length;
+
+                    if (images[currentIndex]) {
+                        imgPrimary.src = images[currentIndex];
+                    }
+
+                    const dots = card.querySelectorAll('.nobifashion_home_gallery_dot');
+                    dots.forEach((dot, idx) => {
+                        dot.setAttribute('aria-current', String(idx === currentIndex));
+                    });
+                });
+            });
+
+            // Swatches
+            const swatches = card.querySelectorAll('.nobifashion_home_swatch');
+            swatches.forEach((swatch, idx) => {
+                swatch.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    swatches.forEach(s => s.setAttribute('aria-pressed', 'false'));
+                    swatch.setAttribute('aria-pressed', 'true');
+
+                    if (images[idx]) {
+                        imgPrimary.src = images[idx];
+                        currentIndex = idx;
+                    }
+                });
+            });
+        });
     }
-    const toggle = event.target.closest("[data-nobifashion-video-toggle]");
-    if (toggle) {
-      const video = document.getElementById(
-        toggle.dataset.nobifashionVideoToggle,
-      );
-      if (video) {
-        if (video.paused) {
-          video.dataset.nobifashionPaused = "false";
-          playVideo(video);
-        } else {
-          video.dataset.nobifashionPaused = "true";
-          video.pause();
-        }
-      }
-      return;
+
+    /* --------------------------------------------------------------------------
+       4. FAVORITE BUTTONS INTERACTION
+       -------------------------------------------------------------------------- */
+    function initFavoriteButtons() {
+        const favButtons = document.querySelectorAll('.nobifashion_home_favorite');
+
+        favButtons.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const isPressed = btn.getAttribute('aria-pressed') === 'true';
+                btn.setAttribute('aria-pressed', String(!isPressed));
+
+                const svg = btn.querySelector('svg');
+                if (svg) {
+                    if (!isPressed) {
+                        svg.setAttribute('fill', 'currentColor');
+                        btn.style.color = '#b91c1c';
+                    } else {
+                        svg.setAttribute('fill', 'none');
+                        btn.style.color = '';
+                    }
+                }
+            });
+        });
     }
-  });
 
-  /* ====================================================================
-     NOBI FASHION - 3D COVERFLOW HERO BANNER MAIN CONTROLLER
-     Class Prefix: nobifashion_home_banner_main_
-     Pure Vanilla JS, Large Dots Pagination, GPU-accelerated
-     ==================================================================== */
-  function initNobifashionHomeBannerMain() {
-      const carouselEl = document.getElementById('nobifashion_home_banner_main_carousel');
-      if (!carouselEl) return;
+    /* --------------------------------------------------------------------------
+       5. FLASH DEALS COUNTDOWN TIMER
+       -------------------------------------------------------------------------- */
+    function initFlashDealsCountdown() {
+        const timerContainer = document.getElementById('nobifashion_flash_countdown');
+        if (!timerContainer) return;
 
-      const stageEl = carouselEl.querySelector('.nobifashion_home_banner_main_stage');
-      const cards = Array.from(carouselEl.querySelectorAll('.nobifashion_home_banner_main_card'));
-      const prevBtn = document.getElementById('nobifashion_home_banner_main_prev_btn');
-      const nextBtn = document.getElementById('nobifashion_home_banner_main_next_btn');
-      const paginationDots = Array.from(carouselEl.parentElement.querySelectorAll('.nobifashion_home_banner_main_pagination_dot'));
-      const ambientGlowEl = document.getElementById('nobifashion_home_banner_main_ambient_glow');
+        const elH = document.getElementById('nobifashion_timer_hours');
+        const elM = document.getElementById('nobifashion_timer_minutes');
+        const elS = document.getElementById('nobifashion_timer_seconds');
+        if (!elH || !elM || !elS) return;
 
-      if (!cards.length) return;
+        let endTime = parseInt(timerContainer.dataset.endTime, 10);
+        if (isNaN(endTime) || endTime <= Date.now()) {
+            endTime = Date.now() + (6 * 3600 + 42 * 60 + 15) * 1000;
+        }
 
-      let currentIndex = 0;
-      let autoplayTimer = null;
-      const total = cards.length;
-      const AUTOPLAY_INTERVAL = 5000;
+        function updateCountdown() {
+            const now = Date.now();
+            let distance = endTime - now;
 
-      const ambientColors = [
-          'radial-gradient(circle, rgba(56, 189, 248, 0.35) 0%, rgba(14, 165, 233, 0.12) 50%, transparent 80%)',
-          'radial-gradient(circle, rgba(251, 146, 60, 0.35) 0%, rgba(249, 115, 22, 0.12) 50%, transparent 80%)',
-          'radial-gradient(circle, rgba(244, 114, 182, 0.35) 0%, rgba(236, 72, 153, 0.12) 50%, transparent 80%)',
-          'radial-gradient(circle, rgba(167, 139, 250, 0.35) 0%, rgba(139, 92, 246, 0.12) 50%, transparent 80%)',
-          'radial-gradient(circle, rgba(52, 211, 153, 0.35) 0%, rgba(16, 185, 129, 0.12) 50%, transparent 80%)',
-          'radial-gradient(circle, rgba(250, 204, 21, 0.35) 0%, rgba(234, 179, 8, 0.12) 50%, transparent 80%)',
-          'radial-gradient(circle, rgba(148, 163, 184, 0.40) 0%, rgba(100, 116, 139, 0.15) 50%, transparent 80%)',
-          'radial-gradient(circle, rgba(225, 29, 72, 0.32) 0%, rgba(190, 18, 60, 0.12) 50%, transparent 80%)',
-      ];
+            if (distance <= 0) {
+                distance = 0;
+            }
 
-      function getResponsiveMetrics() {
-          const width = window.innerWidth;
-          if (width < 768) {
-              return {
-                  mode: 'mobile',
-                  stepX: 140,
-                  scaleStep: 0.15,
-                  zStep: 80,
-                  rotY: 8,
-                  maxVisible: 1,
-              };
-          }
-          if (width < 992) {
-              return {
-                  mode: 'tablet',
-                  stepX: 160,
-                  scaleStep: 0.14,
-                  zStep: 90,
-                  rotY: 12,
-                  maxVisible: 2,
-              };
-          }
-          if (width < 1200) {
-              return {
-                  mode: 'laptop',
-                  stepX: 185,
-                  scaleStep: 0.13,
-                  zStep: 100,
-                  rotY: 14,
-                  maxVisible: 2,
-              };
-          }
-          return {
-              mode: 'desktop',
-              stepX: 210,
-              scaleStep: 0.13,
-              zStep: 110,
-              rotY: 16,
-              maxVisible: 3,
-          };
-      }
+            const hours = Math.floor((distance / (1000 * 60 * 60)) % 24);
+            const minutes = Math.floor((distance / (1000 * 60)) % 60);
+            const seconds = Math.floor((distance / 1000) % 60);
 
-      function update3DStage() {
-          const metrics = getResponsiveMetrics();
+            elH.textContent = String(hours).padStart(2, '0');
+            elM.textContent = String(minutes).padStart(2, '0');
+            elS.textContent = String(seconds).padStart(2, '0');
+        }
 
-          cards.forEach((card, index) => {
-              let offset = index - currentIndex;
-              while (offset > total / 2) offset -= total;
-              while (offset < -total / 2) offset += total;
-
-              const absOffset = Math.abs(offset);
-              const isActive = offset === 0;
-
-              if (isActive) {
-                  card.classList.add('nobifashion_home_banner_main_card_active');
-                  card.setAttribute('aria-hidden', 'false');
-                  card.style.transform = 'translate3d(-50%, -50%, 0px) scale(1) rotateY(0deg)';
-                  card.style.zIndex = '20';
-                  card.style.opacity = '1';
-                  card.style.filter = 'brightness(1) contrast(1)';
-                  card.style.pointerEvents = 'auto';
-              } else if (absOffset <= metrics.maxVisible) {
-                  card.classList.remove('nobifashion_home_banner_main_card_active');
-                  card.setAttribute('aria-hidden', 'true');
-
-                  const dir = offset > 0 ? 1 : -1;
-                  const posX = dir * (absOffset * metrics.stepX + (absOffset === 1 ? 35 : 15));
-                  const posZ = -absOffset * metrics.zStep;
-                  const scale = Math.max(0.45, 1 - absOffset * metrics.scaleStep);
-                  const rotY = -dir * (metrics.rotY + (absOffset - 1) * 3);
-                  const opacity = Math.max(0.3, 1 - absOffset * 0.22);
-                  const brightness = Math.max(0.4, 0.85 - (absOffset - 1) * 0.18);
-
-                  card.style.transform = `translate3d(calc(-50% + ${posX}px), -50%, ${posZ}px) scale(${scale}) rotateY(${rotY}deg)`;
-                  card.style.zIndex = String(20 - absOffset);
-                  card.style.opacity = String(opacity);
-                  card.style.filter = `brightness(${brightness})`;
-                  card.style.pointerEvents = 'auto';
-              } else {
-                  card.classList.remove('nobifashion_home_banner_main_card_active');
-                  card.setAttribute('aria-hidden', 'true');
-                  const dir = offset > 0 ? 1 : -1;
-                  const posX = dir * (metrics.maxVisible * metrics.stepX + 160);
-                  card.style.transform = `translate3d(calc(-50% + ${posX}px), -50%, -300px) scale(0.5)`;
-                  card.style.zIndex = '0';
-                  card.style.opacity = '0';
-                  card.style.pointerEvents = 'none';
-              }
-          });
-
-          // Update Large Dots Pagination
-          paginationDots.forEach((dot, index) => {
-              if (index === currentIndex) {
-                  dot.classList.add('nobifashion_home_banner_main_pagination_dot_active');
-                  dot.setAttribute('aria-current', 'true');
-              } else {
-                  dot.classList.remove('nobifashion_home_banner_main_pagination_dot_active');
-                  dot.setAttribute('aria-current', 'false');
-              }
-          });
-
-          // Update Ambient Glow
-          if (ambientGlowEl) {
-              const colorIdx = currentIndex % ambientColors.length;
-              ambientGlowEl.style.background = ambientColors[colorIdx];
-          }
-      }
-
-      function goToSlide(targetIndex) {
-          if (targetIndex === currentIndex) return;
-          currentIndex = (targetIndex + total) % total;
-          update3DStage();
-          resetAutoplay();
-      }
-
-      function nextSlide() {
-          goToSlide(currentIndex + 1);
-      }
-
-      function prevSlide() {
-          goToSlide(currentIndex - 1);
-      }
-
-      function startAutoplay() {
-          stopAutoplay();
-          autoplayTimer = setInterval(() => {
-              if (!document.hidden) {
-                  nextSlide();
-              }
-          }, AUTOPLAY_INTERVAL);
-      }
-
-      function stopAutoplay() {
-          if (autoplayTimer) {
-              clearInterval(autoplayTimer);
-              autoplayTimer = null;
-          }
-      }
-
-      function resetAutoplay() {
-          stopAutoplay();
-          startAutoplay();
-      }
-
-      // Card clicks: clicking any background slide switches it to the main slide
-      cards.forEach((card, index) => {
-          function selectThisCard(e) {
-              if (index !== currentIndex) {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  goToSlide(index);
-              }
-          }
-
-          // Use capture phase to intercept click before child elements / link navigation
-          card.addEventListener('click', selectThisCard, true);
-
-          const link = card.querySelector('.nobifashion_home_banner_main_card_link');
-          if (link) {
-              link.addEventListener('click', selectThisCard);
-          }
-      });
-
-      // Prev / Next button clicks
-      if (prevBtn) {
-          prevBtn.addEventListener('click', function (e) {
-              e.preventDefault();
-              prevSlide();
-          });
-      }
-
-      if (nextBtn) {
-          nextBtn.addEventListener('click', function (e) {
-              e.preventDefault();
-              nextSlide();
-          });
-      }
-
-      // Large Dots clicks
-      paginationDots.forEach((dot) => {
-          dot.addEventListener('click', function (e) {
-              e.preventDefault();
-              const targetIdx = parseInt(this.getAttribute('data-nobifashion-index'), 10);
-              if (!isNaN(targetIdx)) {
-                  goToSlide(targetIdx);
-              }
-          });
-      });
-
-      // Keyboard navigation
-      carouselEl.addEventListener('keydown', function (e) {
-          if (e.key === 'ArrowLeft') {
-              e.preventDefault();
-              prevSlide();
-          } else if (e.key === 'ArrowRight') {
-              e.preventDefault();
-              nextSlide();
-          }
-      });
-
-      // Touch & Swipe Support
-      let touchStartX = 0;
-      let touchStartY = 0;
-      let touchEndX = 0;
-      let touchEndY = 0;
-
-      stageEl.addEventListener('touchstart', function (e) {
-          if (e.touches.length === 1) {
-              touchStartX = e.touches[0].clientX;
-              touchStartY = e.touches[0].clientY;
-              touchEndX = touchStartX;
-              touchEndY = touchStartY;
-              stopAutoplay();
-          }
-      }, { passive: true });
-
-      stageEl.addEventListener('touchmove', function (e) {
-          if (e.touches.length === 1) {
-              touchEndX = e.touches[0].clientX;
-              touchEndY = e.touches[0].clientY;
-          }
-      }, { passive: true });
-
-      stageEl.addEventListener('touchend', function () {
-          const diffX = touchEndX - touchStartX;
-          const diffY = touchEndY - touchStartY;
-          const SWIPE_THRESHOLD = 45;
-
-          if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > SWIPE_THRESHOLD) {
-              if (diffX < 0) {
-                  nextSlide();
-              } else {
-                  prevSlide();
-              }
-          }
-          startAutoplay();
-      }, { passive: true });
-
-      // Hover pause
-      carouselEl.addEventListener('mouseenter', stopAutoplay);
-      carouselEl.addEventListener('mouseleave', startAutoplay);
-      carouselEl.addEventListener('focusin', stopAutoplay);
-      carouselEl.addEventListener('focusout', startAutoplay);
-
-      // Resize throttle
-      let resizeTimeout = null;
-      window.addEventListener('resize', function () {
-          if (resizeTimeout) clearTimeout(resizeTimeout);
-          resizeTimeout = setTimeout(() => {
-              update3DStage();
-          }, 100);
-      }, { passive: true });
-
-      // Visibility change
-      document.addEventListener('visibilitychange', function () {
-          if (document.hidden) {
-              stopAutoplay();
-          } else {
-              startAutoplay();
-          }
-      });
-
-      // Initial setup
-      update3DStage();
-      startAutoplay();
-  }
-
-  /* ====================================================================
-     CATEGORY EXPLORER DEPARTMENT TABS CONTROLLER
-     ==================================================================== */
-  function initNobifashionCategoryTabs() {
-      const tabsContainer = document.querySelector('.nobifashion_home_categories_tabs');
-      if (!tabsContainer) return;
-
-      const tabs = tabsContainer.querySelectorAll('.nobifashion_home_categories_tab_btn');
-      const panels = document.querySelectorAll('.nobifashion_home_categories_panel');
-
-      tabs.forEach(tab => {
-          tab.addEventListener('click', function (e) {
-              e.preventDefault();
-              if (this.classList.contains('nobifashion_home_categories_tab_active')) return;
-
-              const targetKey = this.getAttribute('data-nobifashion-tab');
-              if (!targetKey) return;
-
-              tabs.forEach(t => {
-                  t.classList.remove('nobifashion_home_categories_tab_active');
-                  t.setAttribute('aria-selected', 'false');
-              });
-              this.classList.add('nobifashion_home_categories_tab_active');
-              this.setAttribute('aria-selected', 'true');
-
-              panels.forEach(panel => {
-                  if (panel.id === 'nobifashion_cat_panel_' + targetKey) {
-                      panel.style.display = 'block';
-                      // Force DOM reflow so staggered animation triggers cleanly
-                      void panel.offsetWidth;
-                      panel.classList.add('nobifashion_home_categories_panel_active');
-                  } else {
-                      panel.style.display = 'none';
-                      panel.classList.remove('nobifashion_home_categories_panel_active');
-                  }
-              });
-          });
-      });
-  }
-
-  if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', function () {
-          initNobifashionHomeBannerMain();
-          initNobifashionCategoryTabs();
-      });
-  } else {
-      initNobifashionHomeBannerMain();
-      initNobifashionCategoryTabs();
-  }
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+    }
 })();
-
