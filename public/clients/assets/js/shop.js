@@ -604,7 +604,7 @@ function renderRecentlyViewed() {
         html += `
             <div class="shop_recently_item">
                 <a href="${p.url}" class="shop_recently_img_link" title="${p.name}">
-                    <img src="${p.image}" alt="${p.name}" loading="lazy" onerror="this.onerror=null;this.src='/clients/assets/img/no-image.webp';">
+                    <img src="${p.image}" alt="${p.name}" width="160" height="213" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='/clients/assets/img/no-image.webp';">
                 </a>
                 <div class="shop_recently_info">
                     <h4 class="shop_recently_name">

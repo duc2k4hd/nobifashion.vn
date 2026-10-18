@@ -1362,11 +1362,11 @@
    RECENTLY VIEWED PRODUCTS (SẢN PHẨM VỪA XEM GẦN ĐÂY)
    ========================================================================== */
 .shop_recently_viewed_section {
-    margin: 24px 0 16px 0;
-    padding: 20px 22px;
+    margin: 16px 0 12px 0;
+    padding: 12px 16px 14px 16px;
     background: #ffffff;
-    border: 1px solid #f1f5f9;
-    border-radius: 14px;
+    border: 1px solid #eef2f6;
+    border-radius: 10px;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
 }
 
@@ -1374,85 +1374,140 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 16px;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #f8fafc;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f1f5f9;
 }
 
 .shop_recently_title {
-    font-size: 16px;
+    font-size: 13.5px;
     font-weight: 700;
-    color: #0f172a;
+    color: #1e293b;
     margin: 0;
     text-transform: uppercase;
-    letter-spacing: 0.3px;
+    letter-spacing: 0.04em;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .shop_recently_clear {
-    background: none;
+    background: transparent;
     border: none;
-    font-size: 12.5px;
-    color: #475569;
+    font-size: 12px;
+    color: #64748b;
     font-weight: 500;
     cursor: pointer;
-    transition: color 0.15s ease;
+    padding: 3px 8px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
 }
 
 .shop_recently_clear:hover {
-    color: #ef4444;
+    color: #b91c1c;
+    background: #fef2f2;
 }
 
 .shop_recently_grid {
-    display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
 }
 
-.shop_recent_item {
+.shop_recently_item {
+    width: 140px;
+    max-width: 160px;
+    flex: 0 0 auto;
     display: flex;
     flex-direction: column;
-    text-decoration: none;
-    color: inherit;
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
     border-radius: 8px;
-    overflow: hidden;
-    transition: transform 0.2s ease;
+    padding: 6px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    box-sizing: border-box;
 }
 
-.shop_recent_item:hover {
-    transform: translateY(-3px);
+.shop_recently_item:hover {
+    transform: translateY(-2px);
+    border-color: #e2e8f0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
-.shop_recent_thumb {
+.shop_recently_img_link {
+    display: block;
     width: 100%;
     aspect-ratio: 3 / 4;
-    border-radius: 8px;
+    border-radius: 6px;
     overflow: hidden;
-    background: #f1f5f9;
-    margin-bottom: 8px;
+    background: #f8fafc;
+    margin-bottom: 6px;
+    position: relative;
+    text-decoration: none;
 }
 
-.shop_recent_thumb img {
+.shop_recently_img_link img {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
 }
 
-.shop_recent_name {
+.shop_recently_item:hover .shop_recently_img_link img {
+    transform: scale(1.04);
+}
+
+.shop_recently_info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    padding: 2px 2px 0 2px;
+}
+
+.shop_recently_name {
+    margin: 0 0 4px 0;
     font-size: 12px;
     font-weight: 500;
-    color: #334155;
-    margin: 0 0 3px 0;
     line-height: 1.35;
+    min-height: 32px;
+}
+
+.shop_recently_name a {
+    color: #1e293b;
+    text-decoration: none;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.2s ease;
 }
 
-.shop_recent_price {
-    font-size: 12.5px;
+.shop_recently_name a:hover {
+    color: #b91c1c;
+}
+
+.shop_recently_info .product_card_price_row {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: auto;
+}
+
+.shop_recently_info .product_price_sale {
+    font-size: 13px;
     font-weight: 700;
-    color: #0f172a;
+    color: #b91c1c;
+    letter-spacing: -0.01em;
+}
+
+.shop_recently_info .product_price_original {
+    font-size: 11px;
+    color: #64748b;
+    text-decoration: line-through;
+    font-weight: 400;
 }
 
 .nobifashion_shop_products_content_pagination {
@@ -2983,43 +3038,63 @@
 
     /* 7. Khối Sản phẩm vừa xem trên Mobile */
     .shop_recently_viewed_section {
-        margin: 14px 0 !important;
-        padding-top: 14px !important;
+        margin: 12px 0 10px 0 !important;
+        padding: 10px 12px !important;
+        border-radius: 8px !important;
     }
 
     .shop_recently_header {
         margin-bottom: 8px !important;
+        padding-bottom: 6px !important;
     }
 
     .shop_recently_title {
-        font-size: 14.5px !important;
+        font-size: 12.5px !important;
     }
 
     .shop_recently_grid {
-        display: grid !important;
-        grid-template-columns: repeat(2, 1fr) !important;
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch !important;
         gap: 8px !important;
+        padding-bottom: 4px !important;
+        scrollbar-width: none !important;
+    }
+
+    .shop_recently_grid::-webkit-scrollbar {
+        display: none !important;
     }
 
     .shop_recently_item {
-        padding: 8px !important;
-        border-radius: 8px !important;
+        width: 120px !important;
+        min-width: 120px !important;
+        max-width: 120px !important;
+        padding: 5px !important;
+        border-radius: 6px !important;
+        flex-shrink: 0 !important;
     }
 
     .shop_recently_img_link {
         aspect-ratio: 3 / 4 !important;
         height: auto !important;
-        border-radius: 6px !important;
+        border-radius: 4px !important;
         overflow: hidden !important;
+        margin-bottom: 4px !important;
+    }
+
+    .shop_recently_name {
+        min-height: 28px !important;
+        margin-bottom: 2px !important;
     }
 
     .shop_recently_name a {
+        font-size: 11px !important;
+        line-height: 1.3 !important;
+    }
+
+    .shop_recently_info .product_price_sale {
         font-size: 12px !important;
-        height: 32px !important;
-        display: -webkit-box !important;
-        -webkit-line-clamp: 2 !important;
-        -webkit-box-orient: vertical !important;
-        overflow: hidden !important;
     }
 
     .nobifashion_shop_products_content_pagination {

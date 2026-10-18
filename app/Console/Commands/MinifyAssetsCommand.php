@@ -31,7 +31,8 @@ class MinifyAssetsCommand extends Command
             'public/clients/assets/css/author.css' => 'public/clients/assets/css/author.min.css',
             'public/clients/assets/css/single.css' => 'public/clients/assets/css/single.min.css',
             'public/clients/assets/css/home.css' => 'public/clients/assets/css/home.min.css',
-            'public/clients/assets/css/blog.css' => 'public/clients/assets/css/blog.min.css'
+            'public/clients/assets/css/blog.css' => 'public/clients/assets/css/blog.min.css',
+            'public/clients/assets/css/shop.css' => 'public/clients/assets/css/shop.min.css'
         ];
 
         foreach ($cssFiles as $src => $dest) {
@@ -57,7 +58,8 @@ class MinifyAssetsCommand extends Command
             'public/clients/assets/js/main.js' => 'public/clients/assets/js/main.min.js',
             'public/clients/assets/js/header.js' => 'public/clients/assets/js/header.min.js',
             'public/clients/assets/js/single.js' => 'public/clients/assets/js/single.min.js',
-            'public/clients/assets/js/home.js' => 'public/clients/assets/js/home.min.js'
+            'public/clients/assets/js/home.js' => 'public/clients/assets/js/home.min.js',
+            'public/clients/assets/js/shop.js' => 'public/clients/assets/js/shop.min.js'
         ];
 
         foreach ($jsFiles as $src => $dest) {
@@ -100,17 +102,25 @@ class MinifyAssetsCommand extends Command
 
     protected function minifyJS(string $js): string
     {
-        // Xóa comment dạng block
-        $js = preg_replace('!/\*[^*]*\*+([^/][^*]*\*+)*/!', '', $js);
-        // Tách dòng, loại bỏ các dòng comment một dòng // và khoảng trắng thừa
-        $lines = explode("\n", str_replace(["\r\n", "\r"], "\n", $js));
+        // Nhận diện chuỗi (nháy đơn, nháy kép, template string backtick) để KHÔNG xóa nhầm /* */ hoặc // bên trong chuỗi
+        $pattern = '/((?:\'[^\'\\\\]*(?:\\\\.[^\'\\\\]*)*\')|(?:"[^"\\\\]*(?:\\\\.[^"\\\\]*)*")|(?:`[^`\\\\]*(?:\\\\.[^`\\\\]*)*`))|(\/\*[\s\S]*?\*\/)|((?<!:)\/\/[^\n]*)/';
+        $cleaned = preg_replace_callback($pattern, function ($matches) {
+            // Nếu là chuỗi string literal (nhóm 1), giữ nguyên vẹn
+            if (!empty($matches[1])) {
+                return $matches[1];
+            }
+            // Nếu là comment (nhóm 2 hoặc 3), xóa bỏ
+            return '';
+        }, $js);
+
+        // Tách dòng và loại bỏ dòng trống
+        $lines = explode("\n", str_replace(["\r\n", "\r"], "\n", $cleaned));
         $cleanLines = [];
         foreach ($lines as $line) {
             $t = trim($line);
-            if ($t === '' || str_starts_with($t, '//')) {
-                continue;
+            if ($t !== '') {
+                $cleanLines[] = $t;
             }
-            $cleanLines[] = $t;
         }
         return implode("\n", $cleanLines);
     }
