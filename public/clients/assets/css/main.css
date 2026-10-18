@@ -768,7 +768,7 @@ input:disabled {
 
 .nobifashion_main_newsletter_banner_btn {
     padding: 14px 22px;
-    background: #ff4b6e;
+    background: #e11d48;
     color: #fff;
     border: none;
     border-radius: 8px;
@@ -780,8 +780,8 @@ input:disabled {
 }
 
 .nobifashion_main_newsletter_banner_btn:hover {
-    background: #ff2b52;
-    box-shadow: 0 6px 12px rgba(255, 75, 110, 0.3);
+    background: #be123c;
+    box-shadow: 0 6px 12px rgba(225, 29, 72, 0.3);
 }
 
 /* ===== IMAGE ===== */

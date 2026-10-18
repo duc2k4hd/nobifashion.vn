@@ -344,7 +344,7 @@
 /* 5. Sidebar Sản phẩm mới */
 .nobifashion_shop_products_filter_new_products_description p {
     font-size: 12px;
-    color: #6b7280;
+    color: #475569;
     margin: 4px 0 10px 0;
     line-height: 1.4;
 }
@@ -647,8 +647,8 @@
     font-size: 11px;
     font-weight: 700;
     border-radius: 999px;
-    background: #f1f5f9;
-    color: #64748b;
+    background: #e2e8f0;
+    color: #0f172a;
     margin-left: 2px;
     transition: all 0.2s ease;
 }
@@ -1032,7 +1032,7 @@
 }
 
 .product_badge_new {
-    background: #0284c7;
+    background: #075985;
     color: #ffffff;
     font-size: 11px;
     font-weight: 700;
@@ -1175,14 +1175,14 @@
 
 .product_swatch_more {
     font-size: 11px;
-    color: #94a3b8;
-    font-weight: 500;
+    color: #475569;
+    font-weight: 600;
 }
 
 .product_card_category {
     font-size: 11px;
     font-weight: 600;
-    color: #94a3b8;
+    color: #475569;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-bottom: 4px;
@@ -1228,7 +1228,8 @@
 }
 
 .product_card_sold {
-    color: #94a3b8;
+    color: #475569;
+    font-weight: 500;
 }
 
 /* Giá tiền */
@@ -1248,7 +1249,7 @@
 
 .product_price_original {
     font-size: 12.5px;
-    color: #94a3b8;
+    color: #64748b;
     text-decoration: line-through;
     font-weight: 400;
 }
@@ -1391,7 +1392,8 @@
     background: none;
     border: none;
     font-size: 12.5px;
-    color: #94a3b8;
+    color: #475569;
+    font-weight: 500;
     cursor: pointer;
     transition: color 0.15s ease;
 }
@@ -1600,11 +1602,11 @@
 
 .nobifashion_shop_filter_count {
     font-size: 11px;
-    color: #6b7280;
-    background: #f3f4f6;
+    color: #1e293b;
+    background: #e2e8f0;
     padding: 2px 7px;
     border-radius: 999px;
-    font-weight: 500;
+    font-weight: 600;
 }
 
 /* Ô tìm kiếm nhanh màu sắc */
@@ -2840,9 +2842,9 @@
     .product_badge_discount,
     .product_badge_featured,
     .product_badge_new {
-        font-size: 9.5px !important;
+        font-size: 10.5px !important;
         font-weight: 700 !important;
-        padding: 2px 5px !important;
+        padding: 2.5px 6px !important;
         border-radius: 4px !important;
         line-height: 1.1 !important;
     }
@@ -2870,6 +2872,7 @@
 
     .product_card_category {
         font-size: 10.5px !important;
+        color: #475569 !important;
         margin-bottom: 2px !important;
     }
 
@@ -2902,6 +2905,7 @@
 
     .product_card_reviews {
         font-size: 10px !important;
+        color: #475569 !important;
     }
 
     .product_card_price_row {
@@ -2919,6 +2923,7 @@
 
     .product_price_original {
         font-size: 11px !important;
+        color: #64748b !important;
     }
 
     .product_card_swatches {

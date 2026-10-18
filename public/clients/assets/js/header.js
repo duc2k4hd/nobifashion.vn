@@ -524,35 +524,39 @@
     }
   });
 
-  // --- SCROLL VISIBILITY FOR BACK TO TOP ---
+  // --- SCROLL VISIBILITY FOR BACK TO TOP (Tối ưu chống Forced Reflow) ---
+  let isBackToTopVisible = false;
   let backToTopTicking = false;
+
+  function updateBackToTopState(shouldShow) {
+    if (isBackToTopVisible === shouldShow) return;
+    isBackToTopVisible = shouldShow;
+
+    const backToTopElems = all(".nobifashion_back_to_top, #nobifashion_home_back_top");
+    backToTopElems.forEach((el) => {
+      if (shouldShow) {
+        el.classList.remove("is-hiding");
+        el.classList.add("is-visible");
+      } else {
+        el.classList.remove("is-visible");
+        el.classList.add("is-hiding");
+        el.addEventListener(
+          "animationend",
+          () => {
+            el.classList.remove("is-hiding");
+          },
+          { once: true }
+        );
+      }
+    });
+  }
+
   function handleBackToTopScroll() {
     if (backToTopTicking) return;
     backToTopTicking = true;
     window.requestAnimationFrame(() => {
-      const isScrolledPast500 = window.scrollY > 500;
-      const backToTopElems = all(".nobifashion_back_to_top, #nobifashion_home_back_top");
-
-      backToTopElems.forEach((el) => {
-        if (isScrolledPast500) {
-          if (!el.classList.contains("is-visible")) {
-            el.classList.remove("is-hiding");
-            el.classList.add("is-visible");
-          }
-        } else {
-          if (el.classList.contains("is-visible")) {
-            el.classList.remove("is-visible");
-            el.classList.add("is-hiding");
-            el.addEventListener(
-              "animationend",
-              () => {
-                el.classList.remove("is-hiding");
-              },
-              { once: true }
-            );
-          }
-        }
-      });
+      const scrollPos = window.pageYOffset || document.documentElement.scrollTop || 0;
+      updateBackToTopState(scrollPos > 500);
       backToTopTicking = false;
     });
   }
@@ -614,7 +618,6 @@
   // Init
   function initHeader() {
     updateWishlistBadge();
-    handleBackToTopScroll();
     initDragScroll();
   }
 

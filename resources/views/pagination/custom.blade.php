@@ -25,27 +25,27 @@
     <ul class="pagination">
         {{-- Nút Quay lại (Prev) --}}
         @if ($paginator->onFirstPage())
-            <li class="page-item disabled"><span class="page-link" aria-disabled="true">{!! $prev_icon !!}</span></li>
+            <li class="page-item disabled" aria-disabled="true"><span class="page-link" aria-hidden="true">{!! $prev_icon !!}</span></li>
         @else
-            <li class="page-item"><a href="{{ $paginator->previousPageUrl() }}" class="page-link" rel="prev">{!! $prev_icon !!}</a></li>
+            <li class="page-item"><a href="{{ $paginator->previousPageUrl() }}" class="page-link" rel="prev" aria-label="Trang trước">{!! $prev_icon !!}</a></li>
         @endif
 
         {{-- Các nút số trang --}}
         @foreach ($pages as $p)
             @if ($p === '...')
-                <li class="page-item disabled page-item-dots"><span class="page-link">...</span></li>
+                <li class="page-item disabled page-item-dots" aria-disabled="true"><span class="page-link" aria-hidden="true">...</span></li>
             @elseif ($p == $currentPage)
                 <li class="page-item active" aria-current="page"><span class="page-link">{{ $p }}</span></li>
             @else
-                <li class="page-item"><a href="{{ $paginator->url($p) }}" class="page-link">{{ $p }}</a></li>
+                <li class="page-item"><a href="{{ $paginator->url($p) }}" class="page-link" aria-label="Đến trang {{ $p }}">{{ $p }}</a></li>
             @endif
         @endforeach
 
         {{-- Nút Tiếp theo (Next) --}}
         @if ($paginator->hasMorePages())
-            <li class="page-item"><a href="{{ $paginator->nextPageUrl() }}" class="page-link" rel="next">{!! $next_icon !!}</a></li>
+            <li class="page-item"><a href="{{ $paginator->nextPageUrl() }}" class="page-link" rel="next" aria-label="Trang tiếp theo">{!! $next_icon !!}</a></li>
         @else
-            <li class="page-item disabled"><span class="page-link" aria-disabled="true">{!! $next_icon !!}</span></li>
+            <li class="page-item disabled" aria-disabled="true"><span class="page-link" aria-hidden="true">{!! $next_icon !!}</span></li>
         @endif
     </ul>
 @endif

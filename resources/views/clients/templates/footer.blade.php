@@ -238,7 +238,7 @@
                 <a href="{{ route('client.policy.payment') }}">Chính sách thanh toán doanh nghiệp</a>
                 <a href="{{ route('client.policy.privacy') }}">Chính sách bảo mật thông tin doanh nghiệp</a>
                 <a href="{{ route('client.policy.privacy') }}">Chính sách bảo mật dữ liệu doanh nghiệp</a>
-                <img style="position: relative; object-fit: cover; max-width: 250px; height: auto; cursor: pointer;" src="https://nobifashion.vn/clients/assets/img/other/TRUSTe.avif" alt="TRUSTe Privacy Certification">
+                <img width="130" height="40" loading="lazy" style="position: relative; object-fit: cover; max-width: 130px; height: auto; cursor: pointer;" src="https://nobifashion.vn/clients/assets/img/other/TRUSTe.avif" alt="TRUSTe Privacy Certification">
             </div>
         </div>
 

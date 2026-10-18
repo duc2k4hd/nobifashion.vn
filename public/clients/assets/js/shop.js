@@ -406,13 +406,20 @@ function initShopSeoToggle() {
     const contentBody = document.getElementById('shopSeoContentBody');
     if (!wrapper || !btn || !contentBody) return;
 
-    // Nếu nội dung thực tế ngắn hơn hoặc bằng 290px thì ẩn nút Xem thêm và ẩn dải Gradient
-    if (contentBody.scrollHeight <= 290) {
-        if (btn.parentElement) btn.parentElement.style.display = 'none';
-        const fade = document.getElementById('shopSeoFade');
-        if (fade) fade.style.display = 'none';
-        wrapper.classList.add('is-expanded');
-        return;
+    // Đo kích thước sau khi trình duyệt render xong để không gây Forced Reflow trong quá trình tải trang
+    const checkHeight = function () {
+        if (contentBody.scrollHeight <= 290) {
+            if (btn.parentElement) btn.parentElement.style.display = 'none';
+            const fade = document.getElementById('shopSeoFade');
+            if (fade) fade.style.display = 'none';
+            wrapper.classList.add('is-expanded');
+        }
+    };
+
+    if ('requestIdleCallback' in window) {
+        window.requestIdleCallback(checkHeight);
+    } else {
+        setTimeout(checkHeight, 150);
     }
 
     btn.addEventListener('click', function () {
@@ -769,9 +776,10 @@ function initSubcategoriesSlider() {
     slider.addEventListener('scroll', updateControls, { passive: true });
     window.addEventListener('resize', updateControls);
 
-    // Kích hoạt ngay lúc tải xong
-    updateControls();
-    setTimeout(updateControls, 300);
+    // Kích hoạt mượt mà không gây forced reflow trong quá trình tải trang
+    requestAnimationFrame(function () {
+        updateControls();
+    });
 }
 
 

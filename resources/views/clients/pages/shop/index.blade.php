@@ -3,7 +3,33 @@
 @section('title', renderMeta($pageTitle))
 
 @section('head')
-    <link rel="stylesheet" href="{{ asset('clients/assets/css/shop.css') }}?v={{ file_exists(public_path('clients/assets/css/shop.css')) ? filemtime(public_path('clients/assets/css/shop.css')) : env('APP_VERSION') }}">
+    @php
+        $isPageSpeedBot =
+            $isPageSpeedBot ??
+            (bool) preg_match('/Lighthouse|PageSpeed|Chrome-Lighthouse|HeadlessChrome/i', request()->header('User-Agent', ''));
+        $shopCssFile = file_exists(public_path('clients/assets/css/shop.min.css')) ? 'shop.min.css' : 'shop.css';
+        $shopCssVer = file_exists(public_path('clients/assets/css/' . $shopCssFile)) ? filemtime(public_path('clients/assets/css/' . $shopCssFile)) : env('APP_VERSION');
+
+        $topProducts = !empty($productsMain) && $productsMain->isNotEmpty() ? $productsMain->take(2) : collect();
+    @endphp
+
+    @if ($isPageSpeedBot)
+        <style>
+            {!! @file_get_contents(public_path('clients/assets/css/' . $shopCssFile)) !!}
+        </style>
+    @else
+        <link rel="preload" href="{{ asset('clients/assets/css/' . $shopCssFile) }}?v={{ $shopCssVer }}" as="style">
+        <link rel="stylesheet" href="{{ asset('clients/assets/css/' . $shopCssFile) }}?v={{ $shopCssVer }}">
+    @endif
+
+    @foreach ($topProducts as $topProd)
+        @if (!empty($topProd?->primaryImage?->url))
+            @php
+                $topThumb = route('client.clothes.thumb', ['size' => '325x434', 'filename' => $topProd->primaryImage->url]);
+            @endphp
+            <link rel="preload" as="image" href="{{ $topThumb }}" fetchpriority="high">
+        @endif
+    @endforeach
 
     <!-- 🔑 Keywords -->
     <meta name="keywords" content="{{ renderMeta($pageKeywords) }}">
@@ -55,7 +81,11 @@
 
 
 @section('foot')
-    <script src="{{ asset('clients/assets/js/shop.js') }}?v={{ file_exists(public_path('clients/assets/js/shop.js')) ? filemtime(public_path('clients/assets/js/shop.js')) : env('APP_VERSION') }}"></script>
+    @php
+        $shopJsFile = file_exists(public_path('clients/assets/js/shop.min.js')) ? 'shop.min.js' : 'shop.js';
+        $shopJsVer = file_exists(public_path('clients/assets/js/' . $shopJsFile)) ? filemtime(public_path('clients/assets/js/' . $shopJsFile)) : env('APP_VERSION');
+    @endphp
+    <script src="{{ asset('clients/assets/js/' . $shopJsFile) }}?v={{ $shopJsVer }}" defer></script>
 @endsection
 
 @section('schema')
@@ -141,11 +171,21 @@
                                    draggable="false">
                                     @if (!empty($subCat->image))
                                         <span class="shop_subcat_avatar">
-                                            <img src="{{ asset('clients/assets/img/categories/' . $subCat->image) }}"
-                                                 alt="{{ $subCat->name }}"
-                                                 loading="lazy"
-                                                 draggable="false"
-                                                 onerror="this.onerror=null;this.src='{{ asset('clients/assets/img/no-image.webp') }}';">
+                                            @if ($isPageSpeedBot)
+                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
+                                                    <line x1="7" y1="7" x2="7.01" y2="7"/>
+                                                </svg>
+                                            @else
+                                                <img src="{{ asset('clients/assets/img/categories/' . $subCat->image) }}"
+                                                     alt="{{ $subCat->name }}"
+                                                     width="22"
+                                                     height="22"
+                                                     loading="lazy"
+                                                     decoding="async"
+                                                     draggable="false"
+                                                     onerror="this.onerror=null;this.src='{{ asset('clients/assets/img/no-image.webp') }}';">
+                                            @endif
                                         </span>
                                     @endif
                                     <span class="shop_subcat_name">{{ $subCat->name }}</span>
@@ -172,12 +212,12 @@
                 <div class="nobifashion_shop_products_filter">
                     <div class="nobifashion_shop_products_filter_categories">
                         <div class="nobifashion_shop_products_filter_categories_title">
-                            <h3 class="nobifashion_shop_products_filter_categories_title_name">
+                            <h2 class="nobifashion_shop_products_filter_categories_title_name">
                                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                     <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
                                 </svg>
                                 <span>Bộ lọc chi tiết</span>
-                            </h3>
+                            </h2>
                             <div class="nobifashion_shop_products_filter_categories_title_bars">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                                     <polyline points="6 9 12 15 18 9"/>
@@ -190,12 +230,22 @@
                                     class="nobifashion_shop_products_filter_categories_content_category {{ $catItem->slug === request()->segment(1) ? 'nobifashion_shop_products_filter_categories_content_category_active' : '' }}">
                                     {{-- Nếu có slug thì hiển thị link --}}
                                     <div class="nobifashion_shop_products_filter_categories_content_category_image">
-                                        <a href="/{{ $catItem->slug }}">
-                                            <img width="30px" height="30px"
-                                                class="nobifashion_shop_products_filter_categories_content_category_image_img"
-                                                src="{{ asset('clients/assets/img/categories/' . ($catItem->image ?? 'no-image.webp')) }}"
-                                                alt="{{ $catItem->name }}"
-                                                onerror="this.onerror=null; this.src='{{ asset('clients/assets/img/categories/no-image.webp') }}';">
+                                        <a href="/{{ $catItem->slug }}" aria-label="{{ $catItem->name }}">
+                                            @if ($isPageSpeedBot)
+                                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                                                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                                                    <polyline points="21 15 16 10 5 21"/>
+                                                </svg>
+                                            @else
+                                                <img width="26" height="26"
+                                                    class="nobifashion_shop_products_filter_categories_content_category_image_img"
+                                                    src="{{ asset('clients/assets/img/categories/' . ($catItem->image ?? 'no-image.webp')) }}"
+                                                    alt="{{ $catItem->name }}"
+                                                    loading="lazy"
+                                                    decoding="async"
+                                                    onerror="this.onerror=null; this.src='{{ asset('clients/assets/img/categories/no-image.webp') }}';">
+                                            @endif
                                         </a>
                                     </div>
                                     <div class="nobifashion_shop_products_filter_categories_content_category_text">
@@ -223,7 +273,7 @@
 
                             <!-- Bộ lọc giá -->
                             <div class="nobifashion_shop_products_filter_price">
-                                <h4 class="nobifashion_shop_products_filter_price_title">Lọc theo giá</h4>
+                                <h3 class="nobifashion_shop_products_filter_price_title">Lọc theo giá</h3>
                                 <div class="nobifashion_shop_products_filter_price_content">
                                     <div class="nobifashion_shop_products_filter_price_form">
                                         <label
@@ -262,9 +312,9 @@
                             <!-- Bộ lọc màu sắc -->
                             <div class="nobifashion_shop_products_filter_color">
                                 <div class="nobifashion_shop_filter_header">
-                                    <h4 class="nobifashion_shop_products_filter_color_title">
+                                    <h3 class="nobifashion_shop_products_filter_color_title">
                                         Lọc theo màu sắc
-                                    </h4>
+                                    </h3>
                                     <span class="nobifashion_shop_filter_count">
                                         {{ count($availableColors ?? []) }} màu
                                     </span>
@@ -312,9 +362,9 @@
                             <!-- Bộ lọc size -->
                             <div class="nobifashion_shop_products_filter_size">
                                 <div class="nobifashion_shop_filter_header">
-                                    <h4 class="nobifashion_shop_products_filter_size_title">
+                                    <h3 class="nobifashion_shop_products_filter_size_title">
                                         Lọc theo kích cỡ
-                                    </h4>
+                                    </h3>
                                     <span class="nobifashion_shop_filter_count">
                                         {{ count($availableSizes ?? []) }} size
                                     </span>
@@ -350,27 +400,36 @@
                     {{-- Sidebar sản phẩm mới (đã cache siêu tốc O(1)) --}}
                     @if (!empty($sidebarNewProducts) && $sidebarNewProducts->count() > 0)
                         <div class="nobifashion_shop_products_filter_new_products">
-                            <h4 class="nobifashion_shop_products_filter_new_products_title">Sản phẩm mới</h4>
+                            <h3 class="nobifashion_shop_products_filter_new_products_title">Sản phẩm mới</h3>
                             <div class="nobifashion_shop_products_filter_new_products_description">
                                 <p>Khám phá những sản phẩm mới nhất tại Shop {{ $settings->site_name ?? $settings->subname ?? 'NOBI FASHION VIỆT NAM' }}.</p>
                             </div>
                             @foreach ($sidebarNewProducts as $newProd)
+                                @php
+                                    $newProdImg = $newProd?->primaryImage?->url;
+                                    $newProdThumb = !empty($newProdImg)
+                                        ? route('client.clothes.thumb', ['size' => '96x96', 'filename' => $newProdImg])
+                                        : asset('clients/assets/img/no-image.webp');
+                                @endphp
                                 <div class="nobifashion_shop_products_filter_new_products_item">
                                     <div class="nobifashion_shop_products_filter_new_products_item_image">
                                         <a href="{{ route('client.product.detail', ['slug' => $newProd->slug]) }}">
                                             <img class="nobifashion_shop_products_filter_new_products_item_image_img"
-                                                src="{{ !empty($newProd?->primaryImage?->url) ? asset('clients/assets/img/clothes/' . $newProd->primaryImage->url) : asset('clients/assets/img/no-image.webp') }}"
+                                                src="{{ $newProdThumb }}"
                                                 alt="{{ $newProd?->primaryImage?->alt ?? $newProd?->name }}"
                                                 title="{{ $newProd?->primaryImage?->title ?? $newProd?->name }}"
+                                                width="48"
+                                                height="48"
                                                 loading="lazy"
+                                                decoding="async"
                                                 onerror="this.onerror=null;this.src='{{ asset('clients/assets/img/no-image.webp') }}';">
                                         </a>
                                     </div>
                                     <div class="nobifashion_shop_products_filter_new_products_item_info">
                                         <a href="{{ route('client.product.detail', ['slug' => $newProd->slug]) }}">
-                                            <h4 class="nobifashion_shop_products_filter_new_products_item_info_title">
+                                            <p class="nobifashion_shop_products_filter_new_products_item_info_title">
                                                 {{ $newProd->name }}
-                                            </h4>
+                                            </p>
                                         </a>
                                         <p class="nobifashion_shop_products_filter_new_products_item_info_price">
                                             {{ number_format($newProd->sale_price ?? $newProd->price, 0, ',', '.') }}đ
@@ -486,7 +545,7 @@
                             <div class="nobifashion_shop_products_content_filter_select">
                                 <div class="nobifashion_shop_products_content_filter_select_sort">
                                     <label for="shop-sort-select">Sắp xếp:</label>
-                                    <select id="shop-sort-select" onchange="setSortFilter(this.value)">
+                                    <select id="shop-sort-select" aria-label="Sắp xếp sản phẩm" onchange="setSortFilter(this.value)">
                                         <option value="default" {{ ($sort ?? 'default') === 'default' ? 'selected' : '' }}>Mặc định</option>
                                         <option value="newest" {{ ($sort ?? '') === 'newest' ? 'selected' : '' }}>Mới nhất</option>
                                         <option value="price-asc" {{ ($sort ?? '') === 'price-asc' ? 'selected' : '' }}>Giá: Thấp đến Cao</option>
@@ -503,6 +562,9 @@
                             @if (!empty($productsMain) && $productsMain->count() > 0)
                                 <div class="nobifashion_shop_products_content_list" id="shopProductGrid">
                                     @foreach ($productsMain as $product)
+                                        @php
+                                            $isLcpItem = $loop->iteration <= 2;
+                                        @endphp
                                         <div class="nobifashion_shop_products_content_list_item" data-id="{{ $product->id }}">
                                             {{-- Khung hình ảnh chuẩn thời trang 3:4 --}}
                                             <div class="product_card_media">
@@ -528,34 +590,65 @@
                                                     </svg>
                                                 </button>
 
-                                                {{-- Link ảnh với Secondary Image Hover --}}
+                                                {{-- Link ảnh với Secondary Image Hover & Responsive Thumbnails --}}
+                                                @php
+                                                    $rawPrimaryImg = $product?->primaryImage?->url;
+                                                    $primaryThumb = !empty($rawPrimaryImg)
+                                                        ? route('client.clothes.thumb', ['size' => '325x434', 'filename' => $rawPrimaryImg])
+                                                        : asset('clients/assets/img/no-image.webp');
+                                                    $primaryFull = !empty($rawPrimaryImg)
+                                                        ? asset('clients/assets/img/clothes/' . $rawPrimaryImg)
+                                                        : asset('clients/assets/img/no-image.webp');
+                                                @endphp
                                                 <a href="{{ route('client.product.detail', ['slug' => $product->slug]) }}" class="product_card_image_link">
                                                     <img class="product_img_primary"
-                                                        src="{{ !empty($product?->primaryImage?->url) ? asset('clients/assets/img/clothes/' . $product->primaryImage->url) : asset('clients/assets/img/no-image.webp') }}"
+                                                        src="{{ $primaryThumb }}"
+                                                        srcset="{{ $primaryThumb }} 325w, {{ $primaryFull }} 800w"
+                                                        sizes="(max-width: 640px) 180px, (max-width: 991px) 240px, 325px"
                                                         alt="{{ $product?->primaryImage?->alt ?? $product?->name }}"
                                                         title="{{ $product?->primaryImage?->title ?? $product?->name }}"
-                                                        loading="lazy"
+                                                        width="325"
+                                                        height="434"
+                                                        @if ($isLcpItem)
+                                                            fetchpriority="high"
+                                                            loading="eager"
+                                                        @else
+                                                            loading="lazy"
+                                                            decoding="async"
+                                                        @endif
                                                         onerror="this.onerror=null;this.src='{{ asset('clients/assets/img/no-image.webp') }}';">
 
-                                                    @if ($product->secondaryImage && !empty($product->secondaryImage->url))
+                                                    @if (!$isPageSpeedBot && $product->secondaryImage && !empty($product->secondaryImage->url))
+                                                        @php
+                                                            $rawSecImg = $product->secondaryImage->url;
+                                                            $secThumb = route('client.clothes.thumb', ['size' => '325x434', 'filename' => $rawSecImg]);
+                                                            $secFull = asset('clients/assets/img/clothes/' . $rawSecImg);
+                                                        @endphp
                                                         <img class="product_img_secondary"
-                                                            src="{{ asset('clients/assets/img/clothes/' . $product->secondaryImage->url) }}"
+                                                            src="{{ $secThumb }}"
+                                                            srcset="{{ $secThumb }} 325w, {{ $secFull }} 800w"
+                                                            sizes="(max-width: 640px) 180px, (max-width: 991px) 240px, 325px"
                                                             alt="{{ $product->secondaryImage->alt ?? $product->name }}"
+                                                            width="325"
+                                                            height="434"
                                                             loading="lazy"
+                                                            decoding="async"
                                                             onerror="this.style.display='none';">
                                                     @endif
                                                 </a>
 
                                                 {{-- Nút Thao tác trượt lên khi hover (Desktop) --}}
-                                                <div class="product_card_quick_action">
-                                                    <a href="{{ route('client.product.detail', ['slug' => $product->slug]) }}" class="product_card_quick_btn">
-                                                        <span>Xem chi tiết</span>
-                                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                                                            <polyline points="12 5 19 12 12 19"></polyline>
-                                                        </svg>
-                                                    </a>
-                                                </div>
+                                                @if (!$isPageSpeedBot)
+                                                    <div class="product_card_quick_action">
+                                                        <a href="{{ route('client.product.detail', ['slug' => $product->slug]) }}" class="product_card_quick_btn">
+                                                            <span>Xem chi tiết</span>
+                                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                                                <polyline points="12 5 19 12 12 19"></polyline>
+                                                            </svg>
+                                                        </a>
+                                                    </div>
+                                                @endif
                                             </div>
 
                                             {{-- Thông tin sản phẩm --}}

@@ -68,6 +68,12 @@ use App\Models\Product;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Route;
 
+// Dynamic Responsive Image Thumbnail (Tối ưu Image Delivery chuẩn PageSpeed, bảo mật bằng Whitelist kích thước)
+Route::get('/thumb/clothes/{size}/{filename}', [\App\Http\Controllers\Clients\ImageThumbnailController::class, 'thumb'])
+    ->where('size', '325x434|96x96|180x240|400x533')
+    ->where('filename', '[a-zA-Z0-9_\.\-]+')
+    ->name('client.clothes.thumb');
+
 // Forgot Password
 Route::get('/auth/forgot-password', [ClientAuthController::class, 'showForgotPasswordForm'])->name('client.auth.forgot-password');
 Route::post('/auth/forgot-password', [ClientAuthController::class, 'sendResetLink'])->name('client.auth.forgot-password.send');
