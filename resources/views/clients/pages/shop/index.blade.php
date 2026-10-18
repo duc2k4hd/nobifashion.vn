@@ -125,34 +125,24 @@
                             </div>
                         </div>
                         <div class="nobifashion_shop_products_filter_categories_content">
-                            @foreach ($categories as $category)
-                                {{-- @php
-                                    $productsCategories = \App\Models\Product::active()
-                                        ->withAnyCategory($category->category_ids)
-                                        ->inRandomOrder()
-                                        ->limit(5);
-                                @endphp --}}
+                            @foreach ($categories as $catItem)
                                 <div
-                                    class="nobifashion_shop_products_filter_categories_content_category {{ $category->slug === request()->segment(1) ? 'nobifashion_shop_products_filter_categories_content_category_active' : '' }}">
+                                    class="nobifashion_shop_products_filter_categories_content_category {{ $catItem->slug === request()->segment(1) ? 'nobifashion_shop_products_filter_categories_content_category_active' : '' }}">
                                     {{-- Nếu có slug thì hiển thị link --}}
                                     <div class="nobifashion_shop_products_filter_categories_content_category_image">
-                                        <a href="/{{ $category->slug }}">
+                                        <a href="/{{ $catItem->slug }}">
                                             <img width="30px" height="30px"
                                                 class="nobifashion_shop_products_filter_categories_content_category_image_img"
-                                                src="{{ asset('clients/assets/img/categories/' . ($category->image ?? 'no-image.webp')) }}"
-                                                alt="{{ $category->name }}"
+                                                src="{{ asset('clients/assets/img/categories/' . ($catItem->image ?? 'no-image.webp')) }}"
+                                                alt="{{ $catItem->name }}"
                                                 onerror="this.onerror=null; this.src='{{ asset('clients/assets/img/categories/no-image.webp') }}';">
                                         </a>
                                     </div>
                                     <div class="nobifashion_shop_products_filter_categories_content_category_text">
-                                        <a href="/{{ $category->slug }}">
-                                            <p>{{ $category->name }}</p>
+                                        <a href="/{{ $catItem->slug }}">
+                                            <p>{{ $catItem->name }}</p>
                                         </a>
                                     </div>
-                                    {{-- <div
-                                        class="nobifashion_shop_products_filter_categories_content_category_quantity">
-                                        <span>{{ $productsCategories ? $productsCategories->get()->count() : 0 }}</span>
-                                    </div> --}}
                                 </div>
                             @endforeach
                         </div>
@@ -465,6 +455,164 @@
                 </div>
             </div>
         </section>
+
+        {{-- Khối nội dung SEO danh mục 2 cột hiện đại (Bài viết SEO + Đặc quyền & Bảng size) --}}
+        @if (!empty($category) && !empty($category->description))
+            <section class="nobifashion_shop_seo_section" id="category-seo-section">
+                <div class="shop_seo_container">
+                    {{-- Cột trái (68%): Bài viết SEO chuyên sâu về danh mục --}}
+                    <div class="shop_seo_main_card">
+                        <div class="shop_seo_content_wrapper" id="shopSeoContentWrapper">
+                            <div class="shop_seo_content_body entry-content" id="shopSeoContentBody">
+                                {!! $category->description !!}
+                            </div>
+                            <div class="shop_seo_fade" id="shopSeoFade"></div>
+                        </div>
+
+                        <div class="shop_seo_toggle_box">
+                            <button type="button" class="shop_seo_toggle_btn" id="btnToggleShopSeo">
+                                <span class="btn-text">Xem thêm nội dung</span>
+                                <svg class="shop-seo-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="6 9 12 15 18 9"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    {{-- Cột phải (32%): Khối giá trị gia tăng (Quyền lợi & Bảng size nhanh) --}}
+                    <aside class="shop_seo_sidebar">
+                        {{-- Card 1: Cam kết & Đặc quyền Nobi Fashion --}}
+                        <div class="shop_seo_perks_card">
+                            <div class="perks_card_header">
+                                {{-- <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                </svg> --}}
+                                <h3>Đặc quyền tại Nobi Fashion</h3>
+                            </div>
+                            <ul class="perks_list">
+                                <li class="perk_item">
+                                    <div class="perk_icon">
+                                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                                            <path d="M3 3v5h5"/>
+                                            <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+                                            <path d="M16 16h5v5"/>
+                                        </svg>
+                                    </div>
+                                    <div class="perk_info">
+                                        <strong>Đổi trả 15 ngày miễn phí</strong>
+                                        <p>Đổi size tận nơi, shipper giao tận tay</p>
+                                    </div>
+                                </li>
+                                <li class="perk_item">
+                                    <div class="perk_icon">
+                                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="m16.5 9.4-9-5.19M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+                                            <polyline points="3.29 7 12 12 20.71 7"/>
+                                            <line x1="12" y1="22" x2="12" y2="12"/>
+                                        </svg>
+                                    </div>
+                                    <div class="perk_info">
+                                        <strong>Đồng kiểm trước nhận hàng</strong>
+                                        <p>Mở hộp kiểm tra ưng ý mới thanh toán</p>
+                                    </div>
+                                </li>
+                                <li class="perk_item">
+                                    <div class="perk_icon">
+                                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect x="1" y="3" width="15" height="13" rx="2"/>
+                                            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+                                            <circle cx="5.5" cy="18.5" r="2.5"/>
+                                            <circle cx="18.5" cy="18.5" r="2.5"/>
+                                        </svg>
+                                    </div>
+                                    <div class="perk_info">
+                                        <strong>Giao hàng toàn quốc</strong>
+                                        <p>Miễn phí ship cho đơn từ 299.000đ</p>
+                                    </div>
+                                </li>
+                                <li class="perk_item">
+                                    <div class="perk_icon">
+                                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                            <path d="m9 12 2 2 4-4"/>
+                                        </svg>
+                                    </div>
+                                    <div class="perk_info">
+                                        <strong>Bảo hành chất lượng 6 tháng</strong>
+                                        <p>Bảo hành đường may, cúc áo, giữ form</p>
+                                    </div>
+                                </li>
+                            </ul>
+
+                            @if (!empty($settings->contact_phone))
+                                <div class="perks_hotline_box">
+                                    <div class="perks_hotline_icon">
+                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M3 18v-6a9 9 0 0 1 18 0v6"/>
+                                            <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <span>Cần tư vấn chọn size chuẩn?</span>
+                                        <a href="tel:{{ $settings->contact_phone }}">{{ preg_replace('/^(\d{4})(\d{3})(\d{3})$/', '$1.$2.$3', preg_replace('/\D/', '', $settings->contact_phone)) }}</a>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+
+                        {{-- Card 2: Bảng gợi ý chọn size chuẩn form người Việt --}}
+                        <div class="shop_seo_size_card">
+                            <div class="size_card_header">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.4 2.4 0 0 1 0-3.4l2.6-2.6a2.4 2.4 0 0 1 3.4 0l12.6 12.6z"/>
+                                    <line x1="7.5" y1="10.5" x2="6" y2="9"/>
+                                    <line x1="10.5" y1="13.5" x2="8" y2="11"/>
+                                    <line x1="13.5" y1="16.5" x2="12" y2="15"/>
+                                    <line x1="16.5" y1="19.5" x2="14" y2="17"/>
+                                </svg>
+                                <h3>Bảng gợi ý chọn size chuẩn</h3>
+                            </div>
+                            <div class="size_table_mini">
+                                <div class="size_row size_header">
+                                    <span>Size</span>
+                                    <span>Chiều cao</span>
+                                    <span>Cân nặng</span>
+                                </div>
+                                <div class="size_row">
+                                    <span class="size_tag">M</span>
+                                    <span>1m58 - 1m65</span>
+                                    <span>50 - 58 kg</span>
+                                </div>
+                                <div class="size_row">
+                                    <span class="size_tag">L</span>
+                                    <span>1m66 - 1m72</span>
+                                    <span>59 - 68 kg</span>
+                                </div>
+                                <div class="size_row">
+                                    <span class="size_tag">XL</span>
+                                    <span>1m73 - 1m78</span>
+                                    <span>69 - 78 kg</span>
+                                </div>
+                                <div class="size_row">
+                                    <span class="size_tag">2XL</span>
+                                    <span>1m79 - 1m85</span>
+                                    <span>79 - 88 kg</span>
+                                </div>
+                            </div>
+                            <p class="size_note">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -1px; margin-right: 4px; color: #2563eb;">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <line x1="12" y1="16" x2="12" y2="12"/>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"/>
+                                </svg>
+                                Nếu phân vân giữa 2 size, hãy chọn size lớn hơn để mặc thoải mái nhất.
+                            </p>
+                        </div>
+                    </aside>
+                </div>
+            </section>
+        @endif
     </main>
 
     @include('clients.templates.call')

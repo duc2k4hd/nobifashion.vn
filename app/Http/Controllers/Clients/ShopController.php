@@ -18,9 +18,10 @@ use Illuminate\Support\Str;
 
 class ShopController extends Controller
 {
-    public function index(Request $request, $url = null)
+    public function index(Request $request, $slug = null)
     {
         $settings = View::shared('settings') ?? Setting::first();
+        $url = $slug ?? $request->route('slug') ?? $request->route('url');
 
         // 1. Lấy toàn bộ màu sắc và kích cỡ thực tế từ database (Cache 1 giờ trong RAM O(1))
         $availableColors = Cache::remember('shop_available_colors_v2', 3600, function () {

@@ -286,3 +286,48 @@ function executeShopFilters(customUrl = null, pushHistory = true) {
     });
 }
 
+// 5. Khởi tạo tính năng Xem thêm / Thu gọn cho Khối Nội dung SEO danh mục
+function initShopSeoToggle() {
+    const wrapper = document.getElementById('shopSeoContentWrapper');
+    const btn = document.getElementById('btnToggleShopSeo');
+    const contentBody = document.getElementById('shopSeoContentBody');
+    if (!wrapper || !btn || !contentBody) return;
+
+    // Nếu nội dung thực tế ngắn hơn hoặc bằng 290px thì ẩn nút Xem thêm và ẩn dải Gradient
+    if (contentBody.scrollHeight <= 290) {
+        if (btn.parentElement) btn.parentElement.style.display = 'none';
+        const fade = document.getElementById('shopSeoFade');
+        if (fade) fade.style.display = 'none';
+        wrapper.classList.add('is-expanded');
+        return;
+    }
+
+    btn.addEventListener('click', function () {
+        const isExpanded = wrapper.classList.contains('is-expanded');
+        const btnText = btn.querySelector('.btn-text');
+        const btnIcon = btn.querySelector('.btn-icon');
+
+        if (isExpanded) {
+            wrapper.classList.remove('is-expanded');
+            btn.classList.remove('is-active');
+            if (btnText) btnText.textContent = 'Xem thêm nội dung';
+            // Cuộn nhẹ về đầu khối SEO để người dùng dễ theo dõi
+            const section = document.getElementById('category-seo-section');
+            if (section) {
+                const offset = section.getBoundingClientRect().top + window.pageYOffset - 90;
+                window.scrollTo({ top: offset, behavior: 'smooth' });
+            }
+        } else {
+            wrapper.classList.add('is-expanded');
+            btn.classList.add('is-active');
+            if (btnText) btnText.textContent = 'Thu gọn nội dung';
+        }
+    });
+}
+
+// Tự động khởi chạy khi tải trang
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initShopSeoToggle);
+} else {
+    initShopSeoToggle();
+}

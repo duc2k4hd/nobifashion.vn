@@ -1032,6 +1032,683 @@
     }
 }
 
+/* =========================================================
+   ✨ KHỐI NỘI DUNG SEO DANH MỤC - BLOG TYPOGRAPHY STYLE
+   ========================================================= */
+.nobifashion_shop_seo_section {
+    width: 100%;
+    margin: 40px 0 25px 0;
+    padding-top: 28px;
+    border-top: 1px dashed #cbd5e1;
+}
+
+.shop_seo_container {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: 30px;
+    align-items: start;
+}
+
+/* Cột Trái (Bài viết SEO) */
+.shop_seo_main_card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 28px 32px;
+    box-shadow: 0 4px 20px -3px rgba(15, 23, 42, 0.05);
+    min-width: 0;
+    word-wrap: break-word;
+}
+
+.shop_seo_content_wrapper {
+    position: relative;
+    max-height: 300px;
+    overflow: hidden;
+    transition: max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.shop_seo_content_wrapper.is-expanded {
+    max-height: none;
+}
+
+.shop_seo_fade {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 110px;
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.85) 60%, #ffffff 100%);
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.shop_seo_content_wrapper.is-expanded .shop_seo_fade {
+    opacity: 0;
+    display: none;
+}
+
+/* -------------------------------------------------------------
+   Blog Typography Engine for .shop_seo_content_body & .entry-content
+   ------------------------------------------------------------- */
+.shop_seo_content_body,
+.shop_seo_content_body.entry-content {
+    font-size: 15px;
+    line-height: 1.8;
+    color: #334155;
+    font-family: inherit;
+    word-wrap: break-word;
+    letter-spacing: -0.01em;
+}
+
+/* Base line-height for all children */
+.shop_seo_content_body * {
+    line-height: 1.75;
+    box-sizing: border-box;
+}
+
+/* Headings Base */
+.shop_seo_content_body h1,
+.shop_seo_content_body h2,
+.shop_seo_content_body h3,
+.shop_seo_content_body h4,
+.shop_seo_content_body h5,
+.shop_seo_content_body h6 {
+    color: #0f172a;
+    font-weight: 700;
+    line-height: 1.4;
+    letter-spacing: -0.015em;
+}
+
+/* H1 - Tiêu đề bài viết chính */
+.shop_seo_content_body h1 {
+    font-size: 1.45rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 16px 0;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #f1f5f9;
+}
+
+/* H2 - Phong cách Blog tạp chí thời trang: thanh màu xanh + background gradient nhẹ */
+.shop_seo_content_body h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 28px 0 14px 0;
+    padding: 8px 16px;
+    border-left: 4px solid #2563eb;
+    background: linear-gradient(90deg, rgba(37, 99, 235, 0.07) 0%, rgba(248, 250, 252, 0.5) 60%, transparent 100%);
+    border-radius: 0 8px 8px 0;
+    position: relative;
+}
+
+.shop_seo_content_body h2:first-child {
+    margin-top: 0;
+}
+
+/* H3 - Tiêu đề đề mục con với icon điểm nhấn thanh lịch */
+.shop_seo_content_body h3 {
+    font-size: 1.12rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 22px 0 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.shop_seo_content_body h3::before {
+    content: "";
+    display: inline-block;
+    width: 5px;
+    height: 15px;
+    background: #3b82f6;
+    border-radius: 3px;
+    flex-shrink: 0;
+    opacity: 0.9;
+}
+
+/* H4, H5, H6 */
+.shop_seo_content_body h4 {
+    font-size: 1.04rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 18px 0 8px 0;
+    border-left: 3px solid #94a3b8;
+    padding-left: 10px;
+}
+
+.shop_seo_content_body h5,
+.shop_seo_content_body h6 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #475569;
+    margin: 14px 0 6px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Paragraphs */
+.shop_seo_content_body p {
+    font-size: 15px;
+    color: #374151;
+    line-height: 1.8;
+    margin-top: 0;
+    margin-bottom: 14px;
+    text-align: justify;
+    text-justify: inter-word;
+}
+
+.shop_seo_content_body > p:first-of-type {
+    font-size: 15.5px;
+    color: #1e293b;
+    line-height: 1.85;
+}
+
+.shop_seo_content_body p:last-child {
+    margin-bottom: 0;
+}
+
+/* Bold / Strong */
+.shop_seo_content_body strong,
+.shop_seo_content_body b {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+/* Italic / Em */
+.shop_seo_content_body em,
+.shop_seo_content_body i {
+    font-style: italic;
+    color: #475569;
+}
+
+/* Links (A) - Tinh tế chuẩn blog cao cấp */
+.shop_seo_content_body a {
+    color: #2563eb;
+    text-decoration: underline;
+    text-decoration-color: rgba(37, 99, 235, 0.4);
+    text-underline-offset: 3.5px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    padding: 0 2px;
+    border-radius: 3px;
+}
+
+.shop_seo_content_body a:hover {
+    color: #1d4ed8;
+    text-decoration-color: #1d4ed8;
+    background-color: rgba(37, 99, 235, 0.08);
+}
+
+/* Lists (UL / OL / LI) - Chuyển sang bullet hiện đại như blog-detail */
+.shop_seo_content_body ul,
+.shop_seo_content_body ol {
+    margin-top: 8px;
+    margin-bottom: 16px;
+}
+
+/* Thẻ OL: Đánh số thứ tự 1. 2. 3. thanh lịch */
+.shop_seo_content_body ol {
+    padding-left: 1.75rem !important;
+    list-style-type: decimal !important;
+}
+
+.shop_seo_content_body ol > li {
+    list-style-type: decimal !important;
+    display: list-item !important;
+    margin-bottom: 8px;
+    padding-left: 0.25rem;
+    line-height: 1.75;
+    color: #374151;
+}
+
+.shop_seo_content_body ol > li::marker {
+    color: #2563eb;
+    font-weight: 700;
+    font-size: 0.95em;
+}
+
+/* Thẻ UL: Dấu bullet tròn xanh công nghệ hiện đại */
+.shop_seo_content_body ul {
+    padding-left: 1.25rem;
+    list-style: none !important;
+}
+
+.shop_seo_content_body ul > li {
+    list-style: none !important;
+    margin-bottom: 8px;
+    position: relative;
+    padding-left: 1.35rem;
+    line-height: 1.75;
+    color: #374151;
+}
+
+.shop_seo_content_body ul > li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0.65em;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #2563eb;
+    box-shadow: 0 0 0 2.5px rgba(37, 99, 235, 0.18);
+}
+
+.shop_seo_content_body li p {
+    display: inline;
+    margin-bottom: 0;
+    line-height: inherit;
+    color: inherit;
+}
+
+/* Blockquote - Trích dẫn chuẩn tạp chí */
+.shop_seo_content_body blockquote {
+    margin: 18px 0 22px 0;
+    padding: 14px 22px 14px 44px;
+    background: #f8fafc;
+    border-left: 4px solid #3b82f6;
+    border-radius: 0 10px 10px 0;
+    font-style: italic;
+    color: #475569;
+    position: relative;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+}
+
+.shop_seo_content_body blockquote::before {
+    content: "\201C";
+    font-family: Georgia, serif;
+    font-size: 3.6rem;
+    color: #93c5fd;
+    position: absolute;
+    left: 12px;
+    top: -0.4rem;
+    line-height: 1;
+    opacity: 0.7;
+}
+
+.shop_seo_content_body blockquote p {
+    margin-bottom: 6px;
+    color: inherit;
+}
+
+.shop_seo_content_body blockquote > :last-child {
+    margin-bottom: 0;
+}
+
+/* Images & Figures */
+.shop_seo_content_body img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 18px auto;
+    border-radius: 12px;
+    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08);
+    transition: transform 0.25s ease;
+}
+
+.shop_seo_content_body figure {
+    margin: 18px auto;
+    text-align: center;
+    max-width: 100%;
+}
+
+.shop_seo_content_body figure img {
+    margin-bottom: 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.shop_seo_content_body figcaption {
+    color: #64748b;
+    background-color: #f1f5f9;
+    font-style: italic;
+    padding: 8px 14px;
+    font-size: 13px;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+/* Tables */
+.shop_seo_content_body table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 18px 0;
+    font-size: 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+}
+
+.shop_seo_content_body th,
+.shop_seo_content_body thead th {
+    background: #f8fafc;
+    color: #0f172a;
+    font-weight: 700;
+    text-align: left;
+    padding: 11px 14px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.shop_seo_content_body td {
+    padding: 10px 14px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #475569;
+}
+
+.shop_seo_content_body tr:last-child td {
+    border-bottom: none;
+}
+
+.shop_seo_content_body tr:hover td {
+    background: #fafafa;
+}
+
+/* Divider HR */
+.shop_seo_content_body hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(226, 232, 240, 0) 0%, #cbd5e1 50%, rgba(226, 232, 240, 0) 100%);
+    margin: 24px 0;
+}
+
+/* Inline Code & Code Block */
+.shop_seo_content_body code {
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    background: #f1f5f9;
+    color: #e11d48;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    border: 1px solid #e2e8f0;
+}
+
+.shop_seo_content_body pre {
+    background: #0f172a;
+    color: #f8fafc;
+    padding: 14px 18px;
+    border-radius: 10px;
+    overflow-x: auto;
+    margin: 16px 0;
+    font-size: 13.5px;
+    line-height: 1.6;
+}
+
+.shop_seo_content_body pre code {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    border: none;
+}
+
+/* Nút Xem Thêm / Thu Gọn */
+.shop_seo_toggle_box {
+    text-align: center;
+    margin-top: 18px;
+    position: relative;
+    z-index: 2;
+}
+
+.shop_seo_toggle_btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #ffffff;
+    color: #2563eb;
+    border: 1.5px solid #bfdbfe;
+    padding: 9px 24px;
+    border-radius: 999px;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.08);
+}
+
+.shop_seo_toggle_btn:hover {
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #2563eb;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.25);
+}
+
+.shop-seo-chevron {
+    transition: transform 0.3s ease;
+}
+
+.shop_seo_content_wrapper.is-expanded + .shop_seo_toggle_box .shop-seo-chevron,
+.shop_seo_toggle_btn.is-active .shop-seo-chevron {
+    transform: rotate(180deg);
+}
+
+/* Cột Phải (Sidebar Quyền lợi & Bảng size) */
+.shop_seo_sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.shop_seo_perks_card,
+.shop_seo_size_card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.04);
+}
+
+.perks_card_header,
+.size_card_header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.perks_card_header svg,
+.size_card_header svg {
+    color: #0f172a;
+    flex-shrink: 0;
+}
+
+.perks_card_header h3,
+.size_card_header h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.perks_list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.perk_item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.perk_icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    color: #0f172a;
+    transition: all 0.25s ease;
+}
+
+.perk_item:hover .perk_icon {
+    background: #0f172a;
+    border-color: #0f172a;
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+}
+
+.perk_icon svg {
+    stroke-width: 1.9;
+    transition: stroke 0.25s ease;
+}
+
+.perk_info strong {
+    display: block;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 2px;
+}
+
+.perk_info p {
+    margin: 0;
+    font-size: 12px;
+    color: #64748b;
+    line-height: 1.4;
+}
+
+.perks_hotline_box {
+    margin-top: 16px;
+    padding: 12px 14px;
+    background: #f8fafc;
+    border: 1px dashed #cbd5e1;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.perks_hotline_icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: #fee2e2;
+    color: #e11d48;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.perks_hotline_box span {
+    display: block;
+    font-size: 11.5px;
+    color: #64748b;
+}
+
+.perks_hotline_box a {
+    font-size: 15px;
+    font-weight: 700;
+    color: #e11d48;
+    text-decoration: none;
+}
+
+.size_table_mini {
+    background: #f8fafc;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    font-size: 12.5px;
+}
+
+.size_row {
+    display: grid;
+    grid-template-columns: 50px 1fr 1fr;
+    padding: 8px 12px;
+    align-items: center;
+    text-align: center;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.size_row:last-child {
+    border-bottom: none;
+}
+
+.size_row.size_header {
+    background: #f1f5f9;
+    font-weight: 600;
+    color: #334155;
+    font-size: 12px;
+    text-transform: uppercase;
+}
+
+.size_tag {
+    display: inline-block;
+    padding: 2px 6px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    font-weight: 700;
+    color: #0f172a;
+    font-size: 11.5px;
+}
+
+.size_note {
+    margin: 10px 0 0 0;
+    font-size: 11.5px;
+    color: #64748b;
+    line-height: 1.4;
+    font-style: italic;
+}
+
+.size_note i {
+    color: #3b82f6;
+    margin-right: 4px;
+}
+
+/* Responsive Tablet & Mobile */
+@media (max-width: 991px) {
+    .shop_seo_container {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .shop_seo_main_card {
+        padding: 20px 18px;
+    }
+
+    .shop_seo_content_body {
+        font-size: 14.5px;
+    }
+
+    .shop_seo_content_body h1 {
+        font-size: 1.3rem;
+    }
+
+    .shop_seo_content_body h2 {
+        font-size: 1.15rem;
+        padding: 6px 12px;
+        margin: 22px 0 12px 0;
+    }
+
+    .shop_seo_content_body h3 {
+        font-size: 1.05rem;
+        margin: 18px 0 8px 0;
+    }
+
+    .shop_seo_content_body p {
+        font-size: 14.5px;
+        margin-bottom: 12px;
+    }
+}
+
+
 
 
 
