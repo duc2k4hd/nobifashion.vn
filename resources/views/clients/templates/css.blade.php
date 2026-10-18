@@ -7,13 +7,15 @@
     as="font" type="font/woff2" crossorigin>
 
 {{-- =====================================================
-    2. CSS QUAN TRỌNG NHẤT & RESPONSIVE CSS
+    2. CSS TOÀN TRANG: MAIN, HEADER, FOOTER & RESPONSIVE
 ===================================================== --}}
 @php
     $isPageSpeedBot =
         $isPageSpeedBot ??
         preg_match('/Lighthouse|PageSpeed|Chrome-Lighthouse|HeadlessChrome/i', request()->header('User-Agent', ''));
     $mainCssFile = file_exists(public_path('clients/assets/css/main.min.css')) ? 'main.min.css' : 'main.css';
+    $headerCssFile = file_exists(public_path('clients/assets/css/header.min.css')) ? 'header.min.css' : 'header.css';
+    $footerCssFile = file_exists(public_path('clients/assets/css/footer.min.css')) ? 'footer.min.css' : 'footer.css';
     $responsiveCssFile = file_exists(public_path('clients/assets/css/responsive.min.css'))
         ? 'responsive.min.css'
         : 'responsive.css';
@@ -24,18 +26,31 @@
         {!! @file_get_contents(public_path('clients/assets/css/' . $mainCssFile)) !!}
     </style>
     <style>
+        {!! @file_get_contents(public_path('clients/assets/css/' . $headerCssFile)) !!}
+    </style>
+    <style>
+        {!! @file_get_contents(public_path('clients/assets/css/' . $footerCssFile)) !!}
+    </style>
+    <style>
         {!! @file_get_contents(public_path('clients/assets/css/' . $responsiveCssFile)) !!}
     </style>
 @else
     @php
         $mainCssVer = file_exists(public_path('clients/assets/css/' . $mainCssFile)) ? filemtime(public_path('clients/assets/css/' . $mainCssFile)) : env('APP_VERSION');
+        $headerCssVer = file_exists(public_path('clients/assets/css/' . $headerCssFile)) ? filemtime(public_path('clients/assets/css/' . $headerCssFile)) : env('APP_VERSION');
+        $footerCssVer = file_exists(public_path('clients/assets/css/' . $footerCssFile)) ? filemtime(public_path('clients/assets/css/' . $footerCssFile)) : env('APP_VERSION');
         $responsiveCssVer = file_exists(public_path('clients/assets/css/' . $responsiveCssFile)) ? filemtime(public_path('clients/assets/css/' . $responsiveCssFile)) : env('APP_VERSION');
     @endphp
-    <link rel="preload" href="{{ asset('clients/assets/css/' . $mainCssFile) }}?v={{ $mainCssVer }}"
-        as="style">
+    <link rel="preload" href="{{ asset('clients/assets/css/' . $mainCssFile) }}?v={{ $mainCssVer }}" as="style">
     <link rel="stylesheet" href="{{ asset('clients/assets/css/' . $mainCssFile) }}?v={{ $mainCssVer }}">
-    <link rel="preload" href="{{ asset('clients/assets/css/' . $responsiveCssFile) }}?v={{ $responsiveCssVer }}"
-        as="style">
+
+    <link rel="preload" href="{{ asset('clients/assets/css/' . $headerCssFile) }}?v={{ $headerCssVer }}" as="style">
+    <link rel="stylesheet" href="{{ asset('clients/assets/css/' . $headerCssFile) }}?v={{ $headerCssVer }}">
+
+    <link rel="preload" href="{{ asset('clients/assets/css/' . $footerCssFile) }}?v={{ $footerCssVer }}" as="style">
+    <link rel="stylesheet" href="{{ asset('clients/assets/css/' . $footerCssFile) }}?v={{ $footerCssVer }}">
+
+    <link rel="preload" href="{{ asset('clients/assets/css/' . $responsiveCssFile) }}?v={{ $responsiveCssVer }}" as="style">
     <link rel="stylesheet" href="{{ asset('clients/assets/css/' . $responsiveCssFile) }}?v={{ $responsiveCssVer }}">
 @endif
 
