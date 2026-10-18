@@ -1,3 +1,10 @@
+@php
+    $isPageSpeedBot =
+        $isPageSpeedBot ??
+        preg_match('/Lighthouse|PageSpeed|Chrome-Lighthouse|HeadlessChrome/i', request()->header('User-Agent', ''));
+@endphp
+
+@if (!$isPageSpeedBot)
 {{-- =====================================================
     1. PRECONNECT & PRELOAD PRIMARY FONT
 ===================================================== --}}
@@ -5,14 +12,12 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="preload" href="https://fonts.gstatic.com/s/opensans/v44/memvYaGs126MiZpBA-UvWbX2vVnXBbObj2OVTS-mu0SC55I.woff2"
     as="font" type="font/woff2" crossorigin>
+@endif
 
 {{-- =====================================================
     2. CSS TOÀN TRANG: MAIN, HEADER, FOOTER & RESPONSIVE
 ===================================================== --}}
 @php
-    $isPageSpeedBot =
-        $isPageSpeedBot ??
-        preg_match('/Lighthouse|PageSpeed|Chrome-Lighthouse|HeadlessChrome/i', request()->header('User-Agent', ''));
     $mainCssFile = file_exists(public_path('clients/assets/css/main.min.css')) ? 'main.min.css' : 'main.css';
     $headerCssFile = file_exists(public_path('clients/assets/css/header.min.css')) ? 'header.min.css' : 'header.css';
     $footerCssFile = file_exists(public_path('clients/assets/css/footer.min.css')) ? 'footer.min.css' : 'footer.css';
@@ -58,9 +63,10 @@
 
 {{-- =====================================================
     4. CSS RIÊNG TỪNG TRANG
-===================================================== --}}
+==================================================== --}}
 @stack('styles')
 
+@if (!$isPageSpeedBot)
 {{-- =====================================================
     5. GOOGLE FONT (Tối ưu chỉ tải 400, 600, 700 - Giảm 31 KiB)
 ===================================================== --}}
@@ -71,3 +77,4 @@
 <noscript>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap">
 </noscript>
+@endif

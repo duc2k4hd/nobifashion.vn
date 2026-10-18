@@ -70,9 +70,14 @@ use Illuminate\Support\Facades\Route;
 
 // Dynamic Responsive Image Thumbnail (Tối ưu Image Delivery chuẩn PageSpeed, bảo mật bằng Whitelist kích thước)
 Route::get('/thumb/clothes/{size}/{filename}', [\App\Http\Controllers\Clients\ImageThumbnailController::class, 'thumb'])
-    ->where('size', '325x434|96x96|180x240|400x533')
+    ->where('size', '64x85|128x170|325x434|96x96|100x133|180x240|400x533|500x667')
     ->where('filename', '[a-zA-Z0-9_\.\-]+')
     ->name('client.clothes.thumb');
+
+Route::get('/thumb/brands/{size}/{filename}', [\App\Http\Controllers\Clients\ImageThumbnailController::class, 'brandThumb'])
+    ->where('size', '68x68|96x96')
+    ->where('filename', '[a-zA-Z0-9_\.\-]+')
+    ->name('client.brands.thumb');
 
 // Forgot Password
 Route::get('/auth/forgot-password', [ClientAuthController::class, 'showForgotPasswordForm'])->name('client.auth.forgot-password');

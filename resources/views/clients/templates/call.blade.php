@@ -24,7 +24,12 @@
 
         <div class="nobifashion_main_newsletter_banner_img">
             <img loading="lazy"
-                 src="{{ asset('clients/assets/img/banners/thuong-hieu-NOBI-FASHION-VIET-NAM.jpg') }}"
+                 decoding="async"
+                 width="550"
+                 height="275"
+                 src="{{ asset('clients/assets/img/banners/thuong-hieu-NOBI-FASHION-VIET-NAM.webp') }}"
+                 srcset="{{ asset('clients/assets/img/banners/thuong-hieu-NOBI-FASHION-VIET-NAM.webp') }} 550w, {{ asset('clients/assets/img/banners/thuong-hieu-NOBI-FASHION-VIET-NAM-2x.webp') }} 1100w"
+                 sizes="(max-width: 900px) 100vw, 550px"
                  alt="Nhận thông tin mới nhất từ NOBI FASHION">
         </div>
 

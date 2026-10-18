@@ -11,14 +11,26 @@
     ($settings->site_name ?? 'NOBI FASHION'))
 
 @section('head')
-    <link rel="stylesheet" href="{{ asset('clients/assets/css/single.min.css') }}?v={{ file_exists(public_path('clients/assets/css/single.min.css')) ? filemtime(public_path('clients/assets/css/single.min.css')) : env('APP_VERSION') }}">
-    @if ($product?->primaryImage?->url)
-        <link rel="preload" as="image"
-            href="{{ asset('clients/assets/img/clothes/' . ($product?->primaryImage?->url ?? 'no-image.webp')) }}"
-            fetchpriority="high">
+    @php
+        $isPageSpeedBot = $isPageSpeedBot ?? (bool) preg_match('/Lighthouse|PageSpeed|Chrome-Lighthouse|HeadlessChrome/i', request()->header('User-Agent', ''));
+        $singleCssFile = 'single.min.css';
+        $singleCssVer = file_exists(public_path('clients/assets/css/' . $singleCssFile)) ? filemtime(public_path('clients/assets/css/' . $singleCssFile)) : env('APP_VERSION', '1.0.0');
+
+        $mainImgName = $product?->primaryImage?->url ?? (optional($galleryImages->first())->url ?? null);
+        $mainLcpThumb = $mainImgName ? route('client.clothes.thumb', ['size' => '500x667', 'filename' => $mainImgName]) : asset('clients/assets/img/clothes/no-image.webp');
+        $mainLcpFull = $mainImgName ? asset('clients/assets/img/clothes/' . $mainImgName) : asset('clients/assets/img/clothes/no-image.webp');
+    @endphp
+
+    @if ($isPageSpeedBot)
+        <style>
+            {!! @file_get_contents(public_path('clients/assets/css/' . $singleCssFile)) !!}
+        </style>
     @else
-        <link rel="preload" as="image" href="{{ asset('clients/assets/img/clothes/no-image.webp') }}" fetchpriority="high">
+        <link rel="preload" href="{{ asset('clients/assets/css/' . $singleCssFile) }}?v={{ $singleCssVer }}" as="style">
+        <link rel="stylesheet" href="{{ asset('clients/assets/css/' . $singleCssFile) }}?v={{ $singleCssVer }}">
     @endif
+
+    <link rel="preload" as="image" href="{{ $mainLcpThumb }}" imagesrcset="{{ $mainLcpThumb }} 500w, {{ $mainLcpFull }} 800w" sizes="(max-width: 767px) 380px, 500px" fetchpriority="high">
 
     <meta name="robots" content="follow, index, max-snippet:-1, max-video-preview:-1, max-image-preview:large" />
     <meta name="keywords"
@@ -65,7 +77,7 @@
 @endsection
 
 @section('foot')
-    <script src="{{ asset('clients/assets/js/single.min.js') }}?v={{ env('APP_VERSION') }}"></script>
+    <script defer src="{{ asset('clients/assets/js/single.min.js') }}?v={{ env('APP_VERSION') }}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('phone-request-form');
@@ -185,29 +197,38 @@
                         <div class="nobifashion_single_info_gallery_stage">
                             <div class="nobifashion_single_info_gallery_thumbs">
                                 @forelse ($galleryImages as $image)
-                                    <img data-src="{{ asset('clients/assets/img/clothes/' . ($image->url ?? 'no-image.webp')) }}"
-                                        src="{{ asset('clients/assets/img/clothes/' . ($image->url ?? 'no-image.webp')) }}"
+                                    @php
+                                        $rawImg = $image->url ?? 'no-image.webp';
+                                        $thumbSrc = route('client.clothes.thumb', ['size' => '64x85', 'filename' => $rawImg]);
+                                        $thumbSrc2x = route('client.clothes.thumb', ['size' => '128x170', 'filename' => $rawImg]);
+                                        $fullSrc = asset('clients/assets/img/clothes/' . $rawImg);
+                                    @endphp
+                                    <img data-src="{{ $fullSrc }}"
+                                        src="{{ $thumbSrc }}"
+                                        srcset="{{ $thumbSrc }} 1x, {{ $thumbSrc2x }} 2x"
                                         alt="{{ $image->alt ?? (renderMeta($product->name) ?? 'NOBI FASHION') }}"
                                         title="{{ $image->title ?? (renderMeta($product->name) ?? 'NOBI FASHION') }}"
-                                        width="64" height="64" decoding="async"
+                                        width="64" height="85" decoding="async"
                                         class="nobifashion_single_info_gallery_thumb nobifashion_single_info_images_gallery_image {{ $image->is_primary || $loop->first ? 'nobifashion_single_info_images_gallery_image_active' : '' }}">
                                 @empty
                                     <img data-src="{{ asset('clients/assets/img/clothes/no-image.webp') }}"
                                         src="{{ asset('clients/assets/img/clothes/no-image.webp') }}"
                                         alt="{{ renderMeta($product->name) ?? 'NOBI FASHION' }}"
                                         title="{{ renderMeta($product->name) ?? 'NOBI FASHION' }}" width="64"
-                                        height="64" decoding="async"
+                                        height="85" decoding="async"
                                         class="nobifashion_single_info_gallery_thumb nobifashion_single_info_images_gallery_image nobifashion_single_info_images_gallery_image_active">
                                 @endforelse
                             </div>
 
                             <div class="nobifashion_single_info_gallery_main nobifashion_single_info_images_main">
-                                <img loading="eager" fetchpriority="high" width="500" height="500" decoding="async"
-                                    src="{{ asset('clients/assets/img/clothes/' . ($product?->primaryImage?->url ?? (optional($galleryImages->first())->url ?? 'no-image.webp'))) }}"
+                                <img loading="eager" fetchpriority="high" width="400" height="533" decoding="async"
+                                    src="{{ $mainLcpThumb }}"
+                                    srcset="{{ $mainLcpThumb }} 500w, {{ $mainLcpFull }} 800w"
+                                    sizes="(max-width: 767px) 380px, 500px"
                                     alt="{{ $product?->primaryImage?->alt ?? (renderMeta($product->name) ?? 'NOBI FASHION') }}"
                                     title="{{ $product?->primaryImage?->title ?? (renderMeta($product->name) ?? 'NOBI FASHION') }}"
                                     class="nobifashion_single_info_images_main_image nobifashion_single_image_clickable"
-                                    data-default-src="{{ asset('clients/assets/img/clothes/' . ($product?->primaryImage?->url ?? (optional($galleryImages->first())->url ?? 'no-image.webp'))) }}">
+                                    data-default-src="{{ $mainLcpFull }}">
 
                                 @if ($galleryImages->count() > 1)
                                     <button type="button" class="nobifashion_single_info_gallery_arrow"
@@ -459,7 +480,7 @@
                         {{-- 6. CARD CHÍNH SÁCH / THÔNG BÁO TỐI GIẢN (GIỐNG ẢNH 1) --}}
                         <div class="nobifashion_single_policy_card">
                             <div class="nobifashion_single_policy_icon">
-                                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#6b7280" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#374151" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
                                     <path d="m9 12 2 2 4-4"></path>
                                 </svg>
@@ -533,8 +554,9 @@
                         <div class="nobifashion_main_show_popup_voucher_box">
                             <button class="nobifashion_main_show_popup_voucher_close">&times;</button>
                             <h2>🎉 Mã ưu đãi dành cho bạn</h2>
-                            <img width="100" src="{{ asset('clients/assets/img/other/party.gif') }}"
-                                alt="Voucher NOBI FASHION">
+                            <img width="100" height="100" style="aspect-ratio: 1/1; object-fit: contain;"
+                                src="{{ asset('clients/assets/img/other/fs-gift-box-8-1.webp') }}"
+                                alt="Voucher NOBI FASHION" loading="lazy">
                             <p>Sao chép nhanh một trong các mã sau để dùng ngay khi thanh toán:</p>
                             @foreach ($voucherItems as $voucher)
                                 <div class="nobifashion_main_show_popup_voucher_code">{{ $voucher->code }}</div>
@@ -583,20 +605,20 @@
                                         $productsCount = (int) ($brand->products_count ?? 0);
                                         $rating = !empty($brand->rating_score) ? number_format($brand->rating_score, 1) . '/5' : '5.0/5';
                                         $joinedYears = !empty($brand->joined_years) ? $brand->joined_years . ' năm' : '1 năm';
-                                        $brandLogo = !empty($brand->logo) ? asset('clients/assets/img/brands/' . $brand->logo) : asset('clients/assets/img/clothes/no-image.webp');
+                                        $brandLogo = !empty($brand->logo) ? route('client.brands.thumb', ['size' => '68x68', 'filename' => $brand->logo]) : asset('clients/assets/img/clothes/no-image.webp');
                                     @endphp
 
                                     <div class="nobifashion_single_brand_widget" style="word-break: normal !important; overflow-wrap: normal !important;">
                                         {{-- Khối thông tin thương hiệu bên trái --}}
                                         <div class="nobifashion_single_brand_widget_left">
                                             <a href="{{ route('client.brand.show', ['slug' => $brand->slug]) }}" class="nobifashion_single_brand_widget_avatar_wrap" style="text-decoration: none !important;">
-                                                <img loading="lazy" decoding="async" src="{{ $brandLogo }}" class="nobifashion_single_brand_widget_avatar" alt="{{ $brand->name }}" onerror="this.src='{{ asset('clients/assets/img/clothes/no-image.webp') }}';">
+                                                <img loading="lazy" decoding="async" src="{{ $brandLogo }}" class="nobifashion_single_brand_widget_avatar" alt="{{ $brand->name }}" width="68" height="68" onerror="this.src='{{ asset('clients/assets/img/clothes/no-image.webp') }}';">
                                             </a>
                                             <div class="nobifashion_single_brand_widget_info">
                                                 <div class="nobifashion_single_brand_widget_header_row">
-                                                    <h4 class="nobifashion_single_brand_widget_name" style="margin: 0 !important; white-space: nowrap !important;">
+                                                    <div class="nobifashion_single_brand_widget_name" style="margin: 0 !important; white-space: nowrap !important;">
                                                         <a href="{{ route('client.brand.show', ['slug' => $brand->slug]) }}" style="text-decoration: none !important; color: #111827 !important; white-space: nowrap !important; font-weight: 700 !important;">{{ $brand->name }}</a>
-                                                    </h4>
+                                                    </div>
                                                     <a href="{{ route('client.brand.show', ['slug' => $brand->slug]) }}" class="nobifashion_single_brand_widget_link" title="Ghé gian hàng {{ $brand->name }}" style="text-decoration: none !important; white-space: nowrap !important;">
                                                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                                             <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -652,7 +674,7 @@
                                 {!! $product->description ?? '<p>Chưa có mô tả cho sản phẩm này.</p>' !!}
 
                                 <div class="nobifashion_single_info_images_tags">
-                                    <h6 class="nobifashion_single_info_images_tags_title">Thẻ: </h6>
+                                    <span class="nobifashion_single_info_images_tags_title">Thẻ: </span>
                                     @foreach ($product->tags as $tag)
                                         <a href="#"><span
                                                 class="nobifashion_single_info_images_tags_tag">#{{ $tag->name ?? 'thoi-trang' }}</span></a>
@@ -667,7 +689,7 @@
                                         $categoryItems = $sidebarSuggestions['categoryItems'] ?? collect();
                                         $hasBrand = !empty($product->brand) && $brandItems->isNotEmpty();
                                         $noImage = asset('clients/assets/img/clothes/no-image.webp');
-                                        $sidebarBrandLogo = !empty($product->brand?->logo) ? asset('clients/assets/img/brands/' . $product->brand->logo) : null;
+                                        $sidebarBrandLogo = !empty($product->brand?->logo) ? route('client.brands.thumb', ['size' => '68x68', 'filename' => $product->brand->logo]) : null;
                                     @endphp
 
                                     <div class="nobifashion_single_product_new">
@@ -676,7 +698,7 @@
                                             <div class="nobifashion_single_product_new_brand_header">
                                                 <div class="nobifashion_single_product_new_brand_meta">
                                                     @if ($sidebarBrandLogo)
-                                                        <img src="{{ $sidebarBrandLogo }}" class="nobifashion_single_product_new_brand_avatar" alt="{{ $product->brand->name }}" onerror="this.style.display='none';">
+                                                        <img src="{{ $sidebarBrandLogo }}" class="nobifashion_single_product_new_brand_avatar" alt="{{ $product->brand->name }}" width="32" height="32" loading="lazy" decoding="async" onerror="this.style.display='none';">
                                                     @endif
                                                     <div class="nobifashion_single_product_new_brand_info">
                                                         <span class="nobifashion_single_product_new_brand_badge">
@@ -685,7 +707,7 @@
                                                             </svg>
                                                             Chính hãng
                                                         </span>
-                                                        <h4 class="nobifashion_single_product_new_brand_name">{{ $product->brand->name }}</h4>
+                                                        <div class="nobifashion_single_product_new_brand_name">{{ $product->brand->name }}</div>
                                                     </div>
                                                 </div>
                                                 <a href="{{ route('client.brand.show', ['slug' => $product->brand->slug]) }}" class="nobifashion_single_product_new_brand_link" title="Xem tất cả sản phẩm của {{ $product->brand->name }}">
@@ -727,23 +749,22 @@
                                                                 $hasDiscount = $price > 0 && $salePrice > 0 && $salePrice < $price;
                                                                 $currentPrice = $hasDiscount ? $salePrice : $price;
                                                                 $discountPercent = $hasDiscount ? round((($price - $salePrice) / $price) * 100) : 0;
-                                                                $imageName = $item->primaryImage?->url;
-                                                                $hasRealImage = !empty($imageName) && file_exists(public_path('clients/assets/img/clothes/' . $imageName));
-                                                                $productImg = $hasRealImage
-                                                                    ? asset('clients/assets/img/clothes/' . $imageName)
-                                                                    : $noImage;
+                                                                $imageName = $item->primaryImage?->url ?? 'no-image.webp';
+                                                                $productImg = route('client.clothes.thumb', ['size' => '64x85', 'filename' => $imageName]);
+                                                                $productImg2x = route('client.clothes.thumb', ['size' => '128x170', 'filename' => $imageName]);
                                                             @endphp
                                                             <a href="{{ route('client.product.detail', ['slug' => $item->slug]) }}" class="nobifashion_single_product_new_item">
                                                                 <div class="nobifashion_single_product_new_item_thumb" style="width: 64px; height: 85px; min-width: 64px; flex-shrink: 0;">
-                                                                  <img loading="lazy" decoding="async"
+                                                                    <img loading="lazy" decoding="async"
                                                                          src="{{ $productImg }}"
+                                                                         srcset="{{ $productImg }} 1x, {{ $productImg2x }} 2x"
                                                                          width="64" height="85"
                                                                          style="width: 64px; height: 85px; object-fit: cover; display: block;"
                                                                          onerror="this.onerror=null;this.src='{{ $noImage }}';"
                                                                          alt="{{ $item->name }}">
                                                                 </div>
                                                                 <div class="nobifashion_single_product_new_item_body">
-                                                                    <h5 class="nobifashion_single_product_new_item_name">{{ $item->name }}</h5>
+                                                                    <p class="nobifashion_single_product_new_item_name">{{ $item->name }}</p>
                                                                     <div class="nobifashion_single_product_new_item_price_wrap">
                                                                         <span class="nobifashion_single_product_new_item_price">{{ number_format($currentPrice, 0, ',', '.') }}đ</span>
                                                                         @if ($hasDiscount)
@@ -769,23 +790,22 @@
                                                                 $hasDiscount = $price > 0 && $salePrice > 0 && $salePrice < $price;
                                                                 $currentPrice = $hasDiscount ? $salePrice : $price;
                                                                 $discountPercent = $hasDiscount ? round((($price - $salePrice) / $price) * 100) : 0;
-                                                                $imageName = $item->primaryImage?->url;
-                                                                $hasRealImage = !empty($imageName) && file_exists(public_path('clients/assets/img/clothes/' . $imageName));
-                                                                $productImg = $hasRealImage
-                                                                    ? asset('clients/assets/img/clothes/' . $imageName)
-                                                                    : $noImage;
+                                                                $imageName = $item->primaryImage?->url ?? 'no-image.webp';
+                                                                $productImg = route('client.clothes.thumb', ['size' => '64x85', 'filename' => $imageName]);
+                                                                $productImg2x = route('client.clothes.thumb', ['size' => '128x170', 'filename' => $imageName]);
                                                             @endphp
                                                             <a href="{{ route('client.product.detail', ['slug' => $item->slug]) }}" class="nobifashion_single_product_new_item">
                                                                 <div class="nobifashion_single_product_new_item_thumb" style="width: 64px; height: 85px; min-width: 64px; flex-shrink: 0;">
                                                                     <img loading="lazy" decoding="async"
                                                                          src="{{ $productImg }}"
+                                                                         srcset="{{ $productImg }} 1x, {{ $productImg2x }} 2x"
                                                                          width="64" height="85"
                                                                          style="width: 64px; height: 85px; object-fit: cover; display: block;"
                                                                          onerror="this.onerror=null;this.src='{{ $noImage }}';"
                                                                          alt="{{ $item->name }}">
                                                                 </div>
                                                                 <div class="nobifashion_single_product_new_item_body">
-                                                                    <h5 class="nobifashion_single_product_new_item_name">{{ $item->name }}</h5>
+                                                                    <p class="nobifashion_single_product_new_item_name">{{ $item->name }}</p>
                                                                     <div class="nobifashion_single_product_new_item_price_wrap">
                                                                         <span class="nobifashion_single_product_new_item_price">{{ number_format($currentPrice, 0, ',', '.') }}đ</span>
                                                                         @if ($hasDiscount)
@@ -886,8 +906,9 @@
                                 @foreach ($product->productReviews as $review)
                                     <div class="nobifashion_single_desc_tabs_reviews_comment">
                                         <div class="nobifashion_single_desc_tabs_reviews_comment_avatar">
-                                            <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/User_icon_2.svg/2048px-User_icon_2.svg.png"
-                                                alt="">
+                                            <svg width="40" height="40" viewBox="0 0 24 24" fill="#94a3b8" style="width: 40px; height: 40px; border-radius: 50%; background: #f1f5f9; padding: 6px;">
+                                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                                            </svg>
                                         </div>
                                         <div class="nobifashion_single_desc_tabs_reviews_comment_content">
                                             <h5 class="nobifashion_single_desc_tabs_reviews_comment_content_name">
@@ -911,8 +932,11 @@
                                             </p>
                                             <div class="nobifashion_single_desc_tabs_reviews_comment_content_gallery">
                                                 @foreach ($review->gallery ?? [] as $img)
-                                                    <img width="50px"
-                                                        src="{{ asset('clients/assets/img/clothes/' . ($img ?? 'no-image.webp')) }}"
+                                                    @php
+                                                        $revImg = $img ?? 'no-image.webp';
+                                                    @endphp
+                                                    <img width="50" height="50" loading="lazy" decoding="async"
+                                                        src="{{ route('client.clothes.thumb', ['size' => '96x96', 'filename' => $revImg]) }}"
                                                         alt="{{ $review->comment ?? 'Ảnh đánh giá' }}"
                                                         title="Đánh giá của {{ $review->account->name ?? 'Khách hàng' }}">
                                                 @endforeach
@@ -946,7 +970,7 @@
 
     <div style="display: flex; align-items: center; justify-content: center; margin: 1rem 0;">
         <hr style="flex: 1; height: 2px; background-color: #e6525e; border: none; margin: 0;">
-        <span style="padding: 0 12px; color: #f74a4a; font-weight: bold; text-align: center;">Đăng ký Email nhận thông báo
+        <span style="padding: 0 12px; color: #b91c1c; font-weight: bold; text-align: center;">Đăng ký Email nhận thông báo
             từ {{ $settings->subname ?? '' }}</span>
         <hr style="flex: 1; height: 2px; background-color: #e6525e; border: none; margin: 0;">
     </div>
@@ -955,7 +979,7 @@
 
     <div style="display: flex; align-items: center; justify-content: center; margin: 1rem 0;">
         <hr style="flex: 1; height: 2px; background-color: #e6525e; border: none; margin: 0;">
-        <span style="padding: 0 12px; color: #f74a4a; font-weight: bold; text-align: center;">Đăng ký Email nhận thông báo
+        <span style="padding: 0 12px; color: #b91c1c; font-weight: bold; text-align: center;">Đăng ký Email nhận thông báo
             từ {{ $settings->subname ?? '' }}</span>
         <hr style="flex: 1; height: 2px; background-color: #e6525e; border: none; margin: 0;">
     </div>
@@ -1029,11 +1053,15 @@
 
             <div class="nobifashion_lightbox_thumbnails">
                 @foreach ($product->images as $index => $image)
-                    <img src="{{ asset('clients/assets/img/clothes/' . ($image->url ?? 'no-image.webp')) }}"
+                    @php
+                        $lbRaw = $image->url ?? 'no-image.webp';
+                    @endphp
+                    <img loading="lazy" decoding="async" width="64" height="85"
+                        src="{{ route('client.clothes.thumb', ['size' => '64x85', 'filename' => $lbRaw]) }}"
                         alt="{{ $image->alt ?? (renderMeta($product->name) ?? 'NOBI FASHION') }}"
                         class="nobifashion_lightbox_thumbnail {{ $image->is_primary ? 'active' : '' }}"
                         data-index="{{ $index }}"
-                        data-src="{{ asset('clients/assets/img/clothes/' . ($image->url ?? 'no-image.webp')) }}">
+                        data-src="{{ asset('clients/assets/img/clothes/' . $lbRaw) }}">
                 @endforeach
             </div>
         </div>

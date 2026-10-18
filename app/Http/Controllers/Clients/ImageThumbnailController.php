@@ -20,10 +20,14 @@ class ImageThumbnailController extends Controller
     {
         // 1. Whitelist kích thước được phép (Chặn triệt để Image Bombing / DoS ép server resize kích thước lạ)
         $allowedSizes = [
+            '64x85'   => [64, 85],
+            '128x170' => [128, 170],
             '325x434' => [325, 434],
             '96x96'   => [96, 96],
+            '100x133' => [100, 133],
             '180x240' => [180, 240],
             '400x533' => [400, 533],
+            '500x667' => [500, 667],
         ];
 
         if (!isset($allowedSizes[$size])) {
@@ -125,9 +129,6 @@ class ImageThumbnailController extends Controller
                     imagewebp($dstImg, $thumbPath, 82);
                 }
 
-                imagedestroy($srcImg);
-                imagedestroy($dstImg);
-
                 if (File::exists($thumbPath) && File::size($thumbPath) > 0) {
                     return response()->file($thumbPath, [
                         'Content-Type' => 'image/webp',
@@ -140,6 +141,120 @@ class ImageThumbnailController extends Controller
         }
 
         // Fallback: Trả về ảnh gốc nếu không thể resize
+        return response()->file($sourcePath, [
+            'Cache-Control' => 'public, max-age=604800',
+        ]);
+    }
+
+    /**
+     * Tạo thumbnail cho logo thương hiệu (Brand logos)
+     */
+    public function brandThumb(Request $request, string $size, string $filename)
+    {
+        $allowedSizes = [
+            '68x68' => [68, 68],
+            '96x96' => [96, 96],
+        ];
+
+        if (!isset($allowedSizes[$size])) {
+            abort(404);
+        }
+
+        [$targetW, $targetH] = $allowedSizes[$size];
+
+        $filename = basename($filename);
+        $cleanName = pathinfo($filename, PATHINFO_FILENAME);
+
+        $sourcePath = public_path('clients/assets/img/brands/' . $filename);
+
+        if (!File::exists($sourcePath)) {
+            $candidates = [
+                public_path("clients/assets/img/brands/{$cleanName}.webp"),
+                public_path("clients/assets/img/brands/{$cleanName}.avif"),
+                public_path("clients/assets/img/brands/{$cleanName}.jpg"),
+                public_path("clients/assets/img/brands/{$cleanName}.jpeg"),
+                public_path("clients/assets/img/brands/{$cleanName}.png"),
+            ];
+            foreach ($candidates as $cand) {
+                if (File::exists($cand)) {
+                    $sourcePath = $cand;
+                    break;
+                }
+            }
+        }
+
+        if (!File::exists($sourcePath)) {
+            $fallback = public_path('clients/assets/img/clothes/no-image.webp');
+            return response()->file($fallback, [
+                'Content-Type' => 'image/webp',
+                'Cache-Control' => 'public, max-age=86400',
+            ]);
+        }
+
+        $cacheDir = public_path("clients/assets/img/brands/thumbs/{$size}");
+        if (!File::isDirectory($cacheDir)) {
+            File::makeDirectory($cacheDir, 0755, true, true);
+        }
+
+        $thumbPath = "{$cacheDir}/{$cleanName}.webp";
+
+        if (File::exists($thumbPath) && File::size($thumbPath) > 0) {
+            return response()->file($thumbPath, [
+                'Content-Type' => 'image/webp',
+                'Cache-Control' => 'public, max-age=31536000, immutable',
+            ]);
+        }
+
+        try {
+            $srcImg = null;
+            $ext = strtolower(pathinfo($sourcePath, PATHINFO_EXTENSION));
+
+            if ($ext === 'webp' && function_exists('imagecreatefromwebp')) {
+                $srcImg = @imagecreatefromwebp($sourcePath);
+            } elseif ($ext === 'avif' && function_exists('imagecreatefromavif')) {
+                $srcImg = @imagecreatefromavif($sourcePath);
+            } elseif (in_array($ext, ['jpg', 'jpeg']) && function_exists('imagecreatefromjpeg')) {
+                $srcImg = @imagecreatefromjpeg($sourcePath);
+            } elseif ($ext === 'png' && function_exists('imagecreatefrompng')) {
+                $srcImg = @imagecreatefrompng($sourcePath);
+            }
+
+            if (!$srcImg) {
+                $info = @getimagesize($sourcePath);
+                $mime = $info['mime'] ?? '';
+                if ($mime === 'image/webp') $srcImg = @imagecreatefromwebp($sourcePath);
+                elseif ($mime === 'image/avif') $srcImg = @imagecreatefromavif($sourcePath);
+                elseif ($mime === 'image/jpeg') $srcImg = @imagecreatefromjpeg($sourcePath);
+                elseif ($mime === 'image/png') $srcImg = @imagecreatefrompng($sourcePath);
+            }
+
+            if ($srcImg) {
+                $origW = imagesx($srcImg);
+                $origH = imagesy($srcImg);
+
+                $dstImg = imagecreatetruecolor($targetW, $targetH);
+                imagealphablending($dstImg, false);
+                imagesavealpha($dstImg, true);
+
+                $transparent = imagecolorallocatealpha($dstImg, 255, 255, 255, 127);
+                imagefilledrectangle($dstImg, 0, 0, $targetW, $targetH, $transparent);
+
+                imagecopyresampled($dstImg, $srcImg, 0, 0, 0, 0, $targetW, $targetH, $origW, $origH);
+
+                if (function_exists('imagewebp')) {
+                    imagewebp($dstImg, $thumbPath, 85);
+                }
+
+                if (File::exists($thumbPath) && File::size($thumbPath) > 0) {
+                    return response()->file($thumbPath, [
+                        'Content-Type' => 'image/webp',
+                        'Cache-Control' => 'public, max-age=31536000, immutable',
+                    ]);
+                }
+            }
+        } catch (\Throwable $e) {
+        }
+
         return response()->file($sourcePath, [
             'Cache-Control' => 'public, max-age=604800',
         ]);
