@@ -409,6 +409,11 @@ class Product extends Model
         return $this->hasOne(Image::class, 'product_id')->where('is_primary', true);
     }
 
+    public function secondaryImage()
+    {
+        return $this->hasOne(Image::class, 'product_id')->where('is_primary', false)->orderBy('order', 'asc');
+    }
+
     public function getFrameAttribute()
     {
         // Logic để lấy frame, ví dụ:

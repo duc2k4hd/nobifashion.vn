@@ -366,12 +366,37 @@
     transform: translateX(2px);
 }
 
-.nobifashion_shop_products_filter_new_products_item_image img {
+.nobifashion_shop_products_filter_new_products_item_image {
     width: 48px;
     height: 48px;
+    min-width: 48px;
+    max-width: 48px;
+    flex-shrink: 0;
     border-radius: 6px;
+    overflow: hidden;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.nobifashion_shop_products_filter_new_products_item_image a {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.nobifashion_shop_products_filter_new_products_item_image img,
+.nobifashion_shop_products_filter_new_products_item_image_img {
+    width: 100%;
+    height: 100%;
+    border-radius: 5px;
     object-fit: cover;
-    border: 1px solid #f1f5f9;
+    display: block;
+    font-size: 0 !important;
+    line-height: 0 !important;
 }
 
 .nobifashion_shop_products_filter_new_products_item_info {
@@ -406,6 +431,240 @@
 }
 
 
+/* ==========================================================================
+   CATEGORY HERO & SUBCATEGORIES BAR (HEADER DANH MỤC THỜI TRANG CAO CẤP)
+   ========================================================================== */
+.nobifashion_shop_hero_section {
+    margin: 8px 0 20px 0;
+    padding: 18px 20px;
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    border-radius: 14px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.shop_hero_header {
+    margin-bottom: 14px;
+}
+
+.shop_hero_title_wrap {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 6px;
+}
+
+.shop_hero_title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+    letter-spacing: -0.3px;
+    line-height: 1.3;
+}
+
+.shop_hero_count_badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 12.5px;
+    font-weight: 600;
+    border-radius: 999px;
+}
+
+.shop_hero_subtitle {
+    font-size: 13.5px;
+    color: #64748b;
+    margin: 0;
+    line-height: 1.55;
+    max-width: 800px;
+}
+
+.shop_subcategories_slider_wrap {
+    position: relative;
+    padding-top: 10px;
+    border-top: 1px solid #f8fafc;
+    display: flex;
+    align-items: center;
+}
+
+.shop_subcategories_slider {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-overflow-scrolling: touch;
+    padding: 6px 4px;
+    cursor: grab;
+    user-select: none;
+    scroll-behavior: smooth;
+    width: 100%;
+}
+
+.shop_subcategories_slider.is-dragging {
+    cursor: grabbing;
+    scroll-behavior: auto;
+}
+
+.shop_subcategories_slider::-webkit-scrollbar {
+    display: none;
+}
+
+/* Nút điều hướng Prev / Next trên slider */
+.shop_subcat_nav_btn {
+    position: absolute;
+    top: calc(50% + 5px);
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #0f172a;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    z-index: 5;
+    transition: all 0.2s ease;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.shop_subcat_nav_btn.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.shop_subcat_nav_btn:hover {
+    background: #0f172a;
+    color: #ffffff;
+    border-color: #0f172a;
+    transform: translateY(-50%) scale(1.08);
+}
+
+.shop_subcat_nav_prev {
+    left: -10px;
+}
+
+.shop_subcat_nav_next {
+    right: -10px;
+}
+
+/* Hiệu ứng Fade Mask 2 bên */
+.shop_subcat_fade {
+    position: absolute;
+    top: 10px;
+    bottom: 0;
+    width: 44px;
+    pointer-events: none;
+    z-index: 2;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.shop_subcat_fade_left {
+    left: 0;
+    background: linear-gradient(to right, #ffffff 40%, rgba(255, 255, 255, 0));
+}
+
+.shop_subcat_fade_right {
+    right: 0;
+    background: linear-gradient(to left, #ffffff 40%, rgba(255, 255, 255, 0));
+}
+
+.shop_subcat_fade.is-visible {
+    opacity: 1;
+}
+
+.shop_subcat_pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    color: #334155;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.shop_subcat_avatar {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #f1f5f9;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.shop_subcat_avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.shop_subcat_count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 18px;
+    padding: 0 6px;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: #64748b;
+    margin-left: 2px;
+    transition: all 0.2s ease;
+}
+
+.shop_subcat_pill:hover {
+    background: #0f172a;
+    border-color: #0f172a;
+    color: #ffffff;
+    transform: translateY(-1px);
+    box-shadow: 0 3px 8px rgba(15, 23, 42, 0.12);
+}
+
+.shop_subcat_pill:hover .shop_subcat_count {
+    background: rgba(255, 255, 255, 0.22);
+    color: #ffffff;
+}
+
+.shop_subcat_pill_active {
+    background: #0f172a !important;
+    border-color: #0f172a !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);
+}
+
+.shop_subcat_pill_active .shop_subcat_count {
+    background: rgba(255, 255, 255, 0.25) !important;
+    color: #ffffff !important;
+}
+
+
+/* ==========================================================================
+   QUICK FILTERS BAR & MODERN TOOLBAR
+   ========================================================================== */
 .nobifashion_shop_products_content {
     width: 100%;
     display: flex;
@@ -416,330 +675,764 @@
     overflow: visible;
 }
 
+/* 1. Quick Filter Pills */
+.shop_quick_filters_bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    border-radius: 12px;
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.shop_quick_filters_bar::-webkit-scrollbar {
+    display: none;
+}
+
+.shop_quick_filters_label {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #64748b;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.shop_quick_filters_list {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+}
+
+.shop_quick_pill {
+    padding: 6px 14px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: #334155;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.shop_quick_pill:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+    border-color: #cbd5e1;
+}
+
+.shop_quick_pill.active {
+    background: #0f172a !important;
+    border-color: #0f172a !important;
+    color: #ffffff !important;
+    font-weight: 600;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.15);
+}
+
+/* 2. Main Toolbar */
 .nobifashion_shop_products_content_filter {
     display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
     align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 16px;
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    border-radius: 12px;
+    flex-wrap: wrap;
+}
+
+.shop_toolbar_left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
 }
 
 .nobifashion_shop_products_content_filter_total {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 500;
-    text-transform: uppercase;
-    text-align: start;
+    color: #64748b;
 }
 
 .nobifashion_shop_products_content_filter_total span {
-    font-size: 18px;
-    font-weight: 500;
-    text-transform: uppercase;
-    color: var(--primary-color);
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
 }
 
-.nobifashion_shop_products_content_filter_delete_all {
+/* Active Filter Chips */
+.shop_active_chips_wrap {
     display: flex;
-    justify-content: flex-end;
-    margin-top: 14px;
-    margin-bottom: 8px;
-    margin: 0 auto;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
-.nobifashion_shop_products_content_filter_delete_all_btn {
-    background-color: #f44336; /* Đỏ tươi */
-    color: white;
+.shop_filter_chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #334155;
+}
+
+.shop_filter_chip button {
+    background: none;
     border: none;
-    padding: 7px 10px;
-    border-radius: 8px;
+    color: #64748b;
     font-size: 14px;
-    font-weight: 600;
     cursor: pointer;
-    transition: background-color 0.3s ease, box-shadow 0.2s;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    padding: 0;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
 }
 
-.nobifashion_shop_products_content_filter_delete_all_btn:hover {
-    background-color: #d32f2f;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+.shop_filter_chip button:hover {
+    color: #ef4444;
 }
 
-.nobifashion_shop_products_content_filter_delete_all_btn:active {
-    background-color: #b71c1c;
+.shop_clear_all_chips_btn {
+    background: none;
+    border: none;
+    font-size: 12px;
+    color: #ef4444;
+    text-decoration: underline;
+    cursor: pointer;
+    font-weight: 600;
+    padding: 0 4px;
 }
 
+/* Toolbar Right: View Switcher & Sort */
+.shop_toolbar_right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.shop_view_modes {
+    display: inline-flex;
+    align-items: center;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 2px;
+}
+
+.shop_view_btn {
+    background: transparent;
+    border: none;
+    padding: 6px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.shop_view_btn:hover {
+    color: #0f172a;
+}
+
+.shop_view_btn.active {
+    background: #ffffff;
+    color: #0f172a;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
 
 .nobifashion_shop_products_content_filter_select {
     display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
     align-items: center;
-    justify-content: flex-start;
-    padding: 0.5rem 10px;
-    border-radius: 8px;
-    background: #f9f9f9;
-    /* nền nhẹ */
+    background: transparent;
+    padding: 0;
 }
 
-.nobifashion_shop_products_content_filter_select label {
-    font-weight: 500;
-    color: #444;
-    font-size: 0.95rem;
-    margin-right: 0.5rem;
-}
-
-.nobifashion_shop_products_content_filter_select select {
-    appearance: none;
-    background-color: #fff;
-    border: 1px solid #ccc;
-    padding: 0.4rem 2rem 0.4rem 0.6rem;
-    /* thêm khoảng cách để đặt icon */
-    border-radius: 6px;
-    font-size: 0.95rem;
-    color: #333;
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-    transition: border-color 0.3s ease, box-shadow 0.3s ease;
-    cursor: pointer;
-    position: relative;
-    background-image: url('data:image/svg+xml;utf8,<svg fill="%23333" height="20" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
-    background-repeat: no-repeat;
-    background-position: right 0.6rem center;
-    background-size: 1rem;
-}
-
-.nobifashion_shop_products_content_filter_select select:focus {
-    outline: none;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.15);
-}
-
-.nobifashion_shop_products_content_filter_select_sort,
-.nobifashion_shop_products_content_filter_select_show {
+.nobifashion_shop_products_content_filter_select_sort {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 8px;
 }
 
-.nobifashion_shop_products_content_filter_select option {
-    color: #333;
-    background: #fff;
+.nobifashion_shop_products_content_filter_select_sort label {
+    font-size: 13px;
+    font-weight: 500;
+    color: #64748b;
+    margin: 0;
+    white-space: nowrap;
 }
 
+.nobifashion_shop_products_content_filter_select_sort select {
+    appearance: none;
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    padding: 6px 28px 6px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #1e293b;
+    cursor: pointer;
+    background-image: url('data:image/svg+xml;utf8,<svg fill="%2364748b" height="16" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/></svg>');
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    background-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.nobifashion_shop_products_content_filter_select_sort select:focus {
+    outline: none;
+    border-color: #0f172a;
+    box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.08);
+}
+
+
+/* ==========================================================================
+   LUXURY EDITORIAL PRODUCT CARD SYSTEM
+   Chuẩn mực thời trang cao cấp: Tỉ lệ 3:4, Secondary Hover, Wishlist, Swatches
+   ========================================================================== */
 .nobifashion_shop_products_content_list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 1rem;
-    background: #f8f9fa;
-    border-radius: 8px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+    background: transparent;
+    border-radius: 0;
+    transition: all 0.3s ease;
 }
 
-.nobifashion_shop_products_content_list_empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 250px;
-    border: 2px dashed #ccc;
-    background-color: #fafafa;
-    border-radius: 16px;
-    padding: 40px 20px;
-    text-align: center;
-    animation: fadeIn 0.4s ease-in-out;
+/* Chế độ xem 3 cột hình lớn */
+.nobifashion_shop_products_content_list.grid-3-cols {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 22px;
 }
-
-.nobifashion_shop_products_content_list_empty p {
-    font-size: 18px;
-    color: #666;
-    font-weight: 500;
-    margin-top: 12px;
-    line-height: 1.6;
-}
-
-.nobifashion_shop_products_content_list_empty::before {
-    content: "🛒";
-    font-size: 48px;
-    opacity: 0.7;
-}
-
-.nobifashion_shop_products_content_list_empty_button {
-    margin-top: 24px;
-    display: inline-block;
-    padding: 12px 24px;
-    font-size: 16px;
-    font-weight: 600;
-    color: #fff;
-    background-color: var(--primary-color);
-    border-radius: 8px;
-    text-decoration: none;
-    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
-    transition: background-color 0.3s, transform 0.2s;
-}
-
-.nobifashion_shop_products_content_list_empty_button:hover {
-    background-color: var(--secondary-color);
-    transform: translateY(-2px);
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-
 
 .nobifashion_shop_products_content_list_item {
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
     overflow: hidden;
     display: flex;
     flex-direction: column;
     position: relative;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .nobifashion_shop_products_content_list_item:hover {
     transform: translateY(-5px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    cursor: pointer;
+    box-shadow: 0 16px 30px -10px rgba(15, 23, 42, 0.1);
+    border-color: #e2e8f0;
 }
 
-.nobifashion_shop_products_content_list_item_label {
-    background: #ff4c4c;
-    color: #fff;
-    font-weight: bold;
-    font-size: 0.75rem;
-    padding: 0.3rem 0.5rem;
-    position: absolute;
-    top: 0.5rem;
-    left: 0.5rem;
-    border-radius: 4px;
-    z-index: 200;
-}
-
-.nobifashion_shop_products_content_list_item_image {
+/* Khung ảnh tỉ lệ vàng thời trang 3:4 */
+.product_card_media {
     position: relative;
     width: 100%;
-    aspect-ratio: 4/6;
+    aspect-ratio: 3 / 4;
     overflow: hidden;
-    border-bottom: 1px solid #eee;
+    background: #f8fafc;
+    border-bottom: 1px solid #f8fafc;
 }
 
-.nobifashion_shop_products_content_list_item_image img {
+.product_card_image_link {
+    display: block;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    text-decoration: none;
+}
+
+.product_img_primary,
+.product_img_secondary {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     object-fit: cover;
-    display: block;
-    transition: transform 0.3s ease;
+    transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform, opacity;
 }
 
-.nobifashion_shop_products_content_list_item:hover .nobifashion_shop_products_content_list_item_image img {
+.product_img_secondary {
+    opacity: 0;
+}
+
+.nobifashion_shop_products_content_list_item:hover .product_img_primary {
     transform: scale(1.05);
 }
 
-.nobifashion_shop_products_content_list_item_category {
-    margin-top: 0.5rem;
-    color: #888;
-    font-size: 0.8rem;
-    text-align: center;
+.nobifashion_shop_products_content_list_item:hover .product_img_secondary {
+    opacity: 1;
+    transform: scale(1.05);
 }
 
-.nobifashion_shop_products_content_list_item_category_name {
-    text-transform: uppercase;
+/* Badges giảm giá & Hot */
+.product_card_badges {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    z-index: 3;
+    pointer-events: none;
 }
 
-.nobifashion_shop_products_content_list_item_title {
-    font-size: 0.95rem;
+.product_badge_discount {
+    background: #e11d48;
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    letter-spacing: 0.3px;
+    box-shadow: 0 2px 6px rgba(225, 29, 72, 0.25);
+}
+
+.product_badge_featured {
+    background: #0f172a;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+}
+
+.product_badge_new {
+    background: #0284c7;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+}
+
+/* Nút Wishlist (Thả tim) */
+.product_card_wishlist_btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #64748b;
+    cursor: pointer;
+    z-index: 4;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    backdrop-filter: blur(4px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    padding: 0;
+}
+
+.product_card_wishlist_btn:hover {
+    background: #ffffff;
+    color: #e11d48;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.product_card_wishlist_btn.active {
+    background: #ffffff;
+    color: #e11d48;
+}
+
+.product_card_wishlist_btn.active svg {
+    fill: #e11d48;
+    stroke: #e11d48;
+    animation: shopHeartPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes shopHeartPop {
+    0% { transform: scale(0.7); }
+    50% { transform: scale(1.3); }
+    100% { transform: scale(1); }
+}
+
+/* Quick Action Overlay (Desktop) */
+.product_card_quick_action {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    z-index: 3;
+    transform: translateY(120%);
+    opacity: 0;
+    transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nobifashion_shop_products_content_list_item:hover .product_card_quick_action {
+    transform: translateY(0);
+    opacity: 1;
+}
+
+.product_card_quick_btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    padding: 9px 12px;
+    background: rgba(15, 23, 42, 0.88);
+    backdrop-filter: blur(8px);
+    color: #ffffff;
+    font-size: 13px;
     font-weight: 600;
-    color: #333;
-    text-align: center;
-    padding: 0.3rem 0.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+    transition: background-color 0.2s ease, transform 0.15s ease;
 }
 
-.nobifashion_shop_products_content_list_item_title_name {
+.product_card_quick_btn:hover {
+    background: #000000;
+    transform: translateY(-1px);
+}
+
+/* Thông tin thân thẻ sản phẩm */
+.product_card_body {
+    padding: 12px 10px 14px 10px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+/* Swatches màu sắc */
+.product_card_swatches {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    min-height: 16px;
+}
+
+.product_swatch_dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    display: inline-block;
+    background-color: #cbd5e1;
+    position: relative;
+}
+
+/* Map các mã màu thông dụng */
+.product_swatch_dot[data-color*="đen" i],
+.product_swatch_dot[data-color*="black" i] { background-color: #111827; }
+.product_swatch_dot[data-color*="trắng" i],
+.product_swatch_dot[data-color*="white" i] { background-color: #ffffff; border-color: #cbd5e1; }
+.product_swatch_dot[data-color*="xanh" i],
+.product_swatch_dot[data-color*="blue" i],
+.product_swatch_dot[data-color*="navy" i] { background-color: #1e3a8a; }
+.product_swatch_dot[data-color*="xám" i],
+.product_swatch_dot[data-color*="ghi" i],
+.product_swatch_dot[data-color*="grey" i] { background-color: #64748b; }
+.product_swatch_dot[data-color*="be" i],
+.product_swatch_dot[data-color*="kem" i],
+.product_swatch_dot[data-color*="beige" i] { background-color: #e5dec9; }
+.product_swatch_dot[data-color*="đỏ" i],
+.product_swatch_dot[data-color*="red" i] { background-color: #b91c1c; }
+.product_swatch_dot[data-color*="nâu" i],
+.product_swatch_dot[data-color*="brown" i] { background-color: #78350f; }
+
+.product_swatch_more {
+    font-size: 11px;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.product_card_category {
+    font-size: 11px;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.product_card_title {
+    font-size: 13.5px;
+    font-weight: 500;
+    color: #1e293b;
+    margin: 0 0 6px 0;
+    line-height: 1.4;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1.3;
-    font-size: .95rem;
-    text-transform: uppercase;
-    font-family: 'Arial', sans-serif;
-    font-weight: 500;
-    color: var(--primary-color);
+    min-height: 38px;
 }
 
-.nobifashion_shop_products_content_list_item_title_name:hover {
-    color: var(--secondary-color);
-    text-decoration: underline;
+.product_card_title a {
+    color: inherit;
+    text-decoration: none;
+    transition: color 0.15s ease;
 }
 
-.nobifashion_shop_products_content_list_item_star {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    font-size: 0.85rem;
-    color: #f6b100;
+.product_card_title a:hover {
+    color: #0f172a;
 }
 
-.nobifashion_shop_products_content_list_item_star svg {
-    display: inline-block;
-    vertical-align: middle;
-    width: 16px;
-}
-
-.nobifashion_shop_products_content_list_item_star_count {
-    font-size: 0.75rem;
-    color: #8a8a8a;
-}
-
-.nobifashion_shop_products_content_list_item_price {
+/* Đánh giá & Đã bán */
+.product_card_rating {
     display: flex;
-    justify-content: center;
     align-items: center;
-    gap: 0.5rem;
-    margin: 0.5rem 0;
+    gap: 6px;
+    margin-bottom: 8px;
+    font-size: 11.5px;
 }
 
-.nobifashion_shop_products_content_list_item_price_new {
-    color: #e53935;
-    font-weight: 700;
-}
-
-.nobifashion_shop_products_content_list_item_price_old {
-    color: #999;
-    text-decoration: line-through;
-    font-size: 0.85rem;
-}
-
-.nobifashion_shop_products_content_list_item_addtocart {
-    text-align: center;
-    margin: 0.5rem;
-}
-
-.nobifashion_shop_products_content_list_item_addtocart button {
+.product_card_stars {
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
-    background: var(--primary-color);
-    color: #fff;
+    gap: 2px;
+}
+
+.product_card_sold {
+    color: #94a3b8;
+}
+
+/* Giá tiền */
+.product_card_price_row {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.product_price_sale {
+    font-size: 15.5px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.2px;
+}
+
+.product_price_original {
+    font-size: 12.5px;
+    color: #94a3b8;
+    text-decoration: line-through;
+    font-weight: 400;
+}
+
+/* Empty State */
+.nobifashion_shop_products_content_list_empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 280px;
+    border: 1px dashed #cbd5e1;
+    background-color: #f8fafc;
+    border-radius: 14px;
+    padding: 40px 24px;
+    text-align: center;
+}
+
+.empty_icon_wrap {
+    margin-bottom: 12px;
+    opacity: 0.8;
+}
+
+.empty_title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 6px 0;
+}
+
+.empty_sub {
+    font-size: 13.5px;
+    color: #64748b;
+    margin: 0 0 20px 0;
+    max-width: 460px;
+    line-height: 1.5;
+}
+
+.nobifashion_shop_products_content_list_empty_button {
+    padding: 10px 22px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #ffffff;
+    background-color: #0f172a;
     border: none;
-    border-radius: 4px;
-    padding: 0.4rem 0.8rem;
-    font-size: 0.9rem;
+    border-radius: 8px;
     cursor: pointer;
-    transition: background 0.3s ease;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+    transition: all 0.2s ease;
 }
 
-.nobifashion_shop_products_content_list_item_addtocart button:hover {
-    background: var(--secondary-color);
+.nobifashion_shop_products_content_list_empty_button:hover {
+    background-color: #000000;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.2);
 }
 
-.nobifashion_shop_products_content_list_item_addtocart svg {
-    width: 16px;
-    height: 16px;
-    fill: #fff;
+
+/* ==========================================================================
+   BRAND TRUST USP BAR (CAM KẾT THƯƠNG HIỆU THỜI TRANG NOBI)
+   ========================================================================== */
+.shop_brand_usp_bar {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin: 32px 0 16px 0;
+    padding: 20px 22px;
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    border-radius: 14px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.shop_usp_item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.shop_usp_icon {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0f172a;
+    flex-shrink: 0;
+}
+
+.shop_usp_text strong {
+    display: block;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #0f172a;
+    line-height: 1.3;
+}
+
+.shop_usp_text p {
+    font-size: 12px;
+    color: #64748b;
+    margin: 2px 0 0 0;
+    line-height: 1.4;
+}
+
+
+/* ==========================================================================
+   RECENTLY VIEWED PRODUCTS (SẢN PHẨM VỪA XEM GẦN ĐÂY)
+   ========================================================================== */
+.shop_recently_viewed_section {
+    margin: 24px 0 16px 0;
+    padding: 20px 22px;
+    background: #ffffff;
+    border: 1px solid #f1f5f9;
+    border-radius: 14px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.shop_recently_header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f8fafc;
+}
+
+.shop_recently_title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.shop_recently_clear {
+    background: none;
+    border: none;
+    font-size: 12.5px;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: color 0.15s ease;
+}
+
+.shop_recently_clear:hover {
+    color: #ef4444;
+}
+
+.shop_recently_grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 14px;
+}
+
+.shop_recent_item {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+    border-radius: 8px;
+    overflow: hidden;
+    transition: transform 0.2s ease;
+}
+
+.shop_recent_item:hover {
+    transform: translateY(-3px);
+}
+
+.shop_recent_thumb {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f1f5f9;
+    margin-bottom: 8px;
+}
+
+.shop_recent_thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.shop_recent_name {
+    font-size: 12px;
+    font-weight: 500;
+    color: #334155;
+    margin: 0 0 3px 0;
+    line-height: 1.35;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.shop_recent_price {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #0f172a;
 }
 
 .nobifashion_shop_products_content_pagination {
@@ -1759,17 +2452,147 @@
     margin-right: 4px;
 }
 
-/* Responsive Tablet & Mobile cho Khối SEO & Sidebar */
+/* ==========================================================================
+   RESPONSIVE DESIGN FOR SHOP (TABLET <= 991px & MOBILE <= 768px / <= 480px)
+   ========================================================================== */
+
 @media (max-width: 991px) {
     .nobifashion_shop {
-        overflow-x: hidden;
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 12px !important;
+        margin: 10px auto !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
     }
 
+    .nobifashion_shop_products {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 14px !important;
+        width: 100% !important;
+    }
+
+    /* Sidebar Filter trên Tablet / Mobile: Collapsible Card cao cấp */
     .nobifashion_shop_products_filter {
         position: static !important;
         top: auto !important;
-        max-height: none !important;
-        overflow-y: visible !important;
+        max-height: 48px !important;
+        overflow: hidden !important;
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 12px !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+        padding: 0 !important;
+        margin: 0 0 4px 0 !important;
+        transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease !important;
+        box-sizing: border-box !important;
+        width: 100% !important;
+    }
+
+    .nobifashion_shop_products_filter.nobifashion_shop_products_filter_height_full {
+        max-height: 2500px !important;
+        padding-bottom: 16px !important;
+        box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.12) !important;
+    }
+
+    .nobifashion_shop_products_filter_categories {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .nobifashion_shop_products_filter_categories_title {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 12px 16px !important;
+        background: #f8fafc !important;
+        border-radius: 12px !important;
+        cursor: pointer !important;
+        user-select: none !important;
+        margin: 0 !important;
+        transition: background 0.2s ease !important;
+    }
+
+    .nobifashion_shop_products_filter_categories_title:hover {
+        background: #f1f5f9 !important;
+    }
+
+    .nobifashion_shop_products_filter_height_full .nobifashion_shop_products_filter_categories_title {
+        border-bottom: 1px solid #e2e8f0 !important;
+        border-radius: 12px 12px 0 0 !important;
+    }
+
+    .nobifashion_shop_products_filter_categories_title_name {
+        font-size: 14px !important;
+        font-weight: 700 !important;
+        color: #0f172a !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        text-transform: none !important;
+        letter-spacing: 0 !important;
+        margin: 0 !important;
+    }
+
+    .nobifashion_shop_products_filter_categories_title_bars {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 24px !important;
+        height: 24px !important;
+        color: #475569 !important;
+        transition: transform 0.3s ease !important;
+    }
+
+    .nobifashion_shop_products_filter_categories_title_bars svg {
+        width: 18px !important;
+        height: 18px !important;
+    }
+
+    .nobifashion_shop_products_filter_height_full .nobifashion_shop_products_filter_categories_title_bars {
+        transform: rotate(90deg) !important;
+        color: #0f172a !important;
+    }
+
+    .nobifashion_shop_products_filter_categories_content {
+        padding: 12px 16px 6px 16px !important;
+    }
+
+    .nobifashion_shop_products_filter_categories_form {
+        padding: 0 16px !important;
+    }
+
+    /* Ẩn mục sản phẩm mới bên trong sidebar trên tablet/mobile để tiết kiệm diện tích */
+    .nobifashion_shop_products_filter_new_products {
+        display: none !important;
+    }
+
+    .nobifashion_shop_products_content {
+        width: 100% !important;
+        gap: 12px !important;
+    }
+
+    /* Danh sách sản phẩm trên Tablet (3 cột) */
+    .nobifashion_shop_products_content_list,
+    .nobifashion_shop_products_content_list.grid-3-cols {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 14px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 0 !important;
+    }
+
+    .shop_brand_usp_bar {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+        padding: 14px !important;
+    }
+
+    .shop_recently_grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 12px !important;
     }
 
     .nobifashion_shop_seo_section {
@@ -1787,133 +2610,396 @@
         border-radius: 12px !important;
     }
 
-    .shop_seo_content_wrapper {
-        max-height: 240px;
-    }
-
-    .shop_seo_fade {
-        height: 75px;
-    }
-
-    .shop_seo_toggle_box {
-        margin-top: 10px;
-    }
-
-    .shop_seo_toggle_btn {
-        padding: 7px 18px;
-        font-size: 13px;
-    }
-
-    .shop_seo_content_body {
-        font-size: 14px;
-    }
-
-    .shop_seo_content_body h1 {
-        font-size: 1.25rem;
-        margin: 0 0 10px 0;
-        padding-bottom: 8px;
-    }
-
-    .shop_seo_content_body h2 {
-        font-size: 1.1rem;
-        padding: 5px 10px;
-        margin: 16px 0 8px 0;
-    }
-
-    .shop_seo_content_body h3 {
-        font-size: 1rem;
-        margin: 14px 0 6px 0;
-    }
-
-    .shop_seo_content_body p {
-        font-size: 14px;
-        margin-bottom: 10px;
-        line-height: 1.65;
-    }
-
-    .shop_seo_sidebar {
-        gap: 12px;
-    }
-
     .shop_seo_perks_card,
     .shop_seo_size_card {
         padding: 14px 12px !important;
         border-radius: 12px !important;
     }
-
-    .perks_card_header,
-    .size_card_header {
-        margin-bottom: 10px;
-        padding-bottom: 8px;
-    }
-
-    .perks_list {
-        gap: 10px;
-    }
-
-    .perk_icon {
-        width: 32px;
-        height: 32px;
-    }
-
-    .perk_info strong {
-        font-size: 12.5px;
-    }
-
-    .perk_info p {
-        font-size: 11px;
-    }
-
-    .perks_hotline_box {
-        margin-top: 10px;
-        padding: 8px 10px;
-    }
-
-    .size_row {
-        padding: 6px 4px;
-        font-size: 12px;
-    }
 }
 
-@media (max-width: 480px) {
-    .nobifashion_shop_seo_section {
-        margin: 10px 0 12px 0 !important;
-        padding-top: 10px !important;
+/* ==========================================================================
+   MOBILE PHONES (<= 768px & <= 640px)
+   ========================================================================== */
+@media (max-width: 768px) {
+    .nobifashion_shop {
+        padding: 0 10px !important;
+        margin: 6px auto !important;
     }
 
-    .shop_seo_container {
-        gap: 10px;
+    /* 1. Category Hero */
+    .nobifashion_shop_hero_section {
+        padding: 12px 14px !important;
+        border-radius: 12px !important;
+        margin: 4px 0 10px 0 !important;
     }
 
-    .shop_seo_main_card {
-        padding: 12px 10px !important;
+    .shop_hero_header {
+        margin-bottom: 8px !important;
+    }
+
+    .shop_hero_title_wrap {
+        gap: 8px !important;
+        margin-bottom: 4px !important;
+    }
+
+    .shop_hero_title {
+        font-size: 18px !important;
+        line-height: 1.3 !important;
+    }
+
+    .shop_hero_count_badge {
+        font-size: 11.5px !important;
+        padding: 2px 8px !important;
+    }
+
+    .shop_hero_subtitle {
+        font-size: 12px !important;
+        line-height: 1.5 !important;
+    }
+
+    /* Subcategories Slider */
+    .shop_subcategories_slider_wrap {
+        padding-top: 8px !important;
+    }
+
+    .shop_subcat_nav_btn {
+        display: none !important;
+    }
+
+    .shop_subcat_pill {
+        padding: 5px 12px !important;
+        font-size: 12.5px !important;
+        gap: 6px !important;
+    }
+
+    .shop_subcat_avatar {
+        width: 20px !important;
+        height: 20px !important;
+    }
+
+    .shop_subcat_count {
+        font-size: 10.5px !important;
+        min-width: 18px !important;
+        height: 16px !important;
+        padding: 0 5px !important;
+    }
+
+    /* 2. Quick Filters Bar */
+    .shop_quick_filters_bar {
+        padding: 4px 0 !important;
+        gap: 6px !important;
+        width: 100% !important;
+        overflow-x: auto !important;
+        scrollbar-width: none !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    .shop_quick_filters_bar::-webkit-scrollbar {
+        display: none !important;
+    }
+
+    .shop_quick_filters_label {
+        font-size: 12px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .shop_quick_filters_list {
+        gap: 6px !important;
+        flex-shrink: 0 !important;
+    }
+
+    .shop_quick_pill {
+        padding: 5px 12px !important;
+        font-size: 12px !important;
+        height: 30px !important;
+        white-space: nowrap !important;
+        flex-shrink: 0 !important;
+    }
+
+    /* 3. Toolbar: Ẩn nút 4/3 cột, hiển thị số lượng & Dropdown sắp xếp tinh gọn */
+    .nobifashion_shop_products_content_filter {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 8px 12px !important;
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
         border-radius: 10px !important;
+        margin-bottom: 2px !important;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02) !important;
     }
 
-    .shop_seo_perks_card,
-    .shop_seo_size_card {
-        padding: 12px 10px !important;
+    .shop_toolbar_left {
+        display: flex !important;
+        align-items: center !important;
+    }
+
+    .nobifashion_shop_products_content_filter_total {
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        color: #475569 !important;
+    }
+
+    .nobifashion_shop_products_content_filter_total span {
+        font-size: 13px !important;
+        font-weight: 700 !important;
+        color: #0f172a !important;
+    }
+
+    .shop_toolbar_right {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+    }
+
+    /* ẨN HOÀN TOÀN NÚT CHUYỂN GRID 4 CỘT / 3 CỘT TRÊN MOBILE */
+    .shop_view_modes {
+        display: none !important;
+    }
+
+    .nobifashion_shop_products_content_filter_select_sort {
+        display: flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+    }
+
+    .nobifashion_shop_products_content_filter_select_sort label {
+        display: none !important;
+    }
+
+    .nobifashion_shop_products_content_filter_select_sort select {
+        padding: 5px 8px !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        color: #0f172a !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 6px !important;
+        background: #ffffff !important;
+        height: 32px !important;
+        outline: none !important;
+        cursor: pointer !important;
+    }
+
+    .shop_active_chips_wrap {
+        display: none !important;
+    }
+
+    /* 4. LƯỚI SẢN PHẨM CHUẨN 2 CỘT TỶ LỆ VÀNG HOÀN HẢO */
+    .nobifashion_shop_products_content_list,
+    .nobifashion_shop_products_content_list.grid-3-cols {
+        display: grid !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* 5. Thẻ Sản phẩm trên Mobile */
+    .nobifashion_shop_products_content_list_item {
         border-radius: 10px !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+        border: 1px solid #f1f5f9 !important;
+        overflow: hidden !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
 
-    .shop_seo_content_body h1 {
-        font-size: 1.15rem;
+    .product_card_media {
+        aspect-ratio: 3 / 4 !important;
+        width: 100% !important;
+        border-radius: 9px 9px 0 0 !important;
     }
 
-    .shop_seo_content_body h2 {
-        font-size: 1.02rem;
-        padding: 4px 8px;
-        margin: 12px 0 6px 0;
+    .product_card_badges {
+        top: 6px !important;
+        left: 6px !important;
+        gap: 3px !important;
     }
 
-    .shop_seo_content_body p {
-        font-size: 13.5px;
-        line-height: 1.6;
-        margin-bottom: 8px;
+    .product_badge_discount,
+    .product_badge_featured,
+    .product_badge_new {
+        font-size: 9.5px !important;
+        font-weight: 700 !important;
+        padding: 2px 5px !important;
+        border-radius: 4px !important;
+        line-height: 1.1 !important;
+    }
+
+    .product_card_wishlist_btn {
+        width: 28px !important;
+        height: 28px !important;
+        top: 6px !important;
+        right: 6px !important;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08) !important;
+    }
+
+    .product_card_wishlist_btn svg {
+        width: 14px !important;
+        height: 14px !important;
+    }
+
+    .product_card_quick_action {
+        display: none !important;
+    }
+
+    .product_card_body {
+        padding: 8px 8px 10px 8px !important;
+    }
+
+    .product_card_category {
+        font-size: 10.5px !important;
+        margin-bottom: 2px !important;
+    }
+
+    .product_card_title {
+        font-size: 12.5px !important;
+        font-weight: 600 !important;
+        line-height: 1.35 !important;
+        height: 34px !important;
+        min-height: 34px !important;
+        margin-bottom: 4px !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+    }
+
+    .product_card_rating_row {
+        display: flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+        font-size: 10.5px !important;
+        margin-bottom: 4px !important;
+    }
+
+    .product_card_stars svg {
+        width: 9px !important;
+        height: 9px !important;
+    }
+
+    .product_card_reviews {
+        font-size: 10px !important;
+    }
+
+    .product_card_price_row {
+        display: flex !important;
+        align-items: baseline !important;
+        flex-wrap: wrap !important;
+        gap: 4px !important;
+        margin-top: 2px !important;
+    }
+
+    .product_price_sale {
+        font-size: 14px !important;
+        font-weight: 700 !important;
+    }
+
+    .product_price_original {
+        font-size: 11px !important;
+    }
+
+    .product_card_swatches {
+        margin-top: 6px !important;
+        gap: 4px !important;
+    }
+
+    .product_swatch_dot {
+        width: 9px !important;
+        height: 9px !important;
+    }
+
+    /* 6. Brand Trust USP Bar: 2 Cột Cực Kì Gọn Gàng */
+    .shop_brand_usp_bar {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+        padding: 10px !important;
+        border-radius: 10px !important;
+        margin: 14px 0 !important;
+        background: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
+    }
+
+    .shop_brand_usp_item {
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        padding: 8px !important;
+        background: #ffffff !important;
+        border: 1px solid #f1f5f9 !important;
+        border-radius: 8px !important;
+    }
+
+    .shop_brand_usp_icon {
+        width: 28px !important;
+        height: 28px !important;
+        min-width: 28px !important;
+        border-radius: 6px !important;
+    }
+
+    .shop_brand_usp_icon svg {
+        width: 14px !important;
+        height: 14px !important;
+    }
+
+    .shop_brand_usp_text strong {
+        font-size: 11.5px !important;
+        line-height: 1.25 !important;
+    }
+
+    .shop_brand_usp_text p {
+        font-size: 10px !important;
+        line-height: 1.2 !important;
+        margin-top: 1px !important;
+    }
+
+    /* 7. Khối Sản phẩm vừa xem trên Mobile */
+    .shop_recently_viewed_section {
+        margin: 14px 0 !important;
+        padding-top: 14px !important;
+    }
+
+    .shop_recently_header {
+        margin-bottom: 8px !important;
+    }
+
+    .shop_recently_title {
+        font-size: 14.5px !important;
+    }
+
+    .shop_recently_grid {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 8px !important;
+    }
+
+    .shop_recently_item {
+        padding: 8px !important;
+        border-radius: 8px !important;
+    }
+
+    .shop_recently_img_link {
+        aspect-ratio: 3 / 4 !important;
+        height: auto !important;
+        border-radius: 6px !important;
+        overflow: hidden !important;
+    }
+
+    .shop_recently_name a {
+        font-size: 12px !important;
+        height: 32px !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+    }
+
+    .nobifashion_shop_products_content_pagination {
+        padding: 14px 0 !important;
     }
 }
-
-
-
-
-

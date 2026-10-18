@@ -784,67 +784,7 @@
         margin: 10px auto !important;
     }
 
-    .nobifashion_shop_banner {
-        max-height: 180px !important;
-        aspect-ratio: 16 / 9 !important;
-    }
-
-    .nobifashion_shop_products {
-        grid-template-columns: 1fr !important;
-    }
-
-    .nobifashion_shop_products_content_filter {
-        flex-direction: column !important;
-        align-items: flex-start !important;
-        gap: 0.5rem !important;
-    }
-
-    .nobifashion_shop_products_content_filter_select {
-        flex-direction: column;
-        gap: 0.5rem;
-        width: 100%;
-    }
-
-    .nobifashion_shop_products_content_filter_select_sort,
-    .nobifashion_shop_products_content_filter_select_show {
-        width: 100%;
-        justify-content: space-between;
-    }
-
-    .nobifashion_shop_products_content_filter_select select {
-        width: 100%;
-    }
-
-    .nobifashion_shop_products_content_list {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)) !important;
-        padding: 0 !important;
-        gap: 0.5rem !important;
-    }
-
-    .nobifashion_shop_products_content_list_item_title {
-        font-size: 0.85rem;
-    }
-
-
-    .nobifashion_shop_products_content_list_item_addtocart button {
-        width: 100%;
-        justify-content: center;
-    }
-
-    /* New Products in Filter */
-    .nobifashion_shop_products_filter_new_products_item {
-        flex-direction: row;
-        align-items: center;
-    }
-
-    .nobifashion_shop_products_filter_new_products_item_image img {
-        width: 40px;
-        height: 40px;
-    }
-
-    .nobifashion_shop_products_filter_new_products_item_info_title {
-        font-size: 0.8rem;
-    }
+    /* Shop styles moved to shop.css */
 
     .nobifashion_single {
         width: 98% !important;
@@ -1005,87 +945,7 @@
         height: 150px !important;
     }
 
-    /* Shop */
-    .nobifashion_shop {
-        width: 95% !important;
-        margin: 10px auto !important;
-    }
-
-    .nobifashion_shop_banner {
-        max-height: 150px !important;
-    }
-
-    .nobifashion_shop_products {
-        grid-template-columns: 1fr !important;
-    }
-
-    .nobifashion_shop_products_filter {
-        height: 58px;
-        overflow: hidden !important;
-        transition: all 0.3s ease !important;
-    }
-
-    .nobifashion_shop_products_filter_height_full {
-        height: auto !important;
-        transition: all 0.3s ease !important;
-    }
-
-    .nobifashion_shop_products_filter_categories_title_bars,
-    .nobifashion_shop_products_filter_categories_title_name {
-        display: flex !important;
-        align-items: center !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-
-    .nobifashion_shop_products_filter_categories_title {
-        display: flex !important;
-        flex-wrap: nowrap !important;
-        margin-bottom: 10px !important;
-        justify-content: space-between !important;
-    }
-
-    .nobifashion_shop_products_filter_categories_title_bars svg {
-        width: 30px !important;
-        height: 30px !important;
-        margin-right: 5px !important;
-    }
-
-    .nobifashion_shop_products_content_filter_select {
-        display: grid !important;
-        grid-template-columns: 1fr !important;
-        gap: 16px !important;
-        padding: 12px !important;
-        background: #f5f5f5 !important;
-        border-radius: 8px !important;
-        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06) !important;
-    }
-
-    .nobifashion_shop_products_content_filter_total {
-        text-align: center !important;
-        margin: 0 auto !important;
-    }
-
-    .nobifashion_shop_products_content_filter_select>div {
-        display: flex !important;
-    }
-
-    .nobifashion_shop_products_content_filter_select label {
-        font-size: 14px !important;
-        margin-bottom: 4px !important;
-        color: #444 !important;
-        font-weight: 600 !important;
-        width: 40% !important;
-    }
-
-    .nobifashion_shop_products_content_filter_select select {
-        padding: 10px !important;
-        font-size: 15px !important;
-        border: 1px solid #ddd !important;
-        border-radius: 6px !important;
-        background-color: #fff !important;
-        appearance: none !important;
-    }
+    /* Shop styles moved to shop.css */
 
     .nobifashion_single_product_related {
         padding: 0 !important;

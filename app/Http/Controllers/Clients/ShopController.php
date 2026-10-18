@@ -191,7 +191,9 @@ class ShopController extends Controller
             'products.is_active',
         ])->with([
             'primaryImage:id,product_id,url,alt,title',
+            'secondaryImage:id,product_id,url,alt,title',
             'primaryCategory:id,name,slug',
+            'variants' => fn($q) => $q->where('is_active', 1)->select('id', 'product_id', 'attributes'),
         ]);
 
         // 9. Thực hiện phân trang duy nhất 1 lần
@@ -207,7 +209,58 @@ class ShopController extends Controller
                 ->get();
         });
 
-        // 11. Hỗ trợ AJAX Instant Filter (Phản hồi <50ms không reload trang)
+        // 11. Danh mục con hoặc danh mục nổi bật để lọc nhanh dạng pills kèm số lượng sản phẩm đang có
+        $subCategories = Cache::remember('shop_sub_categories_' . ($category ? $category->id : 'all'), 1800, function () use ($category) {
+            if ($category) {
+                $children = $category->children()->select('id', 'name', 'slug', 'image')->get();
+                if ($children->isNotEmpty()) {
+                    $catList = $children;
+                } elseif ($category->parent_id) {
+                    $catList = Category::where('parent_id', $category->parent_id)->where('id', '!=', $category->id)->active()->select('id', 'name', 'slug', 'image')->get();
+                } else {
+                    $catList = collect();
+                }
+            } else {
+                $catList = Category::where(function ($q) {
+                    $q->whereNull('parent_id')->orWhere('parent_id', 0);
+                })->active()->select('id', 'name', 'slug', 'image')->orderBy('sort_order')->limit(12)->get();
+            }
+
+            if ($catList->isEmpty()) {
+                return $catList;
+            }
+
+            $allCategories = Category::select('id', 'parent_id')->get();
+            $activeProducts = Product::active()->select('id', 'primary_category_id', 'category_ids')->get();
+
+            foreach ($catList as $subCat) {
+                $subIds = [$subCat->id];
+                $queue = [$subCat->id];
+                while (!empty($queue)) {
+                    $pid = array_pop($queue);
+                    $cList = $allCategories->where('parent_id', $pid)->pluck('id')->all();
+                    foreach ($cList as $cid) {
+                        if (!in_array($cid, $subIds, true)) {
+                            $subIds[] = $cid;
+                            $queue[] = $cid;
+                        }
+                    }
+                }
+
+                $subCat->products_count = $activeProducts->filter(function ($p) use ($subIds) {
+                    if (in_array((int)$p->primary_category_id, $subIds, true)) {
+                        return true;
+                    }
+                    $extraIds = is_array($p->category_ids) ? array_map('intval', $p->category_ids) : [];
+                    return count(array_intersect($subIds, $extraIds)) > 0;
+                })->count();
+            }
+
+            // Chỉ hiển thị các danh mục thực sự có sản phẩm đang có bán (> 0)
+            return $catList->filter(fn($c) => ($c->products_count ?? 0) > 0)->values();
+        });
+
+        // 12. Hỗ trợ AJAX Instant Filter (Phản hồi <50ms không reload trang)
         if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
             return response()->json([
                 'success' => true,
@@ -216,6 +269,7 @@ class ShopController extends Controller
                     'availableColors',
                     'availableSizes',
                     'sidebarNewProducts',
+                    'subCategories',
                     'perPage',
                     'minPriceRange',
                     'maxPriceRange',
@@ -240,6 +294,7 @@ class ShopController extends Controller
             'availableColors',
             'availableSizes',
             'sidebarNewProducts',
+            'subCategories',
             'perPage',
             'minPriceRange',
             'maxPriceRange',
@@ -437,7 +492,9 @@ class ShopController extends Controller
             'products.is_active',
         ])->with([
             'primaryImage:id,product_id,url,alt,title',
+            'secondaryImage:id,product_id,url,alt,title',
             'primaryCategory:id,name,slug',
+            'variants' => fn($q) => $q->where('is_active', 1)->select('id', 'product_id', 'attributes'),
         ]);
 
         // 9. Phân trang
@@ -453,7 +510,47 @@ class ShopController extends Controller
                 ->get();
         });
 
-        // 11. SEO Metadata
+        // 11. Danh mục nổi bật để lọc nhanh dạng pills kèm số lượng sản phẩm đang có
+        $subCategories = Cache::remember('shop_sub_categories_all', 1800, function () {
+            $catList = Category::where(function ($q) {
+                $q->whereNull('parent_id')->orWhere('parent_id', 0);
+            })->active()->select('id', 'name', 'slug', 'image')->orderBy('sort_order')->limit(12)->get();
+
+            if ($catList->isEmpty()) {
+                return $catList;
+            }
+
+            $allCategories = Category::select('id', 'parent_id')->get();
+            $activeProducts = Product::active()->select('id', 'primary_category_id', 'category_ids')->get();
+
+            foreach ($catList as $subCat) {
+                $subIds = [$subCat->id];
+                $queue = [$subCat->id];
+                while (!empty($queue)) {
+                    $pid = array_pop($queue);
+                    $cList = $allCategories->where('parent_id', $pid)->pluck('id')->all();
+                    foreach ($cList as $cid) {
+                        if (!in_array($cid, $subIds, true)) {
+                            $subIds[] = $cid;
+                            $queue[] = $cid;
+                        }
+                    }
+                }
+
+                $subCat->products_count = $activeProducts->filter(function ($p) use ($subIds) {
+                    if (in_array((int)$p->primary_category_id, $subIds, true)) {
+                        return true;
+                    }
+                    $extraIds = is_array($p->category_ids) ? array_map('intval', $p->category_ids) : [];
+                    return count(array_intersect($subIds, $extraIds)) > 0;
+                })->count();
+            }
+
+            // Chỉ hiển thị các danh mục thực sự có sản phẩm đang có bán (> 0)
+            return $catList->filter(fn($c) => ($c->products_count ?? 0) > 0)->values();
+        });
+
+        // 12. SEO Metadata
         $siteName = $settings->site_name ?? $settings->subname ?? 'NOBI FASHION VIỆT NAM';
         $pageTitle = $keyword !== ''
             ? "Kết quả tìm kiếm cho '{$keyword}' - {$siteName}"
@@ -463,7 +560,7 @@ class ShopController extends Controller
         $canonicalUrl = "{$settings->site_url}/shop/search" . ($keyword !== '' ? '?keyword=' . urlencode($keyword) : '');
         $pageImage = asset('clients/assets/img/business/' . ($settings->site_banner ?? $settings->site_logo));
 
-        // 12. Hỗ trợ AJAX Instant Filter
+        // 13. Hỗ trợ AJAX Instant Filter
         if ($request->ajax() || $request->wantsJson() || $request->header('X-Requested-With') === 'XMLHttpRequest') {
             return response()->json([
                 'success' => true,
@@ -472,6 +569,7 @@ class ShopController extends Controller
                     'availableColors',
                     'availableSizes',
                     'sidebarNewProducts',
+                    'subCategories',
                     'perPage',
                     'minPriceRange',
                     'maxPriceRange',
@@ -497,6 +595,7 @@ class ShopController extends Controller
             'availableColors',
             'availableSizes',
             'sidebarNewProducts',
+            'subCategories',
             'perPage',
             'minPriceRange',
             'maxPriceRange',

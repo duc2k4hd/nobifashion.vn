@@ -100,15 +100,69 @@
             </div>
         </section>
 
-        <!-- Banner -->
-        {{-- <section>
-            <div class="nobifashion_shop_banner">
-                @if ($banner && $banner->count() > 0)
-                    <img class="nobifashion_shop_banner_image"
-                        src="{{ asset('clients/assets/img/banners/' . $banner->image) }}" alt="{{ $banner->title }}">
-                @endif
+        <!-- Category Hero & Subcategories Bar -->
+        <section class="nobifashion_shop_hero_section">
+            <div class="shop_hero_header">
+                <div class="shop_hero_title_wrap">
+                    @if ($category)
+                        <h1 class="shop_hero_title">{{ $category->name }}</h1>
+                    @elseif (!empty($keyword) || request('keyword'))
+                        <h1 class="shop_hero_title">Kết quả tìm kiếm: "{{ $keyword ?? request('keyword') }}"</h1>
+                    @else
+                        <h1 class="shop_hero_title">Bộ Sưu Tập Thời Trang Nobi</h1>
+                    @endif
+                    <span class="shop_hero_count_badge">{{ number_format($productsMain->total() ?? 0) }} sản phẩm</span>
+                </div>
+                <p class="shop_hero_subtitle">
+                    @if ($category && !empty($category->meta_description))
+                        {{ Str::limit(strip_tags($category->meta_description), 150) }}
+                    @else
+                        Khám phá các thiết kế thời trang hiện đại, tôn vinh form dáng và chất liệu tuyển chọn tại Nobi Fashion.
+                    @endif
+                </p>
             </div>
-        </section> --}}
+
+            @if (!empty($subCategories) && $subCategories->count() > 0)
+                <div class="shop_subcategories_slider_wrap">
+                    <button type="button" class="shop_subcat_nav_btn shop_subcat_nav_prev" id="btnSubcatPrev" aria-label="Cuộn sang trái">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </button>
+
+                    <div class="shop_subcat_fade shop_subcat_fade_left" id="subcatFadeLeft"></div>
+
+                    <div class="shop_subcategories_slider" id="shopSubcategoriesSlider">
+                        @foreach ($subCategories as $subCat)
+                            @if (($subCat->products_count ?? 0) > 0)
+                                <a href="/{{ $subCat->slug }}"
+                                   class="shop_subcat_pill {{ ($category && $category->id === $subCat->id) || request()->segment(1) === $subCat->slug ? 'shop_subcat_pill_active' : '' }}"
+                                   title="{{ $subCat->name }} ({{ $subCat->products_count }} sản phẩm)">
+                                    @if (!empty($subCat->image))
+                                        <span class="shop_subcat_avatar">
+                                            <img src="{{ asset('clients/assets/img/categories/' . $subCat->image) }}"
+                                                 alt="{{ $subCat->name }}"
+                                                 loading="lazy"
+                                                 onerror="this.onerror=null;this.src='{{ asset('clients/assets/img/no-image.webp') }}';">
+                                        </span>
+                                    @endif
+                                    <span class="shop_subcat_name">{{ $subCat->name }}</span>
+                                    <span class="shop_subcat_count">{{ $subCat->products_count }}</span>
+                                </a>
+                            @endif
+                        @endforeach
+                    </div>
+
+                    <div class="shop_subcat_fade shop_subcat_fade_right" id="subcatFadeRight"></div>
+
+                    <button type="button" class="shop_subcat_nav_btn shop_subcat_nav_next" id="btnSubcatNext" aria-label="Cuộn sang phải">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </button>
+                </div>
+            @endif
+        </section>
 
         <!-- Bộ lọc -->
         <section>
@@ -116,11 +170,15 @@
                 <div class="nobifashion_shop_products_filter">
                     <div class="nobifashion_shop_products_filter_categories">
                         <div class="nobifashion_shop_products_filter_categories_title">
-                            <h3 class="nobifashion_shop_products_filter_categories_title_name">Lọc sản phẩm</h3>
+                            <h3 class="nobifashion_shop_products_filter_categories_title_name">
+                                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                                </svg>
+                                <span>Bộ lọc chi tiết</span>
+                            </h3>
                             <div class="nobifashion_shop_products_filter_categories_title_bars">
-                                <svg focusable="false" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"
-                                    viewBox="0 0 24 24">
-                                    <path d="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z" />
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="6 9 12 15 18 9"/>
                                 </svg>
                             </div>
                         </div>
@@ -299,10 +357,11 @@
                                     <div class="nobifashion_shop_products_filter_new_products_item_image">
                                         <a href="{{ route('client.product.detail', ['slug' => $newProd->slug]) }}">
                                             <img class="nobifashion_shop_products_filter_new_products_item_image_img"
-                                                src="{{ asset('clients/assets/img/clothes/' . ($newProd?->primaryImage?->url ?? 'no-image.webp')) }}"
+                                                src="{{ !empty($newProd?->primaryImage?->url) ? asset('clients/assets/img/clothes/' . $newProd->primaryImage->url) : asset('clients/assets/img/no-image.webp') }}"
                                                 alt="{{ $newProd?->primaryImage?->alt ?? $newProd?->name }}"
                                                 title="{{ $newProd?->primaryImage?->title ?? $newProd?->name }}"
-                                                loading="lazy">
+                                                loading="lazy"
+                                                onerror="this.onerror=null;this.src='{{ asset('clients/assets/img/no-image.webp') }}';">
                                         </a>
                                     </div>
                                     <div class="nobifashion_shop_products_filter_new_products_item_info">
@@ -322,126 +381,255 @@
                 </div>
 
                 <div class="nobifashion_shop_products_content">
-                    <div class="nobifashion_shop_products_content_filter">
-                        <div class="nobifashion_shop_products_content_filter_total">
-                            Tổng <span id="shop-total-count">{{ number_format($productsMain->total() ?? 0) }}</span> sản phẩm
-                        </div>
-
-                        <div class="nobifashion_shop_products_content_filter_delete_all {{ request()->hasAny(['minPriceRange', 'maxPriceRange', 'colorRange', 'sizeRange', 'sort']) ? '' : 'nobifashion_shop_hide' }}" id="shop-clear-filters-box">
-                            <button class="nobifashion_shop_products_content_filter_delete_all_btn" type="button" onclick="resetAllShopFilters()">
-                                Xóa tất cả bộ lọc
+                    {{-- 1. Thanh Lọc Nhanh 1 Chạm (Quick Filter Pills) --}}
+                    <div class="shop_quick_filters_bar">
+                        <span class="shop_quick_filters_label">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                            </svg>
+                            Gợi ý:
+                        </span>
+                        <div class="shop_quick_filters_list">
+                            <button type="button" class="shop_quick_pill {{ ($sort ?? 'default') === 'default' && empty($minPriceRange) && empty($maxPriceRange) && empty($colorRange) && empty($sizeRange) ? 'active' : '' }}" data-quick="all" onclick="applyQuickFilter('all')">
+                                Tất cả
+                            </button>
+                            <button type="button" class="shop_quick_pill {{ ($sort ?? '') === 'newest' ? 'active' : '' }}" data-quick="newest" onclick="applyQuickFilter('newest')">
+                                🔥 Hàng mới về
+                            </button>
+                            <button type="button" class="shop_quick_pill {{ ($sort ?? '') === 'price-asc' ? 'active' : '' }}" data-quick="price-asc" onclick="applyQuickFilter('price-asc')">
+                                ⚡ Giá tốt nhất
+                            </button>
+                            <button type="button" class="shop_quick_pill {{ (string)$minPriceRange === '0' && (string)$maxPriceRange === '250000' ? 'active' : '' }}" data-quick="price-0-250" onclick="applyQuickFilter('price-0-250')">
+                                Dưới 250K
+                            </button>
+                            <button type="button" class="shop_quick_pill {{ (string)$minPriceRange === '250000' && (string)$maxPriceRange === '500000' ? 'active' : '' }}" data-quick="price-250-500" onclick="applyQuickFilter('price-250-500')">
+                                250K - 500K
+                            </button>
+                            <button type="button" class="shop_quick_pill {{ (string)$minPriceRange === '500000' && empty($maxPriceRange) ? 'active' : '' }}" data-quick="price-500-plus" onclick="applyQuickFilter('price-500-plus')">
+                                Trên 500K
                             </button>
                         </div>
+                    </div>
 
-                        <div class="nobifashion_shop_products_content_filter_select">
-                            <div class="nobifashion_shop_products_content_filter_select_sort">
-                                <label for="shop-sort-select">Sắp xếp theo:</label>
-                                <select id="shop-sort-select" onchange="setSortFilter(this.value)">
-                                    <option value="default" {{ ($sort ?? 'default') === 'default' ? 'selected' : '' }}>Mặc định</option>
-                                    <option value="price-asc" {{ ($sort ?? '') === 'price-asc' ? 'selected' : '' }}>Giá: Thấp đến Cao</option>
-                                    <option value="price-desc" {{ ($sort ?? '') === 'price-desc' ? 'selected' : '' }}>Giá: Cao đến Thấp</option>
-                                    <option value="newest" {{ ($sort ?? '') === 'newest' ? 'selected' : '' }}>Mới nhất</option>
-                                </select>
+                    {{-- 2. Thanh Toolbar & Switch Grid View --}}
+                    <div class="nobifashion_shop_products_content_filter">
+                        <div class="shop_toolbar_left">
+                            <div class="nobifashion_shop_products_content_filter_total">
+                                Hiển thị <span id="shop-total-count">{{ number_format($productsMain->total() ?? 0) }}</span> sản phẩm
                             </div>
 
-                            <div class="nobifashion_shop_products_content_filter_select_show">
-                                <label for="shop-perpage-select">Hiển thị:</label>
-                                <select id="shop-perpage-select" onchange="setPerPageFilter(this.value)">
-                                    @foreach ([24, 30, 36, 48, 60, 72, 84, 96] as $val)
-                                        <option value="{{ $val }}" {{ (int) ($perPage ?? 30) === $val ? 'selected' : '' }}>
-                                            {{ $val }} sản phẩm
-                                        </option>
-                                    @endforeach
-                                </select>
+                            {{-- Active Filter Chips (Các tiêu chí đang lọc) --}}
+                            <div class="shop_active_chips_wrap {{ request()->hasAny(['minPriceRange', 'maxPriceRange', 'colorRange', 'sizeRange']) ? '' : 'nobifashion_shop_hide' }}" id="shop-active-chips-box">
+                                @if (request('minPriceRange') !== null || request('maxPriceRange') !== null)
+                                    <span class="shop_filter_chip">
+                                        Giá: 
+                                        @if(request('minPriceRange') !== null && request('maxPriceRange') !== null && request('minPriceRange') !== '' && request('maxPriceRange') !== '')
+                                            {{ number_format((float)request('minPriceRange')) }}đ - {{ number_format((float)request('maxPriceRange')) }}đ
+                                        @elseif(request('minPriceRange') !== null && request('minPriceRange') !== '')
+                                            Từ {{ number_format((float)request('minPriceRange')) }}đ
+                                        @elseif(request('maxPriceRange') !== null && request('maxPriceRange') !== '')
+                                            Dưới {{ number_format((float)request('maxPriceRange')) }}đ
+                                        @endif
+                                        <button type="button" onclick="setPriceFilter('', '')" aria-label="Xóa lọc giá">&times;</button>
+                                    </span>
+                                @endif
+
+                                @if (!empty($colorRange))
+                                    <span class="shop_filter_chip">
+                                        Màu: {{ is_array($colorRange) ? implode(', ', $colorRange) : $colorRange }}
+                                        <button type="button" onclick="setColorFilter('')" aria-label="Xóa lọc màu">&times;</button>
+                                    </span>
+                                @endif
+
+                                @if (!empty($sizeRange))
+                                    <span class="shop_filter_chip">
+                                        Size: {{ is_array($sizeRange) ? implode(', ', $sizeRange) : $sizeRange }}
+                                        <button type="button" onclick="setSizeFilter('')" aria-label="Xóa lọc size">&times;</button>
+                                    </span>
+                                @endif
+
+                                <button class="shop_clear_all_chips_btn" type="button" onclick="resetAllShopFilters()">
+                                    Xóa tất cả
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="shop_toolbar_right">
+                            {{-- Chuyển đổi Grid View: 4 cột hoặc 3 cột --}}
+                            <div class="shop_view_modes">
+                                <button type="button" class="shop_view_btn active" data-grid="4" title="Xem lưới 4 cột (Gọn gàng)" onclick="changeShopGrid(4, this)" aria-label="Xem lưới 4 cột">
+                                    <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+                                        <rect x="2" y="2" width="4" height="9" rx="1"/>
+                                        <rect x="8" y="2" width="4" height="9" rx="1"/>
+                                        <rect x="14" y="2" width="4" height="9" rx="1"/>
+                                        <rect x="20" y="2" width="4" height="9" rx="1"/>
+                                        <rect x="2" y="13" width="4" height="9" rx="1"/>
+                                        <rect x="8" y="13" width="4" height="9" rx="1"/>
+                                        <rect x="14" y="13" width="4" height="9" rx="1"/>
+                                        <rect x="20" y="13" width="4" height="9" rx="1"/>
+                                    </svg>
+                                </button>
+                                <button type="button" class="shop_view_btn" data-grid="3" title="Xem lưới 3 cột (Hình ảnh lớn)" onclick="changeShopGrid(3, this)" aria-label="Xem lưới 3 cột">
+                                    <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
+                                        <rect x="2" y="2" width="5.5" height="9" rx="1"/>
+                                        <rect x="9.25" y="2" width="5.5" height="9" rx="1"/>
+                                        <rect x="16.5" y="2" width="5.5" height="9" rx="1"/>
+                                        <rect x="2" y="13" width="5.5" height="9" rx="1"/>
+                                        <rect x="9.25" y="13" width="5.5" height="9" rx="1"/>
+                                        <rect x="16.5" y="13" width="5.5" height="9" rx="1"/>
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <div class="nobifashion_shop_products_content_filter_select">
+                                <div class="nobifashion_shop_products_content_filter_select_sort">
+                                    <label for="shop-sort-select">Sắp xếp:</label>
+                                    <select id="shop-sort-select" onchange="setSortFilter(this.value)">
+                                        <option value="default" {{ ($sort ?? 'default') === 'default' ? 'selected' : '' }}>Mặc định</option>
+                                        <option value="newest" {{ ($sort ?? '') === 'newest' ? 'selected' : '' }}>Mới nhất</option>
+                                        <option value="price-asc" {{ ($sort ?? '') === 'price-asc' ? 'selected' : '' }}>Giá: Thấp đến Cao</option>
+                                        <option value="price-desc" {{ ($sort ?? '') === 'price-desc' ? 'selected' : '' }}>Giá: Cao đến Thấp</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    {{-- Vùng render danh sách sản phẩm động siêu tốc --}}
+                    {{-- 3. Vùng render danh sách sản phẩm động siêu tốc --}}
                     <div id="shop-products-container" class="nobifashion_shop_products_container">
                         @fragment('shop-product-list')
                             @if (!empty($productsMain) && $productsMain->count() > 0)
-                                <div class="nobifashion_shop_products_content_list">
+                                <div class="nobifashion_shop_products_content_list" id="shopProductGrid">
                                     @foreach ($productsMain as $product)
-                                        <div class="nobifashion_shop_products_content_list_item">
-                                            <div class="nobifashion_shop_products_content_list_item_label">
-                                                {{ $product->label ?? '' }}
-                                            </div>
-                                            <div class="nobifashion_shop_products_content_list_item_image">
-                                                <a href="{{ route('client.product.detail', ['slug' => $product->slug]) }}">
-                                                    <img class="nobifashion_shop_products_content_list_item_image_img"
-                                                        src="{{ asset('clients/assets/img/clothes/' . ($product?->primaryImage?->url ?? 'no-image.webp')) }}"
+                                        <div class="nobifashion_shop_products_content_list_item" data-id="{{ $product->id }}">
+                                            {{-- Khung hình ảnh chuẩn thời trang 3:4 --}}
+                                            <div class="product_card_media">
+                                                {{-- Badges --}}
+                                                <div class="product_card_badges">
+                                                    @if ($product->sale_price && $product->sale_price < $product->price)
+                                                        @php
+                                                            $discountPercent = round((($product->price - $product->sale_price) / $product->price) * 100);
+                                                        @endphp
+                                                        <span class="product_badge_discount">-{{ $discountPercent }}%</span>
+                                                    @endif
+                                                    @if ($product->is_featured)
+                                                        <span class="product_badge_featured">HOT</span>
+                                                    @elseif (\Carbon\Carbon::parse($product->created_at)->greaterThanOrEqualTo(now()->subDays(30)))
+                                                        <span class="product_badge_new">MỚI</span>
+                                                    @endif
+                                                </div>
+
+                                                {{-- Nút Thả tim (Wishlist) góc ảnh --}}
+                                                <button type="button" class="product_card_wishlist_btn" onclick="toggleShopWishlist({{ $product->id }}, this)" aria-label="Lưu vào yêu thích" data-product-id="{{ $product->id }}">
+                                                    <svg class="heart-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                                                    </svg>
+                                                </button>
+
+                                                {{-- Link ảnh với Secondary Image Hover --}}
+                                                <a href="{{ route('client.product.detail', ['slug' => $product->slug]) }}" class="product_card_image_link">
+                                                    <img class="product_img_primary"
+                                                        src="{{ !empty($product?->primaryImage?->url) ? asset('clients/assets/img/clothes/' . $product->primaryImage->url) : asset('clients/assets/img/no-image.webp') }}"
                                                         alt="{{ $product?->primaryImage?->alt ?? $product?->name }}"
                                                         title="{{ $product?->primaryImage?->title ?? $product?->name }}"
                                                         loading="lazy"
-                                                        onerror="this.onerror=null;this.src='{{ asset('clients/assets/img/clothes/no-image.webp') }}';">
+                                                        onerror="this.onerror=null;this.src='{{ asset('clients/assets/img/no-image.webp') }}';">
+
+                                                    @if ($product->secondaryImage && !empty($product->secondaryImage->url))
+                                                        <img class="product_img_secondary"
+                                                            src="{{ asset('clients/assets/img/clothes/' . $product->secondaryImage->url) }}"
+                                                            alt="{{ $product->secondaryImage->alt ?? $product->name }}"
+                                                            loading="lazy"
+                                                            onerror="this.style.display='none';">
+                                                    @endif
                                                 </a>
-                                            </div>
-                                            <div class="nobifashion_shop_products_content_list_item_category">
-                                                <h5 class="nobifashion_shop_products_content_list_item_category_name">
-                                                    {{ $product->primaryCategory ? $product->primaryCategory->name : ($settings->site_name ?? $settings->subname ?? 'NOBI FASHION VIỆT NAM') }}
-                                                </h5>
-                                            </div>
-                                            <div class="nobifashion_shop_products_content_list_item_title">
-                                                <a href="{{ route('client.product.detail', ['slug' => $product->slug]) }}">
-                                                    <h4 class="nobifashion_shop_products_content_list_item_title_name">
-                                                        {{ $product->name }}
-                                                    </h4>
-                                                </a>
-                                            </div>
-                                            <div class="nobifashion_shop_products_content_list_item_star">
-                                                <span class="nobifashion_shop_products_content_list_item_star_icon">
-                                                    @php
-                                                        $star = 5;
-                                                        for ($i = 1; $i <= $star; $i++) {
-                                                            echo '<svg xmlns="http://www.w3.org/2000/svg" height="10" width="10" viewBox="0 0 640 640"><path fill="#FFD43B" d="M341.5 45.1C337.4 37.1 329.1 32 320.1 32C311.1 32 302.8 37.1 298.7 45.1L225.1 189.3L65.2 214.7C56.3 216.1 48.9 222.4 46.1 231C43.3 239.6 45.6 249 51.9 255.4L166.3 369.9L141.1 529.8C139.7 538.7 143.4 547.7 150.7 553C158 558.3 167.6 559.1 175.7 555L320.1 481.6L464.4 555C472.4 559.1 482.1 558.3 489.4 553C496.7 547.7 500.4 538.8 499 529.8L473.7 369.9L588.1 255.4C594.5 249 596.7 239.6 593.9 231C591.1 222.4 583.8 216.1 574.8 214.7L415 189.3L341.5 45.1z"/></svg>';
-                                                        }
-                                                    @endphp
-                                                </span>
-                                                <span class="nobifashion_shop_products_content_list_item_star_count">
-                                                    ({{ 50 + ($product->id % 900) }} review)
-                                                </span>
-                                            </div>
-                                            <div class="nobifashion_shop_products_content_list_item_price">
-                                                @if ($product->sale_price && $product->sale_price < $product->price)
-                                                    <span class="nobifashion_shop_products_content_list_item_price_new">
-                                                        {{ number_format($product->sale_price, 0, ',', '.') }}đ
-                                                    </span>
-                                                    <span class="nobifashion_shop_products_content_list_item_price_old">
-                                                        {{ number_format($product->price, 0, ',', '.') }}đ
-                                                    </span>
-                                                @else
-                                                    <span class="nobifashion_shop_products_content_list_item_price_new">
-                                                        {{ number_format($product->price ?? 0, 0, ',', '.') }}đ
-                                                    </span>
-                                                @endif
+
+                                                {{-- Nút Thao tác trượt lên khi hover (Desktop) --}}
+                                                <div class="product_card_quick_action">
+                                                    <a href="{{ route('client.product.detail', ['slug' => $product->slug]) }}" class="product_card_quick_btn">
+                                                        <span>Xem chi tiết</span>
+                                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                                                            <polyline points="12 5 19 12 12 19"></polyline>
+                                                        </svg>
+                                                    </a>
+                                                </div>
                                             </div>
 
-                                            <div class="nobifashion_shop_products_content_list_item_addtocart">
-                                                <a href="{{ route('client.product.detail', ['slug' => $product->slug]) }}"
-                                                    class="nobifashion_shop_products_content_list_item_addtocart_button">
-                                                    <button><svg focusable="false" aria-hidden="true"
-                                                            xmlns="http://www.w3.org/2000/svg"
-                                                            viewBox="0 0 576 512">
-                                                            <path
-                                                                d="M0 24C0 10.7 10.7 0 24 0L69.5 0c22 0 41.5 12.8 50.6 32l411 0c26.3 0 45.5 25 38.6 50.4l-41 152.3c-8.5 31.4-37 53.3-69.5 53.3l-288.5 0 5.4 28.5c2.2 11.3 12.1 19.5 23.6 19.5L488 336c13.3 0 24 10.7 24 24s-10.7 24-24 24l-288.3 0c-34.6 0-64.3-24.6-70.7-58.5L77.4 54.5c-.7-3.8-4-6.5-7.9-6.5L24 48C10.7 48 0 37.3 0 24zM128 464a48 48 0 1 1 96 0 48 48 0 1 1 -96 0zm336-48a48 48 0 1 1 0 96 48 48 0 1 1 0-96zM252 160c0 11 9 20 20 20l44 0 0 44c0 11 9 20 20 20s20-9 20-20l0-44 44 0c11 0 20-9 20-20s-9-20-20-20l-44 0 0-44c0-11-9-20-20-20s-20 9-20 20l0 44-44 0c-11 0-20 9-20 20z" />
-                                                        </svg> Xem sản phẩm</button>
-                                                </a>
+                                            {{-- Thông tin sản phẩm --}}
+                                            <div class="product_card_body">
+                                                {{-- Chấm màu Swatches (nếu có biến thể màu) --}}
+                                                @php
+                                                    $productColors = $product->variants
+                                                        ? $product->variants->map(fn($v) => $v->attributes['color'] ?? null)->filter()->unique()->take(4)->values()
+                                                        : collect();
+                                                @endphp
+                                                @if ($productColors->isNotEmpty())
+                                                    <div class="product_card_swatches" title="{{ $productColors->count() }} màu sắc có sẵn">
+                                                        @foreach ($productColors as $colorName)
+                                                            <span class="product_swatch_dot" title="{{ $colorName }}" data-color="{{ $colorName }}"></span>
+                                                        @endforeach
+                                                        @if ($product->variants && $product->variants->map(fn($v) => $v->attributes['color'] ?? null)->filter()->unique()->count() > 4)
+                                                            <span class="product_swatch_more">+{{ $product->variants->map(fn($v) => $v->attributes['color'] ?? null)->filter()->unique()->count() - 4 }}</span>
+                                                        @endif
+                                                    </div>
+                                                @endif
+
+                                                {{-- Danh mục --}}
+                                                <div class="product_card_category">
+                                                    {{ $product->primaryCategory ? $product->primaryCategory->name : 'Nobi Fashion' }}
+                                                </div>
+
+                                                {{-- Tên sản phẩm --}}
+                                                <h3 class="product_card_title">
+                                                    <a href="{{ route('client.product.detail', ['slug' => $product->slug]) }}" title="{{ $product->name }}">
+                                                        {{ $product->name }}
+                                                    </a>
+                                                </h3>
+
+                                                {{-- Đánh giá & đã bán --}}
+                                                <div class="product_card_rating">
+                                                    <span class="product_card_stars">
+                                                        @for ($i = 1; $i <= 5; $i++)
+                                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="#f59e0b" stroke="none">
+                                                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                                                            </svg>
+                                                        @endfor
+                                                    </span>
+                                                    <span class="product_card_sold">Đã bán {{ 80 + ($product->id % 850) }}</span>
+                                                </div>
+
+                                                {{-- Giá sản phẩm --}}
+                                                <div class="product_card_price_row">
+                                                    @if ($product->sale_price && $product->sale_price < $product->price)
+                                                        <span class="product_price_sale">{{ number_format($product->sale_price, 0, ',', '.') }}đ</span>
+                                                        <span class="product_price_original">{{ number_format($product->price, 0, ',', '.') }}đ</span>
+                                                    @else
+                                                        <span class="product_price_sale">{{ number_format($product->price ?? 0, 0, ',', '.') }}đ</span>
+                                                    @endif
+                                                </div>
                                             </div>
                                         </div>
                                     @endforeach
                                 </div>
                             @else
                                 <div class="nobifashion_shop_products_content_list_empty">
+                                    <div class="empty_icon_wrap">
+                                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                            <circle cx="11" cy="11" r="8"></circle>
+                                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                            <line x1="8" y1="11" x2="14" y2="11"></line>
+                                        </svg>
+                                    </div>
                                     @if (!empty($keyword) || request('keyword'))
-                                        <p>Không tìm thấy sản phẩm nào phù hợp với từ khóa "<strong>{{ $keyword ?? request('keyword') }}</strong>".</p>
+                                        <p class="empty_title">Không tìm thấy sản phẩm phù hợp với "<strong>{{ $keyword ?? request('keyword') }}</strong>"</p>
                                     @else
-                                        <p>Không có sản phẩm nào phù hợp với bộ lọc của bạn.</p>
+                                        <p class="empty_title">Không có sản phẩm nào phù hợp với bộ lọc đã chọn</p>
                                     @endif
-                                    <p>Hãy thử tìm kiếm với từ khóa khác hoặc chọn mức giá khác.</p>
-                                    <a href="{{ !empty($keyword) || request('keyword') ? route('client.product.shop.search.keyword', ['keyword' => $keyword ?? request('keyword')]) : url()->current() }}" class="nobifashion_shop_products_content_list_empty_button" onclick="if(window.resetAllShopFilters){ window.resetAllShopFilters(); return false; }">
-                                        Xóa bộ lọc
-                                    </a>
+                                    <p class="empty_sub">Bạn hãy thử chọn mức giá khác hoặc xóa các điều kiện lọc để khám phá thêm nhiều mẫu mới.</p>
+                                    <button type="button" class="nobifashion_shop_products_content_list_empty_button" onclick="resetAllShopFilters()">
+                                        Khám phá tất cả sản phẩm
+                                    </button>
                                 </div>
                             @endif
 
@@ -451,6 +639,74 @@
                                 </div>
                             @endif
                         @endfragment
+                    </div>
+
+                    {{-- 4. Thanh Cam Kết Thương Hiệu (Brand Trust USP Bar) --}}
+                    <div class="shop_brand_usp_bar">
+                        <div class="shop_usp_item">
+                            <div class="shop_usp_icon">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="1" y="3" width="15" height="13" rx="2"/>
+                                    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+                                    <circle cx="5.5" cy="18.5" r="2.5"/>
+                                    <circle cx="18.5" cy="18.5" r="2.5"/>
+                                </svg>
+                            </div>
+                            <div class="shop_usp_text">
+                                <strong>Miễn phí vận chuyển</strong>
+                                <p>Cho mọi đơn hàng từ 299.000đ</p>
+                            </div>
+                        </div>
+
+                        <div class="shop_usp_item">
+                            <div class="shop_usp_icon">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                                    <path d="M3 3v5h5"/>
+                                    <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+                                    <path d="M16 16h5v5"/>
+                                </svg>
+                            </div>
+                            <div class="shop_usp_text">
+                                <strong>Đổi trả 15 ngày tận nơi</strong>
+                                <p>Đổi size miễn phí, shipper đến tận nhà</p>
+                            </div>
+                        </div>
+
+                        <div class="shop_usp_item">
+                            <div class="shop_usp_icon">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                    <path d="m9 12 2 2 4-4"/>
+                                </svg>
+                            </div>
+                            <div class="shop_usp_text">
+                                <strong>Đồng kiểm trước nhận hàng</strong>
+                                <p>Ưng ý mẫu mã mới thanh toán</p>
+                            </div>
+                        </div>
+
+                        <div class="shop_usp_item">
+                            <div class="shop_usp_icon">
+                                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="10"/>
+                                    <polyline points="12 6 12 12 16 14"/>
+                                </svg>
+                            </div>
+                            <div class="shop_usp_text">
+                                <strong>Bảo hành chính hãng 6 tháng</strong>
+                                <p>Đường may chắc chắn, cam kết chuẩn form</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- 5. Khối Sản phẩm vừa xem gần đây (Recently Viewed - Render bằng JS) --}}
+                    <div class="shop_recently_viewed_section" id="shopRecentlyViewedBox" style="display: none;">
+                        <div class="shop_recently_header">
+                            <h3 class="shop_recently_title">Sản phẩm bạn vừa xem</h3>
+                            <button type="button" class="shop_recently_clear" onclick="clearRecentlyViewed()">Xóa lịch sử xem</button>
+                        </div>
+                        <div class="shop_recently_grid" id="shopRecentlyViewedGrid"></div>
                     </div>
                 </div>
             </div>
