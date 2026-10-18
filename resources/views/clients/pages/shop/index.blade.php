@@ -447,7 +447,7 @@
 
                             @if (!empty($productsMain) && $productsMain->count() > 0)
                                 <div class="nobifashion_shop_products_content_pagination">
-                                    {{ $productsMain->links('pagination.custom') }}
+                                    {{ $productsMain->onEachSide(1)->links('pagination.custom') }}
                                 </div>
                             @endif
                         @endfragment

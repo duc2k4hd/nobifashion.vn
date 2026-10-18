@@ -3,6 +3,7 @@
     max-width: 1200px;
     height: auto;
     margin: 20px auto;
+    overflow-x: hidden;
 }
 
 .nobifashion_shop_breadcrumb {
@@ -739,19 +740,36 @@
 .nobifashion_shop_products_content_pagination {
     display: flex;
     justify-content: center;
-    margin: 1rem 0;
+    align-items: center;
+    margin: 1.5rem 0;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+
+.nobifashion_shop_products_content_pagination::-webkit-scrollbar {
+    display: none;
 }
 
 .nobifashion_shop_products_content_pagination .pagination {
-    display: flex;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    justify-content: center;
+    align-items: center;
     gap: 0.5rem;
     list-style: none;
     padding: 0;
     margin: 0;
+    flex-shrink: 0;
+    white-space: nowrap !important;
 }
 
 .nobifashion_shop_products_content_pagination .page-item {
-    flex: 0 0 auto;
+    flex: 0 0 auto !important;
+    display: inline-flex !important;
 }
 
 .nobifashion_shop_products_content_pagination .page-link {
@@ -768,6 +786,14 @@
     text-decoration: none;
     transition: all 0.3s ease;
     overflow: hidden;
+    flex-shrink: 0;
+}
+
+.nobifashion_shop_products_content_pagination .page-item-dots .page-link {
+    border-color: #cbd5e1 !important;
+    color: #64748b !important;
+    background: transparent !important;
+    cursor: default;
 }
 
 .nobifashion_shop_products_content_pagination .page-link svg {
@@ -1011,17 +1037,17 @@
 @media (max-width: 991px) {
     .nobifashion_shop {
         width: 95%;
-        margin: 6px auto 20px auto !important;
+        margin: 4px auto 14px auto !important;
     }
 
     .nobifashion_shop_breadcrumb {
-        margin: 6px 0 12px 0 !important;
+        margin: 4px 0 8px 0 !important;
     }
 
     .nobifashion_shop_products {
         grid-template-columns: 1fr;
         column-gap: 0;
-        row-gap: 20px;
+        row-gap: 14px;
         margin: 0 auto;
     }
 
@@ -1029,6 +1055,62 @@
         position: static;
         max-height: none;
         overflow-y: visible;
+        padding: 12px 10px;
+    }
+
+    .nobifashion_shop_products_content_pagination {
+        margin: 12px 0 8px 0 !important;
+    }
+
+    .nobifashion_shop_products_content_pagination .pagination {
+        gap: 6px;
+        flex-wrap: nowrap !important;
+    }
+
+    .nobifashion_shop_products_content_pagination .page-link {
+        width: 36px;
+        height: 36px;
+        font-size: 0.85rem;
+    }
+
+    .nobifashion_shop_products_content_pagination .page-link svg {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+@media (max-width: 480px) {
+    .nobifashion_shop {
+        width: 96%;
+        margin: 2px auto 10px auto !important;
+    }
+
+    .nobifashion_shop_products {
+        row-gap: 10px;
+    }
+
+    .nobifashion_shop_products_content_list {
+        gap: 8px !important;
+    }
+
+    .nobifashion_shop_products_content_pagination {
+        margin: 10px 0 6px 0 !important;
+    }
+
+    .nobifashion_shop_products_content_pagination .pagination {
+        gap: 4px;
+        flex-wrap: nowrap !important;
+    }
+
+    .nobifashion_shop_products_content_pagination .page-link {
+        width: 32px;
+        height: 32px;
+        font-size: 0.8rem;
+    }
+
+    .nobifashion_shop_products_content_pagination .page-link svg {
+        width: 16px;
+        height: 16px;
     }
 }
 
@@ -1672,39 +1754,146 @@
     margin-right: 4px;
 }
 
-/* Responsive Tablet & Mobile */
+/* Responsive Tablet & Mobile cho Khối SEO & Sidebar */
 @media (max-width: 991px) {
+    .nobifashion_shop_seo_section {
+        margin: 14px 0 16px 0 !important;
+        padding-top: 14px !important;
+    }
+
     .shop_seo_container {
         grid-template-columns: 1fr;
-        gap: 20px;
+        gap: 14px;
     }
 
     .shop_seo_main_card {
-        padding: 20px 18px;
+        padding: 16px 14px !important;
+        border-radius: 12px !important;
+    }
+
+    .shop_seo_content_wrapper {
+        max-height: 240px;
+    }
+
+    .shop_seo_fade {
+        height: 75px;
+    }
+
+    .shop_seo_toggle_box {
+        margin-top: 10px;
+    }
+
+    .shop_seo_toggle_btn {
+        padding: 7px 18px;
+        font-size: 13px;
     }
 
     .shop_seo_content_body {
-        font-size: 14.5px;
+        font-size: 14px;
     }
 
     .shop_seo_content_body h1 {
-        font-size: 1.3rem;
+        font-size: 1.25rem;
+        margin: 0 0 10px 0;
+        padding-bottom: 8px;
     }
 
     .shop_seo_content_body h2 {
-        font-size: 1.15rem;
-        padding: 6px 12px;
-        margin: 22px 0 12px 0;
+        font-size: 1.1rem;
+        padding: 5px 10px;
+        margin: 16px 0 8px 0;
     }
 
     .shop_seo_content_body h3 {
-        font-size: 1.05rem;
-        margin: 18px 0 8px 0;
+        font-size: 1rem;
+        margin: 14px 0 6px 0;
     }
 
     .shop_seo_content_body p {
-        font-size: 14.5px;
-        margin-bottom: 12px;
+        font-size: 14px;
+        margin-bottom: 10px;
+        line-height: 1.65;
+    }
+
+    .shop_seo_sidebar {
+        gap: 12px;
+    }
+
+    .shop_seo_perks_card,
+    .shop_seo_size_card {
+        padding: 14px 12px !important;
+        border-radius: 12px !important;
+    }
+
+    .perks_card_header,
+    .size_card_header {
+        margin-bottom: 10px;
+        padding-bottom: 8px;
+    }
+
+    .perks_list {
+        gap: 10px;
+    }
+
+    .perk_icon {
+        width: 32px;
+        height: 32px;
+    }
+
+    .perk_info strong {
+        font-size: 12.5px;
+    }
+
+    .perk_info p {
+        font-size: 11px;
+    }
+
+    .perks_hotline_box {
+        margin-top: 10px;
+        padding: 8px 10px;
+    }
+
+    .size_row {
+        padding: 6px 4px;
+        font-size: 12px;
+    }
+}
+
+@media (max-width: 480px) {
+    .nobifashion_shop_seo_section {
+        margin: 10px 0 12px 0 !important;
+        padding-top: 10px !important;
+    }
+
+    .shop_seo_container {
+        gap: 10px;
+    }
+
+    .shop_seo_main_card {
+        padding: 12px 10px !important;
+        border-radius: 10px !important;
+    }
+
+    .shop_seo_perks_card,
+    .shop_seo_size_card {
+        padding: 12px 10px !important;
+        border-radius: 10px !important;
+    }
+
+    .shop_seo_content_body h1 {
+        font-size: 1.15rem;
+    }
+
+    .shop_seo_content_body h2 {
+        font-size: 1.02rem;
+        padding: 4px 8px;
+        margin: 12px 0 6px 0;
+    }
+
+    .shop_seo_content_body p {
+        font-size: 13.5px;
+        line-height: 1.6;
+        margin-bottom: 8px;
     }
 }
 
