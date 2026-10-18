@@ -29,7 +29,7 @@
 @endsection
 
 @push('styles')
-    <link rel="stylesheet" href="{{ asset('clients/assets/css/blog.css?v=' . env('APP_VERSION')) }}">
+    <link rel="stylesheet" href="{{ asset('clients/assets/css/blog.min.css?v=' . (file_exists(public_path('clients/assets/css/blog.min.css')) ? filemtime(public_path('clients/assets/css/blog.min.css')) : env('APP_VERSION', '1.0.0')) ) }}">
 @endpush
 
 @section('schema')
@@ -164,11 +164,11 @@
                                     <span>{{ optional($post->published_at)->format('d/m/Y') }}</span>
                                 </div>
 
-                                <h3 class="nobifashion_blog_card_title">
+                                <h2 class="nobifashion_blog_card_title">
                                     <a href="{{ route('client.blog.show', $post) }}">
                                         {{ renderMeta($post->title) }}
                                     </a>
-                                </h3>
+                                </h2>
 
                                 <p class="nobifashion_blog_card_excerpt">{{ renderMeta($post->excerpt_text) }}</p>
 
@@ -223,7 +223,7 @@
             <aside class="nobifashion_blog_sidebar">
                 <!-- Categories -->
                 <div class="nobifashion_blog_sidebar_widget">
-                    <h3 class="nobifashion_blog_widget_title">Danh mục nổi bật</h3>
+                    <h2 class="nobifashion_blog_widget_title">Danh mục nổi bật</h2>
                     <ul class="nobifashion_blog_category_list">
                         @foreach ($sidebarCategories as $category)
                             <li class="nobifashion_blog_category_item">
@@ -242,7 +242,7 @@
                 <!-- Tags -->
                 @if ($sidebarTags->isNotEmpty())
                     <div class="nobifashion_blog_sidebar_widget">
-                        <h3 class="nobifashion_blog_widget_title">Hashtag nổi bật</h3>
+                        <h2 class="nobifashion_blog_widget_title">Hashtag nổi bật</h2>
                         <div class="nobifashion_blog_tag_cloud">
                             @foreach ($sidebarTags as $tag)
                                 <a href="{{ route('client.tags.show', $tag->slug) }}"
@@ -257,7 +257,7 @@
                 <!-- Recent Posts -->
                 @if ($recentPosts->isNotEmpty())
                     <div class="nobifashion_blog_sidebar_widget">
-                        <h3 class="nobifashion_blog_widget_title">Bài viết mới</h3>
+                        <h2 class="nobifashion_blog_widget_title">Bài viết mới</h2>
                         <ul class="nobifashion_blog_post_mini_list">
                             @foreach ($recentPosts as $recent)
                                 <li class="nobifashion_blog_post_mini_item">
@@ -277,7 +277,7 @@
                 <!-- Popular -->
                 @if ($popularPosts->isNotEmpty())
                     <div class="nobifashion_blog_sidebar_widget">
-                        <h3 class="nobifashion_blog_widget_title">Heatmap lượt xem</h3>
+                        <h2 class="nobifashion_blog_widget_title">Heatmap lượt xem</h2>
                         <ul class="nobifashion_blog_post_mini_list">
                             @foreach ($popularPosts as $popular)
                                 <li class="nobifashion_blog_post_mini_item">
