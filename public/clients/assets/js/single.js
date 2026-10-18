@@ -32,39 +32,60 @@
     let swipeOffset = 0;
     let isChangingImage = false;
 
-    // Collect all images
+    // Collect all full-resolution images (chỉ dùng ảnh gốc sắc nét, không dùng ảnh thumbnail resize)
     function initImages() {
         images = [];
-        const mainImage = document.querySelector('.nobifashion_single_info_images_main_image');
-        const galleryImages = document.querySelectorAll('.nobifashion_single_info_images_gallery_image');
         
+        // 1. Ưu tiên lấy từ danh sách thumbnail của lightbox (chứa data-src là link ảnh gốc chuẩn)
+        const lbThumbs = document.querySelectorAll('.nobifashion_lightbox_thumbnail');
+        if (lbThumbs.length > 0) {
+            lbThumbs.forEach((thumb, idx) => {
+                const fullSrc = thumb.dataset.src || thumb.getAttribute('data-src') || thumb.src;
+                images.push({
+                    src: fullSrc,
+                    alt: thumb.getAttribute('alt') || '',
+                    index: idx
+                });
+            });
+            return;
+        }
+
+        // 2. Dự phòng lấy từ gallery trang chi tiết
+        const galleryItems = document.querySelectorAll('.nobifashion_single_info_images_gallery_image');
+        if (galleryItems.length > 0) {
+            galleryItems.forEach((img, idx) => {
+                const fullSrc = img.dataset.src || img.getAttribute('data-src') || img.src;
+                images.push({
+                    src: fullSrc,
+                    alt: img.getAttribute('alt') || '',
+                    index: idx
+                });
+            });
+            return;
+        }
+
+        // 3. Dự phòng lấy từ ảnh chính
+        const mainImage = document.querySelector('.nobifashion_single_info_images_main_image');
         if (mainImage) {
+            const fullSrc = mainImage.dataset.defaultSrc || mainImage.getAttribute('data-default-src') || mainImage.src;
             images.push({
-                src: mainImage.getAttribute('src') || mainImage.getAttribute('data-default-src'),
-                alt: mainImage.getAttribute('alt') || ''
+                src: fullSrc,
+                alt: mainImage.getAttribute('alt') || '',
+                index: 0
             });
         }
-        
-        galleryImages.forEach(img => {
-            const src = img.getAttribute('src') || img.getAttribute('data-src');
-            if (src && !images.some(i => i.src === src)) {
-                images.push({
-                    src: src,
-                    alt: img.getAttribute('alt') || ''
-                });
-            }
-        });
     }
 
     // Open lightbox
     function openLightbox(index = 0) {
+        initImages();
         if (images.length === 0) return;
         
         currentIndex = Math.max(0, Math.min(index, images.length - 1));
-        updateImage();
         lightbox.classList.add('active');
         document.body.style.overflow = 'hidden';
         resetZoom();
+        updateImage(false);
     }
 
     // Close lightbox
@@ -72,56 +93,71 @@
         lightbox.classList.remove('active');
         document.body.style.overflow = '';
         resetZoom();
+
+        // Đồng bộ ảnh đang xem trong lightbox ra ngoài ảnh chính ngoài trang
+        const pageGallery = document.querySelectorAll('.nobifashion_single_info_images_gallery_image');
+        if (pageGallery[currentIndex] && typeof setActiveGalleryImage === 'function') {
+            setActiveGalleryImage(pageGallery[currentIndex], { behavior: 'smooth', align: 'center' });
+        }
     }
 
     // Update displayed image with smooth transition
     function updateImage(animate = true) {
         if (!lightboxImage || !images[currentIndex] || isChangingImage) return;
         
-        isChangingImage = true;
-        
-        if (animate && lightboxImage.src) {
-            // Fade out
-            lightboxImage.style.opacity = '0';
-            lightboxImage.style.transform = 'scale(0.95)';
+        const targetImage = images[currentIndex];
+
+        // Cập nhật thumbnail active & cuộn êm mượt vào giữa
+        const allLbThumbs = document.querySelectorAll('.nobifashion_lightbox_thumbnail');
+        allLbThumbs.forEach((thumb, idx) => {
+            const isActive = (idx === currentIndex);
+            thumb.classList.toggle('active', isActive);
+            if (isActive) {
+                thumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+            }
+        });
+
+        if (animate && lightboxImage.getAttribute('src')) {
+            isChangingImage = true;
             
-            setTimeout(() => {
-                // Change image
-                lightboxImage.src = images[currentIndex].src;
-                lightboxImage.alt = images[currentIndex].alt || '';
-                if (lightboxDownload) {
-                    lightboxDownload.href = images[currentIndex].src;
-                    lightboxDownload.download = images[currentIndex].src.split('/').pop();
-                }
+            // Animation fade out và scale nhẹ tinh tế
+            lightboxImage.style.transition = 'opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1)';
+            lightboxImage.style.opacity = '0';
+            lightboxImage.style.transform = 'scale(0.96)';
+            
+            const preloader = new Image();
+            preloader.onload = preloader.onerror = function() {
+                lightboxImage.src = targetImage.src;
+                lightboxImage.alt = targetImage.alt || '';
                 
-                // Update thumbnails
-                lightboxThumbnails.forEach((thumb, index) => {
-                    thumb.classList.toggle('active', index === currentIndex);
-                });
+                if (lightboxDownload) {
+                    lightboxDownload.href = targetImage.src;
+                    lightboxDownload.download = targetImage.src.split('/').pop();
+                }
                 
                 resetZoom();
                 
-                // Fade in
-                setTimeout(() => {
+                requestAnimationFrame(() => {
                     lightboxImage.style.opacity = '1';
                     lightboxImage.style.transform = 'scale(1)';
-                    isChangingImage = false;
-                }, 50);
-            }, 150);
+                    setTimeout(() => {
+                        isChangingImage = false;
+                    }, 200);
+                });
+            };
+            preloader.src = targetImage.src;
         } else {
-            // No animation for first load
-            lightboxImage.src = images[currentIndex].src;
-            lightboxImage.alt = images[currentIndex].alt || '';
+            // Lần đầu mở lightbox
+            lightboxImage.src = targetImage.src;
+            lightboxImage.alt = targetImage.alt || '';
             if (lightboxDownload) {
-                lightboxDownload.href = images[currentIndex].src;
-                lightboxDownload.download = images[currentIndex].src.split('/').pop();
+                lightboxDownload.href = targetImage.src;
+                lightboxDownload.download = targetImage.src.split('/').pop();
             }
             
-            lightboxThumbnails.forEach((thumb, index) => {
-                thumb.classList.toggle('active', index === currentIndex);
-            });
-            
             resetZoom();
+            lightboxImage.style.opacity = '1';
+            lightboxImage.style.transform = 'scale(1)';
             isChangingImage = false;
         }
     }
@@ -229,9 +265,14 @@
         if (mainImage) {
             mainImage.addEventListener('click', function() {
                 initImages();
-                const mainSrc = this.getAttribute('src') || this.getAttribute('data-default-src');
-                const index = images.findIndex(img => img.src === mainSrc);
-                openLightbox(index >= 0 ? index : 0);
+                const activeThumb = document.querySelector('.nobifashion_single_info_images_gallery_image_active');
+                let targetIdx = 0;
+                if (activeThumb) {
+                    const galleryList = Array.from(document.querySelectorAll('.nobifashion_single_info_images_gallery_image'));
+                    const found = galleryList.indexOf(activeThumb);
+                    if (found >= 0) targetIdx = found;
+                }
+                openLightbox(targetIdx);
             });
         }
 
@@ -578,23 +619,44 @@ function scrollGalleryThumbIntoView(activeThumb, options = {}) {
 }
 
 function setActiveGalleryImage(activeThumb, options = {}) {
-    if (!activeThumb) {
+    if (!activeThumb || !mainIMG) {
         return;
     }
 
     const newSrc = activeThumb.dataset.src || activeThumb.src;
-    if (newSrc && mainIMG) {
-        mainIMG.setAttribute("src", newSrc);
-        mainIMG.setAttribute("alt", activeThumb.getAttribute("alt") || mainIMG.getAttribute("alt") || "");
-        mainIMG.setAttribute("title", activeThumb.getAttribute("title") || mainIMG.getAttribute("title") || "");
-    }
+    if (!newSrc) return;
 
+    // Highlight thumbnail ngay lập tức
     galleryImages.forEach((img) =>
         img.classList.remove("nobifashion_single_info_images_gallery_image_active")
     );
-
     activeThumb.classList.add("nobifashion_single_info_images_gallery_image_active");
     scrollGalleryThumbIntoView(activeThumb, options);
+
+    // Nếu ảnh to đang hiển thị đúng ảnh này và không còn srcset thì không cần animation lại
+    if (mainIMG.getAttribute("src") === newSrc && !mainIMG.hasAttribute("srcset")) {
+        return;
+    }
+
+    // Animation chuyển ảnh to mượt mà: fade out nhẹ & scale nhẹ
+    mainIMG.style.transition = "opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1), transform 0.22s cubic-bezier(0.4, 0, 0.2, 1)";
+    mainIMG.style.opacity = "0.35";
+    mainIMG.style.transform = "scale(0.975)";
+
+    const preloader = new Image();
+    preloader.onload = preloader.onerror = function() {
+        // Quan trọng: xóa srcset để trình duyệt không ép hiển thị ảnh cũ
+        mainIMG.removeAttribute("srcset");
+        mainIMG.setAttribute("src", newSrc);
+        mainIMG.setAttribute("alt", activeThumb.getAttribute("alt") || mainIMG.getAttribute("alt") || "");
+        mainIMG.setAttribute("title", activeThumb.getAttribute("title") || mainIMG.getAttribute("title") || "");
+        
+        requestAnimationFrame(() => {
+            mainIMG.style.opacity = "1";
+            mainIMG.style.transform = "scale(1)";
+        });
+    };
+    preloader.src = newSrc;
 }
 
 galleryImages.forEach((img) => {
@@ -604,7 +666,8 @@ galleryImages.forEach((img) => {
 });
 
 if (galleryArrow && galleryImages.length > 1) {
-    galleryArrow.addEventListener("click", () => {
+    galleryArrow.addEventListener("click", (e) => {
+        e.stopPropagation();
         const items = Array.from(galleryImages);
         const currentIndex = items.findIndex((img) =>
             img.classList.contains("nobifashion_single_info_images_gallery_image_active")
@@ -613,7 +676,7 @@ if (galleryArrow && galleryImages.length > 1) {
             ? (currentIndex + 1) % items.length
             : 0;
 
-        setActiveGalleryImage(items[nextIndex], { behavior: "smooth", align: "start" });
+        setActiveGalleryImage(items[nextIndex], { behavior: "smooth", align: "center" });
     });
 }
 

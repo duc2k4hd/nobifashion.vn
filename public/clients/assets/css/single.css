@@ -152,6 +152,8 @@ img.nobifashion_single_info_images_main_image.nobifashion_single_image_clickable
     max-height: 600px;
     object-fit: cover;
     border-radius: 12px;
+    transition: opacity 0.22s cubic-bezier(0.4, 0, 0.2, 1), transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    will-change: opacity, transform;
 }
 
 .nobifashion_single_info_gallery_arrow {
@@ -2676,14 +2678,13 @@ img.nobifashion_single_info_images_main_image.nobifashion_single_image_clickable
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-        opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+        opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: grab;
     user-select: none;
     -webkit-user-drag: none;
     will-change: transform, opacity;
     opacity: 1;
-    aspect-ratio: 3/4;
 }
 
 .nobifashion_lightbox_image:active {
@@ -2788,25 +2789,26 @@ img.nobifashion_single_info_images_main_image.nobifashion_single_image_clickable
 }
 
 .nobifashion_lightbox_thumbnail {
-    width: 60px;
-    height: 60px;
+    width: 54px;
+    height: 72px;
     object-fit: cover;
     border-radius: 6px;
     cursor: pointer;
-    opacity: 0.6;
-    transition: all 0.3s ease;
+    opacity: 0.55;
+    transition: all 0.22s ease;
     border: 2px solid transparent;
 }
 
 .nobifashion_lightbox_thumbnail:hover {
-    opacity: 1;
-    transform: scale(1.1);
+    opacity: 0.9;
+    transform: scale(1.06);
 }
 
 .nobifashion_lightbox_thumbnail.active {
     opacity: 1;
-    border-color: var(--primary-color);
-    transform: scale(1.15);
+    border-color: #ffffff;
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.45);
+    transform: scale(1.1);
 }
 
 .nobifashion_single_image_clickable {
