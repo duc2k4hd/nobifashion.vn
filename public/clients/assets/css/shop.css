@@ -3,7 +3,6 @@
     max-width: 1200px;
     height: auto;
     margin: 20px auto;
-    overflow-x: hidden;
 }
 
 .nobifashion_shop_breadcrumb {
@@ -82,11 +81,17 @@
     flex-direction: column;
     gap: 16px;
     transition: all 0.3s ease;
+    position: -webkit-sticky;
     position: sticky;
     top: 80px;
     height: fit-content;
-    overflow: visible;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
     box-sizing: border-box;
+    z-index: 10;
 }
 
 /* Triệt tiêu thanh cuộn ngang */
@@ -1756,6 +1761,17 @@
 
 /* Responsive Tablet & Mobile cho Khối SEO & Sidebar */
 @media (max-width: 991px) {
+    .nobifashion_shop {
+        overflow-x: hidden;
+    }
+
+    .nobifashion_shop_products_filter {
+        position: static !important;
+        top: auto !important;
+        max-height: none !important;
+        overflow-y: visible !important;
+    }
+
     .nobifashion_shop_seo_section {
         margin: 14px 0 16px 0 !important;
         padding-top: 14px !important;
