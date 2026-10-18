@@ -63,8 +63,24 @@
     <div class="nobifashion_home_dialog_shell nobifashion_menu_drawer_shell">
         <div class="nobifashion_home_dialog_header nobifashion_home_container">
             <div class="nobifashion_menu_header_left">
-                <span class="nobifashion_menu_logo_brand">NOBI FASHION</span>
-                <span class="nobifashion_menu_subtitle">MENU &amp; DANH MỤC</span>
+                @php
+                    $menuLogoFile = ($settings->site_logo ?? null) ?: 'nobifashion-logo.png';
+                    $menuLogoWebp = pathinfo($menuLogoFile, PATHINFO_FILENAME) . '.webp';
+                    $menuBusinessDir = public_path('clients/assets/img/business');
+                    $menuWebpPath = $menuBusinessDir . DIRECTORY_SEPARATOR . $menuLogoWebp;
+                    $finalMenuLogo = file_exists($menuWebpPath) ? $menuLogoWebp : $menuLogoFile;
+                @endphp
+                <a href="/" class="nobifashion_menu_logo_link" aria-label="Trang chủ Nobi Fashion">
+                    <img class="nobifashion_menu_logo_img"
+                        src="{{ asset('clients/assets/img/business/' . $finalMenuLogo) }}"
+                        alt="Shop {{ renderMeta($settings->subname ?? 'Nobi Fashion') }}"
+                        title="Shop {{ renderMeta($settings->site_name ?? 'Nobi Fashion') }}"
+                        width="120" height="38">
+                </a>
+                <div class="nobifashion_menu_title_group">
+                    <span class="nobifashion_menu_logo_brand">{{ renderMeta($settings->site_name ?? 'NOBI FASHION') }}</span>
+                    <span class="nobifashion_menu_subtitle">MENU &amp; DANH MỤC</span>
+                </div>
             </div>
             <button class="nobifashion_home_icon_button nobifashion_modal_close_btn" type="button" aria-label="Đóng menu" data-nobifashion-close autofocus>
                 <svg class="nobifashion_home_icon" viewbox="0 0 24 24" aria-hidden="true">

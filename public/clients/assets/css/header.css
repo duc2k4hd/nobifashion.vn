@@ -383,32 +383,60 @@ svg.nobifashion_home_icon_solid,
    4. MENU DRAWER / TABS & ACCORDION (HEADER MODAL MENU)
    -------------------------------------------------------------------------- */
 .nobifashion_mobile_menu_dialog .nobifashion_home_dialog_shell {
-    max-height: 92vh;
-    border-top-left-radius: 0 !important;
-    border-top-right-radius: 0 !important;
-    border-bottom-left-radius: 20px !important;
-    border-bottom-right-radius: 20px !important;
+    max-height: 100vh;
+    border-radius: 0 !important;
     background: #ffffff;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 }
 
 .nobifashion_menu_header_left {
     display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.nobifashion_menu_logo_link {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    text-decoration: none !important;
+}
+
+.nobifashion_menu_logo_img {
+    height: 38px;
+    width: auto;
+    max-height: 38px;
+    max-width: 130px;
+    object-fit: contain;
+    display: block;
+}
+
+.nobifashion_menu_title_group {
+    display: flex;
     flex-direction: column;
+    justify-content: center;
+    border-left: 1px solid #e5e5e5;
+    padding-left: 12px;
+    min-width: 0;
 }
 
 .nobifashion_menu_logo_brand {
-    font-size: 17px;
+    font-size: 15px;
     font-weight: 800;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.04em;
     color: #111111;
+    line-height: 1.2;
+    white-space: nowrap;
 }
 
 .nobifashion_menu_subtitle {
-    font-size: 11px;
+    font-size: 10.5px;
     font-weight: 600;
     color: #888888;
     letter-spacing: 0.08em;
+    line-height: 1.2;
+    white-space: nowrap;
 }
 
 .nobifashion_menu_body_content {
@@ -504,14 +532,12 @@ svg.nobifashion_home_icon_solid,
     margin-bottom: 8px;
 }
 
-.nobifashion_home_tab[aria-current="page"]::after,
-.nobifashion_home_tab[aria-selected="true"]::after,
-.nobifashion_menu_tab_item[aria-selected="true"]::after {
-    content: "";
-    position: absolute;
-    inset: auto 0 0;
-    height: 2px;
-    background: currentColor;
+/* Bỏ gạch chân ở các pill tabs trong menu drawer */
+.nobifashion_home_menu_tab::after,
+.nobifashion_menu_tab_item::after,
+.nobifashion_menu_tabs_bar .nobifashion_home_tab::after {
+    display: none !important;
+    content: none !important;
 }
 
 .nobifashion_home_menu_tabs,
@@ -1134,8 +1160,6 @@ svg.nobifashion_home_icon_solid,
     .nobifashion_home_dialog_shell,
     .nobifashion_home_dialog[open] .nobifashion_home_dialog_shell,
     .nobifashion_mobile_menu_dialog[open] .nobifashion_home_dialog_shell {
-        border-top-left-radius: 0 !important;
-        border-top-right-radius: 0 !important;
         margin-top: 0 !important;
     }
 }
@@ -1204,6 +1228,27 @@ svg.nobifashion_home_icon_solid,
 
     .nobifashion_home_dialog_header {
         min-height: 56px;
+    }
+
+    .nobifashion_menu_header_left {
+        gap: 8px;
+    }
+
+    .nobifashion_menu_logo_img {
+        height: 32px;
+        max-width: 105px;
+    }
+
+    .nobifashion_menu_title_group {
+        padding-left: 8px;
+    }
+
+    .nobifashion_menu_logo_brand {
+        font-size: 13.5px;
+    }
+
+    .nobifashion_menu_subtitle {
+        font-size: 9.5px;
     }
 
     .nobifashion_home_dialog_title {
