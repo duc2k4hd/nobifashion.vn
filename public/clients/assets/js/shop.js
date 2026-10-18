@@ -702,18 +702,30 @@ function initSubcategoriesSlider() {
         });
     }
 
-    // Kéo trượt bằng chuột trên Desktop (Mouse Drag-to-Scroll)
+    // Chặn triệt để hành vi kéo bóng mờ mặc định của trình duyệt (HTML5 Ghost Link/Image Drag)
+    slider.addEventListener('dragstart', function (e) {
+        e.preventDefault();
+        return false;
+    });
+
+    slider.querySelectorAll('a, img').forEach(function (el) {
+        el.setAttribute('draggable', 'false');
+        el.addEventListener('dragstart', function (e) {
+            e.preventDefault();
+            return false;
+        });
+    });
+
+    // Kéo trượt bằng chuột trên Desktop mượt mà không bị kéo link ra ngoài
     let isDown = false;
     let startX = 0;
     let scrollStart = 0;
     let hasDragged = false;
 
     slider.addEventListener('mousedown', function (e) {
-        // Chỉ nhận chuột trái
         if (e.button !== 0) return;
         isDown = true;
         hasDragged = false;
-        slider.classList.add('is-dragging');
         startX = e.pageX - slider.offsetLeft;
         scrollStart = slider.scrollLeft;
     });
@@ -722,20 +734,23 @@ function initSubcategoriesSlider() {
         if (!isDown) return;
         isDown = false;
         slider.classList.remove('is-dragging');
-        setTimeout(() => { hasDragged = false; }, 50);
+        setTimeout(() => { hasDragged = false; }, 80);
     });
 
     slider.addEventListener('mousemove', function (e) {
         if (!isDown) return;
         const x = e.pageX - slider.offsetLeft;
         const walk = (x - startX);
-        if (Math.abs(walk) > 4) {
+        if (Math.abs(walk) > 6) {
             hasDragged = true;
+            slider.classList.add('is-dragging');
         }
-        slider.scrollLeft = scrollStart - walk;
+        if (hasDragged) {
+            slider.scrollLeft = scrollStart - walk;
+        }
     });
 
-    // Chặn click vào link nếu vừa kéo chuột
+    // Chặn click vào link nếu người dùng vừa thực hiện thao tác kéo trượt
     slider.addEventListener('click', function (e) {
         if (hasDragged) {
             e.preventDefault();

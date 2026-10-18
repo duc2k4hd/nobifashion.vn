@@ -137,12 +137,14 @@
                             @if (($subCat->products_count ?? 0) > 0)
                                 <a href="/{{ $subCat->slug }}"
                                    class="shop_subcat_pill {{ ($category && $category->id === $subCat->id) || request()->segment(1) === $subCat->slug ? 'shop_subcat_pill_active' : '' }}"
-                                   title="{{ $subCat->name }} ({{ $subCat->products_count }} sản phẩm)">
+                                   title="{{ $subCat->name }} ({{ $subCat->products_count }} sản phẩm)"
+                                   draggable="false">
                                     @if (!empty($subCat->image))
                                         <span class="shop_subcat_avatar">
                                             <img src="{{ asset('clients/assets/img/categories/' . $subCat->image) }}"
                                                  alt="{{ $subCat->name }}"
                                                  loading="lazy"
+                                                 draggable="false"
                                                  onerror="this.onerror=null;this.src='{{ asset('clients/assets/img/no-image.webp') }}';">
                                         </span>
                                     @endif
