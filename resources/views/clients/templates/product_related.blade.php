@@ -11,19 +11,23 @@
             @foreach ($productRelated as $related)
                 <!-- Item -->
                 <div class="nobifashion_single_product_related_item">
-                    <a href="/san-pham/{{ $related->slug ?? '' }}" class="nobifashion_single_product_related_img">
+                    <a href="/san-pham/{{ $related->slug ?? '' }}" class="nobifashion_single_product_related_img {{ $related->secondaryImage && !empty($related->secondaryImage->url) ? 'has_secondary' : '' }}">
                         @php
                             $relImg = $related->primaryImage->url ?? 'no-image.webp';
+                            $secImg = $related->secondaryImage->url ?? null;
                         @endphp
-                        <img loading="lazy" decoding="async" src="{{ route('client.clothes.thumb', ['size' => '180x240', 'filename' => $relImg]) }}" width="180" height="240" alt="{{ $related->name }}">
+                        <img class="nobifashion_single_product_related_img_main" loading="lazy" decoding="async" src="{{ route('client.clothes.thumb', ['size' => '180x240', 'filename' => $relImg]) }}" width="180" height="240" alt="{{ $related->name }}" onerror="this.onerror=null;this.src='{{ asset('clients/assets/img/no-image.webp') }}';">
+                        @if($secImg)
+                            <img class="nobifashion_single_product_related_img_secondary" loading="lazy" decoding="async" src="{{ route('client.clothes.thumb', ['size' => '180x240', 'filename' => $secImg]) }}" width="180" height="240" alt="{{ $related->secondaryImage->alt ?? $related->name }}" onerror="this.style.display='none';">
+                        @endif
                         @if($related->is_featured)
                             <span class="nobifashion_single_product_related_badge">Hot</span>
-                        @elseif($related->created_at->diffInDays(now()) <= 30)
+                        @elseif($related->created_at && $related->created_at->diffInDays(now()) <= 30)
                             <span class="nobifashion_single_product_related_badge">New</span>
                         @endif
                     </a>
                     <div class="nobifashion_single_product_related_info">
-                        <a href="/san-pham/{{ $related->slug ?? '' }}" class="nobifashion_single_product_related_name">{{ $related->name }}</a>
+                        <a href="/san-pham/{{ $related->slug ?? '' }}" class="nobifashion_single_product_related_name" title="{{ $related->name }}">{{ $related->name }}</a>
                         <p class="nobifashion_single_product_related_price">{{ number_format($related?->sale_price ?? $related?->price ?? 0, 0, ',', '.') }}đ</p>
                     </div>
                 </div>

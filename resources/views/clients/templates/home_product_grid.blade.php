@@ -28,6 +28,14 @@
         ];
         $totalFallbacks = count($curatedFallbackImages);
         $clothesDir = public_path('clients/assets/img/clothes/');
+        $getThumbUrl = function($imgUrl, $size = '325x434') {
+            if (!$imgUrl) return asset('clients/assets/img/no-image.webp');
+            if (str_starts_with($imgUrl, 'http') && !str_contains($imgUrl, 'clients/assets/img/clothes/') && !str_contains($imgUrl, 'nobifashion.vn') && !str_contains($imgUrl, 'localhost') && !str_contains($imgUrl, '127.0.0.1')) {
+                return $imgUrl;
+            }
+            $filename = basename(parse_url($imgUrl, PHP_URL_PATH) ?? $imgUrl);
+            return route('client.clothes.thumb', ['size' => $size, 'filename' => $filename]);
+        };
     @endphp
     <section class="nobifashion_home_products" data-nobifashion-tone="light" aria-label="Sản phẩm gợi ý">
         <div class="nobifashion_home_product_grid">
@@ -84,13 +92,25 @@
                     <div class="nobifashion_home_product_gallery" tabindex="0" aria-label="Ảnh {{ $product->name }}">
                         <a class="nobifashion_home_product_gallery_link"
                             href="{{ url('/san-pham/' . $product->slug) }}">
+                            @php
+                                $primaryThumb325 = $getThumbUrl($primaryImgUrl, '325x434');
+                                $primaryThumb500 = $getThumbUrl($primaryImgUrl, '500x667');
+                            @endphp
                             <img class="nobifashion_home_product_image nobifashion_home_product_image_primary"
-                                src="{{ $primaryImgUrl }}"
-                                alt="{{ $product->name }}" width="750" height="1000" loading="lazy" decoding="async">
+                                src="{{ $primaryThumb325 }}"
+                                srcset="{{ $primaryThumb325 }} 325w, {{ $primaryThumb500 }} 500w"
+                                sizes="(max-width: 640px) 180px, (max-width: 1024px) 280px, 325px"
+                                alt="{{ $product->name }}" width="325" height="434" loading="lazy" decoding="async">
                             @if ($secondaryImgUrl)
+                                @php
+                                    $secThumb325 = $getThumbUrl($secondaryImgUrl, '325x434');
+                                    $secThumb500 = $getThumbUrl($secondaryImgUrl, '500x667');
+                                @endphp
                                 <img class="nobifashion_home_product_image nobifashion_home_product_image_secondary"
-                                    src="{{ $secondaryImgUrl }}"
-                                    alt="{{ $product->name }} góc nhìn khác" width="750" height="1000" loading="lazy" decoding="async" aria-hidden="true">
+                                    src="{{ $secThumb325 }}"
+                                    srcset="{{ $secThumb325 }} 325w, {{ $secThumb500 }} 500w"
+                                    sizes="(max-width: 640px) 180px, (max-width: 1024px) 280px, 325px"
+                                    alt="{{ $product->name }} góc nhìn khác" width="325" height="434" loading="lazy" decoding="async" aria-hidden="true">
                             @endif
                         </a>
 
@@ -129,7 +149,7 @@
 
                         {{-- Nút Xem Nhanh trượt lên mượt mà --}}
                         <div class="nobifashion_home_product_quick_action">
-                            <a href="{{ url('/san-pham/' . $product->slug) }}" class="nobifashion_home_quick_btn" title="Xem chi tiết {{ $product->name }}">
+                            <a href="{{ url('/san-pham/' . $product->slug) }}" class="nobifashion_home_quick_btn" title="Xem chi tiết {{ $product->name }}" aria-label="Xem chi tiết: {{ $product->name }}">
                                 <span>Xem Chi Tiết</span>
                                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                     <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -153,7 +173,7 @@
                                         @php
                                             $colorName = $variant->attributes['color'] ?? '';
                                         @endphp
-                                        <button class="nobifashion_home_swatch" type="button" aria-label="{{ $colorName }}"
+                                        <button class="nobifashion_home_swatch" type="button" aria-label="Màu {{ $colorName }} cho {{ $product->name }}"
                                             aria-pressed="{{ $vIndex === 0 ? 'true' : 'false' }}" data-nobifashion-color="{{ $colorName }}"
                                             data-nobifashion-images='@json($imageUrls)'>
                                             <span class="nobifashion_home_swatch_dot" title="{{ $colorName }}" style="display:inline-block;width:12px;height:12px;border-radius:50%;border:1px solid #ddd;background-color: #222;"></span>

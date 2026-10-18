@@ -80,7 +80,7 @@ class ProductDetailController extends Controller
             ];
         });
 
-        $productRelated = Cache::remember("product-detail:related:{$product->id}:v1", now()->addMinutes(10), function () use ($product) {
+        $productRelated = Cache::remember("product-detail:related:{$product->id}:v2", now()->addMinutes(10), function () use ($product) {
             return Product::query()->related($product);
         });
 

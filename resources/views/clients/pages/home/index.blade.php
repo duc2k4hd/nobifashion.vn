@@ -5,7 +5,7 @@
 @section('title', renderMeta(optional($settings)->site_title ?? (optional($settings)->site_name ?? 'NOBI FASHION - Thời trang hiện đại & Tinh tế')))
 
 @section('head')
-    <link rel="stylesheet" href="{{ asset('clients/assets/css/home.css') }}?v={{ filemtime(public_path('clients/assets/css/home.css')) }}">
+    <link rel="stylesheet" href="{{ asset('clients/assets/css/home.min.css') }}?v={{ filemtime(public_path('clients/assets/css/home.min.css')) }}">
     <meta name="robots" content="follow, index, max-snippet:-1, max-video-preview:-1, max-image-preview:large" />
     <meta name="keywords" content="{{ $settings->seo_keywords ?? 'NOBI FASHION, quần áo, phụ kiện, thời trang nam nữ, áo khoác, quần jean' }}">
     <meta name="description"
@@ -14,7 +14,7 @@
 @endsection
 
 @section('foot')
-    <script defer src="{{ asset('clients/assets/js/home.js') }}?v={{ filemtime(public_path('clients/assets/js/home.js')) }}"></script>
+    <script defer src="{{ asset('clients/assets/js/home.min.js') }}?v={{ filemtime(public_path('clients/assets/js/home.min.js')) }}"></script>
 @endsection
 
 @section('schema')
@@ -34,7 +34,7 @@
                 <div class="nobifashion_home_hero_slide nobifashion_home_hero_slide_active" data-nobifashion-slide="0">
                     <div class="nobifashion_home_hero_media">
                         <picture class="nobifashion_home_hero_picture">
-                            <source media="(max-width: 768px)" srcset="{{ asset('clients/assets/img/banners/phoi-do-mua-dong.webp') }}">
+                            <source media="(max-width: 768px)" srcset="{{ asset('clients/assets/img/banners/phoi-do-mua-dong-mobile.webp') }}">
                             <img class="nobifashion_home_hero_img"
                                  src="{{ asset('clients/assets/img/banners/phoi-do-mua-dong.webp') }}"
                                  alt="Bộ Sưu Tập Thu Đông - NOBI FASHION"
@@ -76,7 +76,7 @@
                 <div class="nobifashion_home_hero_slide" data-nobifashion-slide="1">
                     <div class="nobifashion_home_hero_media">
                         <picture class="nobifashion_home_hero_picture">
-                            <source media="(max-width: 768px)" srcset="{{ asset('clients/assets/img/banners/bo-suu-tap-quan-jeans.webp') }}">
+                            <source media="(max-width: 768px)" srcset="{{ asset('clients/assets/img/banners/bo-suu-tap-quan-jeans-mobile.webp') }}">
                             <img class="nobifashion_home_hero_img"
                                  src="{{ asset('clients/assets/img/banners/bo-suu-tap-quan-jeans.webp') }}"
                                  alt="Bộ sưu tập quần Jeans - NOBI FASHION"
@@ -108,7 +108,7 @@
                 <div class="nobifashion_home_hero_slide" data-nobifashion-slide="2">
                     <div class="nobifashion_home_hero_media">
                         <picture class="nobifashion_home_hero_picture">
-                            <source media="(max-width: 768px)" srcset="{{ asset('clients/assets/img/banners/bo-suu-tap-ao-khoac-gio.webp') }}">
+                            <source media="(max-width: 768px)" srcset="{{ asset('clients/assets/img/banners/bo-suu-tap-ao-khoac-gio-mobile.webp') }}">
                             <img class="nobifashion_home_hero_img"
                                  src="{{ asset('clients/assets/img/banners/bo-suu-tap-ao-khoac-gio.webp') }}"
                                  alt="Áo khoác gió thời thượng - NOBI FASHION"
@@ -261,9 +261,12 @@
                     <article class="nobifashion_home_dept_card nobifashion_home_dept_card_large">
                         <a href="{{ url('/thoi-trang-nam') }}" class="nobifashion_home_dept_card_inner" title="Thời Trang Nam">
                             <div class="nobifashion_home_dept_media">
-                                <img src="{{ asset('clients/assets/img/banners/bo-suu-tap-ao-khoac-gio.webp') }}"
-                                     alt="Thời trang Nam - NOBI FASHION"
-                                     width="800" height="960" loading="lazy" decoding="async">
+                                <picture>
+                                    <source media="(max-width: 768px)" srcset="{{ asset('clients/assets/img/banners/bo-suu-tap-ao-khoac-gio-mobile.webp') }}">
+                                    <img src="{{ asset('clients/assets/img/banners/bo-suu-tap-ao-khoac-gio.webp') }}"
+                                         alt="Thời trang Nam - NOBI FASHION"
+                                         width="800" height="450" loading="lazy" decoding="async">
+                                </picture>
                                 <div class="nobifashion_home_dept_overlay"></div>
                             </div>
                             <div class="nobifashion_home_dept_info">
@@ -285,9 +288,12 @@
                     <article class="nobifashion_home_dept_card nobifashion_home_dept_card_medium">
                         <a href="{{ url('/thoi-trang-nu') }}" class="nobifashion_home_dept_card_inner" title="Thời Trang Nữ">
                             <div class="nobifashion_home_dept_media">
-                                <img src="{{ asset('clients/assets/img/banners/ao-len-nu.webp') }}"
-                                     alt="Thời trang Nữ - NOBI FASHION"
-                                     width="800" height="600" loading="lazy" decoding="async">
+                                <picture>
+                                    <source media="(max-width: 768px)" srcset="{{ asset('clients/assets/img/banners/ao-len-nu-mobile.webp') }}">
+                                    <img src="{{ asset('clients/assets/img/banners/ao-len-nu.webp') }}"
+                                         alt="Thời trang Nữ - NOBI FASHION"
+                                         width="800" height="450" loading="lazy" decoding="async">
+                                </picture>
                                 <div class="nobifashion_home_dept_overlay"></div>
                             </div>
                             <div class="nobifashion_home_dept_info">
@@ -309,9 +315,12 @@
                     <article class="nobifashion_home_dept_card nobifashion_home_dept_card_small">
                         <a href="{{ url('/do-gia-dung') }}" class="nobifashion_home_dept_card_inner" title="Thể Thao & Tiện Ích">
                             <div class="nobifashion_home_dept_media">
-                                <img src="{{ asset('clients/assets/img/banners/do-chay-bo.webp') }}"
-                                     alt="Thể thao & Phụ kiện - NOBI FASHION"
-                                     width="800" height="600" loading="lazy" decoding="async">
+                                <picture>
+                                    <source media="(max-width: 768px)" srcset="{{ asset('clients/assets/img/banners/do-chay-bo-mobile.webp') }}">
+                                    <img src="{{ asset('clients/assets/img/banners/do-chay-bo.webp') }}"
+                                         alt="Thể thao & Phụ kiện - NOBI FASHION"
+                                         width="800" height="450" loading="lazy" decoding="async">
+                                </picture>
                                 <div class="nobifashion_home_dept_overlay"></div>
                             </div>
                             <div class="nobifashion_home_dept_info">
@@ -424,10 +433,10 @@
                     <div class="nobifashion_home_lookbook_feature">
                         <div class="nobifashion_home_lookbook_visual">
                             <picture>
-                                <source media="(max-width: 768px)" srcset="{{ asset('clients/assets/img/banners/ky-niem-mua-dong-2026.webp') }}">
+                                <source media="(max-width: 768px)" srcset="{{ asset('clients/assets/img/banners/ky-niem-mua-dong-2026-mobile.webp') }}">
                                 <img src="{{ asset('clients/assets/img/banners/ky-niem-mua-dong-2026.webp') }}"
                                      alt="Lookbook Thu Đông 2026 - NOBI FASHION"
-                                     width="900" height="1200" loading="lazy" decoding="async">
+                                     width="800" height="450" loading="lazy" decoding="async">
                             </picture>
                             <div class="nobifashion_home_lookbook_tagline">
                                 <span>LOOKBOOK #04</span>

@@ -29,7 +29,8 @@ class MinifyAssetsCommand extends Command
             'public/clients/assets/css/blog-detail.css' => 'public/clients/assets/css/blog-detail.min.css',
             'public/clients/assets/css/responsive.css' => 'public/clients/assets/css/responsive.min.css',
             'public/clients/assets/css/author.css' => 'public/clients/assets/css/author.min.css',
-            'public/clients/assets/css/single.css' => 'public/clients/assets/css/single.min.css'
+            'public/clients/assets/css/single.css' => 'public/clients/assets/css/single.min.css',
+            'public/clients/assets/css/home.css' => 'public/clients/assets/css/home.min.css'
         ];
 
         foreach ($cssFiles as $src => $dest) {
@@ -54,7 +55,8 @@ class MinifyAssetsCommand extends Command
         $jsFiles = [
             'public/clients/assets/js/main.js' => 'public/clients/assets/js/main.min.js',
             'public/clients/assets/js/header.js' => 'public/clients/assets/js/header.min.js',
-            'public/clients/assets/js/single.js' => 'public/clients/assets/js/single.min.js'
+            'public/clients/assets/js/single.js' => 'public/clients/assets/js/single.min.js',
+            'public/clients/assets/js/home.js' => 'public/clients/assets/js/home.min.js'
         ];
 
         foreach ($jsFiles as $src => $dest) {

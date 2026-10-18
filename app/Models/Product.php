@@ -563,7 +563,7 @@ class Product extends Model
         // ✅ Dùng cùng scope -> không khởi tạo Product:: mới
         $baseQuery = $query->newQuery()
             ->active()
-            ->with('primaryImage')
+            ->with(['primaryImage', 'secondaryImage'])
             ->where('id', '!=', $currentId)
             ->where(function ($q) use ($product) {
                 $q->where('primary_category_id', $product->primary_category_id)
