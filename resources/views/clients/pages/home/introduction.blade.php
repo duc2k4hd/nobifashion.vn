@@ -192,10 +192,10 @@
                         ],
                         [
                             '@type' => 'Question',
-                            'name' => 'Địa chỉ showroom trải nghiệm trực tiếp của NOBI FASHION ở đâu?',
+                            'name' => 'NOBI FASHION phục vụ khách hàng và tư vấn chọn size như thế nào?',
                             'acceptedAnswer' => [
                                 '@type' => 'Answer',
-                                'text' => 'Quý khách có thể ghé thăm cửa hàng tại Ngõ 512 Thiên Lôi, Phường Vĩnh Niệm, Quận Lê Chân, Thành phố Hải Phòng để trực tiếp trải nghiệm và thử phom dáng.'
+                                'text' => 'NOBI FASHION phục vụ trực tuyến trên toàn quốc với chính sách đồng kiểm 100% khi nhận hàng. Khách hàng được mở hộp kiểm tra phom dáng, chất vải và được hỗ trợ đổi size linh hoạt trong 15 ngày.'
                             ]
                         ]
                     ]
@@ -1367,79 +1367,79 @@
         {{-- 5. Quy Trình Kiểm Soát Sản Phẩm Tinh Gọn --}}
         <section class="intro-process-section">
             <div class="story-header" style="margin-bottom: 0;">
-                <span class="intro-eyebrow">Quy Trình Chuẩn Mực</span>
-                <h2>4 Bước Kiểm Soát Từng Mẫu Trang Phục</h2>
-                <p>Để một sản phẩm đến tay bạn trong tình trạng hoàn hảo nhất, đội ngũ NOBI FASHION tuân thủ quy trình kiểm soát nghiêm ngặt.</p>
+                <span class="intro-eyebrow">Tiêu Chuẩn Sản Phẩm</span>
+                <h2>4 Bước Tuyển Chọn &amp; Kiểm Soát Trang Phục</h2>
+                <p>Để từng chiếc áo, chiếc quần đến tay bạn đều đúng kỳ vọng, NOBI FASHION thực hiện kiểm tra kỹ lưỡng qua từng công đoạn.</p>
             </div>
 
             <div class="process-grid">
                 <div class="process-step">
                     <div class="step-index">01</div>
                     <h4>Chọn Lọc Chất Vải</h4>
-                    <p>Thử nghiệm độ co giãn, bề mặt mềm mịn và khả năng thấm hút mồ hôi trước khi đưa vào sản xuất số lượng lớn.</p>
+                    <p>Ưu tiên các dòng sợi tự nhiên thoáng khí (Cotton, Denim, Linen...), kiểm tra độ co giãn và độ bền màu sau giặt.</p>
                 </div>
 
                 <div class="process-step">
                     <div class="step-index">02</div>
-                    <h4>May Mẫu & Căn Phom</h4>
-                    <p>Mặc thử mẫu thực tế trên người thật ở nhiều dáng người khác nhau để tinh chỉnh độ cử động thoải mái nhất.</p>
+                    <h4>Thử Nghiệm Phom Dáng</h4>
+                    <p>Mặc thử trên người thật ở nhiều dáng người Việt khác nhau để đảm bảo cử động vai, nách và lưng áo luôn thoải mái.</p>
                 </div>
 
                 <div class="process-step">
                     <div class="step-index">03</div>
-                    <h4>Kiểm Tra KCS Chi Tiết</h4>
-                    <p>Soi xét từng đường kim mũi chỉ, cúc áo, khóa kéo và cắt tỉa chỉ thừa trước khi cho vào túi bảo quản.</p>
+                    <h4>Kiểm Tra Chi Tiết</h4>
+                    <p>Soi xét kỹ càng từng đường may, mũi chỉ, khuy nút, khóa kéo và cắt tỉa chỉ thừa trước khi hoàn thiện đóng gói.</p>
                 </div>
 
                 <div class="process-step">
                     <div class="step-index">04</div>
-                    <h4>Đóng Gói & Giao Nhanh</h4>
-                    <p>Đóng gói cẩn thận, bảo quản trang phục phẳng phiu và chuyển phát an toàn đến tận tay khách hàng trên toàn quốc.</p>
+                    <h4>Đóng Gói &amp; Đồng Kiểm</h4>
+                    <p>Đóng hộp chỉn chu, giao hàng tận nơi với chính sách đồng kiểm: bạn luôn được mở kiểm tra trước khi thanh toán.</p>
                 </div>
             </div>
         </section>
 
-        {{-- 6. Showroom Thực Tế & Bản Đồ Vị Trí --}}
+        {{-- 6. Kho Hàng & Trung Tâm Hỗ Trợ Trực Tuyến --}}
         <section class="intro-showroom-section">
             <div class="showroom-info-box">
                 <div class="showroom-header">
-                    <span class="intro-eyebrow">Địa Chỉ & Trụ Sở</span>
-                    <h3>Trải Nghiệm Trực Tiếp Tại Showroom</h3>
-                    <p>Quý khách có thể ghé thăm cửa hàng để trực tiếp cảm nhận chất vải, ướm thử phom dáng và nhận sự tư vấn chu đáo từ đội ngũ của chúng tôi.</p>
+                    <span class="intro-eyebrow">Kho Hàng &amp; Dịch Vụ CSKH</span>
+                    <h3>Trung Tâm Hỗ Trợ &amp; Tiếp Nhận Đổi Trả</h3>
+                    <p>NOBI FASHION vận hành theo mô hình bán lẻ trực tuyến trên toàn quốc nhằm tối ưu chi phí vận hành, đem lại trang phục chất lượng với mức giá tốt nhất cho khách hàng.</p>
                 </div>
 
                 <ul class="showroom-details">
                     <li>
-                        <span class="detail-label">Cửa hàng:</span>
+                        <span class="detail-label">Thương hiệu:</span>
                         <span class="detail-value"><strong>{{ ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'NOBI FASHION') }}</strong></span>
                     </li>
                     <li>
-                        <span class="detail-label">Địa chỉ:</span>
-                        <span class="detail-value">{{ ($settings->contact_address ?? null) ?: 'Đang cập nhật...' }}</span>
+                        <span class="detail-label">Kho hàng:</span>
+                        <span class="detail-value">{{ ($settings->contact_address ?? null) ?: 'Ngõ 512 Thiên Lôi, Phường Vĩnh Niệm, Quận Lê Chân, Hải Phòng' }}</span>
                     </li>
                     <li>
-                        <span class="detail-label">Hotline:</span>
+                        <span class="detail-label">Hotline tư vấn:</span>
                         <span class="detail-value">
                             @if(!empty($settings->contact_phone))
                                 <a href="tel:{{ $settings->contact_phone }}">{{ $settings->contact_phone }}</a>
                             @else
-                                Đang cập nhật...
+                                0363.359.818
                             @endif
                         </span>
                     </li>
                     <li>
-                        <span class="detail-label">Email:</span>
+                        <span class="detail-label">Email hỗ trợ:</span>
                         <span class="detail-value">
                             @if(!empty($settings->contact_email))
                                 <a href="mailto:{{ $settings->contact_email }}">{{ $settings->contact_email }}</a>
                             @else
-                                Đang cập nhật...
+                                hotro@nobifashion.vn
                             @endif
                         </span>
                     </li>
                     <li>
-                        <span class="detail-label">Giờ mở cửa:</span>
-                        <span class="detail-value">{{ ($settings->business_hours ?? null) ?: 'Đang cập nhật...' }}</span>
+                        <span class="detail-label">Giờ phục vụ:</span>
+                        <span class="detail-value">{{ ($settings->business_hours ?? null) ?: '08:00 - 21:30 (Thứ 2 - Chủ Nhật)' }}</span>
                     </li>
                 </ul>
 

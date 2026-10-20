@@ -1002,28 +1002,30 @@
             {{-- Cột Trái: Thông tin chính thức & Cam kết dịch vụ --}}
             <div class="contact-info-panel">
 
-                {{-- Box Thông tin doanh nghiệp --}}
+                {{-- Box Thông tin thương hiệu & hỗ trợ khách hàng --}}
                 <div class="info-box">
                     <h3 class="info-box-title">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-                        Thông Tin Doanh Nghiệp
+                        Thông Tin Thương Hiệu &amp; Hỗ Trợ
                     </h3>
 
                     <ul class="info-detail-list">
                         <li>
-                            <span class="info-label">Đơn vị:</span>
-                            <span class="info-text"><strong>{{ ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'Đang cập nhật...') }}</strong></span>
+                            <span class="info-label">Thương hiệu:</span>
+                            <span class="info-text"><strong>{{ ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'NOBI FASHION') }}</strong></span>
                         </li>
+                        @if(!empty($settings->site_tax_code) && $settings->site_tax_code !== 'Đang cập nhật...')
                         <li>
                             <span class="info-label">Mã số thuế:</span>
                             <span class="info-text">{{ ($settings->site_tax_code ?? null) ?: 'Đang cập nhật...' }}</span>
                         </li>
+                        @endif
                         <li>
                             <span class="info-label">Trụ sở chính:</span>
                             <span class="info-text">{{ ($settings->contact_address ?? null) ?: 'Đang cập nhật...' }}</span>
                         </li>
                         <li>
-                            <span class="info-label">Hotline:</span>
+                            <span class="info-label">Hotline tư vấn:</span>
                             <span class="info-text">
                                 @if(!empty($settings->contact_phone))
                                     <a href="tel:{{ $settings->contact_phone }}">{{ $settings->contact_phone }}</a>
@@ -1033,7 +1035,7 @@
                             </span>
                         </li>
                         <li>
-                            <span class="info-label">Email CSKH:</span>
+                            <span class="info-label">Email hỗ trợ:</span>
                             <span class="info-text">
                                 @if(!empty($settings->contact_email))
                                     <a href="mailto:{{ $settings->contact_email }}">{{ $settings->contact_email }}</a>

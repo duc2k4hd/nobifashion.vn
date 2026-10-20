@@ -226,35 +226,31 @@
         </div>
 
         <div class="nobifashion_footer_content_corporate">
-            <p class="nobifashion_footer_content_corporate_title">Doanh nghiệp</p>
+            <p class="nobifashion_footer_content_corporate_title">Thông tin &amp; Chính sách</p>
             <div class="nobifashion_footer_content_corporate_links">
-                <a href="{{ route('client.page.introduction') }}">Giới thiệu doanh nghiệp</a>
-                <a href="{{ route('client.page.contact') }}">Liên hệ doanh nghiệp</a>
-                <a href="{{ route('client.policy.privacy') }}">Chính sách bảo mật doanh nghiệp</a>
-                <a href="{{ route('client.policy.terms') }}">Điều khoản sử dụng doanh nghiệp</a>
-                <a href="{{ route('client.policy.return') }}">Chính sách đổi trả doanh nghiệp</a>
-                <a href="{{ route('client.policy.delivery') }}">Chính sách vận chuyển doanh nghiệp</a>
-                <a href="{{ route('client.policy.warranty') }}">Chính sách bảo hành doanh nghiệp</a>
-                <a href="{{ route('client.policy.payment') }}">Chính sách thanh toán doanh nghiệp</a>
-                <a href="{{ route('client.policy.privacy') }}">Chính sách bảo mật thông tin doanh nghiệp</a>
-                <a href="{{ route('client.policy.privacy') }}">Chính sách bảo mật dữ liệu doanh nghiệp</a>
+                <a href="{{ route('client.page.introduction') }}">Giới thiệu NOBI FASHION</a>
+                <a href="{{ route('client.page.contact') }}">Liên hệ &amp; Hỗ trợ</a>
+                <a href="{{ route('client.policy.editorial') }}">Chính sách biên tập nội dung</a>
+                <a href="{{ route('client.policy.privacy') }}">Chính sách bảo mật</a>
+                <a href="{{ route('client.policy.terms') }}">Điều khoản sử dụng</a>
+                <a href="{{ route('client.policy.return') }}">Chính sách đổi trả hàng</a>
+                <a href="{{ route('client.policy.delivery') }}">Chính sách vận chuyển</a>
+                <a href="{{ route('client.policy.warranty') }}">Chính sách bảo hành</a>
+                <a href="{{ route('client.policy.payment') }}">Chính sách thanh toán</a>
                 <img width="130" height="40" loading="lazy" style="position: relative; object-fit: cover; max-width: 130px; height: auto; cursor: pointer;" src="https://nobifashion.vn/clients/assets/img/other/TRUSTe.avif" alt="TRUSTe Privacy Certification">
             </div>
         </div>
 
         <div class="nobifashion_footer_content_services">
-            <p class="nobifashion_footer_content_services_title">Dịch vụ</p>
+            <p class="nobifashion_footer_content_services_title">Hỗ trợ khách hàng</p>
             <div class="nobifashion_footer_content_services_links">
-                <a href="{{ route('client.page.contact') }}">Hỗ trợ khách hàng</a>
-                <a href="{{ route('client.page.contact') }}">Trung tâm hỗ trợ</a>
-                <a href="#">Câu hỏi thường gặp</a>
-                <a href="#">Hướng dẫn sử dụng</a>
+                <a href="{{ route('client.page.contact') }}">Trung tâm tư vấn &amp; CSKH</a>
+                <a href="#">Hướng dẫn chọn size</a>
                 <a href="{{ route('client.policy.payment') }}">Hướng dẫn thanh toán</a>
                 <a href="{{ route('client.policy.delivery') }}">Hướng dẫn vận chuyển</a>
                 <a href="{{ route('client.policy.return') }}">Hướng dẫn đổi trả</a>
                 <a href="{{ route('client.policy.warranty') }}">Hướng dẫn bảo hành</a>
-                <a href="{{ route('client.policy.privacy') }}">Hướng dẫn bảo mật thông tin</a>
-                <a href="{{ route('client.policy.privacy') }}">Hướng dẫn bảo mật dữ liệu</a>
+                <a href="{{ route('client.policy.privacy') }}">Bảo vệ quyền riêng tư</a>
                 <a href="{{ route('client.sitemap.html') }}">🗺️ Sitemap</a>
                 <img loading="lazy" width="240" height="35" style="max-width: 250px; height: auto; object-fit: contain;" src="{{ asset('clients/assets/img/other/footer_trustbadge.jpg') }}"
                     alt="Các phương thức thanh toán được tin cậy bởi Nobifashion.vn">
@@ -265,6 +261,8 @@
     <div class="nobifashion_footer_bottom">
         <p>{!! !empty($settings->copyright) ? Blade::render($settings->copyright) : 'Đang cập nhật...' !!}</p>
         <p>Thiết kế bởi <a href="{{ route('client.author.show', 'nguyen-minh-duc') }}" target="_blank" rel="noopener noreferrer">Đức Nobi</a></p>
-        <p>Mã số thuế: <strong>{{ ($settings->site_tax_code ?? null) ?: 'Đang cập nhật...' }}</strong></p>
+        @if(!empty($settings->site_tax_code) && $settings->site_tax_code !== 'Đang cập nhật...')
+            <p>Mã số thuế: <strong>{{ $settings->site_tax_code }}</strong></p>
+        @endif
     </div>
 </footer>
