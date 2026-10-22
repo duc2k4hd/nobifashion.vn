@@ -33,13 +33,10 @@
                 {{-- Slide 1: Winter Editorial Campaign với Video Runway hoặc Ảnh Chiến Dịch --}}
                 <div class="nobifashion_home_hero_slide nobifashion_home_hero_slide_active" data-nobifashion-slide="0">
                     <div class="nobifashion_home_hero_media">
-                        <picture class="nobifashion_home_hero_picture">
-                            <source media="(max-width: 768px)" srcset="{{ asset('clients/assets/img/banners/phoi-do-mua-dong-mobile.webp') }}">
-                            <img class="nobifashion_home_hero_img"
-                                 src="{{ asset('clients/assets/img/banners/phoi-do-mua-dong.webp') }}"
-                                 alt="Bộ Sưu Tập Thu Đông - NOBI FASHION"
-                                 width="1920" height="960" fetchpriority="high" decoding="async">
-                        </picture>
+                        <img class="nobifashion_home_hero_img"
+                             src="{{ asset('clients/assets/img/banners/phoi-do-mua-dong.webp') }}"
+                             alt="Bộ Sưu Tập Thu Đông - NOBI FASHION"
+                             width="1920" height="960" fetchpriority="high" decoding="async">
                         <video class="nobifashion_home_hero_video" id="nobifashion_home_hero_video" muted loop playsinline preload="none"
                                data-src="{{ asset('clients/assets/img/banners/Trinh-dien-thoi-trang.mp4') }}"
                                aria-label="Video trình diễn thời trang"></video>
@@ -75,13 +72,10 @@
                 {{-- Slide 2: Minimal Jeans Collection --}}
                 <div class="nobifashion_home_hero_slide" data-nobifashion-slide="1">
                     <div class="nobifashion_home_hero_media">
-                        <picture class="nobifashion_home_hero_picture">
-                            <source media="(max-width: 768px)" srcset="{{ asset('clients/assets/img/banners/bo-suu-tap-quan-jeans-mobile.webp') }}">
-                            <img class="nobifashion_home_hero_img"
-                                 src="{{ asset('clients/assets/img/banners/bo-suu-tap-quan-jeans.webp') }}"
-                                 alt="Bộ sưu tập quần Jeans - NOBI FASHION"
-                                 width="1920" height="960" loading="lazy" decoding="async">
-                        </picture>
+                        <img class="nobifashion_home_hero_img"
+                             src="{{ asset('clients/assets/img/banners/bo-suu-tap-quan-jeans.webp') }}"
+                             alt="Bộ sưu tập quần Jeans - NOBI FASHION"
+                             width="1920" height="960" loading="lazy" decoding="async">
                         <div class="nobifashion_home_hero_overlay"></div>
                     </div>
                     <div class="nobifashion_home_container nobifashion_home_hero_content_wrap">
@@ -107,13 +101,10 @@
                 {{-- Slide 3: Active & Streetwear Lifestyle --}}
                 <div class="nobifashion_home_hero_slide" data-nobifashion-slide="2">
                     <div class="nobifashion_home_hero_media">
-                        <picture class="nobifashion_home_hero_picture">
-                            <source media="(max-width: 768px)" srcset="{{ asset('clients/assets/img/banners/bo-suu-tap-ao-khoac-gio-mobile.webp') }}">
-                            <img class="nobifashion_home_hero_img"
-                                 src="{{ asset('clients/assets/img/banners/bo-suu-tap-ao-khoac-gio.webp') }}"
-                                 alt="Áo khoác gió thời thượng - NOBI FASHION"
-                                 width="1920" height="960" loading="lazy" decoding="async">
-                        </picture>
+                        <img class="nobifashion_home_hero_img"
+                             src="{{ asset('clients/assets/img/banners/bo-suu-tap-ao-khoac-gio.webp') }}"
+                             alt="Áo khoác gió thời thượng - NOBI FASHION"
+                             width="1920" height="960" loading="lazy" decoding="async">
                         <div class="nobifashion_home_hero_overlay"></div>
                     </div>
                     <div class="nobifashion_home_container nobifashion_home_hero_content_wrap">
@@ -261,12 +252,9 @@
                     <article class="nobifashion_home_dept_card nobifashion_home_dept_card_large">
                         <a href="{{ url('/thoi-trang-nam') }}" class="nobifashion_home_dept_card_inner" title="Thời Trang Nam">
                             <div class="nobifashion_home_dept_media">
-                                <picture>
-                                    <source media="(max-width: 768px)" srcset="{{ asset('clients/assets/img/banners/bo-suu-tap-ao-khoac-gio-mobile.webp') }}">
-                                    <img src="{{ asset('clients/assets/img/banners/bo-suu-tap-ao-khoac-gio.webp') }}"
-                                         alt="Thời trang Nam - NOBI FASHION"
-                                         width="800" height="450" loading="lazy" decoding="async">
-                                </picture>
+                                <img src="{{ asset('clients/assets/img/banners/bo-suu-tap-ao-khoac-gio.webp') }}"
+                                     alt="Thời trang Nam - NOBI FASHION"
+                                     width="800" height="450" loading="lazy" decoding="async">
                                 <div class="nobifashion_home_dept_overlay"></div>
                             </div>
                             <div class="nobifashion_home_dept_info">
@@ -288,12 +276,9 @@
                     <article class="nobifashion_home_dept_card nobifashion_home_dept_card_medium">
                         <a href="{{ url('/thoi-trang-nu') }}" class="nobifashion_home_dept_card_inner" title="Thời Trang Nữ">
                             <div class="nobifashion_home_dept_media">
-                                <picture>
-                                    <source media="(max-width: 768px)" srcset="{{ asset('clients/assets/img/banners/ao-len-nu-mobile.webp') }}">
-                                    <img src="{{ asset('clients/assets/img/banners/ao-len-nu.webp') }}"
-                                         alt="Thời trang Nữ - NOBI FASHION"
-                                         width="800" height="450" loading="lazy" decoding="async">
-                                </picture>
+                                <img src="{{ asset('clients/assets/img/banners/ao-len-nu.webp') }}"
+                                     alt="Thời trang Nữ - NOBI FASHION"
+                                     width="800" height="450" loading="lazy" decoding="async">
                                 <div class="nobifashion_home_dept_overlay"></div>
                             </div>
                             <div class="nobifashion_home_dept_info">
@@ -315,12 +300,9 @@
                     <article class="nobifashion_home_dept_card nobifashion_home_dept_card_small">
                         <a href="{{ url('/do-gia-dung') }}" class="nobifashion_home_dept_card_inner" title="Thể Thao & Tiện Ích">
                             <div class="nobifashion_home_dept_media">
-                                <picture>
-                                    <source media="(max-width: 768px)" srcset="{{ asset('clients/assets/img/banners/do-chay-bo-mobile.webp') }}">
-                                    <img src="{{ asset('clients/assets/img/banners/do-chay-bo.webp') }}"
-                                         alt="Thể thao & Phụ kiện - NOBI FASHION"
-                                         width="800" height="450" loading="lazy" decoding="async">
-                                </picture>
+                                <img src="{{ asset('clients/assets/img/banners/do-chay-bo.webp') }}"
+                                     alt="Thể thao & Phụ kiện - NOBI FASHION"
+                                     width="800" height="450" loading="lazy" decoding="async">
                                 <div class="nobifashion_home_dept_overlay"></div>
                             </div>
                             <div class="nobifashion_home_dept_info">
@@ -432,12 +414,9 @@
                     {{-- Cột trái (Lookbook Image khổ lớn) --}}
                     <div class="nobifashion_home_lookbook_feature">
                         <div class="nobifashion_home_lookbook_visual">
-                            <picture>
-                                <source media="(max-width: 768px)" srcset="{{ asset('clients/assets/img/banners/ky-niem-mua-dong-2026-mobile.webp') }}">
-                                <img src="{{ asset('clients/assets/img/banners/ky-niem-mua-dong-2026.webp') }}"
-                                     alt="Lookbook Thu Đông 2026 - NOBI FASHION"
-                                     width="800" height="450" loading="lazy" decoding="async">
-                            </picture>
+                            <img src="{{ asset('clients/assets/img/banners/ky-niem-mua-dong-2026.webp') }}"
+                                 alt="Lookbook Thu Đông 2026 - NOBI FASHION"
+                                 width="800" height="450" loading="lazy" decoding="async">
                             <div class="nobifashion_home_lookbook_tagline">
                                 <span>LOOKBOOK #04</span>
                                 <h4>THE WINTER NARRATIVE</h4>
