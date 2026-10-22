@@ -14,7 +14,7 @@
         <div>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-1 small">
-                    <li class="breadcrumb-item"><a href="{{ route('admin.dashboard.index') }}" class="text-decoration-none text-muted">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}" class="text-decoration-none text-muted">Dashboard</a></li>
                     <li class="breadcrumb-item"><a href="{{ route('admin.email-accounts.index') }}" class="text-decoration-none text-muted">Tài khoản Email</a></li>
                     <li class="breadcrumb-item active" aria-current="page">Thêm mới</li>
                 </ol>
