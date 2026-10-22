@@ -73,8 +73,8 @@ class ProfileController extends Controller
             $changes['sub_avatar'] = $profile->sub_avatar;
         }
 
-        // Cập nhật các trường khác
-        $updateData = $request->only(['full_name', 'nickname', 'bio', 'gender', 'birthday', 'phone', 'location']);
+        // Cập nhật các trường khác (tên phụ nickname không được phép chỉnh sửa)
+        $updateData = $request->only(['full_name', 'bio', 'gender', 'birthday', 'phone', 'location']);
         
         // 处理每个字段
         foreach ($updateData as $key => $value) {
