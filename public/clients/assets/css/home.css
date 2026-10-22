@@ -1918,19 +1918,54 @@ body.nobifashion_home_page,
         font-size: 22px;
     }
 
+    /* Tối ưu Dải Cam Kết Thương Hiệu trên Mobile: Grid 2x2 tinh gọn, không hộp thô kệch */
+    .nobifashion_home_assurance_section {
+        padding: 14px 0 !important;
+    }
+
     .nobifashion_home_assurance_grid {
-        grid-template-columns: 1fr;
-        gap: 8px;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 12px 10px !important;
     }
 
     .nobifashion_home_assurance_item {
-        padding: 10px 14px;
-        background: #fafafa;
-        border-radius: 8px;
+        display: flex !important;
+        align-items: flex-start !important;
+        gap: 8px !important;
+        padding: 0 !important;
+        background: transparent !important;
+        border-radius: 0 !important;
     }
 
     .nobifashion_home_assurance_item::after {
         display: none !important;
+    }
+
+    .nobifashion_home_assurance_index {
+        font-size: 11px !important;
+        font-weight: 800 !important;
+        color: var(--nobifashion_home_dosiin_red, #b91c1c) !important;
+        line-height: 1.3 !important;
+        min-width: 16px !important;
+    }
+
+    .nobifashion_home_assurance_title {
+        font-size: 12.5px !important;
+        font-weight: 700 !important;
+        line-height: 1.3 !important;
+        color: var(--nobifashion_home_black) !important;
+        margin: 0 0 2px 0 !important;
+    }
+
+    .nobifashion_home_assurance_desc {
+        font-size: 10.5px !important;
+        line-height: 1.35 !important;
+        color: var(--nobifashion_home_text_muted) !important;
+        margin: 0 !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 1 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
     }
 
     .nobifashion_home_flash_box {
