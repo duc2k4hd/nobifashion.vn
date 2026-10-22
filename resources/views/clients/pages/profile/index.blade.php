@@ -26,7 +26,7 @@
         .nobifashion_profile_container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 32px 16px 64px;
+            padding: 20px 0;
             font-family: var(--nobi-prof-font);
         }
 
