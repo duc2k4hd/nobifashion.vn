@@ -567,6 +567,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         Route::resource('email-accounts', EmailAccountController::class)->names('email-accounts');
         Route::post('email-accounts/{email_account}/set-default', [EmailAccountController::class, 'setDefault'])->name('email-accounts.set-default');
+        Route::post('email-accounts/{email_account}/toggle-active', [EmailAccountController::class, 'toggleActive'])->name('email-accounts.toggle-active');
+        Route::post('email-accounts/{email_account}/send-test', [EmailAccountController::class, 'sendTest'])->name('email-accounts.send-test');
+        Route::post('email-accounts/test-connection', [EmailAccountController::class, 'testConnection'])->name('email-accounts.test-connection');
 
         Route::match(['get', 'post'], 'posts/export-csv', [PostImportExportController::class, 'exportCsv'])->name('posts.export-csv');
         Route::get('posts/export-data', [PostImportExportController::class, 'getExportData'])->name('posts.export-data');
