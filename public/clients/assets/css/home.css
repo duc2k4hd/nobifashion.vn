@@ -1752,7 +1752,7 @@ body.nobifashion_home_page,
         border-radius: 2px !important;
     }
 
-    /* Triệt tiêu 2 góc đen trên dialog: góc đỉnh bằng 0, không lộ nền backdrop đen */
+    /* Triệt tiêu 2 góc đen trên dialog, khôi phục khả năng cuộn mượt mà trên mobile */
     .nobifashion_home_dialog,
     .nobifashion_mobile_menu_dialog {
         background: transparent !important;
@@ -1760,6 +1760,7 @@ body.nobifashion_home_page,
         padding: 0 !important;
         margin: 0 !important;
         overflow: hidden !important;
+        touch-action: pan-y !important;
     }
 
     .nobifashion_home_dialog_shell {
@@ -1768,14 +1769,36 @@ body.nobifashion_home_page,
         border-bottom-left-radius: 20px !important;
         border-bottom-right-radius: 20px !important;
         background: #ffffff !important;
-        overflow: hidden !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        touch-action: pan-y !important;
+        overscroll-behavior: contain !important;
+    }
+
+    .nobifashion_mobile_menu_dialog .nobifashion_home_dialog_shell {
+        height: 100% !important;
+        max-height: 100dvh !important;
+        border-radius: 0 !important;
+        overflow-x: hidden !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        touch-action: pan-y !important;
     }
 
     .nobifashion_home_dialog_header {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 50 !important;
+        background: #ffffff !important;
         border-top-left-radius: 0 !important;
         border-top-right-radius: 0 !important;
         border-bottom: 1px solid #f0f0f0 !important;
         padding-inline: 16px !important;
+    }
+
+    .nobifashion_menu_body_content {
+        padding-bottom: 90px !important;
     }
 
     .nobifashion_home_dialog_title {
