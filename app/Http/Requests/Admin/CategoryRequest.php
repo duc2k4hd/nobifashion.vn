@@ -28,6 +28,8 @@ class CategoryRequest extends FormRequest
             'description' => ['nullable', 'string'],
             'parent_id' => ['nullable', 'integer', 'exists:categories,id'],
             'image' => ['nullable', 'file', 'image', 'max:4096'],
+            'media_image' => ['nullable', 'string', 'max:255'],
+            'media_image_folder' => ['nullable', 'string', 'max:50'],
             'meta_title' => ['nullable', 'string', 'max:255'],
             'meta_description' => ['nullable', 'string'],
             'meta_keywords' => ['nullable', 'string'],

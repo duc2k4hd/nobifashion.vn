@@ -487,25 +487,54 @@
             <h3>Ảnh đại diện</h3>
             <div class="form-group">
                 <label for="image">Ảnh danh mục</label>
-                <input type="file" name="image" id="image" class="form-control" accept="image/jpeg,image/png,image/webp">
+                <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+                    <button type="button" class="btn btn-outline-primary btn-sm" id="btn-choose-category-media">
+                        <i class="fas fa-photo-video me-1"></i> Chọn từ Thư viện Media
+                    </button>
+                    <label class="btn btn-outline-secondary btn-sm" for="image" style="margin-bottom: 0; cursor: pointer;">
+                        <i class="fas fa-upload me-1"></i> Tải ảnh mới từ máy tính
+                    </label>
+                </div>
+                <input type="file" name="image" id="image" class="form-control" accept="image/jpeg,image/png,image/webp" style="display: none;">
+                <input type="hidden" name="media_image" id="media_image" value="">
+                <input type="hidden" name="media_image_folder" id="media_image_folder" value="">
+                
                 <div class="form-help">Định dạng: JPG, PNG, WebP. Kích thước tối đa: 1MB</div>
                 @error('image')
                     <div style="color:#ef4444;font-size:12px;margin-top:4px;">{{ $message }}</div>
                 @enderror
                 
-                @if($isEdit && $category->image)
-                    <div class="image-preview">
-                        <img src="{{ asset('clients/assets/img/categories/' . $category->image) }}" 
-                             alt="{{ $category->name }}" 
-                             id="imagePreview">
-                        <div class="image-preview-actions">
-                            <label style="margin:0;">
-                                <input type="checkbox" name="delete_image" value="1">
-                                Xóa ảnh hiện tại
+                @php
+                    $hasCurrentImage = $isEdit && !empty($category->image);
+                    $currentImageSrc = '';
+                    if ($hasCurrentImage) {
+                        $currentImageSrc = str_starts_with($category->image, 'http')
+                            ? $category->image
+                            : (file_exists(public_path('clients/assets/img/categories/' . $category->image))
+                                ? asset('clients/assets/img/categories/' . $category->image)
+                                : (file_exists(public_path('clients/assets/img/clothes/' . $category->image))
+                                    ? asset('clients/assets/img/clothes/' . $category->image)
+                                    : asset('clients/assets/img/posts/' . $category->image)));
+                    }
+                @endphp
+
+                <div class="image-preview" id="category-image-preview-container" style="{{ $hasCurrentImage ? '' : 'display: none;' }}">
+                    <img src="{{ $currentImageSrc }}" 
+                         alt="{{ $category->name ?? 'Preview' }}" 
+                         id="imagePreview"
+                         style="max-width: 200px; max-height: 150px; object-fit: cover; border-radius: 8px; border: 1px solid #e2e8f0;">
+                    <div class="image-preview-actions" style="margin-top: 8px;">
+                        <button type="button" class="btn btn-outline-danger btn-sm" id="btn-remove-selected-image" style="padding: 3px 8px; font-size: 12px;">
+                            <i class="fas fa-times me-1"></i> Gỡ ảnh này
+                        </button>
+                        @if($hasCurrentImage)
+                            <label style="margin: 0; margin-left: 10px; font-size: 13px;" id="delete-image-checkbox-wrapper">
+                                <input type="checkbox" name="delete_image" id="delete_image" value="1">
+                                Xóa ảnh hiện tại khỏi hệ thống
                             </label>
-                        </div>
+                        @endif
                     </div>
-                @endif
+                </div>
             </div>
         </div>
 
@@ -600,6 +629,8 @@
 @endsection
 
 @push('scripts')
+    @include('admins.partials.media-library-modal')
+    <script src="{{ asset('admins/js/media-library.js') }}?v={{ env('APP_VERSION') }}"></script>
     <script src="{{ asset('admins/vendor/slimselect/slimselect.min.js') }}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -636,26 +667,77 @@
                 });
             }
             
-            // Image preview
+            // Image handling (upload từ máy + chọn từ Media Library)
             const imageInput = document.getElementById('image');
+            const mediaImageInput = document.getElementById('media_image');
+            const mediaImageFolder = document.getElementById('media_image_folder');
             const imagePreview = document.getElementById('imagePreview');
+            const previewContainer = document.getElementById('category-image-preview-container');
+            const deleteCheckbox = document.getElementById('delete_image');
+            const btnChooseMedia = document.getElementById('btn-choose-category-media');
+            const btnRemoveImage = document.getElementById('btn-remove-selected-image');
             
+            // Xử lý khi chọn file từ máy tính
             if (imageInput && imagePreview) {
                 imageInput.addEventListener('change', (e) => {
                     const file = e.target.files[0];
                     if (file) {
+                        if (mediaImageInput) mediaImageInput.value = '';
+                        if (mediaImageFolder) mediaImageFolder.value = '';
+                        if (deleteCheckbox) deleteCheckbox.checked = false;
+
                         const reader = new FileReader();
-                        reader.onload = (e) => {
-                            imagePreview.src = e.target.result;
+                        reader.onload = (ev) => {
+                            imagePreview.src = ev.target.result;
+                            if (previewContainer) previewContainer.style.display = 'block';
                         };
                         reader.readAsDataURL(file);
                     }
+                });
+            }
+
+            // Xử lý khi chọn ảnh từ Media Library
+            if (btnChooseMedia) {
+                btnChooseMedia.addEventListener('click', () => {
+                    if (window.mediaLibrary) {
+                        window.mediaLibrary.open({
+                            context: 'product',
+                            insertMode: 'single',
+                            onInsert: (item) => {
+                                const folder = (window.mediaLibrary && window.mediaLibrary.context === 'post') ? 'posts' : 'clothes';
+                                const fileName = item.url || item.file_name;
+                                const fullUrl = `/clients/assets/img/${folder}/${fileName}`;
+
+                                if (imagePreview) imagePreview.src = fullUrl;
+                                if (previewContainer) previewContainer.style.display = 'block';
+                                if (mediaImageInput) mediaImageInput.value = fileName;
+                                if (mediaImageFolder) mediaImageFolder.value = folder;
+                                if (imageInput) imageInput.value = '';
+                                if (deleteCheckbox) deleteCheckbox.checked = false;
+                            }
+                        });
+                    } else {
+                        alert('Media Library chưa được khởi tạo');
+                    }
+                });
+            }
+
+            // Xử lý khi bấm nút Gỡ ảnh
+            if (btnRemoveImage) {
+                btnRemoveImage.addEventListener('click', () => {
+                    if (imageInput) imageInput.value = '';
+                    if (mediaImageInput) mediaImageInput.value = '';
+                    if (mediaImageFolder) mediaImageFolder.value = '';
+                    if (imagePreview) imagePreview.src = '';
+                    if (previewContainer) previewContainer.style.display = 'none';
+                    if (deleteCheckbox) deleteCheckbox.checked = true;
                 });
             }
             
             // Initialize CKEditor 5
             if (typeof window.initCKEditor5 === 'function') {
                 window.initCKEditor5('#description', {
+                    mediaLibraryContext: 'product',
                     toolbar: {
                         items: [
                             'undo', 'redo', '|',
@@ -669,9 +751,10 @@
                             'sourceEditing', 'showBlocks', 'fullscreen'
                         ],
                         shouldNotGroupWhenFull: true
-                }
+                    }
                 });
             }
+
             // Khởi tạo SlimSelect cho dropdown danh mục cha
             const parentSelectEl = document.getElementById('parent_id');
             if (parentSelectEl && typeof SlimSelect !== 'undefined') {

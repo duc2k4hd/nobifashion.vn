@@ -109,6 +109,8 @@ class CategoryController extends Controller
 
         if ($request->hasFile('image')) {
             $data['image'] = $this->uploadImage($request->file('image'));
+        } elseif ($request->filled('media_image')) {
+            $data['image'] = $this->assignMediaImage($request->input('media_image'), $request->input('media_image_folder', 'clothes'));
         }
 
         Category::create($data);
@@ -171,6 +173,12 @@ class CategoryController extends Controller
         if ($request->hasFile('image')) {
             $this->deleteImageFile($category->image);
             $data['image'] = $this->uploadImage($request->file('image'));
+        } elseif ($request->filled('media_image')) {
+            $newImage = $this->assignMediaImage($request->input('media_image'), $request->input('media_image_folder', 'clothes'));
+            if ($newImage && $newImage !== $category->image) {
+                $this->deleteImageFile($category->image);
+                $data['image'] = $newImage;
+            }
         }
 
         $category->update($data);
@@ -315,6 +323,29 @@ class CategoryController extends Controller
         @chmod($destination . DIRECTORY_SEPARATOR . $filename, 0644);
 
         return $filename;
+    }
+
+    private function assignMediaImage(?string $mediaImage, string $folder = 'clothes'): ?string
+    {
+        if (empty($mediaImage)) {
+            return null;
+        }
+
+        $fileName = basename($mediaImage);
+        $sourcePath = public_path("clients/assets/img/{$folder}/{$fileName}");
+        $destDir = public_path('clients/assets/img/categories');
+        $destPath = $destDir . DIRECTORY_SEPARATOR . $fileName;
+
+        if (!is_dir($destDir)) {
+            mkdir($destDir, 0755, true);
+        }
+
+        if (file_exists($sourcePath) && !file_exists($destPath)) {
+            @copy($sourcePath, $destPath);
+            @chmod($destPath, 0644);
+        }
+
+        return $fileName;
     }
 
     private function deleteImageFile(?string $filename): void
