@@ -18,7 +18,7 @@
                         <input type="text" id="media-search" placeholder="Tìm kiếm ảnh..." class="form-control">
                     </div>
                     <div class="media-toolbar-actions" style="display: flex; align-items: center; gap: 8px;">
-                        <button type="button" class="btn-multi-select" id="toggle-multi-select-btn" onclick="window.mediaLibrary && window.mediaLibrary.toggleMultiSelectMode()" title="Bật/Tắt chế độ chọn nhiều ảnh (Hỗ trợ tốt trên Mobile hoặc không cần giữ Ctrl)">
+                        <button type="button" class="btn-multi-select" id="toggle-multi-select-btn" title="Bật/Tắt chế độ chọn nhiều ảnh (Dành cho Mobile hoặc không cần giữ Ctrl)">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="9 11 12 14 22 4"></polyline>
                                 <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>

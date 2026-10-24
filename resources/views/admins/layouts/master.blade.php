@@ -1077,7 +1077,7 @@
     <link rel="stylesheet" href="https://cdn.ckeditor.com/ckeditor5/47.4.0/ckeditor5.css" crossorigin>
     <script src="https://cdn.ckeditor.com/ckeditor5/47.4.0/ckeditor5.umd.js" crossorigin></script>
     <script src="https://cdn.ckeditor.com/ckeditor5/47.4.0/translations/vi.umd.js" crossorigin></script>
-    <script src="{{ asset('admins/js/ckeditor-init.js') }}?v={{ env('APP_VERSION') }}"></script>
+    <script src="{{ asset('admins/js/ckeditor-init.js') }}?v={{ file_exists(public_path('admins/js/ckeditor-init.js')) ? filemtime(public_path('admins/js/ckeditor-init.js')) : time() }}"></script>
     @stack('scripts')
     
     <!-- Back to Top Button -->

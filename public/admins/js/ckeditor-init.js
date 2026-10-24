@@ -108,7 +108,7 @@
                                 const folder = context === 'post' ? 'posts' : 'clothes';
                                 const items = Array.isArray(result) ? result : [result];
                                 
-                                // Chèn từng ảnh vào editor
+                                // Chèn từng ảnh vào editor theo đúng thứ tự người dùng chọn (ảnh chọn trước ở trên)
                                 editor.model.change(writer => {
                                     items.forEach(image => {
                                         const imageUrl = `/clients/assets/img/${folder}/${image.url || image.file_name}`;
@@ -132,12 +132,12 @@
                                             writer.append(captionElement, imageElement);
                                         }
 
-                                        // Chèn vào vị trí hiện tại
-                                        const insertAt = editor.model.document.selection.getFirstPosition();
-                                        editor.model.insertContent(imageElement, insertAt);
-                                        
-                                        // Di chuyển selection sau ảnh
-                                        writer.setSelection(imageElement, 'after');
+                                        // Chèn ảnh vào vị trí con trỏ hiện tại (CKEditor 5 tự động di chuyển con trỏ ra sau ảnh)
+                                        editor.model.insertContent(imageElement);
+
+                                        // Tạo một hàng trống (paragraph) để mỗi ảnh nằm trên 1 hàng độc lập
+                                        const p = writer.createElement('paragraph');
+                                        editor.model.insertContent(p);
                                     });
                                 });
                             },

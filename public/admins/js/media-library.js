@@ -95,9 +95,14 @@ class MediaLibrary {
         document.getElementById('insert-media')?.addEventListener('click', () => this.insertSelected());
 
         // Multi-select toggle button
-        document.getElementById('toggle-multi-select-btn')?.addEventListener('click', () => {
-            this.toggleMultiSelectMode();
-        });
+        const multiBtn = document.getElementById('toggle-multi-select-btn');
+        if (multiBtn) {
+            multiBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.toggleMultiSelectMode();
+            };
+        }
 
         // Event Delegation cho Grid - KHÔNG bao giờ bị mất khi render lại innerHTML
         const grid = document.getElementById('media-grid');
@@ -411,6 +416,16 @@ class MediaLibrary {
         this.toggleMultiSelectMode(false);
         this.syncSelectionDOM();
         this.updateFooter();
+
+        // Đảm bảo sự kiện nút chọn nhiều luôn sẵn sàng
+        const multiBtn = document.getElementById('toggle-multi-select-btn');
+        if (multiBtn) {
+            multiBtn.onclick = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.toggleMultiSelectMode();
+            };
+        }
 
         this.modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';
