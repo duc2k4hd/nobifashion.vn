@@ -17,17 +17,26 @@
                     <div class="search-box">
                         <input type="text" id="media-search" placeholder="Tìm kiếm ảnh..." class="form-control">
                     </div>
-                    <div class="view-toggle">
-                        <button class="view-btn active" data-view="grid" title="Grid view">
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                                <path d="M1 1h6v6H1V1zm8 0h6v6H9V1zM1 9h6v6H1V9zm8 0h6v6H9V9z"/>
+                    <div class="media-toolbar-actions" style="display: flex; align-items: center; gap: 8px;">
+                        <button type="button" class="btn-multi-select" id="toggle-multi-select-btn" title="Bật/Tắt chế độ chọn nhiều ảnh (hoặc giữ phím Ctrl / Cmd + Click vào ảnh)">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 11 12 14 22 4"></polyline>
+                                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
                             </svg>
+                            <span id="multi-select-btn-text">Chọn nhiều (Ctrl)</span>
                         </button>
-                        <button class="view-btn" data-view="list" title="List view">
-                            <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                                <path d="M1 1h14v2H1V1zm0 4h14v2H1V5zm0 4h14v2H1V9zm0 4h14v2H1v-2z"/>
-                            </svg>
-                        </button>
+                        <div class="view-toggle">
+                            <button class="view-btn active" data-view="grid" title="Grid view">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                    <path d="M1 1h6v6H1V1zm8 0h6v6H9V1zM1 9h6v6H1V9zm8 0h6v6H9V9z"/>
+                                </svg>
+                            </button>
+                            <button class="view-btn" data-view="list" title="List view">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                                    <path d="M1 1h14v2H1V1zm0 4h14v2H1V5zm0 4h14v2H1V9zm0 4h14v2H1v-2z"/>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -315,6 +324,40 @@
 
 .search-box {
     flex: 1;
+}
+
+.btn-multi-select {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #4b5563;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+    user-select: none;
+    line-height: 1.4;
+}
+
+.btn-multi-select:hover {
+    background: #f3f4f6;
+    color: #1f2937;
+    border-color: #9ca3af;
+}
+
+.btn-multi-select.active {
+    background: #2563eb;
+    color: #fff;
+    border-color: #1d4ed8;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+}
+
+.btn-multi-select.active svg {
+    stroke: #fff;
 }
 
 .view-toggle {

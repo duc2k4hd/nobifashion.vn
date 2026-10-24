@@ -20,6 +20,7 @@ class MediaLibrary {
         this.isLoading = false;
         this.currentSearch = '';
         this.cacheValid = false; // Cờ kiểm soát cache
+        this.isMultiSelectMode = false; // Chế độ chọn nhiều ảnh (hoặc giữ phím Ctrl)
         
         console.log('MediaLibrary V3.0 Constructor called.');
         this.init();
@@ -93,13 +94,20 @@ class MediaLibrary {
         // Insert button
         document.getElementById('insert-media')?.addEventListener('click', () => this.insertSelected());
 
+        // Multi-select toggle button
+        document.getElementById('toggle-multi-select-btn')?.addEventListener('click', () => {
+            this.toggleMultiSelectMode();
+        });
+
         // Event Delegation cho Grid - KHÔNG bao giờ bị mất khi render lại innerHTML
         const grid = document.getElementById('media-grid');
         if (grid) {
             grid.addEventListener('click', (e) => {
                 const item = e.target.closest('.media-item');
                 if (!item || e.target.type === 'checkbox') return;
-                this.toggleSelect(item.dataset.id);
+                // Kiểm tra nếu người dùng đang giữ phím Ctrl (hoặc Cmd trên Mac) hoặc đang bật chế độ chọn nhiều
+                const isCtrl = e.ctrlKey || e.metaKey || this.isMultiSelectMode;
+                this.toggleSelect(item.dataset.id, isCtrl);
             });
 
             grid.addEventListener('dblclick', (e) => {
@@ -223,7 +231,7 @@ class MediaLibrary {
         if (this.currentView === 'list') {
             return `
                 <div class="media-item list-view ${isSelected ? 'selected' : ''}" data-id="${item.id}">
-                    <input type="checkbox" class="media-item-checkbox" ${isSelected ? 'checked' : ''} onchange="window.mediaLibrary.toggleSelect('${item.id}')">
+                    <input type="checkbox" class="media-item-checkbox" ${isSelected ? 'checked' : ''} onchange="window.mediaLibrary.toggleSelect('${item.id}', true)">
                     <img onerror="this.src='/clients/assets/img/no-image.png'" src="/clients/assets/img/${folder}/${item.url}" alt="${item.alt || item.name}" loading="lazy">
                     <div class="media-item-info">
                         <div class="media-item-name">${this.escapeHtml(item.title || item.name)}</div>
@@ -234,7 +242,7 @@ class MediaLibrary {
         }
         return `
             <div class="media-item ${isSelected ? 'selected' : ''}" data-id="${item.id}">
-                <input type="checkbox" class="media-item-checkbox" ${isSelected ? 'checked' : ''} onchange="window.mediaLibrary.toggleSelect('${item.id}')">
+                <input type="checkbox" class="media-item-checkbox" ${isSelected ? 'checked' : ''} onchange="window.mediaLibrary.toggleSelect('${item.id}', true)">
                 <img onerror="this.src='/clients/assets/img/no-image.png'" src="/clients/assets/img/${folder}/${item.url}" alt="${item.alt || item.name}" loading="lazy">
                 <div class="media-item-name" title="${item.title || item.name}">${this.escapeHtml(item.title || item.name)}</div>
             </div>
@@ -259,12 +267,27 @@ class MediaLibrary {
         }
     }
 
+    // Bật/tắt chế độ chọn nhiều ảnh
+    toggleMultiSelectMode(forcedState) {
+        this.isMultiSelectMode = typeof forcedState === 'boolean' ? forcedState : !this.isMultiSelectMode;
+        const btn = document.getElementById('toggle-multi-select-btn');
+        const text = document.getElementById('multi-select-btn-text');
+        if (btn) btn.classList.toggle('active', this.isMultiSelectMode);
+        if (text) text.textContent = this.isMultiSelectMode ? 'Đang chọn nhiều' : 'Chọn nhiều (Ctrl)';
+    }
+
     insertSelected() {
         if (this.selectedItems.length === 0) return;
         
         if (this.onInsert) {
-            // Nếu mode là single, truyền object đơn, nếu multiple truyền array
-            const data = this.insertMode === 'single' ? this.selectedItems[0] : this.selectedItems;
+            // Nếu người dùng chọn từ 2 ảnh trở lên: luôn truyền toàn bộ mảng ảnh
+            // Nếu chỉ chọn 1 ảnh: truyền object nếu mode là single, truyền array nếu mode là multiple
+            let data;
+            if (this.selectedItems.length > 1) {
+                data = this.selectedItems;
+            } else {
+                data = this.insertMode === 'single' ? this.selectedItems[0] : this.selectedItems;
+            }
             this.onInsert(data);
             this.close();
         } else {
@@ -272,16 +295,34 @@ class MediaLibrary {
         }
     }
 
-    toggleSelect(id) {
+    toggleSelect(id, isMulti = false) {
         const item = this.mediaItems.find(m => String(m.id) === String(id));
         if (!item) return;
 
         const index = this.selectedItems.findIndex(sel => String(sel.id) === String(id));
-        if (index >= 0) {
-            this.selectedItems.splice(index, 1);
+        
+        if (isMulti) {
+            // Khi giữ Ctrl hoặc đang bật chế độ chọn nhiều: toggle ảnh hiện tại mà không mất ảnh khác
+            if (index >= 0) {
+                this.selectedItems.splice(index, 1);
+            } else {
+                this.selectedItems.push(item);
+            }
         } else {
-            if (this.insertMode === 'single') this.selectedItems = [item];
-            else this.selectedItems.push(item);
+            // Khi click bình thường không giữ Ctrl
+            if (this.insertMode === 'single') {
+                if (index >= 0 && this.selectedItems.length === 1) {
+                    this.selectedItems = [];
+                } else {
+                    this.selectedItems = [item];
+                }
+            } else {
+                if (index >= 0) {
+                    this.selectedItems.splice(index, 1);
+                } else {
+                    this.selectedItems.push(item);
+                }
+            }
         }
 
         this.syncSelectionDOM();
@@ -323,8 +364,16 @@ class MediaLibrary {
 
         if (info) info.style.display = count > 0 ? 'inline-block' : 'none';
         if (countEl) countEl.textContent = count;
-        if (insertBtn) insertBtn.disabled = count === 0;
         if (deleteBulkBtn) deleteBulkBtn.style.display = count > 0 ? 'inline-block' : 'none';
+
+        if (insertBtn) {
+            insertBtn.disabled = count === 0;
+            if (count > 1) {
+                insertBtn.textContent = `Chèn ${count} ảnh đã chọn`;
+            } else {
+                insertBtn.textContent = 'Chèn vào editor';
+            }
+        }
     }
 
     async handleUpload(files) {
@@ -362,6 +411,12 @@ class MediaLibrary {
             this.context = options.context;
             this.cacheValid = false; // Context khác thì phải xóa cache
         }
+
+        // Reset trạng thái chọn khi mở modal mới
+        this.selectedItems = [];
+        this.toggleMultiSelectMode(false);
+        this.syncSelectionDOM();
+        this.updateFooter();
 
         this.modal.style.display = 'flex';
         document.body.style.overflow = 'hidden';

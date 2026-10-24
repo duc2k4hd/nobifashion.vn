@@ -704,8 +704,11 @@
                             context: 'product',
                             insertMode: 'single',
                             onInsert: (item) => {
+                                const selectedItem = Array.isArray(item) ? item[0] : item;
+                                if (!selectedItem) return;
+
                                 const folder = (window.mediaLibrary && window.mediaLibrary.context === 'post') ? 'posts' : 'clothes';
-                                const fileName = item.url || item.file_name;
+                                const fileName = selectedItem.url || selectedItem.file_name;
                                 const fullUrl = `/clients/assets/img/${folder}/${fileName}`;
 
                                 if (imagePreview) imagePreview.src = fullUrl;

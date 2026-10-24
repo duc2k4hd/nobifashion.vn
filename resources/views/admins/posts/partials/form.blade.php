@@ -352,11 +352,14 @@
                 window.mediaLibrary.open({
                     context: 'post',
                     onInsert: function(image) {
+                        const selectedImage = Array.isArray(image) ? image[0] : image;
+                        if (!selectedImage) return;
+
                         const input = document.getElementById('thumbnail-input');
                         const preview = document.getElementById('thumbnail-preview');
                         
                         // Đảm bảo chỉ lấy tên tệp để lưu vào DB
-                        const filename = image.url ? image.url.split('/').pop() : '';
+                        const filename = selectedImage.url ? selectedImage.url.split('/').pop() : '';
                         
                         if (input) {
                             input.value = filename;

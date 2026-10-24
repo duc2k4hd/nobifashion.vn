@@ -104,37 +104,41 @@
                     if (window.mediaLibrary) {
                         window.mediaLibrary.open({
                             context: context,
-                            onInsert: (image) => {
+                            onInsert: (result) => {
                                 const folder = context === 'post' ? 'posts' : 'clothes';
-                                const imageUrl = `/clients/assets/img/${folder}/${image.url || image.file_name}`;
+                                const items = Array.isArray(result) ? result : [result];
                                 
-                                // Lấy metadata từ đối tượng image
-                                const alt = image.alt || image.name || image.title || '';
-                                const title = image.title || image.name || '';
-                                const caption = image.description || image.title || '';
-                                
-                                // Chèn ảnh vào editor
+                                // Chèn từng ảnh vào editor
                                 editor.model.change(writer => {
-                                    // Tạo imageBlock (tương đương thẻ figure)
-                                    const imageElement = writer.createElement('imageBlock', {
-                                        src: imageUrl,
-                                        alt: alt,
-                                        title: title // Gán thuộc tính title cho ảnh
+                                    items.forEach(image => {
+                                        const imageUrl = `/clients/assets/img/${folder}/${image.url || image.file_name}`;
+                                        
+                                        // Lấy metadata từ đối tượng image
+                                        const alt = image.alt || image.name || image.title || '';
+                                        const title = image.title || image.name || '';
+                                        const caption = image.description || image.title || '';
+                                        
+                                        // Tạo imageBlock (tương đương thẻ figure)
+                                        const imageElement = writer.createElement('imageBlock', {
+                                            src: imageUrl,
+                                            alt: alt,
+                                            title: title // Gán thuộc tính title cho ảnh
+                                        });
+
+                                        // Tạo figcaption nếu có metadata
+                                        if (caption) {
+                                            const captionElement = writer.createElement('caption');
+                                            writer.insertText(caption, captionElement);
+                                            writer.append(captionElement, imageElement);
+                                        }
+
+                                        // Chèn vào vị trí hiện tại
+                                        const insertAt = editor.model.document.selection.getFirstPosition();
+                                        editor.model.insertContent(imageElement, insertAt);
+                                        
+                                        // Di chuyển selection sau ảnh
+                                        writer.setSelection(imageElement, 'after');
                                     });
-
-                                    // Tạo figcaption nếu có metadata
-                                    if (caption) {
-                                        const captionElement = writer.createElement('caption');
-                                        writer.insertText(caption, captionElement);
-                                        writer.append(captionElement, imageElement);
-                                    }
-
-                                    // Chèn vào vị trí hiện tại
-                                    const insertAt = editor.model.document.selection.getFirstPosition();
-                                    editor.model.insertContent(imageElement, insertAt);
-                                    
-                                    // Di chuyển selection sau ảnh
-                                    writer.setSelection(imageElement, 'after');
                                 });
                             },
                             insertMode: 'single'
