@@ -105,41 +105,53 @@
                         window.mediaLibrary.open({
                             context: context,
                             onInsert: (result) => {
-                                const folder = context === 'post' ? 'posts' : 'clothes';
-                                const items = Array.isArray(result) ? result : [result];
-                                
-                                // Chèn từng ảnh vào editor theo đúng thứ tự người dùng chọn (ảnh chọn trước ở trên)
-                                editor.model.change(writer => {
+                                try {
+                                    const folder = context === 'post' ? 'posts' : 'clothes';
+                                    const items = Array.isArray(result) ? result : [result];
+                                    if (!items.length) return;
+
+                                    // Xây dựng chuỗi HTML chuẩn của CKEditor 5
+                                    // Đảm bảo ảnh chọn trước nằm ở trên, mỗi ảnh 1 hàng riêng biệt
+                                    let htmlContent = '';
                                     items.forEach(image => {
-                                        const imageUrl = `/clients/assets/img/${folder}/${image.url || image.file_name}`;
-                                        
-                                        // Lấy metadata từ đối tượng image
-                                        const alt = image.alt || image.name || image.title || '';
-                                        const title = image.title || image.name || '';
-                                        const caption = image.description || image.title || '';
-                                        
-                                        // Tạo imageBlock (tương đương thẻ figure)
-                                        const imageElement = writer.createElement('imageBlock', {
-                                            src: imageUrl,
-                                            alt: alt,
-                                            title: title // Gán thuộc tính title cho ảnh
-                                        });
+                                        const fileName = image.url || image.file_name || '';
+                                        if (!fileName) return;
 
-                                        // Tạo figcaption nếu có metadata
+                                        const imageUrl = `/clients/assets/img/${folder}/${fileName}`;
+                                        const alt = (image.alt || image.name || image.title || '').replace(/"/g, '&quot;');
+                                        const caption = (image.description || image.title || '').trim();
+
+                                        htmlContent += `<figure class="image">`;
+                                        htmlContent += `<img src="${imageUrl}" alt="${alt}">`;
                                         if (caption) {
-                                            const captionElement = writer.createElement('caption');
-                                            writer.insertText(caption, captionElement);
-                                            writer.append(captionElement, imageElement);
+                                            htmlContent += `<figcaption>${caption}</figcaption>`;
                                         }
-
-                                        // Chèn ảnh vào vị trí con trỏ hiện tại (CKEditor 5 tự động di chuyển con trỏ ra sau ảnh)
-                                        editor.model.insertContent(imageElement);
-
-                                        // Tạo một hàng trống (paragraph) để mỗi ảnh nằm trên 1 hàng độc lập
-                                        const p = writer.createElement('paragraph');
-                                        editor.model.insertContent(p);
+                                        htmlContent += `</figure><p>&nbsp;</p>`;
                                     });
-                                });
+
+                                    if (htmlContent && editor.data && editor.data.processor) {
+                                        // Sử dụng data processor để parse HTML sang Model Fragment của CKEditor
+                                        const viewFragment = editor.data.processor.toView(htmlContent);
+                                        const modelFragment = editor.data.toModel(viewFragment);
+                                        editor.model.insertContent(modelFragment);
+                                    } else {
+                                        // Fallback nếu không có processor
+                                        editor.model.change(writer => {
+                                            items.forEach(image => {
+                                                const fileName = image.url || image.file_name || '';
+                                                const imageUrl = `/clients/assets/img/${folder}/${fileName}`;
+                                                const alt = image.alt || image.name || image.title || '';
+                                                const imageElement = writer.createElement('imageBlock', {
+                                                    src: imageUrl,
+                                                    alt: alt
+                                                });
+                                                editor.model.insertContent(imageElement);
+                                            });
+                                        });
+                                    }
+                                } catch (err) {
+                                    console.error('Lỗi khi chèn ảnh vào CKEditor:', err);
+                                }
                             },
                             insertMode: 'single'
                         });

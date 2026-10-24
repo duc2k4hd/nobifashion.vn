@@ -361,6 +361,11 @@
     stroke: #ffffff;
 }
 
+.btn-multi-select svg,
+.btn-multi-select span {
+    pointer-events: none;
+}
+
 .view-toggle {
     display: flex;
     gap: 4px;
