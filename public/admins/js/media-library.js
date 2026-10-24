@@ -65,7 +65,10 @@ class MediaLibrary {
         const uploadArea = document.getElementById('upload-area');
         const fileInput = document.getElementById('file-input');
         uploadArea?.addEventListener('click', () => fileInput?.click());
-        fileInput?.addEventListener('change', (e) => this.handleUpload(Array.from(e.target.files)));
+        fileInput?.addEventListener('change', (e) => {
+            this.handleUpload(Array.from(e.target.files));
+            e.target.value = '';
+        });
 
         // Drag & Drop trong tab Tải lên (Giữ nguyên)
         if (uploadArea) {
@@ -428,6 +431,7 @@ class MediaLibrary {
         if (!files || !files.length) return;
 
         let hasSuccess = false;
+        const uploadedItems = [];
         const grid = document.getElementById('media-grid');
         let indicator = null;
 
@@ -449,7 +453,8 @@ class MediaLibrary {
                     body: formData
                 });
                 const data = await response.json();
-                if (data.success) {
+                if (data.success && data.data) {
+                    uploadedItems.push(data.data);
                     hasSuccess = true;
                 }
             } catch (err) { 
@@ -462,9 +467,28 @@ class MediaLibrary {
         }
 
         if (hasSuccess) {
-            this.cacheValid = false; // Đánh dấu cần tải lại sau khi upload
+            // Chuyển tab sang Thư viện trực tiếp trên giao diện
+            this.currentTab = 'library';
+            this.modal.querySelectorAll('.tab-button').forEach(btn => btn.classList.toggle('active', btn.dataset.tab === 'library'));
+            this.modal.querySelectorAll('.tab-content').forEach(content => content.classList.toggle('active', content.id === 'tab-library'));
+
+            this.cacheValid = false;
             await this.loadMedia(this.currentSearch, true);
-            this.switchTab('library');
+
+            // Tự động chọn ảnh vừa upload:
+            // - Nếu <= 10 ảnh: tự động chọn tất cả các ảnh đó
+            // - Nếu > 10 ảnh: tự chọn ảnh đầu tiên upload lên
+            if (uploadedItems.length > 0) {
+                const itemsToSelect = uploadedItems.length > 10 ? [uploadedItems[0]] : uploadedItems;
+                const itemsMap = new Map(this.mediaItems.map(m => [String(m.id), m]));
+                this.selectedItems = itemsToSelect.map(item => itemsMap.get(String(item.id)) || item);
+
+                // Bật chế độ chọn nhiều nếu số lượng ảnh được chọn > 1
+                this.toggleMultiSelectMode(this.selectedItems.length > 1);
+
+                this.syncSelectionDOM();
+                this.updateFooter();
+            }
         }
     }
 
