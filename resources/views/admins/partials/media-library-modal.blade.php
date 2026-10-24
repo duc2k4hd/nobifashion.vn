@@ -11,6 +11,19 @@
         </div>
 
         <div class="media-library-content">
+            <!-- Global Drag & Drop Overlay -->
+            <div class="media-drag-drop-overlay" id="media-drag-overlay" style="display: none;">
+                <div class="media-drag-drop-box">
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
+                    </svg>
+                    <h4>Thả ảnh vào đây để tải lên</h4>
+                    <p>Hỗ trợ JPG, PNG, WEBP, GIF, AVIF (Tự động lưu vào thư viện)</p>
+                </div>
+            </div>
+
             <!-- Library Tab -->
             <div class="tab-content active" id="tab-library">
                 <div class="media-library-toolbar">
@@ -202,6 +215,55 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    position: relative;
+}
+
+.media-drag-drop-overlay {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px dashed #2563eb;
+    border-radius: 12px;
+    pointer-events: none;
+    box-shadow: 0 10px 25px -5px rgba(37, 99, 235, 0.2);
+    animation: fadeInOverlay 0.15s ease-out;
+}
+
+@keyframes fadeInOverlay {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.media-drag-drop-box {
+    text-align: center;
+    color: #2563eb;
+    pointer-events: none;
+}
+
+.media-drag-drop-box svg {
+    margin-bottom: 12px;
+    stroke: #2563eb;
+}
+
+.media-drag-drop-box h4 {
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    color: #1e40af;
+}
+
+.media-drag-drop-box p {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0;
 }
 
 .media-library-body {

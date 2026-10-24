@@ -67,7 +67,7 @@ class MediaLibrary {
         uploadArea?.addEventListener('click', () => fileInput?.click());
         fileInput?.addEventListener('change', (e) => this.handleUpload(Array.from(e.target.files)));
 
-        // Drag & Drop
+        // Drag & Drop trong tab Tải lên (Giữ nguyên)
         if (uploadArea) {
             ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
                 uploadArea.addEventListener(eventName, (e) => {
@@ -88,6 +88,55 @@ class MediaLibrary {
                 const dt = e.dataTransfer;
                 const files = dt.files;
                 this.handleUpload(Array.from(files));
+            }, false);
+        }
+
+        // Global Drag & Drop: Chỉ cần kéo ảnh vào media-library-content là tự động tải lên
+        const contentEl = this.modal?.querySelector('.media-library-content');
+        const dragOverlay = document.getElementById('media-drag-overlay');
+
+        if (contentEl) {
+            let dragCounter = 0;
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                contentEl.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }, false);
+            });
+
+            contentEl.addEventListener('dragenter', (e) => {
+                if (e.dataTransfer && e.dataTransfer.types && Array.from(e.dataTransfer.types).includes('Files')) {
+                    dragCounter++;
+                    if (dragOverlay) dragOverlay.style.display = 'flex';
+                }
+            }, false);
+
+            contentEl.addEventListener('dragover', (e) => {
+                if (e.dataTransfer) {
+                    e.dataTransfer.dropEffect = 'copy';
+                }
+            }, false);
+
+            contentEl.addEventListener('dragleave', (e) => {
+                dragCounter--;
+                if (dragCounter <= 0) {
+                    dragCounter = 0;
+                    if (dragOverlay) dragOverlay.style.display = 'none';
+                }
+            }, false);
+
+            contentEl.addEventListener('drop', (e) => {
+                dragCounter = 0;
+                if (dragOverlay) dragOverlay.style.display = 'none';
+
+                const dt = e.dataTransfer;
+                if (dt && dt.files && dt.files.length > 0) {
+                    const files = Array.from(dt.files).filter(file => file.type.startsWith('image/'));
+                    if (files.length > 0) {
+                        this.handleUpload(files);
+                    }
+                }
             }, false);
         }
 
@@ -376,6 +425,19 @@ class MediaLibrary {
     }
 
     async handleUpload(files) {
+        if (!files || !files.length) return;
+
+        let hasSuccess = false;
+        const grid = document.getElementById('media-grid');
+        let indicator = null;
+
+        if (this.currentTab === 'library' && grid) {
+            indicator = document.createElement('div');
+            indicator.style.cssText = 'grid-column: 1 / -1; padding: 12px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; text-align: center; color: #1e40af; font-size: 13px; font-weight: 500;';
+            indicator.innerHTML = `<span class="spinner-border spinner-border-sm me-2" role="status" style="width: 14px; height: 14px; border-width: 2px;"></span> Đang tải lên ${files.length} ảnh, vui lòng chờ...`;
+            grid.insertAdjacentElement('afterbegin', indicator);
+        }
+
         for (const file of files) {
             const formData = new FormData();
             formData.append('file', file);
@@ -388,11 +450,21 @@ class MediaLibrary {
                 });
                 const data = await response.json();
                 if (data.success) {
-                    this.cacheValid = false; // Đánh dấu cần tải lại sau khi upload
-                    this.loadMedia(this.currentSearch, true);
-                    this.switchTab('library');
+                    hasSuccess = true;
                 }
-            } catch (err) { console.error('Upload failed', err); }
+            } catch (err) { 
+                console.error('Upload failed', err); 
+            }
+        }
+
+        if (indicator) {
+            indicator.remove();
+        }
+
+        if (hasSuccess) {
+            this.cacheValid = false; // Đánh dấu cần tải lại sau khi upload
+            await this.loadMedia(this.currentSearch, true);
+            this.switchTab('library');
         }
     }
 
