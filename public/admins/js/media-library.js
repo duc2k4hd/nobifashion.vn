@@ -267,13 +267,13 @@ class MediaLibrary {
         }
     }
 
-    // Bật/tắt chế độ chọn nhiều ảnh
+    // Bật/tắt chế độ chọn nhiều ảnh (Dành cho Mobile hoặc người dùng không muốn giữ Ctrl)
     toggleMultiSelectMode(forcedState) {
         this.isMultiSelectMode = typeof forcedState === 'boolean' ? forcedState : !this.isMultiSelectMode;
         const btn = document.getElementById('toggle-multi-select-btn');
         const text = document.getElementById('multi-select-btn-text');
         if (btn) btn.classList.toggle('active', this.isMultiSelectMode);
-        if (text) text.textContent = this.isMultiSelectMode ? 'Đang chọn nhiều' : 'Chọn nhiều (Ctrl)';
+        if (text) text.textContent = this.isMultiSelectMode ? 'Đang chọn nhiều' : 'Chọn nhiều ảnh';
     }
 
     insertSelected() {
@@ -299,29 +299,23 @@ class MediaLibrary {
         const item = this.mediaItems.find(m => String(m.id) === String(id));
         if (!item) return;
 
+        // Cho phép chọn nhiều nếu: đang bật nút 'Chọn nhiều', hoặc đang giữ phím Ctrl/Cmd, hoặc click vào ô checkbox
+        const isMultiActive = Boolean(isMulti || this.isMultiSelectMode);
         const index = this.selectedItems.findIndex(sel => String(sel.id) === String(id));
         
-        if (isMulti) {
-            // Khi giữ Ctrl hoặc đang bật chế độ chọn nhiều: toggle ảnh hiện tại mà không mất ảnh khác
+        if (isMultiActive) {
+            // Chế độ chọn nhiều: click để thêm vào hoặc bỏ bớt ảnh mà không mất ảnh khác
             if (index >= 0) {
                 this.selectedItems.splice(index, 1);
             } else {
                 this.selectedItems.push(item);
             }
         } else {
-            // Khi click bình thường không giữ Ctrl
-            if (this.insertMode === 'single') {
-                if (index >= 0 && this.selectedItems.length === 1) {
-                    this.selectedItems = [];
-                } else {
-                    this.selectedItems = [item];
-                }
+            // Chế độ chọn đơn: click ảnh nào chọn duy nhất ảnh đó
+            if (index >= 0 && this.selectedItems.length === 1) {
+                this.selectedItems = [];
             } else {
-                if (index >= 0) {
-                    this.selectedItems.splice(index, 1);
-                } else {
-                    this.selectedItems.push(item);
-                }
+                this.selectedItems = [item];
             }
         }
 

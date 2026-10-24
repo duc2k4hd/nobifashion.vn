@@ -18,12 +18,12 @@
                         <input type="text" id="media-search" placeholder="Tìm kiếm ảnh..." class="form-control">
                     </div>
                     <div class="media-toolbar-actions" style="display: flex; align-items: center; gap: 8px;">
-                        <button type="button" class="btn-multi-select" id="toggle-multi-select-btn" title="Bật/Tắt chế độ chọn nhiều ảnh (hoặc giữ phím Ctrl / Cmd + Click vào ảnh)">
+                        <button type="button" class="btn-multi-select" id="toggle-multi-select-btn" onclick="window.mediaLibrary && window.mediaLibrary.toggleMultiSelectMode()" title="Bật/Tắt chế độ chọn nhiều ảnh (Hỗ trợ tốt trên Mobile hoặc không cần giữ Ctrl)">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <polyline points="9 11 12 14 22 4"></polyline>
                                 <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
                             </svg>
-                            <span id="multi-select-btn-text">Chọn nhiều (Ctrl)</span>
+                            <span id="multi-select-btn-text">Chọn nhiều ảnh</span>
                         </button>
                         <div class="view-toggle">
                             <button class="view-btn active" data-view="grid" title="Grid view">
@@ -330,34 +330,35 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 12px;
+    padding: 6px 14px;
     font-size: 13px;
-    font-weight: 500;
-    color: #4b5563;
-    background: #fff;
-    border: 1px solid #d1d5db;
+    font-weight: 600;
+    color: #374151;
+    background: #f9fafb;
+    border: 1.5px solid #d1d5db;
     border-radius: 6px;
     cursor: pointer;
-    transition: all 0.15s ease-in-out;
+    transition: all 0.2s ease-in-out;
     user-select: none;
     line-height: 1.4;
+    min-height: 34px;
 }
 
 .btn-multi-select:hover {
     background: #f3f4f6;
-    color: #1f2937;
+    color: #111827;
     border-color: #9ca3af;
 }
 
 .btn-multi-select.active {
-    background: #2563eb;
-    color: #fff;
-    border-color: #1d4ed8;
-    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+    background: #1d4ed8;
+    color: #ffffff !important;
+    border-color: #1e40af;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
 }
 
 .btn-multi-select.active svg {
-    stroke: #fff;
+    stroke: #ffffff;
 }
 
 .view-toggle {

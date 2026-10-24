@@ -211,7 +211,7 @@
         console.log('=== POSTS FORM SCRIPTS LOADING ===');
         console.log('Loading media-library.js...');
     </script>
-    <script src="{{ asset('admins/js/media-library.js') }}?v={{ env('APP_VERSION') }}"></script>
+    <script src="{{ asset('admins/js/media-library.js') }}?v={{ file_exists(public_path('admins/js/media-library.js')) ? filemtime(public_path('admins/js/media-library.js')) : time() }}"></script>
     <script>
         console.log('=== POSTS FORM SCRIPTS LOADING ===');
         console.log('Loading media-library.js...');
