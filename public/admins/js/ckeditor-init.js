@@ -121,12 +121,11 @@
                                         const alt = (image.alt || image.name || image.title || '').replace(/"/g, '&quot;');
                                         const caption = (image.description || image.title || '').trim();
 
-                                        htmlContent += `<figure class="image">`;
-                                        htmlContent += `<img src="${imageUrl}" alt="${alt}">`;
+                                        htmlContent += `<figure class="image"><img src="${imageUrl}" alt="${alt}">`;
                                         if (caption) {
                                             htmlContent += `<figcaption>${caption}</figcaption>`;
                                         }
-                                        htmlContent += `</figure><p>&nbsp;</p>`;
+                                        htmlContent += `</figure>`;
                                     });
 
                                     if (htmlContent && editor.data && editor.data.processor) {
