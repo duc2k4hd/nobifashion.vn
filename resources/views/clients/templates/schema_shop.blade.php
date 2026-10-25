@@ -55,6 +55,8 @@
     "@id": "{{ $settings->site_url }}#website",
     "url": "{{ $settings->site_url }}",
     "name": "{{ renderMeta($settings->site_name) }}",
+    "alternateName": "Nobi Fashion Việt Nam",
+    "inLanguage": "vi-VN",
     "publisher": { "@id": "{{ $settings->site_url }}#organization" },
     "potentialAction": {
       "@type": "SearchAction",

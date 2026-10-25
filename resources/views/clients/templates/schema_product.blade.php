@@ -42,6 +42,20 @@
       }
     },
     {
+      '@type' => 'WebSite',
+      '@id' => ($settings->site_url ?? 'https://nobifashion.vn') . '#website',
+      'url' => $settings->site_url ?? 'https://nobifashion.vn',
+      'name' => $settings->subname ?? 'Nobi Fashion',
+      'publisher' => ['@id' => ($settings->site_url ?? 'https://nobifashion.vn') . '#organization'],
+      "alternateName" => "Nobi Fashion Việt Nam",
+      "inLanguage" => "vi-VN",
+      'potentialAction' => [
+        '@type' => 'SearchAction',
+        'target' => ($settings->site_url ?? 'https://nobifashion.vn') . '/tim-kiem/{q}',
+        'query-input' => 'required name=q'
+      ]
+    },
+    {
       "@type": "LocalBusiness",
       "@id": "{{ ($settings->site_url ?? 'https://nobifashion.vn') }}#localbusiness",
       "name": "{{ renderMeta($settings->site_name ?? 'NOBI FASHION') }}",

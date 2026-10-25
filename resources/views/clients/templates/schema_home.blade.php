@@ -32,8 +32,10 @@
       '@type' => 'WebSite',
       '@id' => ($settings->site_url ?? 'https://nobifashion.vn') . '#website',
       'url' => $settings->site_url ?? 'https://nobifashion.vn',
-      'name' => $settings->subname ?? 'NOBI FASHION - Thời trang chính hãng',
+      'name' => $settings->subname ?? 'Nobi Fashion',
       'publisher' => ['@id' => ($settings->site_url ?? 'https://nobifashion.vn') . '#organization'],
+      "alternateName" => "Nobi Fashion Việt Nam",
+      "inLanguage" => "vi-VN",
       'potentialAction' => [
         '@type' => 'SearchAction',
         'target' => ($settings->site_url ?? 'https://nobifashion.vn') . '/tim-kiem/{q}',
