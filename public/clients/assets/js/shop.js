@@ -404,15 +404,47 @@ function initShopSeoToggle() {
     const wrapper = document.getElementById('shopSeoContentWrapper');
     const btn = document.getElementById('btnToggleShopSeo');
     const contentBody = document.getElementById('shopSeoContentBody');
+    const mainCard = document.querySelector('.shop_seo_main_card');
+    const sidebar = document.querySelector('.shop_seo_sidebar');
+    const fade = document.getElementById('shopSeoFade');
+    const toggleBox = btn ? btn.closest('.shop_seo_toggle_box') : null;
+
     if (!wrapper || !btn || !contentBody) return;
 
-    // Đo kích thước sau khi trình duyệt render xong để không gây Forced Reflow trong quá trình tải trang
+    // Đồng bộ chiều cao mainCard bằng sidebar khi ở màn hình máy tính (>= 992px) và chưa mở rộng
+    const syncCardHeight = function () {
+        const isExpanded = wrapper.classList.contains('is-expanded');
+        if (window.innerWidth >= 992) {
+            if (!isExpanded && sidebar && mainCard) {
+                const sidebarH = sidebar.offsetHeight;
+                if (sidebarH > 100) {
+                    mainCard.style.height = sidebarH + 'px';
+                }
+            } else if (isExpanded && mainCard) {
+                mainCard.style.height = 'auto';
+            }
+        } else {
+            if (mainCard) mainCard.style.height = 'auto';
+        }
+    };
+
+    // Đo kích thước sau khi trình duyệt render xong để kiểm tra hiển thị nút xem thêm
     const checkHeight = function () {
-        if (contentBody.scrollHeight <= 290) {
-            if (btn.parentElement) btn.parentElement.style.display = 'none';
-            const fade = document.getElementById('shopSeoFade');
+        syncCardHeight();
+
+        let threshold = 280;
+        if (window.innerWidth >= 992 && sidebar && mainCard) {
+            const toggleBoxH = toggleBox ? toggleBox.offsetHeight : 50;
+            const mainStyles = window.getComputedStyle(mainCard);
+            const padY = (parseFloat(mainStyles.paddingTop) || 0) + (parseFloat(mainStyles.paddingBottom) || 0);
+            threshold = (sidebar.offsetHeight || 580) - padY - toggleBoxH - 18;
+        }
+
+        if (contentBody.scrollHeight <= threshold + 10) {
+            if (toggleBox) toggleBox.style.display = 'none';
             if (fade) fade.style.display = 'none';
             wrapper.classList.add('is-expanded');
+            if (mainCard) mainCard.style.height = 'auto';
         }
     };
 
@@ -422,15 +454,35 @@ function initShopSeoToggle() {
         setTimeout(checkHeight, 150);
     }
 
+    // Khi hình ảnh hoặc toàn bộ trang tải xong, cân đối lại chiều cao
+    window.addEventListener('load', syncCardHeight);
+
+    // Lắng nghe khi thay đổi kích thước cửa sổ trình duyệt
+    let resizeTimer;
+    window.addEventListener('resize', function () {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(checkHeight, 100);
+    });
+
+    // Theo dõi thay đổi kích thước sidebar bằng ResizeObserver
+    if (typeof ResizeObserver !== 'undefined' && sidebar) {
+        const sidebarObserver = new ResizeObserver(function () {
+            if (!wrapper.classList.contains('is-expanded')) {
+                syncCardHeight();
+            }
+        });
+        sidebarObserver.observe(sidebar);
+    }
+
     btn.addEventListener('click', function () {
         const isExpanded = wrapper.classList.contains('is-expanded');
         const btnText = btn.querySelector('.btn-text');
-        const btnIcon = btn.querySelector('.btn-icon');
 
         if (isExpanded) {
             wrapper.classList.remove('is-expanded');
             btn.classList.remove('is-active');
             if (btnText) btnText.textContent = 'Xem thêm nội dung';
+            syncCardHeight();
             // Cuộn nhẹ về đầu khối SEO để người dùng dễ theo dõi
             const section = document.getElementById('category-seo-section');
             if (section) {
@@ -440,6 +492,7 @@ function initShopSeoToggle() {
         } else {
             wrapper.classList.add('is-expanded');
             btn.classList.add('is-active');
+            if (mainCard) mainCard.style.height = 'auto';
             if (btnText) btnText.textContent = 'Thu gọn nội dung';
         }
     });
