@@ -10,6 +10,11 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="shortcut icon" href="{{ asset('admins/img/icons/icon-admin.gif') }}" type="image/x-icon">
     <link rel="icon" href="{{ asset('admins/img/icons/icon-admin.gif') }}" type="image/gif">
+    <meta name="robots" content="noindex, nofollow, noarchive">
+    <meta name="googlebot" content="noindex, nofollow, noarchive">
+    <meta name="bingbot" content="noindex, nofollow, noarchive">
+    <meta name="slurp" content="noindex, nofollow, noarchive">
+    <meta name="duckduckbot" content="noindex, nofollow, noarchive">
     <style>
         :root {
             --bg-color: #6a0035;
