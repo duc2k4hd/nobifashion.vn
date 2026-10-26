@@ -386,11 +386,63 @@
         mediaLibraryContext: 'product' // Context cho Media Library
     };
 
+    // Hàm tắt tính năng kiểm tra chính tả (bỏ gạch chân đỏ lượn sóng của trình duyệt)
+    function disableEditorSpellcheck(editor) {
+        if (!editor) return;
+
+        const applyAttributes = (el) => {
+            if (!el) return;
+            el.setAttribute('spellcheck', 'false');
+            el.setAttribute('autocorrect', 'off');
+            el.setAttribute('autocomplete', 'off');
+            el.setAttribute('autocapitalize', 'off');
+        };
+
+        // 1. Áp dụng vào Model View của CKEditor
+        try {
+            editor.editing.view.change(writer => {
+                const root = editor.editing.view.document.getRoot();
+                if (root) {
+                    writer.setAttribute('spellcheck', 'false', root);
+                    writer.setAttribute('autocorrect', 'off', root);
+                    writer.setAttribute('autocomplete', 'off', root);
+                }
+            });
+        } catch (e) {}
+
+        // 2. Áp dụng trực tiếp vào DOM Element
+        try {
+            if (editor.ui && editor.ui.view && editor.ui.view.editable) {
+                applyAttributes(editor.ui.view.editable.element);
+            }
+            if (editor.editing && editor.editing.view) {
+                applyAttributes(editor.editing.view.getDomRoot());
+            }
+        } catch (e) {}
+
+        // 3. Đảm bảo khi người dùng click/focus vào soạn thảo, spellcheck không bị bật lại
+        try {
+            if (editor.ui && editor.ui.focusTracker) {
+                editor.ui.focusTracker.on('change:isFocused', (evt, name, isFocused) => {
+                    if (isFocused) {
+                        if (editor.ui.view && editor.ui.view.editable) {
+                            applyAttributes(editor.ui.view.editable.element);
+                        }
+                        if (editor.editing && editor.editing.view) {
+                            applyAttributes(editor.editing.view.getDomRoot());
+                        }
+                    }
+                });
+            }
+        } catch (e) {}
+    }
+
     // Khởi tạo editor cho Posts
     function initPostsEditor() {
         const textarea = document.getElementById('post-content-editor');
         if (!textarea) return;
 
+        textarea.setAttribute('spellcheck', 'false');
         const initialData = textarea.value || '';
 
         ClassicEditor
@@ -399,6 +451,7 @@
                 initialData: initialData
             })
             .then(editor => {
+                disableEditorSpellcheck(editor);
                 window.ckeditorInstances = window.ckeditorInstances || {};
                 window.ckeditorInstances['post-content-editor'] = editor;
 
@@ -436,6 +489,7 @@
                 return;
             }
 
+            textarea.setAttribute('spellcheck', 'false');
             const initialData = textarea.value || '';
             const editorId = textarea.id || 'ckeditor-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
             if (!textarea.id) {
@@ -452,6 +506,7 @@
                     initialData: initialData
                 })
                 .then(editor => {
+                    disableEditorSpellcheck(editor);
                     textarea.dataset.ckeditorInitialized = 'true';
                     window.ckeditorInstances = window.ckeditorInstances || {};
                     window.ckeditorInstances[editorId] = editor;
@@ -543,5 +598,23 @@
             });
         }
     }
+
+    // Cơ chế quét toàn cục để tắt spellcheck trên mọi phần tử soạn thảo
+    function enforceDisableSpellcheck() {
+        document.querySelectorAll('.ck-editor__editable, [contenteditable="true"], textarea, .tinymce-editor').forEach(el => {
+            if (el.getAttribute('spellcheck') !== 'false') {
+                el.setAttribute('spellcheck', 'false');
+                el.setAttribute('autocorrect', 'off');
+                el.setAttribute('autocomplete', 'off');
+                el.setAttribute('autocapitalize', 'off');
+            }
+        });
+    }
+
+    document.addEventListener('focusin', enforceDisableSpellcheck, true);
+    document.addEventListener('DOMContentLoaded', enforceDisableSpellcheck);
+    setTimeout(enforceDisableSpellcheck, 500);
+    setTimeout(enforceDisableSpellcheck, 1500);
+    setInterval(enforceDisableSpellcheck, 3000);
 
 })();
