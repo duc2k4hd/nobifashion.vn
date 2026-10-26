@@ -3,10 +3,6 @@
 @section('title', 'Quản lý tài khoản')
 @section('page-title', '👤 Tài khoản')
 
-@push('head')
-    <link rel="shortcut icon" href="{{ asset('admins/img/icons/account-icon.png') }}" type="image/x-icon">
-@endpush
-
 @push('styles')
     <style>
         .accounts-page {

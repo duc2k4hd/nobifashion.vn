@@ -509,6 +509,8 @@
         }
     </style>
     @stack('head')
+    <link rel="shortcut icon" href="{{ asset('admins/img/icons/icon-admin.gif') }}" type="image/x-icon">
+    <link rel="icon" href="{{ asset('admins/img/icons/icon-admin.gif') }}" type="image/gif">
 </head>
 <body>
     <!-- Sidebar -->
