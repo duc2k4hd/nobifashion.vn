@@ -22,7 +22,10 @@ class AuthController extends Controller
      */
     public function showLoginForm()
     {
-        // Không cần check auth, cho phép truy cập
+        if (Auth::check()) {
+            return redirect()->route('client.home.index');
+        }
+
         return view('clients.pages.auth.login.index');
     }
 
@@ -89,7 +92,10 @@ class AuthController extends Controller
      */
     public function showRegisterForm()
     {
-        // Không cần check auth, cho phép truy cập
+        if (Auth::check()) {
+            return redirect()->route('client.home.index');
+        }
+
         return view('clients.pages.auth.register.index');
     }
 
