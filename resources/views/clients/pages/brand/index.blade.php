@@ -1,9 +1,9 @@
 @extends('clients.layouts.master')
 
 @php
-    $brandName = $brand->name ?? 'NOBIFASHION';
+    $brandName = $brand->name ?? 'Nobi Fashion';
     $brandSlug = $currentSlug ?? ($brand->slug ?? 'nobifashion');
-    $siteName = $settings->site_name ?? ($settings->subname ?? 'NOBI FASHION');
+    $siteName = $settings->subname ?? ($settings->site_name ?? 'Nobi Fashion');
 
     $brandImageUrl = !empty($brand->logo) && file_exists(public_path('clients/assets/img/brands/' . $brand->logo))
         ? asset('clients/assets/img/brands/' . $brand->logo)
@@ -198,7 +198,7 @@
                         </div>
                         <div class="nobifashion_brand_identity">
                             <p class="nobifashion_brand_campaign">{{ $brand->campaign ?? '#SUMMER 2026' }}</p>
-                            <h1>{{ $brand->name ?? 'NOBIFASHION' }} <span aria-label="Đã xác minh" title="Đã xác minh chính hãng">●</span></h1>
+                            <h1>{{ $brand->name ?? 'Nobi Fashion' }} <span aria-label="Đã xác minh" title="Đã xác minh chính hãng">●</span></h1>
                             <p>{{ number_format($brand->followers_count ?? 2000, 0, ',', '.') }} người theo dõi</p>
                         </div>
                     </div>
@@ -211,7 +211,7 @@
 
                     <div class="nobifashion_brand_intro_wrapper">
                         <p class="nobifashion_brand_intro" id="nobifashion_brand_intro">
-                            {{ $brand->description ?? 'Được hình thành trong thời đại 4.0, NOBIFASHION áp dụng sức mạnh của công nghệ vào thời trang để đưa ra giải pháp mua sắm đồ cơ bản cho nam giới với mô hình tiện lợi hơn, tiết kiệm hơn — khách hàng có thể mua cả tủ đồ đảm bảo chất lượng, made in Vietnam, giá tốt, giao hàng nhanh chóng.' }}
+                            {{ $brand->description ?? 'Được hình thành trong thời đại 4.0, Nobi Fashion áp dụng sức mạnh của công nghệ vào thời trang để đưa ra giải pháp mua sắm đồ cơ bản cho nam giới với mô hình tiện lợi hơn, tiết kiệm hơn — khách hàng có thể mua cả tủ đồ đảm bảo chất lượng, made in Vietnam, giá tốt, giao hàng nhanh chóng.' }}
                         </p>
                         <button type="button" class="nobifashion_brand_more" id="nobifashion_brand_more">
                             <span>Xem thêm</span> <i class="fa-solid fa-chevron-down"></i>
@@ -230,7 +230,7 @@
                         $slides = $brand->banner_slides;
                         if (empty($slides) || !is_array($slides)) {
                             $slides = [
-                                ['tag' => "#SUMMER 2026\nLOADING.", 'title' => 'Một bầu trời', 'highlight' => $brand->name ?? 'NOBIFASHION', 'image' => null],
+                                ['tag' => "#SUMMER 2026\nLOADING.", 'title' => 'Một bầu trời', 'highlight' => $brand->name ?? 'Nobi Fashion', 'image' => null],
                                 ['tag' => "EVERYDAY\nESSENTIALS.", 'title' => 'Đơn giản để', 'highlight' => 'thoải mái hơn', 'image' => null],
                                 ['tag' => "MADE IN\nVIETNAM.", 'title' => 'Chất lượng cho', 'highlight' => 'mỗi ngày', 'image' => null],
                             ];
@@ -274,10 +274,10 @@
                             <a href="{{ route('client.product.detail', $product->slug) }}" class="nobifashion_brand_product_visual" style="aspect-ratio: 1/1.05; display: block;">
                                 <img src="{{ $imgUrl }}" alt="{{ $product->name }}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
                             </a>
-                            <span class="nobifashion_brand_badge">{{ $brand->name ?? 'NOBIFASHION' }}</span>
+                            <span class="nobifashion_brand_badge">{{ $brand->name ?? 'Nobi Fashion' }}</span>
                             <button type="button" class="nobifashion_brand_favorite" data-id="{{ $product->id }}" aria-label="Thêm vào yêu thích">♡</button>
                             <div class="nobifashion_brand_product_body">
-                                <p class="nobifashion_brand_product_brand">{{ $brand->name ?? 'NOBIFASHION' }}</p>
+                                <p class="nobifashion_brand_product_brand">{{ $brand->name ?? 'Nobi Fashion' }}</p>
                                 <a href="{{ route('client.product.detail', $product->slug) }}" class="nobifashion_brand_product_title" title="{{ $product->name }}">{{ $product->name }}</a>
                                 <span class="nobifashion_brand_product_price">{{ number_format($curPrice, 0, ',', '.') }} ₫</span>
                                 @if($hasSale)
@@ -351,10 +351,10 @@
                             <a href="{{ route('client.product.detail', $product->slug) }}" class="nobifashion_brand_product_visual" style="aspect-ratio: 1/1.05; display: block;">
                                 <img src="{{ $imgUrl }}" alt="{{ $product->name }}" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
                             </a>
-                            <span class="nobifashion_brand_badge">{{ $brand->name ?? 'NOBIFASHION' }}</span>
+                            <span class="nobifashion_brand_badge">{{ $brand->name ?? 'Nobi Fashion' }}</span>
                             <button type="button" class="nobifashion_brand_favorite" data-id="{{ $product->id }}" aria-label="Thêm vào yêu thích">♡</button>
                             <div class="nobifashion_brand_product_body">
-                                <p class="nobifashion_brand_product_brand">{{ $brand->name ?? 'NOBIFASHION' }}</p>
+                                <p class="nobifashion_brand_product_brand">{{ $brand->name ?? 'Nobi Fashion' }}</p>
                                 <a href="{{ route('client.product.detail', $product->slug) }}" class="nobifashion_brand_product_title" title="{{ $product->name }}">{{ $product->name }}</a>
                                 <span class="nobifashion_brand_product_price">{{ number_format($curPrice, 0, ',', '.') }} ₫</span>
                                 @if($hasSale)
@@ -387,7 +387,7 @@
             @if(!empty($faqs) && is_array($faqs))
                 <section class="nobifashion_brand_faq_section">
                     <h2>Câu hỏi thường gặp</h2>
-                    <p>Gian hàng chính hãng {{ $brand->name ?? 'NOBIFASHION' }} giải đáp thắc mắc của bạn.</p>
+                    <p>Gian hàng chính hãng {{ $brand->name ?? 'Nobi Fashion' }} giải đáp thắc mắc của bạn.</p>
                     <div class="nobifashion_brand_faq" id="nobifashion_brand_faq">
                         @foreach($faqs as $faq)
                             <article class="nobifashion_brand_faq_item">
@@ -412,7 +412,7 @@
     <script>
         window.nobifashion_brand_config = {
             productsApi: "{{ route('client.brand.products', $brand->slug ?? $currentSlug) }}",
-            brandName: "{{ $brand->name ?? 'NOBIFASHION' }}"
+            brandName: "{{ $brand->name ?? 'Nobi Fashion' }}"
         };
     </script>
     <script src="{{ asset('clients/assets/js/brand.js') }}?v={{ env('APP_VERSION', '1.0') }}"></script>

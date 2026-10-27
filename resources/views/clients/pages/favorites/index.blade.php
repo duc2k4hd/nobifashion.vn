@@ -1,6 +1,10 @@
 @extends('clients.layouts.master')
 
-@section('title', 'Sản phẩm yêu thích')
+@section('title', 'Sản phẩm yêu thích | ' . renderMeta($settings->subname ?? 'Nobi Fashion'))
+
+@section('head')
+    <meta name="robots" content="nofollow, noindex"/>
+@endsection
 
 @section('content')
 <style>

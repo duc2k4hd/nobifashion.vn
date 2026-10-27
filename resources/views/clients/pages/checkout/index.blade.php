@@ -1,11 +1,11 @@
 @extends('clients.layouts.master')
 
-@section('title', 'Thông tin đặt hàng - ' . renderMeta($settings->site_name ?? ($settings->subname ?? 'NOBI FASHION')))
+@section('title', 'Thông tin đặt hàng | ' . renderMeta($settings->subname ?? 'Nobi Fashion'))
 
 @section('head')
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.4.3/dist/css/tom-select.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('clients/assets/css/checkout.css') }}?v={{ env('APP_VERSION') }}">
-    <meta name="robots" content="follow, noindex"/>
+    <meta name="robots" content="nofollow, noindex"/>
 @endsection
 
 @section('foot')

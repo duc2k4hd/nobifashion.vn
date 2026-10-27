@@ -1,6 +1,6 @@
 @extends('clients.layouts.master')
 
-@section('title', '404 - Không Tìm Thấy Trang | ' . ($settings_site_name ?? 'NOBI FASHION VIỆT NAM'))
+@section('title', '404 - Không Tìm Thấy Trang | ' . ($settings->subname ?? 'Nobi Fashion'))
 
 @section('head')
     <meta name="theme-color" content="#fffbf5">

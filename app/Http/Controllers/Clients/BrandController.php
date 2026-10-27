@@ -29,7 +29,7 @@ class BrandController extends Controller
             ->orderBy('name', 'asc')
             ->get();
 
-        // Với NOBIFASHION, cộng dồn các sản phẩm chưa gán brand_id
+        // Với Nobi Fashion, cộng dồn các sản phẩm chưa gán brand_id
         $nobifashionUnassignedCount = Product::active()->whereNull('brand_id')->count();
         $brands->each(function ($b) use ($nobifashionUnassignedCount) {
             if ($b->slug === 'nobifashion') {
@@ -80,7 +80,7 @@ class BrandController extends Controller
         // Nếu là slug nobifashion nhưng chưa có record trong bảng, lấy record mặc định hoặc tạo
         if (!$brand && $slug === 'nobifashion') {
             $brand = Brand::where('slug', 'nobifashion')->first() ?? new Brand([
-                'name' => 'NOBIFASHION',
+                'name' => 'Nobi Fashion',
                 'slug' => 'nobifashion',
                 'description' => 'Thương hiệu thời trang nam hiện đại, chất lượng chuẩn Việt Nam.',
                 'campaign' => '#SUMMER 2026',
@@ -153,8 +153,8 @@ class BrandController extends Controller
             ->paginate(15, ['*'], 'page', 1);
 
         // 4. Khởi tạo SEO Meta với dữ liệu từ bảng brands và cơ chế Fallback
-        $siteName = $settings->site_name ?? ($settings->subname ?? 'NOBI FASHION');
-        $brandName = $brand->name ?? 'NOBIFASHION';
+        $siteName = $settings->site_name ?? ($settings->subname ?? 'Nobi Fashion');
+        $brandName = $brand->name ?? 'Nobi Fashion';
         $brandSlug = $slug ?: ($brand->slug ?? 'nobifashion');
 
         $pageTitle = !empty($brand->meta_title)

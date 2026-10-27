@@ -1,15 +1,15 @@
 @extends('clients.layouts.master')
 
-@section('title', 'Giới Thiệu NOBI FASHION – Thời Trang Nam Hiện Đại, Chuẩn Phom Dáng Việt')
+@section('title', 'Giới Thiệu Nobi Fashion – Thời Trang Nam Hiện Đại, Chuẩn Phom Dáng Việt')
 
 @section('head')
     <meta name="robots" content="index, follow, max-snippet:-1, max-video-preview:-1, max-image-preview:large" />
     <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
     <meta name="bingbot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
     <meta name="keywords" content="{{ $settings->seo_keywords ?? 'giới thiệu nobi fashion, thương hiệu nobi fashion, thời trang nam hải phòng, shop quần áo nam đẹp, nobi fashion việt nam' }}">
-    <meta name="description" content="Khám phá câu chuyện thương hiệu {{ ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'NOBI FASHION') }} – Thời trang nam thiết kế trẻ trung, phom dáng chuẩn người Việt, chất liệu thoáng mát bền đẹp và dịch vụ tận tâm.">
-    <meta name="author" content="{{ ($settings->seo_author ?? null) ?: (($settings->site_name ?? null) ?: 'NOBI FASHION') }}">
-    <meta name="generator" content="NOBI FASHION Platform">
+    <meta name="description" content="Khám phá câu chuyện thương hiệu {{ ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'Nobi Fashion') }} – Thời trang nam thiết kế trẻ trung, phom dáng chuẩn người Việt, chất liệu thoáng mát bền đẹp và dịch vụ tận tâm.">
+    <meta name="author" content="{{ ($settings->seo_author ?? null) ?: (($settings->site_name ?? null) ?: 'Nobi Fashion') }}">
+    <meta name="generator" content="Nobi Fashion Platform">
     <meta name="revisit-after" content="1 days">
     <meta name="rating" content="general">
     <link rel="canonical" href="{{ route('client.page.introduction') }}">
@@ -24,15 +24,15 @@
 
     {{-- Open Graph --}}
     <meta property="og:type" content="website">
-    <meta property="og:site_name" content="{{ renderMeta(($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'NOBI FASHION')) }}">
+    <meta property="og:site_name" content="{{ renderMeta(($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'Nobi Fashion')) }}">
     <meta property="og:url" content="{{ route('client.page.introduction') }}">
-    <meta property="og:title" content="Giới Thiệu NOBI FASHION – Thời Trang Nam Hiện Đại, Chuẩn Phom Dáng Việt">
-    <meta property="og:description" content="Khám phá câu chuyện thương hiệu {{ ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'NOBI FASHION') }} – Thời trang nam thiết kế trẻ trung, phom dáng chuẩn người Việt, chất liệu thoáng mát bền đẹp và dịch vụ tận tâm.">
+    <meta property="og:title" content="Giới Thiệu Nobi Fashion – Thời Trang Nam Hiện Đại, Chuẩn Phom Dáng Việt">
+    <meta property="og:description" content="Khám phá câu chuyện thương hiệu {{ ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'Nobi Fashion') }} – Thời trang nam thiết kế trẻ trung, phom dáng chuẩn người Việt, chất liệu thoáng mát bền đẹp và dịch vụ tận tâm.">
     <meta property="og:image" content="{{ asset('clients/assets/img/business/' . (($settings->site_banner ?? null) ?: (($settings->site_logo ?? null) ?: 'banner.webp'))) }}">
     <meta property="og:image:secure_url" content="{{ asset('clients/assets/img/business/' . (($settings->site_banner ?? null) ?: (($settings->site_logo ?? null) ?: 'banner.webp'))) }}">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
-    <meta property="og:image:alt" content="Giới thiệu thương hiệu thời trang NOBI FASHION">
+    <meta property="og:image:alt" content="Giới thiệu thương hiệu thời trang Nobi Fashion">
     <meta property="og:image:type" content="image/jpeg">
     <meta property="og:locale" content="vi_VN">
 
@@ -40,10 +40,10 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:site" content="@nobifashion">
     <meta name="twitter:creator" content="@nobifashion">
-    <meta name="twitter:title" content="Giới Thiệu NOBI FASHION – Thời Trang Nam Hiện Đại, Chuẩn Phom Dáng Việt">
-    <meta name="twitter:description" content="Khám phá câu chuyện thương hiệu {{ ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'NOBI FASHION') }} – Thời trang nam thiết kế trẻ trung, phom dáng chuẩn người Việt, chất liệu thoáng mát bền đẹp và dịch vụ tận tâm.">
+    <meta name="twitter:title" content="Giới Thiệu Nobi Fashion – Thời Trang Nam Hiện Đại, Chuẩn Phom Dáng Việt">
+    <meta name="twitter:description" content="Khám phá câu chuyện thương hiệu {{ ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'Nobi Fashion') }} – Thời trang nam thiết kế trẻ trung, phom dáng chuẩn người Việt, chất liệu thoáng mát bền đẹp và dịch vụ tận tâm.">
     <meta name="twitter:image" content="{{ asset('clients/assets/img/business/' . (($settings->site_banner ?? null) ?: (($settings->site_logo ?? null) ?: 'banner.webp'))) }}">
-    <meta name="twitter:image:alt" content="Giới thiệu thương hiệu thời trang NOBI FASHION">
+    <meta name="twitter:image:alt" content="Giới thiệu thương hiệu thời trang Nobi Fashion">
 @endsection
 
 @section('schema')
@@ -68,7 +68,7 @@
                     '@type' => 'WebSite',
                     '@id' => $siteUrl . '#website',
                     'url' => $siteUrl,
-                    'name' => renderMeta(($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'NOBI FASHION')),
+                    'name' => renderMeta(($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'Nobi Fashion')),
                     'description' => renderMeta(($settings->site_description ?? null) ?: 'Thương hiệu thời trang nam hiện đại chuẩn phom dáng người Việt'),
                     'publisher' => [
                         '@id' => $siteUrl . '#organization'
@@ -79,8 +79,8 @@
                     '@type' => 'AboutPage',
                     '@id' => route('client.page.introduction') . '#webpage',
                     'url' => route('client.page.introduction'),
-                    'name' => 'Giới Thiệu NOBI FASHION – Thời Trang Nam Hiện Đại, Chuẩn Phom Dáng Việt',
-                    'description' => 'Khám phá câu chuyện thương hiệu NOBI FASHION – Thời trang nam thiết kế trẻ trung, phom dáng chuẩn người Việt, chất liệu thoáng mát bền đẹp và dịch vụ tận tâm.',
+                    'name' => 'Giới Thiệu Nobi Fashion – Thời Trang Nam Hiện Đại, Chuẩn Phom Dáng Việt',
+                    'description' => 'Khám phá câu chuyện thương hiệu Nobi Fashion – Thời trang nam thiết kế trẻ trung, phom dáng chuẩn người Việt, chất liệu thoáng mát bền đẹp và dịch vụ tận tâm.',
                     'isPartOf' => [
                         '@id' => $siteUrl . '#website'
                     ],
@@ -113,13 +113,13 @@
                 [
                     '@type' => ['ClothingStore', 'Organization'],
                     '@id' => $siteUrl . '#organization',
-                    'name' => ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'NOBI FASHION'),
-                    'alternateName' => ($settings->subname ?? null) ?: 'NOBI FASHION',
+                    'name' => ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'Nobi Fashion'),
+                    'alternateName' => ($settings->subname ?? null) ?: 'Nobi Fashion',
                     'url' => $siteUrl,
                     'logo' => [
                         '@type' => 'ImageObject',
                         'url' => $logoUrl,
-                        'caption' => 'Logo NOBI FASHION'
+                        'caption' => 'Logo Nobi Fashion'
                     ],
                     'image' => $bannerUrl,
                     'telephone' => ($settings->contact_phone ?? null) ?: 'Đang cập nhật...',
@@ -172,34 +172,34 @@
                     'mainEntity' => [
                         [
                             '@type' => 'Question',
-                            'name' => 'NOBI FASHION là thương hiệu thời trang định hướng như thế nào?',
+                            'name' => 'Nobi Fashion là thương hiệu thời trang định hướng như thế nào?',
                             'acceptedAnswer' => [
                                 '@type' => 'Answer',
-                                'text' => 'NOBI FASHION là thương hiệu thời trang nam phong cách Smart-Casual hiện đại, tập trung vào các thiết kế tối giản, dễ phối đồ, chuẩn phom dáng người Việt và chất liệu thoáng mát bền đẹp.'
+                                'text' => 'Nobi Fashion là thương hiệu thời trang nam phong cách Smart-Casual hiện đại, tập trung vào các thiết kế tối giản, dễ phối đồ, chuẩn phom dáng người Việt và chất liệu thoáng mát bền đẹp.'
                             ]
                         ],
                         [
                             '@type' => 'Question',
-                            'name' => 'Mua sắm tại NOBI FASHION có được kiểm tra hàng trước khi nhận không?',
+                            'name' => 'Mua sắm tại Nobi Fashion có được kiểm tra hàng trước khi nhận không?',
                             'acceptedAnswer' => [
                                 '@type' => 'Answer',
-                                'text' => 'Có. NOBI FASHION áp dụng chính sách đồng kiểm 100% cho mọi đơn hàng. Quý khách hoàn toàn được quyền mở hộp kiểm tra chất vải, đường may và mẫu mã trước khi thanh toán.'
+                                'text' => 'Có. Nobi Fashion áp dụng chính sách đồng kiểm 100% cho mọi đơn hàng. Quý khách hoàn toàn được quyền mở hộp kiểm tra chất vải, đường may và mẫu mã trước khi thanh toán.'
                             ]
                         ],
                         [
                             '@type' => 'Question',
-                            'name' => 'Chính sách đổi size sản phẩm của NOBI FASHION ra sao?',
+                            'name' => 'Chính sách đổi size sản phẩm của Nobi Fashion ra sao?',
                             'acceptedAnswer' => [
                                 '@type' => 'Answer',
-                                'text' => 'NOBI FASHION hỗ trợ đổi size thuận tiện trong 15 ngày nếu trang phục chưa vừa vặn với vóc dáng, đảm bảo khách hàng luôn có sản phẩm ưng ý nhất.'
+                                'text' => 'Nobi Fashion hỗ trợ đổi size thuận tiện trong 15 ngày nếu trang phục chưa vừa vặn với vóc dáng, đảm bảo khách hàng luôn có sản phẩm ưng ý nhất.'
                             ]
                         ],
                         [
                             '@type' => 'Question',
-                            'name' => 'NOBI FASHION phục vụ khách hàng và tư vấn chọn size như thế nào?',
+                            'name' => 'Nobi Fashion phục vụ khách hàng và tư vấn chọn size như thế nào?',
                             'acceptedAnswer' => [
                                 '@type' => 'Answer',
-                                'text' => 'NOBI FASHION phục vụ trực tuyến trên toàn quốc với chính sách đồng kiểm 100% khi nhận hàng. Khách hàng được mở hộp kiểm tra phom dáng, chất vải và được hỗ trợ đổi size linh hoạt trong 15 ngày.'
+                                'text' => 'Nobi Fashion phục vụ trực tuyến trên toàn quốc với chính sách đồng kiểm 100% khi nhận hàng. Khách hàng được mở hộp kiểm tra phom dáng, chất vải và được hỗ trợ đổi size linh hoạt trong 15 ngày.'
                             ]
                         ]
                     ]
@@ -1247,7 +1247,7 @@
                     Thời Trang Nam Hiện Đại & Lịch Lãm Cho Phái Mạnh Việt
                 </h1>
                 <p class="intro-hero-lead">
-                    Khởi nguồn từ thành phố cảng Hải Phòng, <strong>{{ ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'NOBI FASHION') }}</strong> ra đời với sứ mệnh mang đến những thiết kế nam tối giản, chỉn chu và tôn vinh vóc dáng. Chúng tôi tin rằng trang phục đẹp không chỉ nằm ở vẻ bề ngoài, mà còn đến từ sự vừa vặn, chất liệu thoải mái và niềm tự tin bạn mang theo mỗi ngày.
+                    Khởi nguồn từ thành phố cảng Hải Phòng, <strong>{{ ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'Nobi Fashion') }}</strong> ra đời với sứ mệnh mang đến những thiết kế nam tối giản, chỉn chu và tôn vinh vóc dáng. Chúng tôi tin rằng trang phục đẹp không chỉ nằm ở vẻ bề ngoài, mà còn đến từ sự vừa vặn, chất liệu thoải mái và niềm tự tin bạn mang theo mỗi ngày.
                 </p>
                 <div class="intro-hero-actions">
                     <a href="{{ route('client.product.shop.index') }}" class="btn-intro-primary">
@@ -1262,7 +1262,7 @@
 
             <div class="intro-hero-media">
                 <div class="intro-media-wrapper">
-                    <img src="{{ asset('clients/assets/img/banners/' . (($settings->site_banner ?? null) ?: 'phoi-do-mua-dong-1.webp')) }}" alt="Bộ sưu tập thời trang NOBI FASHION" loading="lazy">
+                    <img src="{{ asset('clients/assets/img/banners/' . (($settings->site_banner ?? null) ?: 'phoi-do-mua-dong-1.webp')) }}" alt="Bộ sưu tập thời trang Nobi Fashion" loading="lazy">
                     <div class="intro-media-badge">
                         <span>Thiết Kế Tinh Gọn</span>
                         <strong>Tỉ mỉ từ đường kim, chỉn chu trong từng phom dáng</strong>
@@ -1312,7 +1312,7 @@
                 <span class="intro-eyebrow">Hành Trình Kiến Tạo</span>
                 <h2>Từ Trăn Trở Đến Từng Thiết Kế Đời Thường</h2>
                 <p>
-                    Thị trường thời trang nam hiện đại không thiếu những mẫu mã hào nhoáng, nhưng tìm được một thương hiệu thực sự thấu hiểu phom người Việt, may kỹ càng và có mức giá hợp lý lại không hề dễ dàng. Đó chính là lý do NOBI FASHION ra đời.
+                    Thị trường thời trang nam hiện đại không thiếu những mẫu mã hào nhoáng, nhưng tìm được một thương hiệu thực sự thấu hiểu phom người Việt, may kỹ càng và có mức giá hợp lý lại không hề dễ dàng. Đó chính là lý do Nobi Fashion ra đời.
                 </p>
             </div>
 
@@ -1343,7 +1343,7 @@
         <section class="intro-values-section">
             <div class="section-header-center">
                 <span class="intro-eyebrow">Kim Chỉ Nam Hoạt Động</span>
-                <h2>Ba Giá Trị Cốt Lõi Làm Nên NOBI FASHION</h2>
+                <h2>Ba Giá Trị Cốt Lõi Làm Nên Nobi Fashion</h2>
                 <p>Những nguyên tắc vững chắc dẫn dắt mọi quyết định từ khâu chọn cuộn vải, hoàn thiện đường may đến dịch vụ khách hàng.</p>
             </div>
 
@@ -1373,7 +1373,7 @@
             <div class="story-header" style="margin-bottom: 0;">
                 <span class="intro-eyebrow">Tiêu Chuẩn Sản Phẩm</span>
                 <h2>4 Bước Tuyển Chọn &amp; Kiểm Soát Trang Phục</h2>
-                <p>Để từng chiếc áo, chiếc quần đến tay bạn đều đúng kỳ vọng, NOBI FASHION thực hiện kiểm tra kỹ lưỡng qua từng công đoạn.</p>
+                <p>Để từng chiếc áo, chiếc quần đến tay bạn đều đúng kỳ vọng, Nobi Fashion thực hiện kiểm tra kỹ lưỡng qua từng công đoạn.</p>
             </div>
 
             <div class="process-grid">
@@ -1409,13 +1409,13 @@
                 <div class="showroom-header">
                     <span class="intro-eyebrow">Kho Hàng &amp; Dịch Vụ CSKH</span>
                     <h3>Trung Tâm Hỗ Trợ &amp; Tiếp Nhận Đổi Trả</h3>
-                    <p>NOBI FASHION vận hành theo mô hình bán lẻ trực tuyến trên toàn quốc nhằm tối ưu chi phí vận hành, đem lại trang phục chất lượng với mức giá tốt nhất cho khách hàng.</p>
+                    <p>Nobi Fashion vận hành theo mô hình bán lẻ trực tuyến trên toàn quốc nhằm tối ưu chi phí vận hành, đem lại trang phục chất lượng với mức giá tốt nhất cho khách hàng.</p>
                 </div>
 
                 <ul class="showroom-details">
                     <li>
                         <span class="detail-label">Thương hiệu:</span>
-                        <span class="detail-value"><strong>{{ ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'NOBI FASHION') }}</strong></span>
+                        <span class="detail-value"><strong>{{ ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'Nobi Fashion') }}</strong></span>
                     </li>
                     <li>
                         <span class="detail-label">Kho hàng:</span>
@@ -1460,7 +1460,7 @@
             <div class="showroom-map-box">
                 <iframe
                     src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4010.6654359851395!2d106.67608087555321!3d20.829894880770134!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x314a707e662ec17b%3A0x6a8ab8c6fc7ccd75!2zTmfDtSA1MTIgRHVvbmcgVGhpw6puIEzDtGksIEFuIEJpw6puLCBI4bqjaSBQaMOybmcsIFZp4buHdCBOYW0!5e1!3m2!1svi!2s!4v1790407588827!5m2!1svi!2s"
-                    loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade" title="Bản đồ chỉ dẫn địa chỉ NOBI FASHION Hải Phòng"></iframe>
+                    loading="lazy" allowfullscreen referrerpolicy="no-referrer-when-downgrade" title="Bản đồ chỉ dẫn địa chỉ Nobi Fashion Hải Phòng"></iframe>
             </div>
         </section>
 
@@ -1483,7 +1483,7 @@
 
         {{-- 8. Gợi Ý Sản Phẩm Mới (Thiết kế trực tiếp, tinh tế, sang trọng) --}}
         @if (isset($productNew) && $productNew->isNotEmpty())
-            <section class="intro-showcase" aria-label="Sản phẩm mới tại NOBI FASHION">
+            <section class="intro-showcase" aria-label="Sản phẩm mới tại Nobi Fashion">
                 <div class="intro-showcase-header">
                     <div class="intro-showcase-title-wrap">
                         <span class="intro-showcase-badge">
@@ -1520,7 +1520,7 @@
                             $currentPrice = $hasDiscount ? $salePrice : ($price > 0 ? $price : $salePrice);
                             $discountPercent = $hasDiscount ? round((($price - $salePrice) / $price) * 100) : 0;
                             $isNew = $item->created_at ? $item->created_at->diffInDays(now()) <= 45 : true;
-                            $brandName = $item->brand?->name ?? 'NOBI FASHION';
+                            $brandName = $item->brand?->name ?? 'Nobi Fashion';
                         @endphp
                         <a href="{{ route('client.product.detail', $item->slug) }}" class="intro-product-card" title="{{ $item->name }}">
                             <div class="intro-product-thumb">

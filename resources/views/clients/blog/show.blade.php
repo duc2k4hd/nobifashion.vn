@@ -1,7 +1,7 @@
 @extends('clients.layouts.master')
 
-@section('title', renderMeta($post->meta_title ?? $post->title) . ' | ' . ($settings->site_name ?? ($settings->subname
-    ?? 'NOBI FASHION VIỆT NAM')))
+@section('title', renderMeta($post->meta_title ?? $post->title) . ' | ' . ($settings->subname
+    ?? 'Nobi Fashion'))
 @section('head')
     {{-- SEO Meta Tags --}}
     @php
@@ -84,7 +84,7 @@
 @section('content')
     @php
         $shareUrl = urlencode(route('client.blog.show', $post));
-        $shareText = urlencode(renderMeta($post->title) . ' - ' . config('app.name'));
+        $shareText = urlencode(renderMeta($post->title) . ' - ' . $settings->subname);
     @endphp
 
     {{-- ========================================= --}}

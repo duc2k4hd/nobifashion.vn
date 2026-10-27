@@ -1,16 +1,16 @@
 @extends('clients.layouts.master')
 
-@section('title', 'Liên Hệ NOBI FASHION – Tư Vấn Size & Chăm Sóc Khách Hàng Tận Tâm')
+@section('title', 'Liên Hệ Nobi Fashion – Tư Vấn Size & Chăm Sóc Khách Hàng Tận Tâm')
 
 @section('head')
     <meta name="robots" content="follow, index, max-snippet:-1, max-video-preview:-1, max-image-preview:large" />
-    <meta name="keywords" content="{{ $settings->seo_keywords ?? 'liên hệ NOBI FASHION, chăm sóc khách hàng nobi fashion, shop thời trang Hải Phòng, hotline nobi fashion, tư vấn size nobi' }}">
-    <meta name="description" content="Trung tâm chăm sóc khách hàng {{ ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'NOBI FASHION') }}. Kết nối trực tiếp để được tư vấn chọn size chuẩn dáng, hỗ trợ đơn hàng và đổi trả nhanh chóng. Hotline: {{ ($settings->contact_phone ?? null) ?: 'Đang cập nhật...' }}.">
+    <meta name="keywords" content="{{ $settings->seo_keywords ?? 'liên hệ Nobi Fashion, chăm sóc khách hàng nobi fashion, shop thời trang Hải Phòng, hotline nobi fashion, tư vấn size nobi' }}">
+    <meta name="description" content="Trung tâm chăm sóc khách hàng {{ ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'Nobi Fashion') }}. Kết nối trực tiếp để được tư vấn chọn size chuẩn dáng, hỗ trợ đơn hàng và đổi trả nhanh chóng. Hotline: {{ ($settings->contact_phone ?? null) ?: 'Đang cập nhật...' }}.">
     <link rel="canonical" href="{{ route('client.page.contact') }}">
 
     {{-- Open Graph --}}
-    <meta property="og:title" content="Liên Hệ NOBI FASHION – Tư Vấn Size & Chăm Sóc Khách Hàng Tận Tâm">
-    <meta property="og:description" content="Trung tâm chăm sóc khách hàng {{ ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'NOBI FASHION') }}. Kết nối trực tiếp để được tư vấn chọn size chuẩn dáng, hỗ trợ đơn hàng và đổi trả nhanh chóng.">
+    <meta property="og:title" content="Liên Hệ Nobi Fashion – Tư Vấn Size & Chăm Sóc Khách Hàng Tận Tâm">
+    <meta property="og:description" content="Trung tâm chăm sóc khách hàng {{ ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'Nobi Fashion') }}. Kết nối trực tiếp để được tư vấn chọn size chuẩn dáng, hỗ trợ đơn hàng và đổi trả nhanh chóng.">
     <meta property="og:url" content="{{ route('client.page.contact') }}">
     <meta property="og:type" content="website">
     <meta property="og:image" content="{{ asset('clients/assets/img/business/' . (($settings->site_banner ?? null) ?: (($settings->site_logo ?? null) ?: 'banner.webp'))) }}">
@@ -19,8 +19,8 @@
 
     {{-- Twitter Card --}}
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Liên Hệ NOBI FASHION – Tư Vấn Size & Chăm Sóc Khách Hàng Tận Tâm">
-    <meta name="twitter:description" content="Trung tâm chăm sóc khách hàng {{ ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'NOBI FASHION') }}. Kết nối trực tiếp để được tư vấn chọn size chuẩn dáng, hỗ trợ đơn hàng và đổi trả nhanh chóng.">
+    <meta name="twitter:title" content="Liên Hệ Nobi Fashion – Tư Vấn Size & Chăm Sóc Khách Hàng Tận Tâm">
+    <meta name="twitter:description" content="Trung tâm chăm sóc khách hàng {{ ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'Nobi Fashion') }}. Kết nối trực tiếp để được tư vấn chọn size chuẩn dáng, hỗ trợ đơn hàng và đổi trả nhanh chóng.">
     <meta name="twitter:image" content="{{ asset('clients/assets/img/business/' . (($settings->site_banner ?? null) ?: (($settings->site_logo ?? null) ?: 'banner.webp'))) }}">
 @endsection
 
@@ -39,8 +39,8 @@
             '@type' => 'ContactPage',
             '@id' => route('client.page.contact') . '#webpage',
             'url' => route('client.page.contact'),
-            'name' => 'Liên Hệ NOBI FASHION – Tư Vấn Size & Chăm Sóc Khách Hàng Tận Tâm',
-            'description' => 'Trung tâm chăm sóc khách hàng NOBI FASHION. Tư vấn chọn size, chính sách mua sắm và hỗ trợ đơn hàng.',
+            'name' => 'Liên Hệ Nobi Fashion – Tư Vấn Size & Chăm Sóc Khách Hàng Tận Tâm',
+            'description' => 'Trung tâm chăm sóc khách hàng Nobi Fashion. Tư vấn chọn size, chính sách mua sắm và hỗ trợ đơn hàng.',
             'inLanguage' => 'vi-VN',
             'breadcrumb' => [
                 '@type' => 'BreadcrumbList',
@@ -939,10 +939,10 @@
 
         {{-- Header Hero --}}
         <header class="contact-header">
-            <span class="contact-eyebrow">Dịch Vụ Khách Hàng • NOBI FASHION</span>
+            <span class="contact-eyebrow">Dịch Vụ Khách Hàng • Nobi Fashion</span>
             <h1 class="contact-title">Liên hệ & Hỗ trợ</h1>
             <p class="contact-desc">
-                Đội ngũ NOBI FASHION luôn sẵn lòng đồng hành cùng bạn. Dù là tư vấn lựa chọn size số, giải đáp thắc mắc về đơn hàng hay trao đổi hợp tác kinh doanh, chúng tôi sẽ phản hồi nhanh chóng và tận tâm nhất.
+                Đội ngũ Nobi Fashion luôn sẵn lòng đồng hành cùng bạn. Dù là tư vấn lựa chọn size số, giải đáp thắc mắc về đơn hàng hay trao đổi hợp tác kinh doanh, chúng tôi sẽ phản hồi nhanh chóng và tận tâm nhất.
             </p>
         </header>
 
@@ -1012,7 +1012,7 @@
                     <ul class="info-detail-list">
                         <li>
                             <span class="info-label">Thương hiệu:</span>
-                            <span class="info-text"><strong>{{ ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'NOBI FASHION') }}</strong></span>
+                            <span class="info-text"><strong>{{ ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'Nobi Fashion') }}</strong></span>
                         </li>
                         @if(!empty($settings->site_tax_code) && $settings->site_tax_code !== 'Đang cập nhật...')
                         <li>
@@ -1193,13 +1193,13 @@
             <div class="map-container">
                 <iframe
                     src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4010.6654359851395!2d106.67608087555321!3d20.829894880770134!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x314a707e662ec17b%3A0x6a8ab8c6fc7ccd75!2zTmfDtSA1MTIgRHVvbmcgVGhpw6puIEzDtGksIEFuIEJpw6puLCBI4bqjaSBQaMOybmcsIFZp4buHdCBOYW0!5e1!3m2!1svi!2s!4v1790407588827!5m2!1svi!2s"
-                    allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Bản đồ chỉ dẫn địa chỉ NOBI FASHION"></iframe>
+                    allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Bản đồ chỉ dẫn địa chỉ Nobi Fashion"></iframe>
             </div>
         </section>
 
         {{-- Gợi Ý Sản Phẩm Mới (Thiết kế trực tiếp, tinh tế, sang trọng, không màu mè) --}}
         @if (isset($productNew) && $productNew->isNotEmpty())
-            <section class="contact-showcase" aria-label="Sản phẩm mới tại NOBI FASHION">
+            <section class="contact-showcase" aria-label="Sản phẩm mới tại Nobi Fashion">
                 <div class="contact-showcase-header">
                     <div class="contact-showcase-title-wrap">
                         <span class="contact-showcase-badge">
@@ -1210,7 +1210,7 @@
                         </span>
                         <h2 class="contact-showcase-title">Gợi ý trang phục cho bạn</h2>
                         <p class="contact-showcase-desc">
-                            Khám phá những mẫu thiết kế mới nhất vừa cập bến tại NOBI FASHION với phong cách hiện đại và chất liệu cao cấp.
+                            Khám phá những mẫu thiết kế mới nhất vừa cập bến tại Nobi Fashion với phong cách hiện đại và chất liệu cao cấp.
                         </p>
                     </div>
                     <a href="{{ route('client.product.shop.index') }}" class="contact-showcase-viewall" title="Xem tất cả sản phẩm">
@@ -1236,7 +1236,7 @@
                             $currentPrice = $hasDiscount ? $salePrice : ($price > 0 ? $price : $salePrice);
                             $discountPercent = $hasDiscount ? round((($price - $salePrice) / $price) * 100) : 0;
                             $isNew = $item->created_at ? $item->created_at->diffInDays(now()) <= 45 : true;
-                            $brandName = $item->brand?->name ?? 'NOBI FASHION';
+                            $brandName = $item->brand?->name ?? 'Nobi Fashion';
                         @endphp
                         <a href="{{ route('client.product.detail', $item->slug) }}" class="contact-product-card" title="{{ $item->name }}">
                             <div class="contact-product-thumb">

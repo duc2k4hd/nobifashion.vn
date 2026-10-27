@@ -1,6 +1,6 @@
 @extends('clients.layouts.master')
 
-@section('title', 'Đơn hàng của tôi | ' . renderMeta($settings->site_name ?? ($settings->subname ?? 'NOBI FASHION')))
+@section('title', 'Đơn hàng của tôi | ' . renderMeta($settings->subname ?? ($settings->site_name ?? 'Nobi Fashion')))
 
 @section('head')
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">

@@ -255,10 +255,10 @@ class AuthorController extends Controller
 
         // 7. Cài đặt SEO & Schema
         $settings = \Illuminate\Support\Facades\View::shared('settings') ?? Setting::first();
-        $siteName = $settings->site_name ?? 'Nobi Fashion';
+        $siteName = $settings->subname ?? 'Nobi Fashion';
         $siteUrl = config('app.url', url('/'));
 
-        $seoTitle = "Tác giả {$fullName} ({$roleTitle}) - {$siteName}";
+        $seoTitle = "Tác giả \"{$fullName}\" ({$roleTitle}) | {$siteName}";
         $seoDescription = "Hồ sơ tác giả {$fullName} - {$roleBadge} tại {$siteName}. Tuyển tập bài viết đọc nhiều nhất, cẩm nang phối đồ xu hướng và góc nhìn phong cách thời trang.";
         $canonicalUrl = route('client.author.show', $cleanSlug);
 

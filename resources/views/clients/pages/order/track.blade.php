@@ -1,6 +1,6 @@
 @extends('clients.layouts.master')
 
-@section('title', 'Tra cứu vận đơn GHN | ' . renderMeta($settings->site_name ?? ($settings->subname ?? 'NOBI FASHION')))
+@section('title', 'Tra cứu vận đơn GHN | ' . renderMeta($settings->subname ?? ($settings->site_name ?? 'Nobi Fashion')))
 
 @section('head')
     <meta name="robots" content="follow, noindex"/>

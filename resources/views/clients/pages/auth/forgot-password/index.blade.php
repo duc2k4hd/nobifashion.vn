@@ -3,14 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quên mật khẩu - {{ renderMeta($settings->subname ?? config('site.short_name')) }}</title>
+    <title>Quên mật khẩu | {{ renderMeta($settings->subname ?? config('site.short_name')) }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <meta name="robots" content="nofollow, noindex"/>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="shortcut icon" href="{{ asset('admins/img/icons/forgot-password.png') }}" type="image/x-icon">
-    <link rel="icon" href="{{ asset('admins/img/icons/forgot-password.png') }}" type="image/x-icon">
-    <link rel="mask-icon" href="{{ asset('admins/img/icons/forgot-password.png') }}" color="#000000">
-    <link rel="apple-touch-icon" href="{{ asset('admins/img/icons/forgot-password.png') }}">
+    @include('clients.templates.head')
     <meta name="theme-color" content="#000000">
     <meta name="msapplication-TileColor" content="#000000">
     <meta name="msapplication-TileImage" content="{{ asset('admins/img/icons/forgot-password.png') }}">

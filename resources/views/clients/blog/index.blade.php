@@ -1,7 +1,7 @@
 @extends('clients.layouts.master')
 
 @section('title', (isset($currentCategory) && $currentCategory ? ($currentCategory->meta_title ?: $currentCategory->name
-    . ' - Xu hướng & Phong cách') : 'Nobi Blog, Xu hướng & Phong cách sống') . ' – ' . config('app.name'))
+    . ' - Xu hướng & Phong cách') : 'Nobi Blog, Xu hướng & Phong cách sống') . ' | ' . $settings->subname)
 
 @section('head')
     @php
@@ -20,12 +20,12 @@
     @endif
 
     <meta name="description"
-        content="{{ isset($currentCategory) && $currentCategory ? ($currentCategory->meta_description ?: ($currentCategory->description ?: 'Tổng hợp các bài viết và thông tin mới nhất về ' . $currentCategory->name . ' tại ' . config('app.name') . '.')) : 'Cập nhật xu hướng thời trang mới nhất, cẩm nang phối đồ và chia sẻ hữu ích về phong cách sống tại ' . config('app.name') . '.' }}">
+        content="{{ isset($currentCategory) && $currentCategory ? ($currentCategory->meta_description ?: ($currentCategory->description ?: 'Tổng hợp các bài viết và thông tin mới nhất về ' . $currentCategory->name . ' tại ' . $settings->subname . '.')) : 'Cập nhật xu hướng thời trang mới nhất, cẩm nang phối đồ và chia sẻ hữu ích về phong cách sống tại ' . $settings->subname . '.' }}">
     <link rel="canonical" href="{{ $canonicalUrl }}">
     <meta property="og:url" content="{{ $canonicalUrl }}">
     <meta property="og:type" content="website">
-    <meta property="og:title" content="{{ (isset($currentCategory) && $currentCategory ? ($currentCategory->meta_title ?: $currentCategory->name . ' - Xu hướng & Phong cách') : 'Nobi Blog, Xu hướng & Phong cách sống') . ' – ' . config('app.name') }}">
-    <meta property="og:description" content="{{ isset($currentCategory) && $currentCategory ? ($currentCategory->meta_description ?: ($currentCategory->description ?: 'Tổng hợp các bài viết và thông tin mới nhất về ' . $currentCategory->name . ' tại ' . config('app.name') . '.')) : 'Cập nhật xu hướng thời trang mới nhất, cẩm nang phối đồ và chia sẻ hữu ích về phong cách sống tại ' . config('app.name') . '.' }}">
+    <meta property="og:title" content="{{ (isset($currentCategory) && $currentCategory ? ($currentCategory->meta_title ?: $currentCategory->name . ' - Xu hướng & Phong cách') : 'Nobi Blog, Xu hướng & Phong cách sống') . ' – ' . $settings->subname }}">
+    <meta property="og:description" content="{{ isset($currentCategory) && $currentCategory ? ($currentCategory->meta_description ?: ($currentCategory->description ?: 'Tổng hợp các bài viết và thông tin mới nhất về ' . $currentCategory->name . ' tại ' . $settings->subname . '.')) : 'Cập nhật xu hướng thời trang mới nhất, cẩm nang phối đồ và chia sẻ hữu ích về phong cách sống tại ' . $settings->subname . '.' }}">
 @endsection
 
 @push('styles')
@@ -105,7 +105,7 @@
                         <h1 class="nobifashion_blog_hero_title">Định hình phong cách & Cảm hứng sống hiện đại</h1>
                         <p class="nobifashion_blog_hero_desc">
                             Khám phá những xu hướng thời trang đương đại, cẩm nang phối đồ tinh tế và câu chuyện phong cách
-                            sống được tuyển chọn bởi {{ config('app.name') }}.
+                            sống được tuyển chọn bởi {{ $settings->subname }}.
                         </p>
                     @endif
                 </div>

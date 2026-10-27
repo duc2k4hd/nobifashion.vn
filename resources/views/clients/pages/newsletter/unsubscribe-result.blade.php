@@ -1,6 +1,6 @@
 @extends('clients.layouts.master')
 
-@section('title', 'Hủy đăng ký Newsletter')
+@section('title', 'Hủy đăng ký Newsletter | '. ($settings->subname ?? 'Nobi Fashion'))
 
 @section('content')
     <div style="max-width: 600px; margin: 60px auto; padding: 40px; background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); text-align: center;">

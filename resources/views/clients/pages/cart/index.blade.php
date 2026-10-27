@@ -1,13 +1,10 @@
 @extends('clients.layouts.master')
 
-@section('title',
-    (auth('web')->user()?->name ?? ($account->name ?? null))
-        ? 'Giỏ hàng của ' . (auth('web')->user()?->name ?? $account->name)
-        : 'Giỏ hàng - ' . renderMeta(data_get($settings ?? [], 'site_name', data_get($settings ?? [], 'subname', 'Bạn'))))
+@section('title', 'Giỏ hàng | ' . renderMeta($settings->subname ?? 'Nobi Fashion'))
 
 @section('head')
     <link rel="stylesheet" href="{{ asset('clients/assets/css/cart.css') }}?v={{ env('APP_VERSION') }}">
-    <meta name="robots" content="follow, noindex"/>
+    <meta name="robots" content="nofollow, noindex"/>
     <meta name="csrf-token" content="{{ csrf_token() }}">
 @endsection
 

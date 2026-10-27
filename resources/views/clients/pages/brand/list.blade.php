@@ -1,20 +1,20 @@
 @extends('clients.layouts.master')
 
-@section('title', 'Top Thương Hiệu Thời Trang Chính Hãng | ' . ($settings->site_name ?? 'NOBIFASHION'))
+@section('title', 'Local Brand Việt: 200+ Thương Hiệu Việt Nam Nổi Tiếng, Chính Hãng | ' . ($settings->subname ?? 'Nobi Fashion'))
 
 @section('head')
     <meta name="robots" content="follow, index, max-snippet:-1, max-video-preview:-1, max-image-preview:large" />
-    <meta name="description" content="Khám phá bảng xếp hạng và danh bạ các thương hiệu thời trang chính hãng, local brand Việt Nam uy tín hàng đầu tại {{ $settings->site_name ?? 'NOBIFASHION' }}." />
+    <meta name="description" content="Khám phá bảng xếp hạng và danh bạ các thương hiệu thời trang chính hãng, local brand Việt Nam uy tín hàng đầu tại {{ $settings->subname ?? 'Nobi Fashion' }}." />
     <meta name="keywords" content="thương hiệu thời trang, local brand việt nam, nobifashion, yody, thời trang nam chính hãng, shop thời trang" />
     <link rel="canonical" href="{{ route('client.brand.list') }}" />
     
     {{-- Open Graph --}}
     <meta property="og:locale" content="vi_VN" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Top Thương Hiệu Thời Trang Chính Hãng | {{ $settings->site_name ?? 'NOBIFASHION' }}" />
-    <meta property="og:description" content="Khám phá bảng xếp hạng và danh bạ các thương hiệu thời trang chính hãng, local brand Việt Nam uy tín tại {{ $settings->site_name ?? 'NOBIFASHION' }}." />
+    <meta property="og:title" content="Local Brand Việt: 200+ Thương Hiệu Việt Nam Nổi Tiếng, Chính Hãng | {{ $settings->subname ?? 'Nobi Fashion' }}" />
+    <meta property="og:description" content="Khám phá bảng xếp hạng và danh bạ các thương hiệu thời trang chính hãng, local brand Việt Nam uy tín tại {{ $settings->subname ?? 'Nobi Fashion' }}." />
     <meta property="og:url" content="{{ route('client.brand.list') }}" />
-    <meta property="og:site_name" content="{{ $settings->site_name ?? 'NOBIFASHION' }}" />
+    <meta property="og:site_name" content="{{ $settings->subname ?? 'Nobi Fashion' }}" />
 
     <style>
         /* ========================================================

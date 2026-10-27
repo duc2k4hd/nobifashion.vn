@@ -4,11 +4,11 @@
     renderMeta(
     $product->meta_title ??
     ($product->name ??
-    'NOBI FASHION - Shop quần áo & phụ kiện thời
+    'Nobi Fashion - Shop quần áo & phụ kiện thời
     trang giá ưu đãi [NOBI]currentyear[NOBI]'),
     ) .
-    ' – ' .
-    ($settings->site_name ?? 'NOBI FASHION'))
+    ' | ' .
+    ($settings->subname ?? 'Nobi Fashion'))
 
 @section('head')
     @php
@@ -34,17 +34,17 @@
 
     <meta name="robots" content="follow, index, max-snippet:-1, max-video-preview:-1, max-image-preview:large" />
     <meta name="keywords"
-        content="{{ is_array($product->meta_keywords ?? null) ? implode(', ', $product->meta_keywords) : 'quần áo, phụ kiện, thời trang nam, thời trang nữ, áo phông, sơ mi, quần jean, váy, mũ nón, thắt lưng, NOBI FASHION' }}">
+        content="{{ is_array($product->meta_keywords ?? null) ? implode(', ', $product->meta_keywords) : 'quần áo, phụ kiện, thời trang nam, thời trang nữ, áo phông, sơ mi, quần jean, váy, mũ nón, thắt lưng, Nobi Fashion' }}">
 
     <meta name="description"
-        content="{{ renderMeta($product->meta_description ?? ($product->meta_title ?? ($product->name ?? 'Cửa hàng thời trang NOBI FASHION: quần áo & phụ kiện chính hãng, chất liệu đẹp, form chuẩn, giao nhanh 1–3 ngày, đổi size 15 ngày.'))) }}">
+        content="{{ renderMeta($product->meta_description ?? ($product->meta_title ?? ($product->name ?? 'Cửa hàng thời trang Nobi Fashion: quần áo & phụ kiện chính hãng, chất liệu đẹp, form chuẩn, giao nhanh 1–3 ngày, đổi size 15 ngày.'))) }}">
 
     <meta http-equiv="date" content="{{ \Carbon\Carbon::parse('2025-06-11 13:10:59')->format('d/m/y') }}" />
 
     <meta property="og:title"
-        content="{{ renderMeta($product->meta_title ?? ($product->name ?? 'NOBI FASHION - Quần áo & phụ kiện thời trang')) }}">
+        content="{{ renderMeta($product->meta_title ?? ($product->name ?? 'Nobi Fashion - Quần áo & phụ kiện thời trang')) }}">
     <meta property="og:description"
-        content="{{ renderMeta($product->meta_description ?? 'NOBI FASHION: Mua sắm quần áo & phụ kiện thời trang nam nữ. Hàng mới, giá tốt, giao nhanh 1–3 ngày, đổi size 15 ngày.') }}">
+        content="{{ renderMeta($product->meta_description ?? 'Nobi Fashion: Mua sắm quần áo & phụ kiện thời trang nam nữ. Hàng mới, giá tốt, giao nhanh 1–3 ngày, đổi size 15 ngày.') }}">
     <meta property="og:url"
         content="{{ $product->canonical_url ?? ($settings->site_url ?? 'https://nobifashion.vn') . '/san-pham/' . ($product->slug ?? '') }}">
     <meta property="og:image"
@@ -52,21 +52,21 @@
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:image:alt"
-        content="{{ $product->primaryImage->title ?? null ?: $product->name ?? ($settings->site_name ?? 'NOBI FASHION') }}">
+        content="{{ $product->primaryImage->title ?? null ?: $product->name ?? ($settings->site_name ?? 'Nobi Fashion') }}">
     <meta property="og:image:type" content="image/webp">
     <meta property="og:type" content="website">
-    <meta property="og:site_name" content="{{ $settings->site_name ?? 'NOBI FASHION' }}">
+    <meta property="og:site_name" content="{{ $settings->site_name ?? 'Nobi Fashion' }}">
     <meta property="og:locale" content="vi_VN">
 
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="{{ $settings->site_name ?? 'NOBI FASHION' }}">
+    <meta name="twitter:site" content="{{ $settings->site_name ?? 'Nobi Fashion' }}">
     <meta name="twitter:title"
-        content="{{ renderMeta($product->meta_title ?? ($product->name ?? 'NOBI FASHION - Quần áo & phụ kiện thời trang')) }}">
+        content="{{ renderMeta($product->meta_title ?? ($product->name ?? 'Nobi Fashion - Quần áo & phụ kiện thời trang')) }}">
     <meta name="twitter:description"
-        content="{{ renderMeta($product->meta_description ?? 'NOBI FASHION: Mua sắm quần áo & phụ kiện thời trang nam nữ. Hàng mới, giá tốt, giao nhanh 1–3 ngày, đổi size 15 ngày.') }}">
+        content="{{ renderMeta($product->meta_description ?? 'Nobi Fashion: Mua sắm quần áo & phụ kiện thời trang nam nữ. Hàng mới, giá tốt, giao nhanh 1–3 ngày, đổi size 15 ngày.') }}">
     <meta name="twitter:image"
         content="{{ asset('clients/assets/img/clothes/' . ($product?->primaryImage?->url ?? 'no-image.webp')) }}">
-    <meta name="twitter:creator" content="{{ $settings->seo_author ?? 'NOBI FASHION' }}">
+    <meta name="twitter:creator" content="{{ $settings->seo_author ?? 'Nobi Fashion' }}">
 
     <link rel="canonical"
         href="{{ $settings->site_url ?? 'https://nobifashion.vn' }}/san-pham/{{ $product->slug ?? '' }}">
@@ -206,15 +206,15 @@
                                     <img data-src="{{ $fullSrc }}"
                                         src="{{ $thumbSrc }}"
                                         srcset="{{ $thumbSrc }} 1x, {{ $thumbSrc2x }} 2x"
-                                        alt="{{ $image->alt ?? (renderMeta($product->name) ?? 'NOBI FASHION') }}"
-                                        title="{{ $image->title ?? (renderMeta($product->name) ?? 'NOBI FASHION') }}"
+                                        alt="{{ $image->alt ?? (renderMeta($product->name) ?? 'Nobi Fashion') }}"
+                                        title="{{ $image->title ?? (renderMeta($product->name) ?? 'Nobi Fashion') }}"
                                         width="64" height="85" decoding="async"
                                         class="nobifashion_single_info_gallery_thumb nobifashion_single_info_images_gallery_image {{ $image->is_primary || $loop->first ? 'nobifashion_single_info_images_gallery_image_active' : '' }}">
                                 @empty
                                     <img data-src="{{ asset('clients/assets/img/clothes/no-image.webp') }}"
                                         src="{{ asset('clients/assets/img/clothes/no-image.webp') }}"
-                                        alt="{{ renderMeta($product->name) ?? 'NOBI FASHION' }}"
-                                        title="{{ renderMeta($product->name) ?? 'NOBI FASHION' }}" width="64"
+                                        alt="{{ renderMeta($product->name) ?? 'Nobi Fashion' }}"
+                                        title="{{ renderMeta($product->name) ?? 'Nobi Fashion' }}" width="64"
                                         height="85" decoding="async"
                                         class="nobifashion_single_info_gallery_thumb nobifashion_single_info_images_gallery_image nobifashion_single_info_images_gallery_image_active">
                                 @endforelse
@@ -225,8 +225,8 @@
                                     src="{{ $mainLcpThumb }}"
                                     srcset="{{ $mainLcpThumb }} 500w, {{ $mainLcpFull }} 800w"
                                     sizes="(max-width: 767px) 380px, 500px"
-                                    alt="{{ $product?->primaryImage?->alt ?? (renderMeta($product->name) ?? 'NOBI FASHION') }}"
-                                    title="{{ $product?->primaryImage?->title ?? (renderMeta($product->name) ?? 'NOBI FASHION') }}"
+                                    alt="{{ $product?->primaryImage?->alt ?? (renderMeta($product->name) ?? 'Nobi Fashion') }}"
+                                    title="{{ $product?->primaryImage?->title ?? (renderMeta($product->name) ?? 'Nobi Fashion') }}"
                                     class="nobifashion_single_info_images_main_image nobifashion_single_image_clickable"
                                     data-default-src="{{ $mainLcpFull }}">
 
@@ -254,7 +254,7 @@
                         <div class="nobifashion_single_top_bar">
                             <div class="nobifashion_single_brand">
                                 <span class="nobifashion_single_brand_label">Thương hiệu:</span>
-                                <span class="nobifashion_single_brand_name">{{ $product->brand?->name ?? 'NOBI FASHION' }}</span>
+                                <span class="nobifashion_single_brand_name">{{ $product->brand?->name ?? 'Nobi Fashion' }}</span>
                             </div>
                             <div class="nobifashion_single_top_actions">
                                 <button
@@ -293,7 +293,7 @@
 
                         {{-- 2. TÊN SẢN PHẨM --}}
                         <h1 class="nobifashion_single_info_title nobifashion_single_title">
-                            {{ renderMeta($product->name) ?? 'Sản phẩm thời trang chính hãng - NOBI FASHION' }}
+                            {{ renderMeta($product->name) ?? 'Sản phẩm thời trang chính hãng - Nobi Fashion' }}
                         </h1>
 
                         <div class="nobifashion_single_divider"></div>
@@ -443,7 +443,7 @@
                                         <span class="nobifashion_cta_arrow">→</span>
                                     </button>
                                     <div class="nobifashion_single_cta_note">
-                                        SẢN PHẨM KHÔNG BÁN TRỰC TIẾP TRÊN NOBI FASHION
+                                        SẢN PHẨM KHÔNG BÁN TRỰC TIẾP TRÊN Nobi Fashion
                                     </div>
 
                                     @php
@@ -487,7 +487,7 @@
                             </div>
                             <div class="nobifashion_single_policy_text">
                                 <div class="nobifashion_single_policy_title">
-                                    Sản phẩm chính hãng tại NOBI FASHION
+                                    Sản phẩm chính hãng tại Nobi Fashion
                                 </div>
                                 <div class="nobifashion_single_policy_desc">
                                     Đổi hàng 15 ngày • Miễn phí vận chuyển từ 499k • Hỗ trợ: {{ $settings->contact_phone ?? '0827786198' }}
@@ -556,7 +556,7 @@
                             <h2>🎉 Mã ưu đãi dành cho bạn</h2>
                             <img width="100" height="100" style="aspect-ratio: 1/1; object-fit: contain;"
                                 src="{{ asset('clients/assets/img/other/fs-gift-box-8-1.webp') }}"
-                                alt="Voucher NOBI FASHION" loading="lazy">
+                                alt="Voucher Nobi Fashion" loading="lazy">
                             <p>Sao chép nhanh một trong các mã sau để dùng ngay khi thanh toán:</p>
                             @foreach ($voucherItems as $voucher)
                                 <div class="nobifashion_main_show_popup_voucher_code">{{ $voucher->code }}</div>
@@ -1058,7 +1058,7 @@
                     @endphp
                     <img loading="lazy" decoding="async" width="64" height="85"
                         src="{{ route('client.clothes.thumb', ['size' => '64x85', 'filename' => $lbRaw]) }}"
-                        alt="{{ $image->alt ?? (renderMeta($product->name) ?? 'NOBI FASHION') }}"
+                        alt="{{ $image->alt ?? (renderMeta($product->name) ?? 'Nobi Fashion') }}"
                         class="nobifashion_lightbox_thumbnail {{ $image->is_primary ? 'active' : '' }}"
                         data-index="{{ $index }}"
                         data-src="{{ asset('clients/assets/img/clothes/' . $lbRaw) }}">
