@@ -6,12 +6,10 @@
 
 @if (!$isPageSpeedBot)
 {{-- =====================================================
-    1. PRECONNECT & PRELOAD PRIMARY FONT
+    1. PRECONNECT PRIMARY FONT
 ===================================================== --}}
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="preload" href="https://fonts.gstatic.com/s/opensans/v44/memvYaGs126MiZpBA-UvWbX2vVnXBbObj2OVTS-mu0SC55I.woff2"
-    as="font" type="font/woff2" crossorigin>
 @endif
 
 {{-- =====================================================
