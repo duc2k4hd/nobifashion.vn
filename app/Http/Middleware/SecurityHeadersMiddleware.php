@@ -17,10 +17,10 @@ class SecurityHeadersMiddleware
     {
         $response = $next($request);
 
-            // Content Security Policy (CSP) to prevent XSS
-            $response->headers->set('Content-Security-Policy',
-    "default-src 'self'; ".
-    
+        // Content Security Policy (CSP) to prevent XSS
+        $response->headers->set('Content-Security-Policy',
+            "default-src 'self'; ".
+
             // Scripts
             "script-src 'self' 'unsafe-inline' 'unsafe-eval' ".
                 "https://cdnjs.cloudflare.com ".
@@ -30,26 +30,55 @@ class SecurityHeadersMiddleware
                 "https://images.dmca.com ".
                 "https://cdn.tailwindcss.com ".
                 "https://cdn.tiny.cloud ".
+                "https://cdn.ckeditor.com ".
+                "https://*.ckeditor.com ".
+                "https://proxy-event.ckeditor.com ".
                 "https://www.googletagmanager.com ".
                 "https://www.google-analytics.com; ".
 
             // Styles
-            "style-src 'self' 'unsafe-inline' ".
+            "style-src 'self' 'unsafe-inline' ".    
                 "https://fonts.googleapis.com ".
                 "https://cdnjs.cloudflare.com ".
                 "https://unpkg.com ".
-                "https://cdn.jsdelivr.net; ".
+                "https://cdn.jsdelivr.net ".
+                "https://cdn.ckeditor.com ".
+                "https://*.ckeditor.com ".
+                "https://cdn.tiny.cloud ".
+                "https://cdn.tailwindcss.com; ".
 
             // Fonts
-            "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https:; ".
+            "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cdn.ckeditor.com https:; ".
 
             // Images
             "img-src 'self' data: https: blob:; ".
 
             // Ajax/Fetch
-            "connect-src 'self' https://api.ghn.vn https://cdn.jsdelivr.net https://unpkg.com https://www.google-analytics.com https://region1.google-analytics.com; ".
+            "connect-src 'self' ".
+                "https://api.ghn.vn ".
+                "https://dev-online-gateway.ghn.vn ".
+                "https://online-gateway.ghn.vn ".
+                "https://cdn.jsdelivr.net ".
+                "https://unpkg.com ".
+                "https://cdn.ckeditor.com ".
+                "https://*.ckeditor.com ".
+                "https://proxy-event.ckeditor.com ".
+                "https://www.google-analytics.com ".
+                "https://region1.google-analytics.com ".
+                "https://www.googletagmanager.com ".
+                "https://stats.g.doubleclick.net ".
+                "https://api-merchant.payos.vn ".
+                "https://pay.payos.vn ".
+                "https://cdn.tiny.cloud; ".
 
-            // No iframe
+            // Web Workers & Blob (cho CKEditor, media plugins)
+            "worker-src 'self' blob:; ".
+            "child-src 'self' blob:; ".
+
+            // Frame embed (Youtube, PayOS)
+            "frame-src 'self' https://pay.payos.vn https://www.youtube.com https://youtube.com; ".
+
+            // No iframe embed
             "frame-ancestors 'none'; ".
 
             // Form submits
