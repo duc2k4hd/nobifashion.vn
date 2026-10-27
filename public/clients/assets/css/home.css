@@ -1717,7 +1717,7 @@ body.nobifashion_home_page,
         stroke: none !important;
     }
 
-    /* Thanh mobile tabs: Đồng bộ nền trắng tinh khiết, liền mạch với tầng logo phía trên */
+    /* Thanh mobile tabs: Đồng bộ nền trắng tinh khiết, hỗ trợ cuộn ngang mượt mà (320px - 375px) không bị tràn */
     .nobifashion_home_mobile_tabs,
     .nobifashion_home_tabs.nobifashion_home_mobile_tabs {
         background: #ffffff !important;
@@ -1728,8 +1728,17 @@ body.nobifashion_home_page,
         padding-inline: 16px !important;
         height: 42px !important;
         min-height: 42px !important;
-        gap: 24px !important;
+        gap: 20px !important;
         align-items: center !important;
+        overflow-x: auto !important;
+        overflow-y: hidden !important;
+        white-space: nowrap !important;
+        -webkit-overflow-scrolling: touch !important;
+        scrollbar-width: none !important;
+    }
+    .nobifashion_home_mobile_tabs::-webkit-scrollbar,
+    .nobifashion_home_tabs.nobifashion_home_mobile_tabs::-webkit-scrollbar {
+        display: none !important;
     }
 
     .nobifashion_home_mobile_tabs .nobifashion_home_tab,
@@ -1743,6 +1752,8 @@ body.nobifashion_home_page,
         background: transparent !important;
         position: relative !important;
         text-transform: uppercase !important;
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
     }
 
     .nobifashion_home_mobile_tabs .nobifashion_home_tab[aria-current="page"],
@@ -2156,6 +2167,36 @@ body.nobifashion_home_page,
     .nobifashion_home_newsletter_submit {
         justify-content: center;
         border-radius: 8px;
+    }
+
+    /* Category Chips cuộn ngang gọn gàng trên mobile */
+    .nobifashion_home_category_chips_wrap {
+        margin-top: 20px;
+        padding-top: 16px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .nobifashion_home_category_chips {
+        display: flex;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        width: 100%;
+        padding-bottom: 4px;
+        scrollbar-width: none;
+    }
+
+    .nobifashion_home_category_chips::-webkit-scrollbar {
+        display: none;
+    }
+
+    .nobifashion_home_chip {
+        white-space: nowrap;
+        flex-shrink: 0;
+        padding: 6px 14px;
+        font-size: 12px;
     }
 }
 

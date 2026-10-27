@@ -1,7 +1,18 @@
 @extends('clients.layouts.master')
 
+@section('title', 'Săn Deal Hot & Ưu Đãi Giảm Giá Thời Trang | Nobi Fashion')
 
 @section('head')
+    <meta name="description" content="Khám phá các chương trình Flash Sale, ưu đãi giảm giá cực sốc quần áo nam nữ và phụ kiện thời trang chính hãng tại NOBI FASHION. Mua ngay nhận ưu đãi!">
+    <link rel="canonical" href="{{ url('/deals') }}">
+    <meta name="robots" content="index, follow">
+    <meta property="og:title" content="Săn Deal Hot & Ưu Đãi Giảm Giá Thời Trang - Nobi Fashion">
+    <meta property="og:description" content="Khám phá các chương trình Flash Sale, ưu đãi giảm giá cực sốc quần áo nam nữ và phụ kiện thời trang chính hãng tại NOBI FASHION.">
+    <meta property="og:url" content="{{ url('/deals') }}">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Săn Deal Hot & Ưu Đãi Giảm Giá Thời Trang - Nobi Fashion">
+    <meta name="twitter:description" content="Khám phá các chương trình Flash Sale, ưu đãi giảm giá cực sốc quần áo nam nữ và phụ kiện thời trang chính hãng tại NOBI FASHION.">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>

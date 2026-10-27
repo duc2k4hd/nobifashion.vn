@@ -48,7 +48,11 @@
 
 @section('schema')
     @php
-        $siteUrl = config('app.url') ?? url('/');
+        $rawUrl = $settings->site_url ?? config('app.url') ?? 'https://nobifashion.vn';
+        $siteUrl = rtrim($rawUrl, '/');
+        if (!preg_match('~^https?://~', $siteUrl)) {
+            $siteUrl = 'https://' . preg_replace('~^https?:?/?/?~', '', $siteUrl);
+        }
         $logoUrl = asset('clients/assets/img/business/' . ($settings->site_logo ?? 'nobifashion-logo.png'));
         $bannerUrl = asset('clients/assets/img/business/' . ($settings->site_banner ?? 'banner.webp'));
         $socialLinks = array_values(array_filter([
@@ -64,8 +68,8 @@
                     '@type' => 'WebSite',
                     '@id' => $siteUrl . '#website',
                     'url' => $siteUrl,
-                    'name' => ($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'NOBI FASHION'),
-                    'description' => ($settings->site_description ?? null) ?: 'Thương hiệu thời trang nam hiện đại chuẩn phom dáng người Việt',
+                    'name' => renderMeta(($settings->site_name ?? null) ?: (($settings->subname ?? null) ?: 'NOBI FASHION')),
+                    'description' => renderMeta(($settings->site_description ?? null) ?: 'Thương hiệu thời trang nam hiện đại chuẩn phom dáng người Việt'),
                     'publisher' => [
                         '@id' => $siteUrl . '#organization'
                     ],

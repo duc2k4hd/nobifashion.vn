@@ -28,8 +28,10 @@ class SecurityHeadersMiddleware
                 "https://unpkg.com ".
                 "https://cdn.jsdelivr.net ".
                 "https://images.dmca.com ".
-                "https://cdn.tailwindcss.com; ".
-                "https://cdn.tiny.cloud; ".
+                "https://cdn.tailwindcss.com ".
+                "https://cdn.tiny.cloud ".
+                "https://www.googletagmanager.com ".
+                "https://www.google-analytics.com; ".
 
             // Styles
             "style-src 'self' 'unsafe-inline' ".
@@ -45,7 +47,7 @@ class SecurityHeadersMiddleware
             "img-src 'self' data: https: blob:; ".
 
             // Ajax/Fetch
-            "connect-src 'self' https://api.ghn.vn https://cdn.jsdelivr.net https://unpkg.com; ".
+            "connect-src 'self' https://api.ghn.vn https://cdn.jsdelivr.net https://unpkg.com https://www.google-analytics.com https://region1.google-analytics.com; ".
 
             // No iframe
             "frame-ancestors 'none'; ".

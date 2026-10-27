@@ -502,7 +502,8 @@ class SitemapService
                 'client.policy.delivery',
                 'client.policy.privacy',
                 'client.policy.payment',
-                'client.policy.editorial'
+                'client.policy.editorial',
+                'client.deals.index',
             ];
 
             $urls = [];
@@ -730,12 +731,6 @@ class SitemapService
             $xml[] = '    <loc>'.e($url['loc']).'</loc>';
             if (! empty($url['lastmod'])) {
                 $xml[] = '    <lastmod>'.$url['lastmod'].'</lastmod>';
-            }
-            if (! empty($url['changefreq'])) {
-                $xml[] = '    <changefreq>'.$url['changefreq'].'</changefreq>';
-            }
-            if (! empty($url['priority'])) {
-                $xml[] = '    <priority>'.$url['priority'].'</priority>';
             }
             $xml[] = '  </url>';
         }

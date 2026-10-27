@@ -2,14 +2,14 @@
 
 @section('body_class', 'nobifashion_home_page')
 
-@section('title', renderMeta(optional($settings)->site_title ?? (optional($settings)->site_name ?? 'NOBI FASHION - Thời trang hiện đại & Tinh tế')))
+@section('title', renderMeta(optional($settings)->site_title ?? (optional($settings)->site_name ?? 'Nobi Fashion - Thời trang hiện đại & Tinh tế')))
 
 @section('head')
     <link rel="stylesheet" href="{{ asset('clients/assets/css/home.min.css') }}?v={{ filemtime(public_path('clients/assets/css/home.min.css')) }}">
     <meta name="robots" content="follow, index, max-snippet:-1, max-video-preview:-1, max-image-preview:large" />
-    <meta name="keywords" content="{{ $settings->seo_keywords ?? 'NOBI FASHION, quần áo, phụ kiện, thời trang nam nữ, áo khoác, quần jean' }}">
+    <meta name="keywords" content="{{ $settings->seo_keywords ?? 'Nobi Fashion, quần áo, phụ kiện, thời trang nam nữ, áo khoác, quần jean' }}">
     <meta name="description"
-        content="{{ renderMeta($settings->site_description) ?? 'NOBI FASHION - Thương hiệu thời trang nam nữ đương đại. Phom dáng chuẩn mực, chất liệu chọn lọc, tối ưu cho vóc dáng người Việt.' }}">
+        content="{{ renderMeta($settings->site_description) ?? 'Nobi Fashion - Thương hiệu thời trang nam nữ đương đại. Phom dáng chuẩn mực, chất liệu chọn lọc, tối ưu cho vóc dáng người Việt.' }}">
     <link rel="canonical" href="{{ $settings->site_url ?? '/' }}">
 @endsection
 
@@ -23,7 +23,7 @@
 
 @section('content')
     <main id="nobifashion_home_main" tabindex="-1">
-        <h1 class="nobifashion_home_sr_only">{{ $settings->site_name ?? 'NOBI FASHION' }} - Thời Trang Đương Đại &amp; Phụ Kiện Chính Hãng</h1>
+        <h1 class="nobifashion_home_sr_only">{{ $settings->site_name ?? 'Nobi Fashion' }} - Thời Trang Đương Đại &amp; Phụ Kiện Chính Hãng</h1>
 
         {{-- ====================================================================
              1. HERO EDITORIAL SHOWCASE (Full-Bleed Campaign Slider)
@@ -35,7 +35,7 @@
                     <div class="nobifashion_home_hero_media">
                         <img class="nobifashion_home_hero_img"
                              src="{{ asset('clients/assets/img/banners/phoi-do-mua-dong.webp') }}"
-                             alt="Bộ Sưu Tập Thu Đông - NOBI FASHION"
+                             alt="Bộ Sưu Tập Thu Đông - Nobi Fashion"
                              width="1920" height="960" fetchpriority="high" decoding="async">
                         <video class="nobifashion_home_hero_video" id="nobifashion_home_hero_video" muted loop playsinline preload="none"
                                data-src="{{ asset('clients/assets/img/banners/Trinh-dien-thoi-trang.mp4') }}"
@@ -74,7 +74,7 @@
                     <div class="nobifashion_home_hero_media">
                         <img class="nobifashion_home_hero_img"
                              src="{{ asset('clients/assets/img/banners/bo-suu-tap-quan-jeans.webp') }}"
-                             alt="Bộ sưu tập quần Jeans - NOBI FASHION"
+                             alt="Bộ sưu tập quần Jeans - Nobi Fashion"
                              width="1920" height="960" loading="lazy" decoding="async">
                         <div class="nobifashion_home_hero_overlay"></div>
                     </div>
@@ -103,7 +103,7 @@
                     <div class="nobifashion_home_hero_media">
                         <img class="nobifashion_home_hero_img"
                              src="{{ asset('clients/assets/img/banners/bo-suu-tap-ao-khoac-gio.webp') }}"
-                             alt="Áo khoác gió thời thượng - NOBI FASHION"
+                             alt="Áo khoác gió thời thượng - Nobi Fashion"
                              width="1920" height="960" loading="lazy" decoding="async">
                         <div class="nobifashion_home_hero_overlay"></div>
                     </div>
@@ -253,7 +253,7 @@
                         <a href="{{ url('/thoi-trang-nam') }}" class="nobifashion_home_dept_card_inner" title="Thời Trang Nam">
                             <div class="nobifashion_home_dept_media">
                                 <img src="{{ asset('clients/assets/img/banners/bo-suu-tap-ao-khoac-gio.webp') }}"
-                                     alt="Thời trang Nam - NOBI FASHION"
+                                     alt="Thời trang Nam - Nobi Fashion"
                                      width="800" height="450" loading="lazy" decoding="async">
                                 <div class="nobifashion_home_dept_overlay"></div>
                             </div>
@@ -277,7 +277,7 @@
                         <a href="{{ url('/thoi-trang-nu') }}" class="nobifashion_home_dept_card_inner" title="Thời Trang Nữ">
                             <div class="nobifashion_home_dept_media">
                                 <img src="{{ asset('clients/assets/img/banners/ao-len-nu.webp') }}"
-                                     alt="Thời trang Nữ - NOBI FASHION"
+                                     alt="Thời trang Nữ - Nobi Fashion"
                                      width="800" height="450" loading="lazy" decoding="async">
                                 <div class="nobifashion_home_dept_overlay"></div>
                             </div>
@@ -298,10 +298,10 @@
 
                     {{-- Khối 3: Thể thao & Đồ mặc nhà --}}
                     <article class="nobifashion_home_dept_card nobifashion_home_dept_card_small">
-                        <a href="{{ url('/do-gia-dung') }}" class="nobifashion_home_dept_card_inner" title="Thể Thao & Tiện Ích">
+                        <a href="{{ url('/thoi-trang-nam') }}" class="nobifashion_home_dept_card_inner" title="Thể Thao & Tiện Ích">
                             <div class="nobifashion_home_dept_media">
                                 <img src="{{ asset('clients/assets/img/banners/do-chay-bo.webp') }}"
-                                     alt="Thể thao & Phụ kiện - NOBI FASHION"
+                                     alt="Thể thao & Phụ kiện - Nobi Fashion"
                                      width="800" height="450" loading="lazy" decoding="async">
                                 <div class="nobifashion_home_dept_overlay"></div>
                             </div>
@@ -415,7 +415,7 @@
                     <div class="nobifashion_home_lookbook_feature">
                         <div class="nobifashion_home_lookbook_visual">
                             <img src="{{ asset('clients/assets/img/banners/ky-niem-mua-dong-2026.webp') }}"
-                                 alt="Lookbook Thu Đông 2026 - NOBI FASHION"
+                                 alt="Lookbook Thu Đông 2026 - Nobi Fashion"
                                  width="800" height="450" loading="lazy" decoding="async">
                             <div class="nobifashion_home_lookbook_tagline">
                                 <span>LOOKBOOK #04</span>
@@ -612,12 +612,12 @@
         <section class="nobifashion_home_newsletter_section" aria-label="Đăng ký nhận tin">
             <div class="nobifashion_home_container">
                 <div class="nobifashion_home_newsletter_box">
-                    <span class="nobifashion_home_newsletter_eyebrow">NOBI FASHION CLUB</span>
+                    <span class="nobifashion_home_newsletter_eyebrow">Nobi Fashion CLUB</span>
                     <h2 class="nobifashion_home_newsletter_title">Tham Gia Cùng Chúng Tôi</h2>
                     <p class="nobifashion_home_newsletter_desc">
                         Đăng ký nhận thông tin về các bộ sưu tập giới hạn, hướng dẫn phối đồ theo mùa và nhận đặc quyền giảm 10% cho đơn hàng đầu tiên.
                     </p>
-                    <form class="nobifashion_home_newsletter_form" action="#" method="POST" onsubmit="event.preventDefault(); alert('Cảm ơn bạn đã đăng ký nhận tin từ NOBI FASHION!');">
+                    <form class="nobifashion_home_newsletter_form" action="#" method="POST" onsubmit="event.preventDefault(); alert('Cảm ơn bạn đã đăng ký nhận tin từ Nobi Fashion!');">
                         <div class="nobifashion_home_newsletter_input_wrap">
                             <input type="email" class="nobifashion_home_newsletter_input" placeholder="Nhập địa chỉ email của bạn..." required aria-label="Địa chỉ email">
                             <button type="submit" class="nobifashion_home_newsletter_submit" aria-label="Đăng ký nhận tin">
@@ -629,7 +629,7 @@
                             </button>
                         </div>
                     </form>
-                    <span class="nobifashion_home_newsletter_note">Bằng cách đăng ký, bạn đồng ý với Chính sách bảo mật của NOBI FASHION.</span>
+                    <span class="nobifashion_home_newsletter_note">Bằng cách đăng ký, bạn đồng ý với Chính sách bảo mật của Nobi Fashion.</span>
                 </div>
             </div>
         </section>

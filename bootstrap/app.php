@@ -3,6 +3,7 @@
 use App\Console\Kernel;
 use App\Http\Middleware\AdminOnly;
 use App\Http\Middleware\HandleRedirects;
+use App\Http\Middleware\SecurityHeadersMiddleware;
 use Illuminate\Contracts\Console\Kernel as ConsoleKernelContract;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -23,6 +24,7 @@ return tap(Application::configure(basePath: dirname(__DIR__))
 
         $middleware->web(append: [
             HandleRedirects::class,
+            SecurityHeadersMiddleware::class,
         ]);
 
         $middleware->redirectGuestsTo(fn (Request $request) => $request->is('admin*') ? route('admin.login') : route('client.auth.login'));

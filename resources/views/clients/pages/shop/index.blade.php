@@ -42,8 +42,8 @@
         // Kiểm tra xem có query string không (có dấu ? trong URL)
         $hasQueryString = !empty(request()->getQueryString());
         
-        // Nếu có query string hoặc ít sản phẩm thì noindex
-        $shouldNoIndex = $hasQueryString;
+        // Nếu là trang tìm kiếm hoặc có query string lọc/phân trang thì noindex, follow
+        $shouldNoIndex = $hasQueryString || request()->is('shop/search*');
     @endphp
     @if ($shouldNoIndex)
         <meta name="robots" content="noindex, follow" />

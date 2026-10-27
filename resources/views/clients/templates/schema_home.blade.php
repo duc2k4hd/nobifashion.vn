@@ -5,7 +5,7 @@
     [
       '@type' => 'Organization',
       '@id' => ($settings->site_url ?? 'https://nobifashion.vn') . '#organization',
-      'name' => $settings->site_name ?? 'NOBI FASHION',
+      'name' => $settings->subname ?? 'Nobi Fashion',
       'url' => $settings->site_url ?? 'https://nobifashion.vn',
       'logo' => asset('clients/assets/img/business/' . ($settings->site_logo ?? 'no-image.webp')),
       'email' => $settings->contact_email ?? 'support@nobifashion.vn',
@@ -38,14 +38,17 @@
       "inLanguage" => "vi-VN",
       'potentialAction' => [
         '@type' => 'SearchAction',
-        'target' => ($settings->site_url ?? 'https://nobifashion.vn') . '/tim-kiem/{q}',
-        'query-input' => 'required name=q'
+        'target' => [
+          '@type' => 'EntryPoint',
+          'urlTemplate' => ($settings->site_url ?? 'https://nobifashion.vn') . '/shop/search?keyword={search_term_string}',
+        ],
+        'query-input' => 'required name=search_term_string'
       ]
     ],
     [
       '@type' => 'LocalBusiness',
       '@id' => ($settings->site_url ?? 'https://nobifashion.vn') . '#localbusiness',
-      'name' => $settings->site_name ?? 'NOBI FASHION',
+      'name' => $settings->subname ?? 'Nobi Fashion',
       'logo' => [
         '@type' => 'ImageObject',
         'url' => asset('clients/assets/img/business/' . ($settings->site_logo ?? 'no-image.webp'))
@@ -83,8 +86,8 @@
       '@type' => 'WebPage',
       '@id' => ($settings->site_url ?? 'https://nobifashion.vn') . '#webpage',
       'url' => $settings->site_url ?? 'https://nobifashion.vn',
-      'name' => $settings->subname ?? 'NOBI FASHION - Trang chủ',
-      'description' => $settings->site_description ?? 'NOBI FASHION - Shop quần áo & phụ kiện',
+      'name' => $settings->subname ?? 'Nobi Fashion - Trang chủ',
+      'description' => $settings->site_description ?? 'Nobi Fashion - Shop quần áo & phụ kiện',
       'inLanguage' => $settings->site_language ?? 'vi-VN',
       'isPartOf' => ['@id' => ($settings->site_url ?? 'https://nobifashion.vn') . '#website']
     ],

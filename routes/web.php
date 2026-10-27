@@ -341,8 +341,9 @@ Route::prefix('author')->name('client.author.')->group(function () {
     Route::get('/{slug}', [AuthorController::class, 'show'])->name('show');
 });
 
-// Robots.txt
+// Robots.txt & LLMs.txt
 Route::get('/robots.txt', [RobotsController::class, 'index'])->name('robots.txt');
+Route::get('/llms.txt', [RobotsController::class, 'llms'])->name('llms.txt');
 
 // Sitemap routes
 Route::get('/sitemap', [SitemapController::class, 'html'])->name('client.sitemap.html');
