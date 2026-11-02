@@ -37,19 +37,25 @@
         {!! $settings->google_tag_body !!}
     @endif
     <div class="nobifashion">
-        @include('clients.pages.loading.index')
-        @include('clients.templates.header')
+        @if(!request()->is('reels*'))
+            @include('clients.pages.loading.index')
+            @include('clients.templates.header')
+        @endif
 
         <main id="main-content" role="main">
             @yield('content')
         </main>
 
-        @include('clients.templates.footer')
+        @if(!request()->is('reels*'))
+            @include('clients.templates.footer')
+        @endif
     </div>
-    @include('clients.templates.notice')
-    @include('clients.templates.bottom_nav')
-    @if (!$isPageSpeedBot)
-        @include('clients.templates.chat')
+    @if(!request()->is('reels*'))
+        @include('clients.templates.notice')
+        @include('clients.templates.bottom_nav')
+        @if (!$isPageSpeedBot)
+            @include('clients.templates.chat')
+        @endif
     @endif
     @include('clients.templates.js')
     @yield('foot')

@@ -1,0 +1,3342 @@
+/* ==========================================================================
+   NOBI FASHION REELS — BASE STYLES & DESIGN TOKENS
+   Prefix mandatory: nobifashion_reels_
+   Style: Premium Minimalism (Black / White / Neutral Gray)
+   ========================================================================== */
+
+:root,
+.nobifashion_reels_app[data-theme="light"] {
+  --nobifashion_reels_bg_primary: #f8f8f9;
+  --nobifashion_reels_bg_elevated: #ffffff;
+  --nobifashion_reels_bg_subtle: #f1f1f4;
+  --nobifashion_reels_bg_stage: #eef0f3;
+  --nobifashion_reels_bg_glass: rgba(255, 255, 255, 0.86);
+  --nobifashion_reels_bg_overlay: rgba(12, 12, 14, 0.48);
+
+  --nobifashion_reels_text_primary: #111113;
+  --nobifashion_reels_text_secondary: #5a5a64;
+  --nobifashion_reels_text_muted: #8b8b96;
+  --nobifashion_reels_text_on_dark: #ffffff;
+  --nobifashion_reels_text_on_dark_sub: rgba(255, 255, 255, 0.78);
+
+  --nobifashion_reels_border_color: #e4e4e9;
+  --nobifashion_reels_border_subtle: #ededf0;
+  --nobifashion_reels_border_strong: #c8c8d0;
+
+  --nobifashion_reels_accent: #111113;
+  --nobifashion_reels_accent_hover: #2b2b30;
+  --nobifashion_reels_accent_contrast: #ffffff;
+  --nobifashion_reels_danger: #d92d20;
+  --nobifashion_reels_like_color: #e11d48;
+  --nobifashion_reels_save_color: #111113;
+
+  --nobifashion_reels_shadow_sm: 0 2px 8px rgba(17, 17, 19, 0.05);
+  --nobifashion_reels_shadow_md: 0 8px 24px rgba(17, 17, 19, 0.08);
+  --nobifashion_reels_shadow_lg: 0 20px 48px rgba(17, 17, 19, 0.14);
+  --nobifashion_reels_shadow_video: 0 24px 60px rgba(0, 0, 0, 0.22);
+
+  --nobifashion_reels_header_h: 64px;
+  --nobifashion_reels_sidebar_w: 380px;
+  --nobifashion_reels_radius_xs: 4px;
+  --nobifashion_reels_radius_sm: 8px;
+  --nobifashion_reels_radius_md: 12px;
+  --nobifashion_reels_radius_lg: 16px;
+  --nobifashion_reels_radius_xl: 20px;
+  --nobifashion_reels_radius_pill: 9999px;
+
+  --nobifashion_reels_space_1: 4px;
+  --nobifashion_reels_space_2: 8px;
+  --nobifashion_reels_space_3: 12px;
+  --nobifashion_reels_space_4: 16px;
+  --nobifashion_reels_space_5: 20px;
+  --nobifashion_reels_space_6: 24px;
+  --nobifashion_reels_space_8: 32px;
+
+  --nobifashion_reels_font_sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --nobifashion_reels_transition_fast: 160ms cubic-bezier(0.22, 1, 0.36, 1);
+  --nobifashion_reels_transition_base: 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  --nobifashion_reels_transition_slide: 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.nobifashion_reels_app[data-theme="dark"] {
+  --nobifashion_reels_bg_primary: #0b0b0d;
+  --nobifashion_reels_bg_elevated: #141418;
+  --nobifashion_reels_bg_subtle: #1e1e24;
+  --nobifashion_reels_bg_stage: #08080a;
+  --nobifashion_reels_bg_glass: rgba(20, 20, 24, 0.88);
+  --nobifashion_reels_bg_overlay: rgba(0, 0, 0, 0.65);
+
+  --nobifashion_reels_text_primary: #f4f4f6;
+  --nobifashion_reels_text_secondary: #a0a0ab;
+  --nobifashion_reels_text_muted: #6e6e7a;
+  --nobifashion_reels_text_on_dark: #ffffff;
+  --nobifashion_reels_text_on_dark_sub: rgba(255, 255, 255, 0.78);
+
+  --nobifashion_reels_border_color: #26262e;
+  --nobifashion_reels_border_subtle: #1d1d24;
+  --nobifashion_reels_border_strong: #3a3a46;
+
+  --nobifashion_reels_accent: #f4f4f6;
+  --nobifashion_reels_accent_hover: #dcdce2;
+  --nobifashion_reels_accent_contrast: #111113;
+  --nobifashion_reels_save_color: #f59e0b;
+
+  --nobifashion_reels_shadow_sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --nobifashion_reels_shadow_md: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --nobifashion_reels_shadow_lg: 0 20px 48px rgba(0, 0, 0, 0.65);
+  --nobifashion_reels_shadow_video: 0 24px 64px rgba(0, 0, 0, 0.65);
+}
+
+/* Scoped reset inside .nobifashion_reels_app so embedding never pollutes host site */
+.nobifashion_reels_app,
+.nobifashion_reels_app *,
+.nobifashion_reels_app *::before,
+.nobifashion_reels_app *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html:has(.nobifashion_reels_app),
+body:has(.nobifashion_reels_app) {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background-color: var(--nobifashion_reels_bg_primary);
+}
+
+.nobifashion_reels_app {
+  font-family: var(--nobifashion_reels_font_sans);
+  background-color: var(--nobifashion_reels_bg_primary);
+  color: var(--nobifashion_reels_text_primary);
+  width: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  position: relative;
+  user-select: none;
+}
+
+.nobifashion_reels_app button,
+.nobifashion_reels_app input,
+.nobifashion_reels_app select,
+.nobifashion_reels_app textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+}
+
+.nobifashion_reels_app button {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.nobifashion_reels_app button:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.nobifashion_reels_app a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.nobifashion_reels_app :focus-visible {
+  outline: 2px solid var(--nobifashion_reels_accent);
+  outline-offset: 2px;
+}
+
+.nobifashion_reels_sr_only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Logo thương hiệu trong Header Reels */
+.nobifashion_reels_brand_img {
+  height: 42px;
+  width: auto;
+  max-width: 170px;
+  object-fit: contain;
+  display: block;
+}
+
+/* Khối thông tin tác giả chuẩn YouTube Shorts / TikTok */
+.nobifashion_reels_author_card_row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+  pointer-events: auto;
+}
+
+.nobifashion_reels_avatar_circle_wrap {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: #ffffff;
+  padding: 3px;
+  flex-shrink: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+.nobifashion_reels_avatar_circle_img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Nút Bật/Tắt âm thanh ở góc trên bên trái khung video */
+.nobifashion_reels_video_mute_btn {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(18, 18, 20, 0.55);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 35;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+  pointer-events: auto;
+  user-select: none;
+  outline: none;
+  padding: 0;
+}
+
+.nobifashion_reels_video_mute_btn:hover {
+  background: rgba(0, 0, 0, 0.78);
+  border-color: rgba(255, 255, 255, 0.7);
+  transform: scale(1.08);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+
+.nobifashion_reels_video_mute_btn:active {
+  transform: scale(0.95);
+}
+
+.nobifashion_reels_video_mute_btn.nobifashion_reels_is_muted {
+  background: rgba(239, 68, 68, 0.4);
+  border-color: rgba(239, 68, 68, 0.7);
+  color: #fee2e2;
+}
+
+.nobifashion_reels_video_mute_btn.nobifashion_reels_is_muted:hover {
+  background: rgba(239, 68, 68, 0.65);
+  border-color: #ef4444;
+}
+
+.nobifashion_reels_author_text_col {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.nobifashion_reels_author_top_line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+.nobifashion_reels_author_main_name {
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nobifashion_reels_earth_badge {
+  display: inline-flex;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.85);
+  flex-shrink: 0;
+}
+
+.nobifashion_reels_dot_sep {
+  display: none;
+}
+
+.nobifashion_reels_subscribe_text_btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 999px;
+  padding: 3px 9px;
+  margin-left: 4px;
+  cursor: pointer;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: auto;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.nobifashion_reels_subscribe_text_btn:hover {
+  background: #f97316;
+  border-color: #f97316;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.4);
+}
+
+.nobifashion_reels_subscribe_text_btn.nobifashion_reels_is_following {
+  background: rgba(0, 0, 0, 0.42);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.82);
+  font-weight: 500;
+  font-size: 10.5px;
+  padding: 2.5px 8px;
+  box-shadow: none;
+}
+
+.nobifashion_reels_subscribe_text_btn.nobifashion_reels_is_following:hover {
+  background: rgba(239, 68, 68, 0.35);
+  border-color: rgba(239, 68, 68, 0.6);
+  color: #fee2e2;
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.25);
+}
+
+.nobifashion_reels_author_audio_line {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.75);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 1px;
+}
+
+.nobifashion_reels_author_audio_line * {
+  font-size: 11px;
+}
+
+.nobifashion_reels_author_audio_line svg {
+  flex-shrink: 0;
+  width: 10px;
+  height: 10px;
+  color: rgba(255, 255, 255, 0.8);
+  opacity: 0.85;
+}
+
+/* Thanh sản phẩm TikTok style */
+.nobifashion_reels_tiktok_product_bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(22, 24, 35, 0.72);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  padding: 5px 10px 5px 8px;
+  max-width: 88%;
+  cursor: pointer;
+  margin-bottom: 4px;
+}
+
+.nobifashion_reels_tiktok_product_icon {
+  width: 22px;
+  height: 22px;
+  background: #f59e0b;
+  color: #ffffff;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.nobifashion_reels_tiktok_product_info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.nobifashion_reels_tiktok_product_name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.nobifashion_reels_tiktok_product_sub {
+  font-size: 10.5px;
+  color: #94a3b8;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nobifashion_reels_tiktok_product_arrow {
+  color: #94a3b8;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+/* 1. Lớp phủ Overlay bên trong video */
+.nobifashion_reels_video_overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 40px 14px 24px 14px !important;
+  background: linear-gradient(0deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.45) 55%, transparent 100%) !important;
+  z-index: 25 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  pointer-events: auto !important;
+}
+
+.nobifashion_reels_video_overlay * {
+  pointer-events: auto !important;
+}
+
+/* 2. Cấu trúc và Logic Mở rộng / Thu gọn Caption trong Video */
+.nobifashion_reels_overlay_caption_wrap {
+  display: block !important;
+  position: relative !important;
+  z-index: 30 !important;
+}
+
+.nobifashion_reels_overlay_caption {
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8) !important;
+  word-break: break-word !important;
+  user-select: text !important;
+  margin: 0 !important;
+}
+
+.nobifashion_reels_overlay_caption.nobifashion_reels_clamp_2 {
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+.nobifashion_reels_overlay_caption:not(.nobifashion_reels_clamp_2) {
+  display: block !important;
+  -webkit-line-clamp: unset !important;
+  overflow: visible !important;
+  max-height: 260px !important;
+  overflow-y: auto !important;
+}
+
+/* 3. Cấu trúc và Logic Mở rộng / Thu gọn Caption trong Sidebar */
+.nobifashion_reels_sidebar_desc_wrap {
+  display: block !important;
+  margin-bottom: 8px !important;
+  position: relative !important;
+}
+
+.nobifashion_reels_sidebar_desc {
+  font-size: 13.5px !important;
+  line-height: 1.55 !important;
+  color: var(--nobifashion_reels_text_primary) !important;
+  word-break: break-word !important;
+  user-select: text !important;
+  margin: 0 !important;
+}
+
+.nobifashion_reels_sidebar_desc.nobifashion_reels_clamp_2 {
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+.nobifashion_reels_sidebar_desc:not(.nobifashion_reels_clamp_2) {
+  display: block !important;
+  -webkit-line-clamp: unset !important;
+  overflow: visible !important;
+}
+
+/* 4. Nút bấm ... thêm / Thu gọn của cả 2 nơi */
+.nobifashion_reels_caption_toggle_btn,
+.nobifashion_reels_sidebar_toggle_btn {
+  display: inline-block !important;
+  margin-top: 3px !important;
+  font-size: 12.5px !important;
+  font-weight: 700 !important;
+  color: #ff9f43 !important;
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  cursor: pointer !important;
+  text-decoration: underline !important;
+  pointer-events: auto !important;
+}
+
+.nobifashion_reels_caption_toggle_btn:hover,
+.nobifashion_reels_sidebar_toggle_btn:hover {
+  color: #ffffff !important;
+}
+
+/* ==========================================================================
+   HASHTAGS & COMMENT STYLING (CHUẨN ẢNH 1 & ẢNH 2)
+   ========================================================================== */
+
+/* 1. Hashtags: Rất nhỏ gọn (11px), màu chữ mờ nhẹ, không có khung nền thô */
+.nobifashion_reels_sidebar_hashtags {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 4px 6px !important;
+  margin-top: 4px !important;
+  margin-bottom: 8px !important;
+}
+
+.nobifashion_reels_sidebar_tag,
+.nobifashion_reels_hashtag_btn {
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  color: var(--nobifashion_reels_text_secondary) !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  cursor: pointer !important;
+  line-height: 1.4 !important;
+  transition: color 0.15s ease !important;
+}
+
+.nobifashion_reels_sidebar_tag:hover,
+.nobifashion_reels_hashtag_btn:hover {
+  color: var(--nobifashion_reels_text_primary) !important;
+  text-decoration: underline !important;
+}
+
+/* 2. Bình luận: Tinh gọn, chữ vừa mắt, chuẩn Facebook/YouTube (Ảnh 2) */
+.nobifashion_reels_comment_item {
+  display: flex !important;
+  gap: 10px !important;
+  margin-bottom: 12px !important;
+  font-size: 13px !important;
+}
+
+.nobifashion_reels_comment_item[data-depth="1"] {
+  margin-left: 20px !important;
+  margin-top: 8px !important;
+}
+
+.nobifashion_reels_comment_item[data-depth="2"] {
+  margin-left: 36px !important;
+  margin-top: 6px !important;
+}
+
+.nobifashion_reels_comment_item[data-depth="3"] {
+  margin-left: 50px !important;
+  margin-top: 6px !important;
+}
+
+.nobifashion_reels_comment_avatar {
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  border-radius: 50% !important;
+  background: #334155 !important;
+  color: #ffffff !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+}
+
+.nobifashion_reels_comment_body {
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+
+.nobifashion_reels_comment_header {
+  display: flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  margin-bottom: 2px !important;
+}
+
+.nobifashion_reels_comment_author {
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  color: var(--nobifashion_reels_text_primary) !important;
+}
+
+.nobifashion_reels_comment_time {
+  font-size: 11px !important;
+  color: var(--nobifashion_reels_text_muted) !important;
+}
+
+.nobifashion_reels_comment_author_tag {
+  font-size: 10.5px !important;
+  font-weight: 600 !important;
+  color: #38bdf8 !important;
+  background: rgba(56, 189, 248, 0.12) !important;
+  padding: 1px 5px !important;
+  border-radius: 4px !important;
+}
+
+.nobifashion_reels_comment_text {
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+  color: var(--nobifashion_reels_text_primary) !important;
+  word-break: break-word !important;
+  margin: 0 !important;
+}
+
+/* Thanh hành động bình luận: Thích icon + số like badge + nút Trả lời */
+.nobifashion_reels_comment_actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  margin-top: 4px !important;
+}
+
+.nobifashion_reels_comment_like_wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.nobifashion_reels_comment_like_btn {
+  background: none !important;
+  border: none !important;
+  padding: 2px 4px !important;
+  color: var(--nobifashion_reels_text_muted) !important;
+  cursor: pointer !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 4px !important;
+  transition: color 0.15s ease, transform 0.15s ease !important;
+}
+
+.nobifashion_reels_comment_like_btn:hover {
+  color: #1877f2 !important;
+  transform: scale(1.08);
+}
+
+.nobifashion_reels_comment_like_btn.nobifashion_reels_is_liked {
+  color: #1877f2 !important;
+}
+
+.nobifashion_reels_comment_like_btn.nobifashion_reels_reaction_love {
+  color: #f33e5b !important;
+}
+
+.nobifashion_reels_comment_like_btn.nobifashion_reels_reaction_care,
+.nobifashion_reels_comment_like_btn.nobifashion_reels_reaction_haha,
+.nobifashion_reels_comment_like_btn.nobifashion_reels_reaction_wow,
+.nobifashion_reels_comment_like_btn.nobifashion_reels_reaction_sad {
+  color: #f7b125 !important;
+}
+
+.nobifashion_reels_comment_like_btn.nobifashion_reels_reaction_angry {
+  color: #eb5a36 !important;
+}
+
+/* Facebook Reactions Popup Bar trên Desktop */
+.nobifashion_reels_comment_like_wrapper {
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.nobifashion_reels_reactions_popup {
+  position: absolute !important;
+  bottom: calc(100% + 10px) !important;
+  left: -8px !important;
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  gap: 6px !important;
+  width: max-content !important;
+  min-width: 275px !important;
+  white-space: nowrap !important;
+  background: #242526 !important;
+  background: rgba(36, 37, 38, 0.97) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  border-radius: 999px !important;
+  padding: 5px 8px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transform: translateY(8px) scale(0.92) !important;
+  transform-origin: bottom left !important;
+  transition: opacity 0.2s cubic-bezier(0.2, 0.9, 0.3, 1),
+              transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1),
+              visibility 0.2s !important;
+  z-index: 999 !important;
+  pointer-events: none !important;
+}
+
+/* Vùng cầu nối liên tục giữa nút Like và popup để hover mượt không bị mất */
+.nobifashion_reels_reactions_popup::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 100% !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 16px !important;
+  background: transparent !important;
+}
+
+.nobifashion_reels_comment_like_wrapper:hover .nobifashion_reels_reactions_popup {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateY(0) scale(1) !important;
+  pointer-events: auto !important;
+}
+
+.nobifashion_reels_reaction_btn {
+  position: relative !important;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  cursor: pointer !important;
+  border-radius: 50% !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  outline: none !important;
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  min-height: 34px !important;
+  flex-shrink: 0 !important;
+  transition: transform 0.18s cubic-bezier(0.175, 0.885, 0.32, 1.35) !important;
+}
+
+.nobifashion_reels_reaction_btn svg {
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  min-height: 32px !important;
+  display: block !important;
+  border-radius: 50% !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25) !important;
+  pointer-events: none !important;
+  flex-shrink: 0 !important;
+}
+
+.nobifashion_reels_reaction_btn:hover {
+  transform: scale(1.35) translateY(-6px) !important;
+  z-index: 10 !important;
+}
+
+/* Tooltip tên cảm xúc Facebook */
+.nobifashion_reels_reaction_btn::after {
+  content: attr(data-reaction-label) !important;
+  position: absolute !important;
+  bottom: calc(100% + 8px) !important;
+  left: 50% !important;
+  transform: translateX(-50%) translateY(4px) !important;
+  background: rgba(0, 0, 0, 0.9) !important;
+  color: #ffffff !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  padding: 4px 8px !important;
+  border-radius: 999px !important;
+  white-space: nowrap !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.15s ease, transform 0.15s ease !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4) !important;
+  z-index: 20 !important;
+}
+
+.nobifashion_reels_reaction_btn:hover::after {
+  opacity: 1 !important;
+  transform: translateX(-50%) translateY(0) !important;
+}
+
+.nobifashion_reels_comment_likes_badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 3px !important;
+  font-size: 11.5px !important;
+  font-weight: 600 !important;
+  color: var(--nobifashion_reels_text_secondary) !important;
+}
+
+.nobifashion_reels_comment_reply_text_btn {
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: var(--nobifashion_reels_text_muted) !important;
+  cursor: pointer !important;
+}
+
+.nobifashion_reels_comment_reply_text_btn:hover {
+  color: var(--nobifashion_reels_text_primary) !important;
+  text-decoration: underline !important;
+}
+
+/* Nút Xem câu trả lời phân cấp (Ảnh 2) */
+.nobifashion_reels_view_replies_btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin-top: 6px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #38bdf8 !important;
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  cursor: pointer !important;
+}
+
+.nobifashion_reels_view_replies_btn:hover {
+  text-decoration: underline !important;
+}
+
+.nobifashion_reels_nested_replies_box {
+  margin-top: 8px !important;
+  border-left: 1.5px solid rgba(255, 255, 255, 0.12) !important;
+  padding-left: 8px !important;
+}
+
+
+.nobifashion_reels_scrollable {
+  scrollbar-width: thin;
+  scrollbar-color: var(--nobifashion_reels_border_strong) transparent;
+}
+
+.nobifashion_reels_scrollable::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.nobifashion_reels_scrollable::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.nobifashion_reels_scrollable::-webkit-scrollbar-thumb {
+  background-color: var(--nobifashion_reels_border_strong);
+  border-radius: var(--nobifashion_reels_radius_pill);
+}
+
+/* Keyframes with mandatory prefix */
+@keyframes nobifashion_reels_spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes nobifashion_reels_pulse {
+  0%, 100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+@keyframes nobifashion_reels_heart_burst {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.35) rotate(-8deg);
+  }
+  25% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.18) rotate(4deg);
+  }
+  55% {
+    opacity: 1;
+    transform: translate(-50%, -58%) scale(1) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -85%) scale(1.35) rotate(0deg);
+  }
+}
+
+@keyframes nobifashion_reels_like_pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.26);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nobifashion_reels_app,
+  .nobifashion_reels_app *,
+  .nobifashion_reels_app *::before,
+  .nobifashion_reels_app *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ==========================================================================
+   NOBI FASHION REELS — CORE DESKTOP & STAGE LAYOUT
+   Inspired by Facebook Reels structure + TikTok vertical fluidity
+   Strict 9:16 Video Frame Guarantee
+   ========================================================================== */
+
+/* A. FIXED HEADER */
+.nobifashion_reels_header {
+  height: var(--nobifashion_reels_header_h);
+  min-height: var(--nobifashion_reels_header_h);
+  width: 100%;
+  background-color: var(--nobifashion_reels_bg_elevated);
+  border-bottom: 1px solid var(--nobifashion_reels_border_color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--nobifashion_reels_space_5);
+  gap: var(--nobifashion_reels_space_3);
+  z-index: 40;
+  transition: background-color var(--nobifashion_reels_transition_base),
+              border-color var(--nobifashion_reels_transition_base);
+}
+
+.nobifashion_reels_header_left {
+  display: flex;
+  align-items: center;
+  gap: var(--nobifashion_reels_space_4);
+  flex-shrink: 0;
+}
+
+.nobifashion_reels_brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--nobifashion_reels_space_3);
+  text-decoration: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.nobifashion_reels_brand_mark {
+  width: 34px;
+  height: 34px;
+  background-color: var(--nobifashion_reels_accent);
+  color: var(--nobifashion_reels_accent_contrast);
+  border-radius: var(--nobifashion_reels_radius_sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+  letter-spacing: 0.08em;
+  flex-shrink: 0;
+}
+
+.nobifashion_reels_brand_text {
+  display: flex;
+  flex-direction: column;
+}
+
+.nobifashion_reels_brand_name {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
+.nobifashion_reels_brand_sub {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--nobifashion_reels_text_muted);
+  margin-top: 2px;
+}
+
+.nobifashion_reels_header_center {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--nobifashion_reels_space_3);
+  position: relative;
+  margin-left: auto;
+  margin-right: var(--nobifashion_reels_space_3);
+  flex: 0 1 360px;
+  min-width: 180px;
+}
+
+.nobifashion_reels_header_right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--nobifashion_reels_space_2);
+  flex-shrink: 0;
+}
+
+/* MAIN WORKSPACE (STAGE + SIDEBAR) */
+.nobifashion_reels_workspace {
+  flex: 1;
+  height: calc(100dvh - var(--nobifashion_reels_header_h));
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr var(--nobifashion_reels_sidebar_w);
+  overflow: hidden;
+  position: relative;
+  background-color: var(--nobifashion_reels_bg_stage);
+}
+
+.nobifashion_reels_workspace.nobifashion_reels_sidebar_collapsed {
+  grid-template-columns: 1fr 0px;
+}
+
+/* B. CENTER VIDEO AREA */
+.nobifashion_reels_stage_area {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: var(--nobifashion_reels_space_4) var(--nobifashion_reels_space_6);
+  touch-action: pan-x;
+}
+
+/* Sub-navigation filter pills floating subtly at top-left of stage */
+.nobifashion_reels_stage_topbar {
+  position: absolute;
+  top: var(--nobifashion_reels_space_4);
+  left: var(--nobifashion_reels_space_6);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--nobifashion_reels_space_2);
+  flex-wrap: wrap;
+}
+
+/* Stage wrapper holding 9:16 frame + right action column */
+.nobifashion_reels_stage_center_group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--nobifashion_reels_space_4);
+  height: 100%;
+  max-height: 100%;
+  max-width: 100%;
+  position: relative;
+}
+
+/* ==========================================================================
+   4. MANDATORY 9:16 VIDEO CONTAINER
+   Always preserves exact 9 / 16 aspect ratio on every screen & orientation!
+   Calculates height after subtracting header & stage padding, and clamps
+   width so it never overflows horizontal space or distorts.
+   ========================================================================== */
+.nobifashion_reels_viewport_frame {
+  --nobifashion_reels_avail_h: calc(100dvh - var(--nobifashion_reels_header_h) - 32px);
+  --nobifashion_reels_avail_w: calc(100vw - var(--nobifashion_reels_sidebar_w) - 140px);
+  aspect-ratio: 9 / 16;
+  height: min(var(--nobifashion_reels_avail_h), 860px, calc(var(--nobifashion_reels_avail_w) * 16 / 9));
+  width: auto;
+  max-height: 100%;
+  max-width: 100%;
+  position: relative;
+  border-radius: var(--nobifashion_reels_radius_lg);
+  overflow: hidden;
+  background-color: #0d0d10;
+  box-shadow: var(--nobifashion_reels_shadow_video);
+  flex-shrink: 0;
+  isolation: isolate;
+}
+
+.nobifashion_reels_workspace.nobifashion_reels_sidebar_collapsed .nobifashion_reels_viewport_frame {
+  --nobifashion_reels_avail_w: calc(100vw - 140px);
+}
+
+/* Vertical Track inside the 9:16 Viewport for smooth GPU translate3d transitions */
+.nobifashion_reels_track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.nobifashion_reels_slide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: 9 / 16;
+  overflow: hidden;
+  background-color: #0e0e11;
+  will-change: transform, opacity;
+  transition: transform var(--nobifashion_reels_transition_slide),
+              opacity var(--nobifashion_reels_transition_slide);
+}
+
+.nobifashion_reels_slide[data-pos="prev"] {
+  transform: translate3d(0, -100%, 0);
+  pointer-events: none;
+}
+
+.nobifashion_reels_slide[data-pos="active"] {
+  transform: translate3d(0, 0, 0);
+  z-index: 2;
+}
+
+.nobifashion_reels_slide[data-pos="next"] {
+  transform: translate3d(0, 100%, 0);
+  pointer-events: none;
+}
+
+.nobifashion_reels_slide[data-no-anim="true"] {
+  transition: none !important;
+}
+
+/* Video element inside 9:16 slide */
+.nobifashion_reels_video_el {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  background-color: #0a0a0c;
+  pointer-events: none;
+}
+
+.nobifashion_reels_video_el[data-fit="contain"] {
+  object-fit: contain;
+}
+
+/* Ambient blurred backdrop for contain mode so non-9:16 videos look editorial */
+.nobifashion_reels_slide_backdrop {
+  position: absolute;
+  inset: -16px;
+  background-size: cover;
+  background-position: center;
+  filter: blur(28px) brightness(0.45);
+  opacity: 0.75;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.nobifashion_reels_video_wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Right-side Vertical Action Bar (Desktop adjacent to 9:16 frame, like Facebook Reels) */
+.nobifashion_reels_action_rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--nobifashion_reels_space_3);
+  padding-bottom: var(--nobifashion_reels_space_2);
+  z-index: 15;
+  flex-shrink: 0;
+}
+
+/* Desktop Up/Down Chevrons positioned cleanly on the right of stage (like FB Reels reference image) */
+.nobifashion_reels_nav_arrows {
+  position: absolute;
+  right: var(--nobifashion_reels_space_6);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: var(--nobifashion_reels_space_3);
+  z-index: 20;
+}
+
+/* C. COMMENTS & DETAILS SIDEBAR (Desktop Right Column) */
+.nobifashion_reels_sidebar {
+  width: var(--nobifashion_reels_sidebar_w);
+  height: 100%;
+  background-color: var(--nobifashion_reels_bg_elevated);
+  border-left: 1px solid var(--nobifashion_reels_border_color);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 30;
+  transition: background-color var(--nobifashion_reels_transition_base),
+              border-color var(--nobifashion_reels_transition_base),
+              transform var(--nobifashion_reels_transition_base);
+}
+
+.nobifashion_reels_workspace.nobifashion_reels_sidebar_collapsed .nobifashion_reels_sidebar {
+  transform: translateX(100%);
+  border-left: none;
+}
+
+/* ==========================================================================
+   NOBI FASHION REELS — UI COMPONENTS
+   Header, Search, Player Controls, Overlays, Action Rail, Comments, Product Drawer
+   ========================================================================== */
+
+/* --- Header Navigation & Search --- */
+.nobifashion_reels_nav_tabs {
+  display: flex;
+  align-items: center;
+  gap: var(--nobifashion_reels_space_1);
+  flex-shrink: 0;
+}
+
+.nobifashion_reels_nav_tab {
+  padding: var(--nobifashion_reels_space_2) var(--nobifashion_reels_space_3);
+  border-radius: var(--nobifashion_reels_radius_pill);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--nobifashion_reels_text_secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color var(--nobifashion_reels_transition_fast),
+              color var(--nobifashion_reels_transition_fast);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.nobifashion_reels_nav_tab:hover {
+  background-color: var(--nobifashion_reels_bg_subtle);
+  color: var(--nobifashion_reels_text_primary);
+}
+
+.nobifashion_reels_nav_tab.nobifashion_reels_is_active {
+  background-color: var(--nobifashion_reels_accent);
+  color: var(--nobifashion_reels_accent_contrast);
+  font-weight: 600;
+}
+
+.nobifashion_reels_search_box {
+  position: relative;
+  width: 100%;
+  max-width: 340px;
+}
+
+.nobifashion_reels_search_input_wrap {
+  display: flex;
+  align-items: center;
+  background-color: var(--nobifashion_reels_bg_subtle);
+  border: 1px solid transparent;
+  border-radius: var(--nobifashion_reels_radius_pill);
+  padding: 0 var(--nobifashion_reels_space_3);
+  height: 38px;
+  transition: border-color var(--nobifashion_reels_transition_fast),
+              background-color var(--nobifashion_reels_transition_fast);
+}
+
+.nobifashion_reels_search_input_wrap:focus-within {
+  background-color: var(--nobifashion_reels_bg_elevated);
+  border-color: var(--nobifashion_reels_border_strong);
+  box-shadow: var(--nobifashion_reels_shadow_sm);
+}
+
+.nobifashion_reels_search_icon {
+  color: var(--nobifashion_reels_text_muted);
+  flex-shrink: 0;
+  margin-right: var(--nobifashion_reels_space_2);
+}
+
+.nobifashion_reels_search_input {
+  width: 100%;
+  font-size: 13px;
+  color: var(--nobifashion_reels_text_primary);
+  outline: none;
+  user-select: text;
+}
+
+.nobifashion_reels_search_input::placeholder {
+  color: var(--nobifashion_reels_text_muted);
+}
+
+.nobifashion_reels_search_clear {
+  color: var(--nobifashion_reels_text_muted);
+  padding: 4px;
+  border-radius: 50%;
+  display: none;
+}
+
+.nobifashion_reels_search_clear.nobifashion_reels_is_visible {
+  display: inline-flex;
+}
+
+/* Search Suggestions Dropdown */
+.nobifashion_reels_search_dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background-color: var(--nobifashion_reels_bg_elevated);
+  border: 1px solid var(--nobifashion_reels_border_color);
+  border-radius: var(--nobifashion_reels_radius_md);
+  box-shadow: var(--nobifashion_reels_shadow_lg);
+  padding: var(--nobifashion_reels_space_2);
+  z-index: 60;
+  max-height: 360px;
+  overflow-y: auto;
+  display: none;
+}
+
+.nobifashion_reels_search_dropdown.nobifashion_reels_is_open {
+  display: block;
+}
+
+.nobifashion_reels_search_section_label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--nobifashion_reels_text_muted);
+  padding: 6px 10px 4px;
+}
+
+.nobifashion_reels_search_item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--nobifashion_reels_space_2);
+  padding: 8px 10px;
+  border-radius: var(--nobifashion_reels_radius_sm);
+  font-size: 13px;
+  text-align: left;
+  transition: background-color var(--nobifashion_reels_transition_fast);
+}
+
+.nobifashion_reels_search_item:hover {
+  background-color: var(--nobifashion_reels_bg_subtle);
+}
+
+.nobifashion_reels_search_item_tag {
+  font-size: 11px;
+  color: var(--nobifashion_reels_text_muted);
+}
+
+/* Header Right Icon Buttons */
+.nobifashion_reels_icon_btn {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--nobifashion_reels_radius_pill);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--nobifashion_reels_text_primary);
+  background-color: transparent;
+  border: 1px solid transparent;
+  position: relative;
+  transition: background-color var(--nobifashion_reels_transition_fast),
+              border-color var(--nobifashion_reels_transition_fast),
+              transform var(--nobifashion_reels_transition_fast);
+}
+
+.nobifashion_reels_icon_btn:hover {
+  background-color: var(--nobifashion_reels_bg_subtle);
+}
+
+.nobifashion_reels_icon_btn:active {
+  transform: scale(0.95);
+}
+
+.nobifashion_reels_icon_btn.nobifashion_reels_is_active {
+  background-color: var(--nobifashion_reels_bg_subtle);
+  border-color: var(--nobifashion_reels_border_strong);
+}
+
+.nobifashion_reels_badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: var(--nobifashion_reels_radius_pill);
+  background-color: var(--nobifashion_reels_accent);
+  color: var(--nobifashion_reels_accent_contrast);
+  font-size: 10px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.nobifashion_reels_avatar_btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 1px solid var(--nobifashion_reels_border_strong);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--nobifashion_reels_bg_subtle);
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: var(--nobifashion_reels_space_1);
+}
+
+/* Header Popover Menus (Notifications & Profile) */
+.nobifashion_reels_popover {
+  position: absolute;
+  top: calc(var(--nobifashion_reels_header_h) - 6px);
+  right: var(--nobifashion_reels_space_6);
+  width: 320px;
+  background-color: var(--nobifashion_reels_bg_elevated);
+  border: 1px solid var(--nobifashion_reels_border_color);
+  border-radius: var(--nobifashion_reels_radius_md);
+  box-shadow: var(--nobifashion_reels_shadow_lg);
+  padding: var(--nobifashion_reels_space_3);
+  z-index: 70;
+  display: none;
+}
+
+.nobifashion_reels_popover.nobifashion_reels_is_open {
+  display: block;
+}
+
+.nobifashion_reels_popover_header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--nobifashion_reels_space_2);
+  margin-bottom: var(--nobifashion_reels_space_2);
+  border-bottom: 1px solid var(--nobifashion_reels_border_subtle);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.nobifashion_reels_notif_item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--nobifashion_reels_space_3);
+  padding: 8px;
+  border-radius: var(--nobifashion_reels_radius_sm);
+  font-size: 12px;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: background-color var(--nobifashion_reels_transition_fast);
+}
+
+.nobifashion_reels_notif_item:hover {
+  background-color: var(--nobifashion_reels_bg_subtle);
+}
+
+/* --- Stage Filter Pills --- */
+.nobifashion_reels_filter_pill {
+  padding: 6px 12px;
+  border-radius: var(--nobifashion_reels_radius_pill);
+  background-color: var(--nobifashion_reels_bg_glass);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--nobifashion_reels_border_color);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--nobifashion_reels_text_secondary);
+  transition: all var(--nobifashion_reels_transition_fast);
+}
+
+.nobifashion_reels_filter_pill:hover {
+  color: var(--nobifashion_reels_text_primary);
+  border-color: var(--nobifashion_reels_border_strong);
+}
+
+.nobifashion_reels_filter_pill.nobifashion_reels_is_active {
+  background-color: var(--nobifashion_reels_accent);
+  color: var(--nobifashion_reels_accent_contrast);
+  border-color: var(--nobifashion_reels_accent);
+}
+
+/* --- Video Player Top Controls (Inside 9:16 Frame) --- */
+.nobifashion_reels_player_topbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: var(--nobifashion_reels_space_4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0) 100%);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.nobifashion_reels_player_topbar_left,
+.nobifashion_reels_player_topbar_right {
+  display: flex;
+  align-items: center;
+  gap: var(--nobifashion_reels_space_2);
+  pointer-events: auto;
+}
+
+.nobifashion_reels_glass_btn {
+  height: 34px;
+  min-width: 34px;
+  padding: 0 10px;
+  border-radius: var(--nobifashion_reels_radius_pill);
+  background-color: rgba(16, 16, 20, 0.55);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: background-color var(--nobifashion_reels_transition_fast),
+              transform var(--nobifashion_reels_transition_fast);
+}
+
+.nobifashion_reels_glass_btn:hover {
+  background-color: rgba(16, 16, 20, 0.78);
+}
+
+.nobifashion_reels_glass_btn:active {
+  transform: scale(0.94);
+}
+
+/* Center Play/Pause Feedback Indicator & Double-Tap Heart */
+.nobifashion_reels_center_feedback {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.85);
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background-color: rgba(12, 12, 16, 0.62);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 11;
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.nobifashion_reels_center_feedback.nobifashion_reels_is_visible {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.nobifashion_reels_doubletap_heart {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 88px;
+  height: 88px;
+  color: #ffffff;
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.45));
+  pointer-events: none;
+  opacity: 0;
+  z-index: 14;
+}
+
+.nobifashion_reels_doubletap_heart.nobifashion_reels_animate {
+  animation: nobifashion_reels_heart_burst 760ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Loading Skeleton Layout-Aware 9:16 (Code tay 100% theo nguyên lý Material-UI Wave Skeleton) */
+.nobifashion_reels_video_loader {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 25 !important;
+  pointer-events: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.35s ease !important;
+  background: #14161a !important;
+  overflow: hidden !important;
+}
+
+.nobifashion_reels_video_loader.nobifashion_reels_is_loading {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.nobifashion_reels_skeleton_screen {
+  position: absolute;
+  inset: 0;
+  background: #15171c;
+  overflow: hidden;
+}
+
+/* Material-UI Wave Animation Shimmer (Code tay 100% không dùng thư viện) */
+.nobifashion_reels_skeleton_wave {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 10;
+}
+
+.nobifashion_reels_skeleton_wave::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.04) 20%,
+    rgba(255, 255, 255, 0.16) 50%,
+    rgba(255, 255, 255, 0.04) 80%,
+    transparent 100%
+  );
+  transform: translateX(-100%);
+  animation: nobifashion_reels_mui_wave 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes nobifashion_reels_mui_wave {
+  0% {
+    transform: translateX(-100%);
+  }
+  60% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* 1. Mute Button Skeleton (Góc trên trái) */
+.nobifashion_reels_skel_mute {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  z-index: 2;
+}
+
+/* 2. Right Action Rail Skeleton (Cột tương tác bên phải: Like, Comment, Bookmark, Share, Music) */
+.nobifashion_reels_skel_rail {
+  position: absolute;
+  right: 14px;
+  bottom: 84px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  z-index: 2;
+}
+
+.nobifashion_reels_skel_rail_item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.nobifashion_reels_skel_circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.nobifashion_reels_skel_count {
+  width: 24px;
+  height: 9px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+/* 3. Bottom-Left Overlay Skeleton (Thẻ sản phẩm, Creator row, Caption) */
+.nobifashion_reels_skel_bottom {
+  position: absolute;
+  left: 16px;
+  right: 76px;
+  bottom: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 2;
+}
+
+.nobifashion_reels_skel_product_card {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px);
+  width: fit-content;
+  max-width: 86%;
+}
+
+.nobifashion_reels_skel_product_thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.16);
+  flex-shrink: 0;
+}
+
+.nobifashion_reels_skel_product_lines {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.nobifashion_reels_skel_author_row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nobifashion_reels_skel_avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  flex-shrink: 0;
+}
+
+.nobifashion_reels_skel_author_text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.nobifashion_reels_skel_author_top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nobifashion_reels_skel_pill {
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.nobifashion_reels_skel_line {
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.11);
+}
+
+.nobifashion_reels_skel_caption {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 2px;
+}
+
+/* 4. Bottom Progress Bar Skeleton */
+.nobifashion_reels_skel_progress_bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.14);
+  z-index: 2;
+}
+
+/* Mini skeleton bên trong preview thumbnail */
+.nobifashion_reels_skel_mini_bottom {
+  position: absolute;
+  bottom: 24px;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 2;
+}
+
+.nobifashion_reels_skel_mini_avatar {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  margin-bottom: 2px;
+}
+
+.nobifashion_reels_video_error {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(14, 14, 18, 0.92);
+  color: #ffffff;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--nobifashion_reels_space_6);
+  text-align: center;
+  gap: var(--nobifashion_reels_space_3);
+  z-index: 15;
+}
+
+.nobifashion_reels_video_error.nobifashion_reels_has_error {
+  display: flex;
+}
+
+/* --- Bottom Info Overlay Inside 9:16 Video --- */
+.nobifashion_reels_video_overlay {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 48px var(--nobifashion_reels_space_4) 24px;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.68) 55%, rgba(0, 0, 0, 0.88) 100%);
+  color: #ffffff;
+  z-index: 9;
+  display: flex;
+  flex-direction: column;
+  gap: var(--nobifashion_reels_space_2);
+  pointer-events: none;
+}
+
+.nobifashion_reels_video_overlay > * {
+  pointer-events: auto;
+}
+
+/* Subtle tagged product pill inside video overlay */
+.nobifashion_reels_overlay_product_pill {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--nobifashion_reels_space_2);
+  background-color: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  padding: 5px 10px 5px 6px;
+  border-radius: var(--nobifashion_reels_radius_pill);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 2px;
+  transition: background-color var(--nobifashion_reels_transition_fast),
+              transform var(--nobifashion_reels_transition_fast);
+}
+
+.nobifashion_reels_overlay_product_pill:hover {
+  background-color: rgba(255, 255, 255, 0.24);
+  transform: translateY(-1px);
+}
+
+.nobifashion_reels_overlay_product_thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.nobifashion_reels_overlay_author_row {
+  display: flex;
+  align-items: center;
+  gap: var(--nobifashion_reels_space_2);
+}
+
+.nobifashion_reels_author_avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  background-color: #27272a;
+  flex-shrink: 0;
+}
+
+.nobifashion_reels_author_name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.nobifashion_reels_verified_badge {
+  display: inline-flex;
+  color: #ffffff;
+}
+
+.nobifashion_reels_follow_btn_inline {
+  padding: 4px 12px;
+  border-radius: var(--nobifashion_reels_radius_pill);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 600;
+  transition: all var(--nobifashion_reels_transition_fast);
+}
+
+.nobifashion_reels_follow_btn_inline:hover {
+  background-color: #ffffff;
+  color: #111113;
+}
+
+.nobifashion_reels_follow_btn_inline.nobifashion_reels_is_following {
+  background-color: rgba(255, 255, 255, 0.22);
+  border-color: transparent;
+}
+
+.nobifashion_reels_overlay_caption {
+  font-size: 13px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.92);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  max-width: 92%;
+}
+
+.nobifashion_reels_overlay_caption.nobifashion_reels_is_expanded {
+  -webkit-line-clamp: unset;
+}
+
+.nobifashion_reels_overlay_hashtags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.nobifashion_reels_hashtag_btn {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  opacity: 0.9;
+  transition: opacity var(--nobifashion_reels_transition_fast);
+}
+
+.nobifashion_reels_hashtag_btn:hover {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+.nobifashion_reels_overlay_meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.72);
+  margin-top: 2px;
+}
+
+/* --- Custom Scrubbing Progress Bar at Bottom Edge of 9:16 Frame --- */
+.nobifashion_reels_progress_container {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 18px;
+  display: flex;
+  align-items: flex-end;
+  z-index: 50 !important;
+  cursor: pointer;
+  padding-bottom: 0;
+  pointer-events: auto !important;
+}
+
+.nobifashion_reels_progress_track {
+  width: 100%;
+  height: 4px;
+  background-color: rgba(255, 255, 255, 0.35);
+  position: relative;
+  transition: height var(--nobifashion_reels_transition_fast);
+}
+
+.nobifashion_reels_progress_container:hover .nobifashion_reels_progress_track {
+  height: 8px;
+}
+
+.nobifashion_reels_progress_fill {
+  height: 100%;
+  width: 0%;
+  background-color: #ffffff;
+  position: relative;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.85);
+}
+
+.nobifashion_reels_progress_thumb {
+  position: absolute;
+  right: -6px;
+  top: 50%;
+  transform: translateY(-50%) scale(0);
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+  transition: transform var(--nobifashion_reels_transition_fast);
+}
+
+.nobifashion_reels_progress_container:hover .nobifashion_reels_progress_thumb {
+  transform: translateY(-50%) scale(1);
+}
+
+.nobifashion_reels_progress_container.nobifashion_reels_is_scrubbing .nobifashion_reels_progress_track {
+  height: 8px !important;
+}
+
+.nobifashion_reels_progress_container.nobifashion_reels_is_scrubbing .nobifashion_reels_progress_thumb {
+  transform: translateY(-50%) scale(1.35) !important;
+}
+
+/* --- Tooltip Xem trước Thumbnail & Thời gian khi Hover Timeline trên Desktop --- */
+.nobifashion_reels_progress_tooltip {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.18s cubic-bezier(0.2, 0.9, 0.3, 1),
+              transform 0.18s cubic-bezier(0.2, 0.9, 0.3, 1),
+              visibility 0.18s;
+  z-index: 120;
+}
+
+.nobifashion_reels_progress_tooltip.nobifashion_reels_is_visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* --- Khung ảnh thu nhỏ hover timeline chuẩn 9:16 dạng TikTok / Facebook Reels trên Desktop --- */
+.nobifashion_reels_preview_thumb_box {
+  width: 108px !important;
+  height: 192px !important;
+  min-width: 108px !important;
+  max-width: 108px !important;
+  min-height: 192px !important;
+  max-height: 192px !important;
+  aspect-ratio: 9 / 16 !important;
+  box-sizing: border-box !important;
+  background: #000000 !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+  border: 2px solid rgba(255, 255, 255, 0.75) !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.95), 0 2px 8px rgba(0, 0, 0, 0.7) !important;
+  position: relative !important;
+  display: block !important;
+}
+
+.nobifashion_reels_preview_skeleton {
+  position: absolute !important;
+  inset: 0 !important;
+  background: #181a20 !important;
+  z-index: 1 !important;
+  overflow: hidden !important;
+}
+
+.nobifashion_reels_preview_thumb_video {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 100% !important;
+  min-height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: cover !important;
+  object-position: center center !important;
+  display: block !important;
+  pointer-events: none !important;
+  background: #000000 !important;
+  border-radius: 8px !important;
+  z-index: 2 !important;
+}
+
+.nobifashion_reels_preview_time_badge {
+  position: absolute !important;
+  bottom: 8px !important;
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  background: rgba(0, 0, 0, 0.85) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+  color: #ffffff !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  padding: 4px 8px !important;
+  border-radius: 4px !important;
+  white-space: nowrap !important;
+  letter-spacing: 0.3px !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.8) !important;
+  z-index: 5 !important;
+}
+
+@media (max-width: 768px), (hover: none) {
+  .nobifashion_reels_progress_tooltip {
+    display: none !important;
+  }
+}
+
+/* --- Video Speed Selector Pill & Vertical Popup --- */
+.nobifashion_reels_speed_wrapper {
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
+  z-index: 65;
+  user-select: none;
+}
+
+.nobifashion_reels_speed_btn {
+  background: rgba(45, 45, 45, 0.88) !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  padding: 4px 11px;
+  color: #ffffff;
+  font-size: 11.5px;
+  font-weight: 700;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  outline: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  transition: background 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
+}
+
+.nobifashion_reels_speed_btn:hover {
+  background: rgba(60, 60, 60, 0.96);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: scale(1.05);
+}
+
+.nobifashion_reels_speed_btn:active {
+  transform: scale(0.96);
+}
+
+.nobifashion_reels_speed_popup {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  background: #242526;
+  background: rgba(34, 35, 38, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 14px;
+  padding: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 68px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.65), 0 2px 8px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(6px) scale(0.94);
+  transform-origin: bottom right;
+  transition: opacity 0.18s cubic-bezier(0.2, 0.9, 0.3, 1),
+              transform 0.18s cubic-bezier(0.2, 0.9, 0.3, 1),
+              visibility 0.18s;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.nobifashion_reels_speed_wrapper.nobifashion_reels_is_open .nobifashion_reels_speed_popup {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.nobifashion_reels_speed_opt {
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 8px 12px;
+  text-align: center;
+  cursor: pointer;
+  outline: none;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.nobifashion_reels_speed_opt:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+}
+
+.nobifashion_reels_speed_opt.nobifashion_reels_is_active {
+  background: rgba(255, 255, 255, 0.22) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+/* --- Action Rail Buttons (Beside Video on Desktop, Overlaid on Mobile) --- */
+.nobifashion_reels_action_item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+}
+
+.nobifashion_reels_action_btn {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background-color: var(--nobifashion_reels_bg_elevated);
+  border: 1px solid var(--nobifashion_reels_border_color);
+  color: var(--nobifashion_reels_text_primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--nobifashion_reels_shadow_sm);
+  transition: background-color var(--nobifashion_reels_transition_fast),
+              border-color var(--nobifashion_reels_transition_fast),
+              transform var(--nobifashion_reels_transition_fast),
+              color var(--nobifashion_reels_transition_fast);
+  position: relative;
+}
+
+.nobifashion_reels_action_btn:hover {
+  background-color: var(--nobifashion_reels_bg_subtle);
+  border-color: var(--nobifashion_reels_border_strong);
+  transform: translateY(-1px);
+}
+
+.nobifashion_reels_action_btn:active {
+  transform: scale(0.92);
+}
+
+.nobifashion_reels_action_btn.nobifashion_reels_is_liked {
+  color: var(--nobifashion_reels_like_color);
+  border-color: rgba(225, 29, 72, 0.3);
+  animation: nobifashion_reels_like_pop 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.nobifashion_reels_action_btn.nobifashion_reels_is_saved {
+  background-color: var(--nobifashion_reels_accent);
+  color: var(--nobifashion_reels_accent_contrast);
+  border-color: var(--nobifashion_reels_accent);
+}
+
+.nobifashion_reels_action_count {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--nobifashion_reels_text_secondary);
+}
+
+/* Tooltip on Action Buttons */
+.nobifashion_reels_action_btn[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  right: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%) translateX(4px);
+  background-color: #111113;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 5px 9px;
+  border-radius: var(--nobifashion_reels_radius_xs);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--nobifashion_reels_transition_fast),
+              transform var(--nobifashion_reels_transition_fast);
+  z-index: 40;
+}
+
+.nobifashion_reels_action_btn[data-tooltip]:hover::after {
+  opacity: 1;
+  transform: translateY(-50%) translateX(0);
+}
+
+/* Navigation Up/Down Buttons */
+.nobifashion_reels_nav_arrow_btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background-color: var(--nobifashion_reels_bg_elevated);
+  border: 1px solid var(--nobifashion_reels_border_color);
+  color: var(--nobifashion_reels_text_primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--nobifashion_reels_shadow_sm);
+  transition: all var(--nobifashion_reels_transition_fast);
+}
+
+.nobifashion_reels_nav_arrow_btn:hover:not(:disabled) {
+  background-color: var(--nobifashion_reels_accent);
+  color: var(--nobifashion_reels_accent_contrast);
+  border-color: var(--nobifashion_reels_accent);
+}
+
+/* --- Sidebar: Creator Info, Description, Product Strip & Comments --- */
+.nobifashion_reels_sidebar_header {
+  padding: var(--nobifashion_reels_space_4) var(--nobifashion_reels_space_5);
+  border-bottom: 1px solid var(--nobifashion_reels_border_subtle);
+  display: flex;
+  flex-direction: column;
+  gap: var(--nobifashion_reels_space_3);
+  flex-shrink: 0;
+}
+
+.nobifashion_reels_sidebar_creator_row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--nobifashion_reels_space_3);
+}
+
+.nobifashion_reels_sidebar_creator_info {
+  display: flex;
+  align-items: center;
+  gap: var(--nobifashion_reels_space_3);
+  min-width: 0;
+}
+
+.nobifashion_reels_sidebar_avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  object-fit: contain;
+  background: #ffffff;
+  padding: 3px;
+  border: 1px solid var(--nobifashion_reels_border_color);
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.nobifashion_reels_sidebar_creator_text {
+  min-width: 0;
+}
+
+.nobifashion_reels_sidebar_creator_name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--nobifashion_reels_text_primary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nobifashion_reels_sidebar_creator_sub {
+  font-size: 12px;
+  color: var(--nobifashion_reels_text_muted);
+}
+
+.nobifashion_reels_btn_primary {
+  padding: 7px 14px;
+  border-radius: var(--nobifashion_reels_radius_pill);
+  background-color: var(--nobifashion_reels_accent);
+  color: var(--nobifashion_reels_accent_contrast);
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--nobifashion_reels_accent);
+  transition: all var(--nobifashion_reels_transition_fast);
+  white-space: nowrap;
+}
+
+.nobifashion_reels_btn_primary:hover {
+  background-color: var(--nobifashion_reels_accent_hover);
+}
+
+.nobifashion_reels_btn_primary.nobifashion_reels_is_following {
+  background-color: transparent;
+  color: var(--nobifashion_reels_text_primary);
+  border-color: var(--nobifashion_reels_border_strong);
+}
+
+.nobifashion_reels_sidebar_desc {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--nobifashion_reels_text_primary);
+  word-break: break-word;
+  user-select: text;
+}
+
+.nobifashion_reels_sidebar_hashtags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.nobifashion_reels_sidebar_tag {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--nobifashion_reels_text_secondary);
+  background-color: var(--nobifashion_reels_bg_subtle);
+  padding: 3px 8px;
+  border-radius: var(--nobifashion_reels_radius_xs);
+  transition: color var(--nobifashion_reels_transition_fast),
+              background-color var(--nobifashion_reels_transition_fast);
+}
+
+.nobifashion_reels_sidebar_tag:hover {
+  color: var(--nobifashion_reels_text_primary);
+  background-color: var(--nobifashion_reels_border_color);
+}
+
+/* Mini Product Card inside Sidebar Header */
+.nobifashion_reels_sidebar_product_card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--nobifashion_reels_space_3);
+  padding: var(--nobifashion_reels_space_2) var(--nobifashion_reels_space_3);
+  background-color: var(--nobifashion_reels_bg_subtle);
+  border: 1px solid var(--nobifashion_reels_border_color);
+  border-radius: var(--nobifashion_reels_radius_md);
+  cursor: pointer;
+  transition: border-color var(--nobifashion_reels_transition_fast),
+              transform var(--nobifashion_reels_transition_fast);
+}
+
+.nobifashion_reels_sidebar_product_card:hover {
+  border-color: var(--nobifashion_reels_border_strong);
+}
+
+.nobifashion_reels_sidebar_product_left {
+  display: flex;
+  align-items: center;
+  gap: var(--nobifashion_reels_space_3);
+  min-width: 0;
+}
+
+.nobifashion_reels_sidebar_product_img {
+  width: 40px;
+  height: 48px;
+  border-radius: var(--nobifashion_reels_radius_xs);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.nobifashion_reels_sidebar_product_title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--nobifashion_reels_text_primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nobifashion_reels_sidebar_product_price {
+  font-size: 12px;
+  color: var(--nobifashion_reels_text_secondary);
+  margin-top: 2px;
+}
+
+.nobifashion_reels_sidebar_stats_bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--nobifashion_reels_space_3) var(--nobifashion_reels_space_5);
+  border-bottom: 1px solid var(--nobifashion_reels_border_subtle);
+  font-size: 12px;
+  color: var(--nobifashion_reels_text_secondary);
+  flex-shrink: 0;
+}
+
+.nobifashion_reels_sort_select {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--nobifashion_reels_text_primary);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--nobifashion_reels_radius_xs);
+  background-color: var(--nobifashion_reels_bg_subtle);
+}
+
+/* Comments Scrollable List */
+.nobifashion_reels_comments_list {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--nobifashion_reels_space_4) var(--nobifashion_reels_space_5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--nobifashion_reels_space_4);
+}
+
+.nobifashion_reels_comment_item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--nobifashion_reels_space_3);
+}
+
+.nobifashion_reels_comment_avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: var(--nobifashion_reels_bg_subtle);
+  border: 1px solid var(--nobifashion_reels_border_color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--nobifashion_reels_text_secondary);
+  flex-shrink: 0;
+}
+
+.nobifashion_reels_comment_body {
+  flex: 1;
+  min-width: 0;
+}
+
+.nobifashion_reels_comment_header {
+  display: flex;
+  align-items: center;
+  gap: var(--nobifashion_reels_space_2);
+  margin-bottom: 3px;
+}
+
+.nobifashion_reels_comment_author {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--nobifashion_reels_text_primary);
+}
+
+.nobifashion_reels_comment_time {
+  font-size: 11px;
+  color: var(--nobifashion_reels_text_muted);
+}
+
+.nobifashion_reels_comment_text {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--nobifashion_reels_text_primary);
+  word-break: break-word;
+  user-select: text;
+}
+
+.nobifashion_reels_comment_actions {
+  display: flex;
+  align-items: center;
+  gap: var(--nobifashion_reels_space_4);
+  margin-top: 6px;
+}
+
+.nobifashion_reels_comment_action_btn {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--nobifashion_reels_text_muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: color var(--nobifashion_reels_transition_fast);
+}
+
+.nobifashion_reels_comment_action_btn:hover,
+.nobifashion_reels_comment_action_btn.nobifashion_reels_is_liked {
+  color: var(--nobifashion_reels_text_primary);
+}
+
+.nobifashion_reels_comment_action_btn.nobifashion_reels_is_liked svg {
+  color: var(--nobifashion_reels_like_color);
+  fill: var(--nobifashion_reels_like_color);
+}
+
+/* Replies nesting */
+.nobifashion_reels_replies_wrap {
+  margin-top: var(--nobifashion_reels_space_3);
+  padding-left: var(--nobifashion_reels_space_3);
+  border-left: 1.5px solid var(--nobifashion_reels_border_color);
+  display: flex;
+  flex-direction: column;
+  gap: var(--nobifashion_reels_space_3);
+}
+
+.nobifashion_reels_toggle_replies_btn {
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--nobifashion_reels_text_secondary);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.nobifashion_reels_toggle_replies_btn:hover {
+  color: var(--nobifashion_reels_text_primary);
+}
+
+/* Fixed Comment Input Footer */
+.nobifashion_reels_comment_composer {
+  padding: var(--nobifashion_reels_space_3) var(--nobifashion_reels_space_4);
+  border-top: 1px solid var(--nobifashion_reels_border_color);
+  background-color: var(--nobifashion_reels_bg_elevated);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.nobifashion_reels_reply_banner {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  color: var(--nobifashion_reels_text_secondary);
+  background-color: var(--nobifashion_reels_bg_subtle);
+  padding: 5px 10px;
+  border-radius: var(--nobifashion_reels_radius_xs);
+  margin-bottom: var(--nobifashion_reels_space_2);
+}
+
+.nobifashion_reels_reply_banner.nobifashion_reels_is_active {
+  display: flex;
+}
+
+.nobifashion_reels_composer_row {
+  display: flex;
+  align-items: center;
+  gap: var(--nobifashion_reels_space_2);
+  background-color: var(--nobifashion_reels_bg_subtle);
+  border: 1px solid var(--nobifashion_reels_border_color);
+  border-radius: var(--nobifashion_reels_radius_pill);
+  padding: 4px 6px 4px 14px;
+}
+
+.nobifashion_reels_composer_row:focus-within {
+  border-color: var(--nobifashion_reels_border_strong);
+  background-color: var(--nobifashion_reels_bg_elevated);
+}
+
+.nobifashion_reels_composer_input {
+  flex: 1;
+  font-size: 13px;
+  outline: none;
+  color: var(--nobifashion_reels_text_primary);
+  user-select: text;
+}
+
+.nobifashion_reels_composer_input::placeholder {
+  color: var(--nobifashion_reels_text_muted);
+}
+
+.nobifashion_reels_emoji_trigger,
+.nobifashion_reels_send_btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--nobifashion_reels_text_secondary);
+  transition: all var(--nobifashion_reels_transition_fast);
+}
+
+.nobifashion_reels_send_btn {
+  background-color: var(--nobifashion_reels_accent);
+  color: var(--nobifashion_reels_accent_contrast);
+}
+
+.nobifashion_reels_emoji_picker {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  right: var(--nobifashion_reels_space_4);
+  background-color: var(--nobifashion_reels_bg_elevated);
+  border: 1px solid var(--nobifashion_reels_border_color);
+  border-radius: var(--nobifashion_reels_radius_md);
+  box-shadow: var(--nobifashion_reels_shadow_md);
+  padding: var(--nobifashion_reels_space_2);
+  display: none;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+  z-index: 50;
+}
+
+.nobifashion_reels_emoji_picker.nobifashion_reels_is_open {
+  display: grid;
+}
+
+.nobifashion_reels_emoji_btn {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--nobifashion_reels_radius_xs);
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nobifashion_reels_emoji_btn:hover {
+  background-color: var(--nobifashion_reels_bg_subtle);
+}
+
+/* --- Drawers & Modals (Product Details, Cart Drawer, Share, More Menu) --- */
+.nobifashion_reels_backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: var(--nobifashion_reels_bg_overlay);
+  backdrop-filter: blur(3px);
+  z-index: 80;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--nobifashion_reels_transition_base);
+}
+
+.nobifashion_reels_backdrop.nobifashion_reels_is_open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.nobifashion_reels_drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(420px, 100vw);
+  background-color: var(--nobifashion_reels_bg_elevated);
+  border-left: 1px solid var(--nobifashion_reels_border_color);
+  box-shadow: var(--nobifashion_reels_shadow_lg);
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform var(--nobifashion_reels_transition_base);
+}
+
+.nobifashion_reels_drawer.nobifashion_reels_is_open {
+  transform: translateX(0);
+}
+
+.nobifashion_reels_drawer_header {
+  padding: var(--nobifashion_reels_space_4) var(--nobifashion_reels_space_5);
+  border-bottom: 1px solid var(--nobifashion_reels_border_color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nobifashion_reels_drawer_title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.nobifashion_reels_drawer_body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--nobifashion_reels_space_5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--nobifashion_reels_space_5);
+}
+
+.nobifashion_reels_drawer_footer {
+  padding: var(--nobifashion_reels_space_4) var(--nobifashion_reels_space_5);
+  border-top: 1px solid var(--nobifashion_reels_border_color);
+  background-color: var(--nobifashion_reels_bg_elevated);
+  display: flex;
+  flex-direction: column;
+  gap: var(--nobifashion_reels_space_3);
+}
+
+/* Product Detail Card in Drawer */
+.nobifashion_reels_product_detail_card {
+  border: 1px solid var(--nobifashion_reels_border_color);
+  border-radius: var(--nobifashion_reels_radius_md);
+  padding: var(--nobifashion_reels_space_4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--nobifashion_reels_space_4);
+  background-color: var(--nobifashion_reels_bg_primary);
+}
+
+.nobifashion_reels_product_detail_top {
+  display: flex;
+  gap: var(--nobifashion_reels_space_4);
+}
+
+.nobifashion_reels_product_detail_img {
+  width: 96px;
+  height: 120px;
+  border-radius: var(--nobifashion_reels_radius_sm);
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid var(--nobifashion_reels_border_color);
+}
+
+.nobifashion_reels_product_detail_info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nobifashion_reels_product_detail_name {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.nobifashion_reels_product_detail_price {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--nobifashion_reels_text_primary);
+}
+
+.nobifashion_reels_product_detail_desc {
+  font-size: 12px;
+  color: var(--nobifashion_reels_text_secondary);
+  line-height: 1.45;
+}
+
+.nobifashion_reels_variant_group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.nobifashion_reels_variant_label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--nobifashion_reels_text_muted);
+}
+
+.nobifashion_reels_variant_options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.nobifashion_reels_variant_chip {
+  padding: 5px 12px;
+  border-radius: var(--nobifashion_reels_radius_xs);
+  border: 1px solid var(--nobifashion_reels_border_color);
+  background-color: var(--nobifashion_reels_bg_elevated);
+  font-size: 12px;
+  font-weight: 500;
+  transition: all var(--nobifashion_reels_transition_fast);
+}
+
+.nobifashion_reels_variant_chip.nobifashion_reels_is_selected {
+  background-color: var(--nobifashion_reels_accent);
+  color: var(--nobifashion_reels_accent_contrast);
+  border-color: var(--nobifashion_reels_accent);
+}
+
+.nobifashion_reels_product_actions_row {
+  display: flex;
+  gap: var(--nobifashion_reels_space_2);
+}
+
+.nobifashion_reels_btn_block {
+  flex: 1;
+  height: 40px;
+  border-radius: var(--nobifashion_reels_radius_sm);
+  background-color: var(--nobifashion_reels_accent);
+  color: var(--nobifashion_reels_accent_contrast);
+  font-size: 13px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: background-color var(--nobifashion_reels_transition_fast);
+}
+
+.nobifashion_reels_btn_block:hover {
+  background-color: var(--nobifashion_reels_accent_hover);
+}
+
+.nobifashion_reels_btn_outline {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: var(--nobifashion_reels_radius_sm);
+  border: 1px solid var(--nobifashion_reels_border_strong);
+  background-color: transparent;
+  color: var(--nobifashion_reels_text_primary);
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+/* Cart Item in Drawer */
+.nobifashion_reels_cart_item {
+  display: flex;
+  gap: var(--nobifashion_reels_space_3);
+  padding-bottom: var(--nobifashion_reels_space_4);
+  border-bottom: 1px solid var(--nobifashion_reels_border_subtle);
+}
+
+.nobifashion_reels_cart_item_img {
+  width: 64px;
+  height: 80px;
+  border-radius: var(--nobifashion_reels_radius_xs);
+  object-fit: cover;
+  border: 1px solid var(--nobifashion_reels_border_color);
+}
+
+.nobifashion_reels_cart_item_info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.nobifashion_reels_qty_control {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--nobifashion_reels_border_color);
+  border-radius: var(--nobifashion_reels_radius_xs);
+}
+
+.nobifashion_reels_qty_btn {
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.nobifashion_reels_qty_val {
+  padding: 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Modal Dialog (Share / More Options / Report) */
+.nobifashion_reels_modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -46%) scale(0.96);
+  width: min(380px, calc(100vw - 32px));
+  background-color: var(--nobifashion_reels_bg_elevated);
+  border: 1px solid var(--nobifashion_reels_border_color);
+  border-radius: var(--nobifashion_reels_radius_lg);
+  box-shadow: var(--nobifashion_reels_shadow_lg);
+  padding: var(--nobifashion_reels_space_5);
+  z-index: 95;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--nobifashion_reels_transition_fast),
+              transform var(--nobifashion_reels_transition_fast);
+}
+
+.nobifashion_reels_modal.nobifashion_reels_is_open {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.nobifashion_reels_modal_list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: var(--nobifashion_reels_space_3);
+}
+
+.nobifashion_reels_modal_option {
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: var(--nobifashion_reels_radius_sm);
+  display: flex;
+  align-items: center;
+  gap: var(--nobifashion_reels_space_3);
+  font-size: 13px;
+  font-weight: 500;
+  text-align: left;
+  transition: background-color var(--nobifashion_reels_transition_fast);
+}
+
+.nobifashion_reels_modal_option:hover {
+  background-color: var(--nobifashion_reels_bg_subtle);
+}
+
+.nobifashion_reels_modal_option.nobifashion_reels_is_danger {
+  color: var(--nobifashion_reels_danger);
+}
+
+/* Toast Notification */
+.nobifashion_reels_toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(16px);
+  background-color: #111113;
+  color: #ffffff;
+  padding: 10px 18px;
+  border-radius: var(--nobifashion_reels_radius_pill);
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: var(--nobifashion_reels_shadow_lg);
+  z-index: 120;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--nobifashion_reels_transition_fast),
+              transform var(--nobifashion_reels_transition_fast);
+}
+
+.nobifashion_reels_toast.nobifashion_reels_is_visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Empty State (when search or filter has 0 matches) */
+.nobifashion_reels_empty_state {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--nobifashion_reels_space_6);
+  text-align: center;
+  gap: var(--nobifashion_reels_space_3);
+  background-color: var(--nobifashion_reels_bg_stage);
+  z-index: 25;
+}
+
+.nobifashion_reels_empty_state.nobifashion_reels_is_visible {
+  display: flex;
+}
+
+/* ==========================================================================
+   NOBI FASHION REELS — RESPONSIVE BREAKPOINTS & MOBILE TIKTOK EXPERIENCE
+   Breakpoints:
+   - Desktop Large: >= 1440px
+   - Laptop: 1024px - 1439px
+   - Tablet: 768px - 1023px
+   - Mobile: < 768px (TikTok full-focus vertical mode + Bottom Sheet comments)
+   - Very Small Mobile: 320px - 479px
+   - Landscape Mobile: max-height: 540px
+   ========================================================================== */
+
+/* Laptop (1024px - 1439px) */
+@media (max-width: 1439px) {
+  :root,
+  .nobifashion_reels_app {
+    --nobifashion_reels_sidebar_w: 340px;
+  }
+
+  .nobifashion_reels_header {
+    padding: 0 var(--nobifashion_reels_space_4);
+    grid-template-columns: auto 1fr auto;
+  }
+
+  .nobifashion_reels_brand_sub {
+    display: none;
+  }
+
+  .nobifashion_reels_stage_area {
+    padding: var(--nobifashion_reels_space_3) var(--nobifashion_reels_space_4);
+  }
+
+  .nobifashion_reels_nav_arrows {
+    right: var(--nobifashion_reels_space_3);
+  }
+}
+
+/* Tablet (768px - 1023px): Sidebar becomes slide-over panel so 9:16 video has generous room */
+@media (max-width: 1023px) {
+  .nobifashion_reels_workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .nobifashion_reels_viewport_frame {
+    --nobifashion_reels_avail_w: calc(100vw - 120px);
+  }
+
+  .nobifashion_reels_sidebar {
+    position: fixed;
+    top: var(--nobifashion_reels_header_h);
+    right: 0;
+    bottom: 0;
+    width: min(360px, 92vw);
+    box-shadow: var(--nobifashion_reels_shadow_lg);
+    transform: translateX(100%);
+  }
+
+  .nobifashion_reels_workspace.nobifashion_reels_mobile_comments_open .nobifashion_reels_sidebar {
+    transform: translateX(0);
+  }
+
+  .nobifashion_reels_nav_tab span {
+    display: none;
+  }
+}
+
+/* Mobile (< 768px): TikTok-inspired immersive layout while strictly preserving 9:16 frame */
+@media (max-width: 767px) {
+  :root,
+  .nobifashion_reels_app {
+    --nobifashion_reels_header_h: 52px;
+  }
+
+  .nobifashion_reels_header {
+    padding: 0 var(--nobifashion_reels_space_3);
+    gap: var(--nobifashion_reels_space_2);
+    display: flex;
+  }
+
+  .nobifashion_reels_header_center {
+    flex: 1;
+    margin: 0;
+    min-width: 0;
+  }
+
+  .nobifashion_reels_brand_name {
+    font-size: 12px;
+  }
+
+  .nobifashion_reels_nav_tabs {
+    display: none;
+  }
+
+  .nobifashion_reels_search_box {
+    max-width: none;
+  }
+
+  .nobifashion_reels_search_input_wrap {
+    height: 34px;
+  }
+
+  .nobifashion_reels_stage_area {
+    padding: 0;
+    background-color: #09090b;
+  }
+
+  .nobifashion_reels_stage_topbar {
+    top: 8px;
+    left: 10px;
+    right: 10px;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .nobifashion_reels_stage_topbar > * {
+    pointer-events: auto;
+  }
+
+  .nobifashion_reels_stage_center_group {
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+  }
+
+  /* Strict 9:16 Video Frame on Mobile: fits inside available width & height without stretching */
+  .nobifashion_reels_viewport_frame {
+    --nobifashion_reels_avail_h: calc(100dvh - var(--nobifashion_reels_header_h));
+    --nobifashion_reels_avail_w: 100vw;
+    aspect-ratio: 9 / 16;
+    height: min(var(--nobifashion_reels_avail_h), calc(var(--nobifashion_reels_avail_w) * 16 / 9));
+    width: auto;
+    border-radius: 0;
+    border: none;
+  }
+
+  /* Action rail floats vertically on right side over video like TikTok / FB Reels mobile */
+  .nobifashion_reels_action_rail {
+    position: absolute;
+    right: 10px;
+    bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+    z-index: 18;
+    gap: 10px;
+  }
+
+  .nobifashion_reels_action_btn {
+    width: 42px;
+    height: 42px;
+    background-color: rgba(16, 16, 20, 0.55);
+    backdrop-filter: blur(8px);
+    border-color: rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+  }
+
+  .nobifashion_reels_action_count {
+    color: #ffffff;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  }
+
+  .nobifashion_reels_action_btn[data-tooltip]::after {
+    display: none;
+  }
+
+  .nobifashion_reels_video_overlay {
+    padding: 40px 64px calc(18px + env(safe-area-inset-bottom, 0px)) 14px;
+  }
+
+  .nobifashion_reels_nav_arrows {
+    display: none;
+  }
+
+  /* Mobile Comments Bottom Sheet */
+  .nobifashion_reels_sidebar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    width: 100%;
+    height: 74dvh;
+    border-left: none;
+    border-top: 1px solid var(--nobifashion_reels_border_color);
+    border-radius: var(--nobifashion_reels_radius_xl) var(--nobifashion_reels_radius_xl) 0 0;
+    transform: translateY(100%);
+    z-index: 85;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .nobifashion_reels_workspace.nobifashion_reels_mobile_comments_open .nobifashion_reels_sidebar {
+    transform: translateY(0);
+  }
+
+  .nobifashion_reels_bottom_sheet_handle {
+    display: flex !important;
+    width: 100%;
+    padding: 10px 0 4px;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    flex-shrink: 0;
+  }
+
+  .nobifashion_reels_bottom_sheet_bar {
+    width: 40px;
+    height: 4px;
+    border-radius: var(--nobifashion_reels_radius_pill);
+    background-color: var(--nobifashion_reels_border_strong);
+  }
+}
+
+/* Very small mobile screens (320px - 479px) */
+@media (max-width: 479px) {
+  .nobifashion_reels_brand_text {
+    display: none;
+  }
+
+  .nobifashion_reels_icon_btn {
+    width: 34px;
+    height: 34px;
+  }
+
+  .nobifashion_reels_filter_pill {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  .nobifashion_reels_action_btn {
+    width: 38px;
+    height: 38px;
+  }
+}
+
+/* Landscape Mobile Orientation: strictly preserve 9:16 frame scaled by available height */
+@media (max-height: 540px) and (orientation: landscape) {
+  :root,
+  .nobifashion_reels_app {
+    --nobifashion_reels_header_h: 44px;
+  }
+
+  .nobifashion_reels_stage_area {
+    padding: 4px 12px;
+  }
+
+  .nobifashion_reels_viewport_frame {
+    --nobifashion_reels_avail_h: calc(100dvh - var(--nobifashion_reels_header_h) - 8px);
+    height: var(--nobifashion_reels_avail_h);
+    width: auto;
+    aspect-ratio: 9 / 16;
+    border-radius: var(--nobifashion_reels_radius_sm);
+  }
+
+  .nobifashion_reels_stage_topbar {
+    display: none;
+  }
+
+  .nobifashion_reels_action_btn {
+    width: 34px;
+    height: 34px;
+  }
+}

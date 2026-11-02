@@ -36,7 +36,9 @@ class SecurityHeadersMiddleware
                 "https://static.cloudflareinsights.com ".
                 "https://*.cloudflareinsights.com ".
                 "https://www.googletagmanager.com ".
-                "https://www.google-analytics.com; ".
+                "https://www.google-analytics.com ".
+                "https://googleads.g.doubleclick.net ".
+                "https://www.googleadservices.com; ".
 
             // Styles
             "style-src 'self' 'unsafe-inline' ".    
@@ -53,7 +55,10 @@ class SecurityHeadersMiddleware
             "font-src 'self' data: https://fonts.gstatic.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://cdn.ckeditor.com https:; ".
 
             // Images
-            "img-src 'self' data: https: blob:; ".
+            "img-src 'self' data: https: http: blob:; ".
+
+            // Media (Cho phép phát Video Reels từ Cloudflare R2)
+            "media-src 'self' blob: data: https: https://*.r2.dev https://pub-c715ae431df54007bca13242d8aff912.r2.dev; ".
 
             // Ajax/Fetch
             "connect-src 'self' ".
@@ -69,11 +74,16 @@ class SecurityHeadersMiddleware
                 "https://region1.google-analytics.com ".
                 "https://www.googletagmanager.com ".
                 "https://stats.g.doubleclick.net ".
+                "https://googleads.g.doubleclick.net ".
+                "https://www.googleadservices.com ".
+                "https://www.google.com ".
+                "https://google.com ".
                 "https://api-merchant.payos.vn ".
                 "https://pay.payos.vn ".
                 "https://static.cloudflareinsights.com ".
                 "https://cloudflareinsights.com ".
                 "https://*.cloudflareinsights.com ".
+                "https://pub-c715ae431df54007bca13242d8aff912.r2.dev ".
                 "https://cdn.tiny.cloud; ".
 
             // Web Workers & Blob (cho CKEditor, media plugins)

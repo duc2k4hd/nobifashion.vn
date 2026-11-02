@@ -104,6 +104,32 @@ Route::middleware('throttle:30,1')->prefix('/v1')->name('api.v1.')->group(functi
         // Get payments list
         Route::get('/payments', [\App\Http\Controllers\Apis\V1\PayOS\PayOSController::class, 'getPayments'])->name('payments');
     });
+
+    // Reels API Routes (v1)
+    Route::prefix('/reels')->name('reels.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\Api\V1\ReelApiController::class, 'index'])->name('index');
+        Route::get('/{id}', [\App\Http\Controllers\Api\V1\ReelApiController::class, 'show'])->whereNumber('id')->name('show');
+        Route::get('/slug/{slug}', [\App\Http\Controllers\Api\V1\ReelApiController::class, 'showBySlug'])->name('slug');
+        Route::post('/{id}/view', [\App\Http\Controllers\Api\V1\ReelApiController::class, 'view'])->whereNumber('id')->name('view');
+        Route::post('/{id}/like', [\App\Http\Controllers\Api\V1\ReelApiController::class, 'like'])->whereNumber('id')->name('like');
+        Route::post('/{id}/save', [\App\Http\Controllers\Api\V1\ReelApiController::class, 'save'])->whereNumber('id')->name('save');
+        Route::post('/{id}/share', [\App\Http\Controllers\Api\V1\ReelApiController::class, 'share'])->whereNumber('id')->name('share');
+        Route::get('/{id}/comments', [\App\Http\Controllers\Api\V1\ReelApiController::class, 'getComments'])->whereNumber('id')->name('comments.get');
+        Route::post('/{id}/comments', [\App\Http\Controllers\Api\V1\ReelApiController::class, 'postComment'])->whereNumber('id')->name('comments.post');
+    });
+});
+
+// Direct alias for /api/reels
+Route::prefix('/reels')->group(function () {
+    Route::get('/', [\App\Http\Controllers\Api\V1\ReelApiController::class, 'index']);
+    Route::get('/{id}', [\App\Http\Controllers\Api\V1\ReelApiController::class, 'show'])->whereNumber('id');
+    Route::get('/slug/{slug}', [\App\Http\Controllers\Api\V1\ReelApiController::class, 'showBySlug']);
+    Route::post('/{id}/view', [\App\Http\Controllers\Api\V1\ReelApiController::class, 'view'])->whereNumber('id');
+    Route::post('/{id}/like', [\App\Http\Controllers\Api\V1\ReelApiController::class, 'like'])->whereNumber('id');
+    Route::post('/{id}/save', [\App\Http\Controllers\Api\V1\ReelApiController::class, 'save'])->whereNumber('id');
+    Route::post('/{id}/share', [\App\Http\Controllers\Api\V1\ReelApiController::class, 'share'])->whereNumber('id');
+    Route::get('/{id}/comments', [\App\Http\Controllers\Api\V1\ReelApiController::class, 'getComments'])->whereNumber('id');
+    Route::post('/{id}/comments', [\App\Http\Controllers\Api\V1\ReelApiController::class, 'postComment'])->whereNumber('id');
 });
 
 
