@@ -56,7 +56,14 @@ class ReelsFeedOrchestrator
             ];
         }
 
-        $currentIndex = (int) $cycle->current_index;
+        // Nếu có cursor -> Phân trang tiếp tục từ con trỏ của cursor
+        // Nếu không có cursor (load trang đầu / reload) -> Bắt đầu từ đầu chu kỳ hiện tại
+        if ($cursor) {
+            $cursorData = $this->parseCursor($cursor);
+            $currentIndex = (isset($cursorData['index'])) ? (int) $cursorData['index'] : (int) $cycle->current_index;
+        } else {
+            $currentIndex = 0;
+        }
 
         // 2. Lấy danh sách ID cho batch này từ sequence
         $targetIds = array_slice($sequence, $currentIndex, $limit);
@@ -81,8 +88,8 @@ class ReelsFeedOrchestrator
 
         // Cập nhật vị trí con trỏ của cycle
         $newIndex = $currentIndex + $fetchedCount;
-        $cycle->current_index = $newIndex;
-        $cycle->total_delivered += count($reels);
+        $cycle->current_index = max((int) $cycle->current_index, $newIndex);
+        $cycle->total_delivered = max((int) $cycle->total_delivered, $newIndex);
         $hasMore = $newIndex < $totalVideos;
 
         if (!$hasMore) {
@@ -92,7 +99,7 @@ class ReelsFeedOrchestrator
         $cycle->save();
 
         // 4. Tạo signed cursor an toàn cho lần gọi tiếp theo
-        $nextCursor = $hasMore ? $this->generateCursor($cycle) : null;
+        $nextCursor = $hasMore ? $this->generateCursorForIndex($cycle, $newIndex) : null;
 
         return [
             'items' => $reels,
@@ -331,11 +338,20 @@ class ReelsFeedOrchestrator
         $savedIds = [];
 
         if (!empty($validIds)) {
-            $likedIds = ReelLike::whereIn('reel_id', $validIds)
-                ->where('anonymous_user_id', $anonUser->id)
-                ->pluck('reel_id')
-                ->flip()
-                ->all();
+            $likedQuery = ReelLike::whereIn('reel_id', $validIds);
+            if ($userId && $anonUser) {
+                $likedQuery->where(function ($q) use ($userId, $anonUser) {
+                    $q->where('anonymous_user_id', $anonUser->id)
+                      ->orWhere('user_id', $userId);
+                });
+            } elseif ($anonUser) {
+                $likedQuery->where('anonymous_user_id', $anonUser->id);
+            } elseif ($userId) {
+                $likedQuery->where('user_id', $userId);
+            } elseif ($clientIp) {
+                $likedQuery->where('ip_address', $clientIp);
+            }
+            $likedIds = $likedQuery->pluck('reel_id')->flip()->all();
 
             $saveQuery = ReelSave::whereIn('reel_id', $validIds);
             if ($userId) {
@@ -369,9 +385,14 @@ class ReelsFeedOrchestrator
 
     protected function generateCursor(ReelFeedCycle $cycle): string
     {
+        return $this->generateCursorForIndex($cycle, (int) $cycle->current_index);
+    }
+
+    protected function generateCursorForIndex(ReelFeedCycle $cycle, int $index): string
+    {
         $payload = [
             'cycle_id' => $cycle->id,
-            'index' => $cycle->current_index,
+            'index' => $index,
             'v' => $cycle->snapshot_version,
             't' => time(),
         ];

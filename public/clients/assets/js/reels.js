@@ -3433,12 +3433,38 @@ class UIController {
     }, 2400);
   }
 
-  setFilter(filterName) {
+  async setFilter(filterName) {
     this.store.activeFilter = filterName;
     // Sync filter pills and header tabs
     document.querySelectorAll('[data-filter]').forEach((el) => {
       el.classList.toggle('nobifashion_reels_is_active', el.getAttribute('data-filter') === filterName);
     });
+
+    // Khi chọn danh mục Đã thích, Đã lưu, Xu hướng hoặc Mới, tải thêm từ server nếu cần
+    if (filterName === 'liked' || filterName === 'saved' || filterName === 'trending' || filterName === 'new') {
+      try {
+        const res = await fetch(`/api/v1/reels?category=${encodeURIComponent(filterName)}&limit=20`);
+        if (res.ok) {
+          const json = await res.json();
+          const items = json.data || [];
+          const existingIds = new Set(this.store.reels.map((r) => Number(r.id)));
+          items.forEach((r) => {
+            if (!existingIds.has(Number(r.id))) {
+              this.store.reels.push(r);
+            } else {
+              const existing = this.store.reels.find((x) => Number(x.id) === Number(r.id));
+              if (existing) {
+                existing.isLiked = r.isLiked;
+                existing.isSaved = r.isSaved;
+              }
+            }
+          });
+        }
+      } catch (err) {
+        console.warn('Lỗi khi nạp danh mục:', err);
+      }
+    }
+
     this.navigationController.refreshList(true);
   }
 
@@ -3893,7 +3919,7 @@ class NobiFashionReelsApp {
       const filterBtn = e.target.closest('[data-filter]');
       if (filterBtn && !filterBtn.hasAttribute('data-action')) {
         const filterName = filterBtn.getAttribute('data-filter');
-        this.uiController.setFilter(filterName);
+        await this.uiController.setFilter(filterName);
         return;
       }
 
@@ -3931,7 +3957,7 @@ class NobiFashionReelsApp {
         case 'profile-filter': {
           const f = actionEl.getAttribute('data-filter') || 'all';
           this.uiController.popoverEl?.classList.remove('nobifashion_reels_is_open');
-          this.uiController.setFilter(f);
+          await this.uiController.setFilter(f);
           break;
         }
 

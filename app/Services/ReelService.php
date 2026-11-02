@@ -40,7 +40,40 @@ class ReelService
             ]);
 
         // Bộ lọc chuyên mục
-        if ($category !== 'all' && $category !== '') {
+        if ($category === 'liked') {
+            $likedQuery = ReelLike::query();
+            if ($userId && $anonUser) {
+                $likedQuery->where(function ($q) use ($userId, $anonUser) {
+                    $q->where('anonymous_user_id', $anonUser->id)
+                      ->orWhere('user_id', $userId);
+                });
+            } elseif ($anonUser) {
+                $likedQuery->where('anonymous_user_id', $anonUser->id);
+            } elseif ($userId) {
+                $likedQuery->where('user_id', $userId);
+            } elseif ($clientIp) {
+                $likedQuery->where('ip_address', $clientIp);
+            } else {
+                $likedQuery->whereRaw('1 = 0');
+            }
+            $likedReelIds = $likedQuery->pluck('reel_id')->all();
+            $query->whereIn('id', $likedReelIds);
+        } elseif ($category === 'saved') {
+            $savedQuery = ReelSave::query();
+            if ($userId) {
+                $savedQuery->where('user_id', $userId);
+            } elseif ($clientIp) {
+                $savedQuery->where('ip_address', $clientIp);
+            } else {
+                $savedQuery->whereRaw('1 = 0');
+            }
+            $savedReelIds = $savedQuery->pluck('reel_id')->all();
+            $query->whereIn('id', $savedReelIds);
+        } elseif ($category === 'trending') {
+            $query->orderByDesc('view_count')->orderByDesc('like_count');
+        } elseif ($category === 'new') {
+            $query->orderByDesc('published_at')->orderByDesc('id');
+        } elseif ($category !== 'all' && $category !== '') {
             $query->where('category', $category);
         }
 
