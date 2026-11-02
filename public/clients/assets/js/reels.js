@@ -373,7 +373,14 @@ class ReelsDataStore {
 
     reel.comments = reel.comments || [];
     if (replyToCommentId) {
-      const parent = reel.comments.find((c) => String(c.id) === String(replyToCommentId));
+      // Tìm root comment trực tiếp, hoặc tìm cha chứa comment con đó
+      let parent = reel.comments.find((c) => String(c.id) === String(replyToCommentId));
+      if (!parent) {
+        parent = reel.comments.find((c) =>
+          c.replies && c.replies.some((r) => String(r.id) === String(replyToCommentId))
+        );
+      }
+
       if (parent) {
         parent.replies = parent.replies || [];
         parent.replies.push(newComment);
@@ -1985,7 +1992,7 @@ class CommentsController {
         </div>
 
         <form id="nobifashion_reels_comment_form" class="nobifashion_reels_composer_row" autocomplete="off">
-          <div style="width:28px;height:28px;border-radius:50%;background:${(window.__ANON_USER__ && window.__ANON_USER__.avatar_color) || '#3b82f6'};display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;" title="Biệt danh: ${(window.__ANON_USER__ && window.__ANON_USER__.nickname) || 'Bạn'}">
+          <div style="width:22px;height:22px;border-radius:50%;background:${(window.__ANON_USER__ && window.__ANON_USER__.avatar_color) || '#3b82f6'};display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;" title="Biệt danh: ${(window.__ANON_USER__ && window.__ANON_USER__.nickname) || 'Bạn'}">
             ${(window.__ANON_USER__ && window.__ANON_USER__.avatar_key && ANIMAL_ICONS[window.__ANON_USER__.avatar_key]) || '🐱'}
           </div>
           <input
@@ -1996,11 +2003,11 @@ class CommentsController {
             maxlength="400"
             aria-label="Nhập nội dung bình luận"
           />
-          <button type="button" class="nobifashion_reels_emoji_trigger" data-action="toggle-emoji" aria-label="Chọn biểu tượng cảm xúc">
+          <button type="button" class="nobifashion_reels_emoji_trigger" data-action="toggle-emoji" aria-label="Chọn biểu tượng cảm xúc" style="font-size:13px;">
             ☺
           </button>
           <button type="submit" class="nobifashion_reels_send_btn" aria-label="Gửi bình luận">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
               <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
             </svg>
           </button>
@@ -2054,8 +2061,9 @@ class CommentsController {
         }
       } else if (action === 'reply-comment') {
         const commentId = btn.getAttribute('data-comment-id');
+        const rootId = btn.getAttribute('data-root-id') || commentId;
         const author = btn.getAttribute('data-author');
-        this.setReplyTarget(commentId, author);
+        this.setReplyTarget(commentId, author, rootId);
       } else if (action === 'cancel-reply') {
         this.clearReplyTarget();
       } else if (action === 'toggle-replies') {
@@ -2239,9 +2247,10 @@ class CommentsController {
     return '👍❤️';
   }
 
-  renderCommentItem(c, depth = 0) {
+  renderCommentItem(c, depth = 0, rootId = null) {
+    const currentRootId = depth === 0 ? c.id : rootId;
     const replies = c.replies || [];
-    const isExpanded = this.expandedReplies.has(c.id);
+    const isExpanded = this.expandedReplies.has(String(c.id)) || this.expandedReplies.has(c.id);
     const hasReplies = replies.length > 0;
     const isAuthor = Boolean(c.isAuthor);
     const isVerified = Boolean(c.isVerified);
@@ -2252,19 +2261,19 @@ class CommentsController {
     const authorName = c.nickname || c.author || 'Khách Nobi';
 
     const stickerHtml = c.sticker && c.sticker.asset_url
-      ? `<div style="margin-top:6px;"><img src="${c.sticker.asset_url}" alt="${this.escapeHtml(c.sticker.name || 'Sticker')}" style="width:72px;height:72px;object-fit:contain;display:block;" /></div>`
+      ? `<div style="margin-top:4px;"><img src="${c.sticker.asset_url}" alt="${this.escapeHtml(c.sticker.name || 'Sticker')}" style="width:42px;height:42px;object-fit:contain;display:block;" /></div>`
       : '';
 
     return `
-      <div class="nobifashion_reels_comment_item" data-comment-id="${c.id}" data-depth="${depth}">
-        <div class="nobifashion_reels_comment_avatar" style="background:${avatarBg};color:#ffffff;display:flex;align-items:center;justify-content:center;font-size:15px;" title="${this.escapeHtml(authorName)}">${animalIcon}</div>
+      <div class="nobifashion_reels_comment_item ${depth > 0 ? 'nobifashion_reels_comment_reply_item' : ''}" data-comment-id="${c.id}" data-depth="${depth}">
+        <div class="nobifashion_reels_comment_avatar" style="background:${avatarBg};color:#ffffff;display:flex;align-items:center;justify-content:center;" title="${this.escapeHtml(authorName)}">${animalIcon}</div>
         <div class="nobifashion_reels_comment_body">
           <div class="nobifashion_reels_comment_header">
-            <span class="nobifashion_reels_comment_author" style="font-weight:600;">${this.escapeHtml(authorName)}</span>
+            <span class="nobifashion_reels_comment_author">${this.escapeHtml(authorName)}</span>
             ${
               isVerified
                 ? `<span class="nobifashion_reels_comment_verified" title="Đã xác minh">
-                    <svg width="11" height="11" viewBox="0 0 24 24" fill="#0ea5e9"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="#0ea5e9"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
                    </span>`
                 : ''
             }
@@ -2301,7 +2310,8 @@ class CommentsController {
               class="nobifashion_reels_comment_reply_text_btn"
               data-action="reply-comment"
               data-comment-id="${c.id}"
-              data-author="${this.escapeHtml(c.author)}"
+              data-root-id="${currentRootId}"
+              data-author="${this.escapeHtml(authorName)}"
             >
               Trả lời
             </button>
@@ -2317,7 +2327,7 @@ class CommentsController {
                 data-action="toggle-replies"
                 data-comment-id="${c.id}"
               >
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transform:${isExpanded ? 'rotate(180deg)' : 'rotate(0deg)'};transition:transform 0.2s ease;">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transform:${isExpanded ? 'rotate(180deg)' : 'rotate(0deg)'};transition:transform 0.2s ease;">
                   <polyline points="6 9 12 15 18 9"/>
                 </svg>
                 <span>${isExpanded ? 'Ẩn câu trả lời' : `Xem ${replies.length} câu trả lời`}</span>
@@ -2326,7 +2336,7 @@ class CommentsController {
               ${
                 isExpanded
                   ? `<div class="nobifashion_reels_nested_replies_box">
-                      ${replies.map((r) => this.renderCommentItem(r, depth + 1)).join('')}
+                      ${replies.map((r) => this.renderCommentItem(r, depth + 1, currentRootId)).join('')}
                     </div>`
                   : ''
               }
@@ -2452,13 +2462,18 @@ class CommentsController {
       .join('');
   }
 
-  setReplyTarget(commentId, author) {
-    this.replyToComment = { id: commentId, author };
+  setReplyTarget(commentId, author, rootId = null) {
+    this.replyToComment = { id: commentId, author, rootId: rootId || commentId };
     if (this.replyBannerEl && this.replyLabelEl) {
-      this.replyLabelEl.textContent = `Đang trả lời ${author}`;
+      this.replyLabelEl.textContent = `Đang trả lời @${author}`;
       this.replyBannerEl.classList.add('nobifashion_reels_is_active');
     }
-    this.commentInputEl.focus();
+    if (this.commentInputEl) {
+      if (rootId && String(commentId) !== String(rootId) && !this.commentInputEl.value.startsWith(`@${author}`)) {
+        this.commentInputEl.value = `@${author} `;
+      }
+      this.commentInputEl.focus();
+    }
   }
 
   clearReplyTarget() {
@@ -2474,6 +2489,7 @@ class CommentsController {
     if (!text) return;
 
     const replyId = this.replyToComment ? this.replyToComment.id : null;
+    const rootId = (this.replyToComment && this.replyToComment.rootId) ? this.replyToComment.rootId : replyId;
     const sendBtn = this.commentFormEl ? this.commentFormEl.querySelector('.nobifashion_reels_send_btn') : null;
     if (sendBtn) sendBtn.disabled = true;
 
@@ -2483,8 +2499,9 @@ class CommentsController {
       this.clearReplyTarget();
       if (this.emojiPickerEl) this.emojiPickerEl.classList.remove('nobifashion_reels_is_open');
 
-      if (replyId) {
-        this.expandedReplies.add(replyId);
+      if (rootId) {
+        this.expandedReplies.add(String(rootId));
+        this.expandedReplies.add(parseInt(rootId, 10));
       }
 
       this.updateStats(this.currentReel);

@@ -312,12 +312,37 @@ class ReelService
 
         $status = ($moderation['decision'] === 'REVIEW') ? 'pending_review' : 'approved';
 
-        // 6. Lưu vào Database an toàn
+        // 6. Xử lý phân cấp phản hồi (Thread Replies):
+        // Nếu trả lời comment con/cháu/chắt, luôn tìm về Root Comment cao nhất để đưa vào cùng một luồng thảo luận
+        $effectiveParentId = null;
+        if ($parentId) {
+            $targetComment = ReelComment::where('id', $parentId)->where('reel_id', $reel->id)->first();
+            if ($targetComment) {
+                $rootParent = $targetComment;
+                while ($rootParent->parent_id !== null) {
+                    $upParent = ReelComment::where('id', $rootParent->parent_id)->where('reel_id', $reel->id)->first();
+                    if (!$upParent) break;
+                    $rootParent = $upParent;
+                }
+                $effectiveParentId = $rootParent->id;
+
+                // Nếu trả lời một bình luận con, tự động tag @tên người đó nếu chưa có
+                if ($targetComment->id !== $rootParent->id) {
+                    $targetAuthor = $targetComment->author_name ?: ($targetComment->anonymousUser?->nickname ?? 'bạn');
+                    $tagPrefix = '@' . trim($targetAuthor);
+                    if (!str_starts_with(trim($content ?? ''), '@')) {
+                        $content = $tagPrefix . ' ' . trim($content ?? '');
+                    }
+                }
+            }
+        }
+
+        // 7. Lưu vào Database an toàn
         $comment = ReelComment::create([
             'reel_id' => $reel->id,
             'anonymous_user_id' => $anonUser->id,
             'user_id' => $userId,
-            'parent_id' => $parentId,
+            'parent_id' => $effectiveParentId,
             'author_name' => $anonUser->nickname,
             'content' => e(strip_tags(trim($content))), // XSS prevention
             'comment_type' => $commentType,
@@ -326,8 +351,8 @@ class ReelService
         ]);
 
         // Tăng đếm replies_count nếu là phản hồi
-        if ($parentId && $status === 'approved') {
-            ReelComment::where('id', $parentId)->increment('replies_count');
+        if ($effectiveParentId && $status === 'approved') {
+            ReelComment::where('id', $effectiveParentId)->increment('replies_count');
         }
 
         if ($status === 'approved') {
