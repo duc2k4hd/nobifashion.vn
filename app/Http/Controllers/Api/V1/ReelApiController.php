@@ -253,19 +253,35 @@ class ReelApiController extends Controller
 
         $newRawToken = null;
         $anonUser = $request->attributes->get('anonymous_user') ?: $this->identityService->resolveUser($request, $newRawToken);
-        $cursor = $request->query('cursor');
+        $sort = (string) $request->query('sort', 'popular');
+        $page = max((int) $request->query('page', 1), 1);
         $limit = min((int) $request->query('limit', 20), 50);
+        $offset = (int) $request->query('offset', ($page - 1) * $limit);
 
-        $query = $reel->comments()
+        // Truy vấn comment cha: Tải trước 20 comment cha và tối đa 10 comment con cho mỗi cha
+        $query = ReelComment::where('reel_id', $reel->id)
             ->whereNull('parent_id')
             ->where('status', 'approved')
-            ->with(['sticker', 'anonymousUser', 'replies.sticker', 'replies.anonymousUser']);
+            ->with([
+                'sticker',
+                'anonymousUser',
+                'replies' => function ($q) {
+                    $q->where('status', 'approved')->orderBy('id', 'asc')->take(10);
+                },
+                'replies.sticker',
+                'replies.anonymousUser',
+            ]);
 
-        if ($cursor) {
-            $query->where('id', '<', (int) $cursor);
+        // Sắp xếp: Mặc định Phù hợp nhất (Nhiều tim nhất -> Nhiều trả lời nhất -> Mới nhất)
+        if ($sort === 'latest') {
+            $query->orderByDesc('id');
+        } else {
+            $query->orderByDesc('likes_count')
+                ->orderByDesc('replies_count')
+                ->orderByDesc('id');
         }
 
-        $comments = $query->orderByDesc('id')
+        $comments = $query->skip($offset)
             ->take($limit + 1)
             ->get();
 
@@ -274,7 +290,7 @@ class ReelApiController extends Controller
             $comments = $comments->slice(0, $limit);
         }
 
-        $nextCursor = $comments->isNotEmpty() ? $comments->last()->id : null;
+        $nextOffset = $offset + $comments->count();
 
         // Lấy danh sách comment ID mà anonymous user hiện tại đã like
         $likedCommentIds = [];
@@ -340,9 +356,96 @@ class ReelApiController extends Controller
             'data' => $data,
             'pagination' => [
                 'has_more' => $hasMore,
-                'next_cursor' => $nextCursor,
+                'next_offset' => $nextOffset,
+                'page' => $page,
+                'limit' => $limit,
             ],
             'total' => (int) $reel->comment_count,
+        ]);
+
+        if ($newRawToken) {
+            $cookie = $this->identityService->makeIdentityCookie($newRawToken, $request);
+            $response->withCookie($cookie);
+        }
+
+        return $response;
+    }
+
+    /**
+     * Tải thêm danh sách comment con (Replies) phân trang 10 mục/lần
+     * GET /api/v1/reels/comments/{id}/replies
+     */
+    public function getCommentReplies(int $id, Request $request): JsonResponse
+    {
+        $parentComment = ReelComment::find($id);
+        if (!$parentComment) {
+            return response()->json(['success' => false, 'message' => 'Bình luận không tồn tại!'], 404);
+        }
+
+        $newRawToken = null;
+        $anonUser = $request->attributes->get('anonymous_user') ?: $this->identityService->resolveUser($request, $newRawToken);
+        $page = max((int) $request->query('page', 1), 1);
+        $limit = min((int) $request->query('limit', 10), 30);
+        $offset = (int) $request->query('offset', ($page - 1) * $limit);
+        $cursor = $request->query('after_id');
+
+        $query = ReelComment::where('parent_id', $id)
+            ->where('status', 'approved')
+            ->with(['sticker', 'anonymousUser']);
+
+        if ($cursor) {
+            $query->where('id', '>', (int) $cursor)->orderBy('id', 'asc');
+        } else {
+            $query->orderBy('id', 'asc')->skip($offset);
+        }
+
+        $replies = $query->take($limit + 1)->get();
+        $hasMore = $replies->count() > $limit;
+        if ($hasMore) {
+            $replies = $replies->slice(0, $limit);
+        }
+
+        $likedCommentIds = [];
+        if ($anonUser && $replies->isNotEmpty()) {
+            $likedCommentIds = \App\Models\ReelCommentLike::whereIn('comment_id', $replies->pluck('id'))
+                ->where('anonymous_user_id', $anonUser->id)
+                ->pluck('comment_id')
+                ->all();
+            $likedCommentIds = array_flip($likedCommentIds);
+        }
+
+        $data = $replies->map(function ($r) use ($likedCommentIds) {
+            $rAnon = $r->anonymousUser;
+            return [
+                'id' => (string) $r->id,
+                'author' => $r->author_name ?: ($rAnon?->nickname ?? 'Khách Nobi'),
+                'nickname' => $rAnon?->nickname ?? $r->author_name,
+                'avatar_key' => $rAnon?->avatar_key ?? 'cat',
+                'avatar_color' => $rAnon?->avatar_color ?? '#3b82f6',
+                'initials' => mb_substr($r->author_name, 0, 2),
+                'time' => $r->created_at->diffForHumans(),
+                'timestamp' => $r->created_at->timestamp,
+                'text' => $r->content,
+                'comment_type' => $r->comment_type,
+                'sticker' => $r->sticker ? [
+                    'id' => $r->sticker->id,
+                    'code' => $r->sticker->code,
+                    'name' => $r->sticker->name,
+                    'asset_url' => $r->sticker->asset_url,
+                ] : null,
+                'likes' => (int) $r->likes_count,
+                'isLiked' => isset($likedCommentIds[$r->id]),
+            ];
+        })->values()->all();
+
+        $response = response()->json([
+            'success' => true,
+            'data' => $data,
+            'pagination' => [
+                'has_more' => $hasMore,
+                'next_offset' => $offset + $replies->count(),
+                'total_replies' => (int) $parentComment->replies_count,
+            ],
         ]);
 
         if ($newRawToken) {

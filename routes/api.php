@@ -108,6 +108,7 @@ Route::prefix('/v1')->name('api.v1.')->group(function () {
         // Bình luận
         Route::get('/{id}/comments', [ReelApiController::class, 'getComments'])->whereNumber('id')->name('comments.get');
         Route::post('/{id}/comments', [ReelApiController::class, 'postComment'])->whereNumber('id')->name('comments.post');
+        Route::get('/comments/{id}/replies', [ReelApiController::class, 'getCommentReplies'])->whereNumber('id')->name('comments.replies');
     });
 });
 
@@ -136,4 +137,5 @@ Route::prefix('/reels')->middleware('anonymous.identity')->group(function () {
     Route::post('/{id}/share', [ReelApiController::class, 'share'])->whereNumber('id');
     Route::get('/{id}/comments', [ReelApiController::class, 'getComments'])->whereNumber('id');
     Route::post('/{id}/comments', [ReelApiController::class, 'postComment'])->whereNumber('id');
+    Route::get('/comments/{id}/replies', [ReelApiController::class, 'getCommentReplies'])->whereNumber('id');
 });

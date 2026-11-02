@@ -319,11 +319,11 @@ class ReelsDataStore {
     return reel;
   }
 
-  async fetchComments(reelId) {
+  async fetchComments(reelId, page = 1, append = false, sort = 'popular') {
     const reel = this.getReelById(reelId);
     if (!reel) return [];
     try {
-      const res = await fetch(`/api/v1/reels/${reel.id}/comments?limit=30`, {
+      const res = await fetch(`/api/v1/reels/${reel.id}/comments?limit=20&page=${page}&sort=${sort}`, {
         credentials: 'include',
         headers: {
           'Accept': 'application/json',
@@ -333,7 +333,15 @@ class ReelsDataStore {
       if (res.ok) {
         const json = await res.json();
         if (json.success && Array.isArray(json.data)) {
-          reel.comments = json.data;
+          reel.commentsPage = page;
+          reel.commentsHasMore = Boolean(json.pagination?.has_more);
+          if (append && Array.isArray(reel.comments)) {
+            const existingIds = new Set(reel.comments.map((c) => String(c.id)));
+            const newItems = json.data.filter((c) => !existingIds.has(String(c.id)));
+            reel.comments.push(...newItems);
+          } else {
+            reel.comments = json.data;
+          }
           if (typeof json.total === 'number') {
             reel.commentsCount = json.total;
           }
@@ -342,6 +350,40 @@ class ReelsDataStore {
       }
     } catch (e) {}
     return reel.comments || [];
+  }
+
+  async fetchMoreCommentReplies(reelId, commentId) {
+    const reel = this.getReelById(reelId);
+    if (!reel || !Array.isArray(reel.comments)) return [];
+
+    const parent = reel.comments.find((c) => String(c.id) === String(commentId));
+    if (!parent) return [];
+
+    parent.replies = parent.replies || [];
+    const offset = parent.replies.length;
+
+    try {
+      const res = await fetch(`/api/v1/reels/comments/${commentId}/replies?offset=${offset}&limit=10`, {
+        credentials: 'include',
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          const existingIds = new Set(parent.replies.map((r) => String(r.id)));
+          const newReplies = json.data.filter((r) => !existingIds.has(String(r.id)));
+          parent.replies.push(...newReplies);
+          if (typeof json.pagination?.total_replies === 'number') {
+            parent.replies_count = json.pagination.total_replies;
+          }
+          return parent.replies;
+        }
+      }
+    } catch (e) {}
+    return parent.replies;
   }
 
   toggleFollow(authorIdentifier) {
@@ -420,6 +462,7 @@ class ReelsDataStore {
     }
 
     const newComment = json.data;
+    newComment.isMyNewComment = true; // Đánh dấu comment của chính mình để luôn ghim lên đầu
     if (typeof json.commentsCount === 'number') {
       reel.commentsCount = json.commentsCount;
     } else {
@@ -2053,6 +2096,7 @@ class CommentsController {
     this.sortBy = 'popular'; // 'popular' | 'newest'
     this.replyToComment = null; // { id, author }
     this.expandedReplies = new Set();
+    this.isLoadingMoreComments = false;
 
     this.init();
   }
@@ -2138,9 +2182,24 @@ class CommentsController {
   }
 
   bindEvents() {
-    this.sortSelectEl.addEventListener('change', (e) => {
+    this.sortSelectEl.addEventListener('change', async (e) => {
       this.sortBy = e.target.value;
-      this.renderCommentsList();
+      if (this.currentReel) {
+        try {
+          await this.store.fetchComments(this.currentReel.id, 1, false, this.sortBy);
+        } catch (_) {}
+        this.renderCommentsList();
+      }
+    });
+
+    // Infinite scroll tự động tải thêm comment cha khi cuộn gần hết
+    this.commentsListEl.addEventListener('scroll', () => {
+      if (this.isLoadingMoreComments || !this.currentReel) return;
+      if (this.currentReel.commentsHasMore === false) return;
+      const { scrollTop, scrollHeight, clientHeight } = this.commentsListEl;
+      if (scrollHeight - scrollTop - clientHeight < 160) {
+        this.loadMoreParentComments();
+      }
     });
 
     this.commentFormEl.addEventListener('submit', (e) => {
@@ -2182,7 +2241,19 @@ class CommentsController {
         } else {
           this.expandedReplies.add(commentId);
         }
-        this.renderCommentsList();
+        this.renderCommentsList(true);
+      } else if (action === 'load-more-replies') {
+        const commentId = btn.getAttribute('data-comment-id');
+        if (this.currentReel && commentId) {
+          btn.disabled = true;
+          btn.innerHTML = '<span>↳ Đang tải thêm câu trả lời...</span>';
+          this.store.fetchMoreCommentReplies(this.currentReel.id, commentId).then(() => {
+            this.renderCommentsList(true);
+          }).catch(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<span>↳ Thử lại xem thêm...</span>';
+          });
+        }
       } else if (action === 'toggle-emoji') {
         this.emojiPickerEl.classList.toggle('nobifashion_reels_is_open');
       } else if (action === 'insert-emoji') {
@@ -2232,7 +2303,7 @@ class CommentsController {
     `;
 
     try {
-      await this.store.fetchComments(reel.id);
+      await this.store.fetchComments(reel.id, 1, false, this.sortBy);
       this.updateStats(reel);
       this.renderCommentsList();
       const railCount = document.querySelector('[data-role="comment-count"]');
@@ -2241,6 +2312,33 @@ class CommentsController {
       }
     } catch (e) {
       this.renderCommentsList();
+    }
+  }
+
+  async loadMoreParentComments() {
+    if (this.isLoadingMoreComments || !this.currentReel) return;
+    if (this.currentReel.commentsHasMore === false) return;
+
+    this.isLoadingMoreComments = true;
+    const nextPage = (this.currentReel.commentsPage || 1) + 1;
+
+    let loader = this.commentsListEl.querySelector('.nobifashion_reels_comments_infinite_loader');
+    if (!loader) {
+      loader = document.createElement('div');
+      loader.className = 'nobifashion_reels_comments_infinite_loader';
+      loader.style.cssText = 'text-align:center;padding:10px 0;font-size:11px;color:var(--nobifashion_reels_text_muted);';
+      loader.innerHTML = '<span>⏳ Đang tải thêm bình luận...</span>';
+      this.commentsListEl.appendChild(loader);
+    }
+
+    try {
+      await this.store.fetchComments(this.currentReel.id, nextPage, true, this.sortBy);
+      this.renderCommentsList(true);
+    } catch (_) {
+    } finally {
+      this.isLoadingMoreComments = false;
+      const curLoader = this.commentsListEl.querySelector('.nobifashion_reels_comments_infinite_loader');
+      if (curLoader) curLoader.remove();
     }
   }
 
@@ -2496,6 +2594,11 @@ class CommentsController {
                 isExpanded
                   ? `<div class="nobifashion_reels_nested_replies_box">
                       ${replies.map((r) => this.renderCommentItem(r, depth + 1, currentRootId)).join('')}
+                      ${(c.replies_count > replies.length)
+                        ? `<button type="button" class="nobifashion_reels_load_more_replies_btn" data-action="load-more-replies" data-comment-id="${c.id}" style="background:none;border:none;color:#0284c7;font-size:10.5px;font-weight:600;padding:4px 0 6px 24px;cursor:pointer;display:flex;align-items:center;gap:4px;">
+                             <span>↳ Xem thêm ${Math.min(10, c.replies_count - replies.length)} câu trả lời...</span>
+                           </button>`
+                        : ''}
                     </div>`
                   : ''
               }
@@ -2508,15 +2611,22 @@ class CommentsController {
     `;
   }
 
-  renderCommentsList() {
+  renderCommentsList(preserveScroll = false) {
     if (!this.commentsListEl || !this.currentReel) return;
     const comments = [...(this.currentReel.comments || [])];
 
-    if (this.sortBy === 'popular') {
-      comments.sort((a, b) => (b.likes || 0) - (a.likes || 0));
-    } else {
-      comments.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-    }
+    // Sắp xếp: Ưu tiên bình luận mới của mình lên đầu -> Nhiều tim nhất -> Nhiều trả lời nhất -> Mới nhất
+    comments.sort((a, b) => {
+      if (a.isMyNewComment && !b.isMyNewComment) return -1;
+      if (!a.isMyNewComment && b.isMyNewComment) return 1;
+
+      if (this.sortBy === 'popular') {
+        return (b.likes || 0) - (a.likes || 0) ||
+               (b.replies_count || 0) - (a.replies_count || 0) ||
+               (b.timestamp || 0) - (a.timestamp || 0);
+      }
+      return (b.timestamp || 0) - (a.timestamp || 0);
+    });
 
     if (comments.length === 0) {
       this.commentsListEl.innerHTML = `
@@ -2527,9 +2637,15 @@ class CommentsController {
       return;
     }
 
+    const prevScrollTop = preserveScroll ? this.commentsListEl.scrollTop : null;
+
     this.commentsListEl.innerHTML = comments
       .map((c) => this.renderCommentItem(c, 0))
       .join('');
+
+    if (preserveScroll && prevScrollTop !== null) {
+      this.commentsListEl.scrollTop = prevScrollTop;
+    }
     return;
     this.commentsListEl.innerHTML_disabled = comments
       .map((c) => {
@@ -2665,6 +2781,9 @@ class CommentsController {
 
       this.updateStats(this.currentReel);
       this.renderCommentsList();
+      if (!replyId && this.commentsListEl) {
+        this.commentsListEl.scrollTop = 0;
+      }
 
       const railCount = document.querySelector('[data-role="comment-count"]');
       if (railCount) {
