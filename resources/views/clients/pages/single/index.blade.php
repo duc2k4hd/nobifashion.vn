@@ -316,19 +316,25 @@
                                 </span>
                             </div>
 
-                            {{-- Rating + Đã bán --}}
+                            {{-- Rating thực tế từ Database (Loại bỏ số ảo rand) --}}
+                            @php
+                                $realReviewCount = $product->productReviews ? $product->productReviews->count() : 0;
+                                $realRatingScore = $realReviewCount > 0 ? number_format($product->productReviews->avg('rating') ?: 5, 1) : null;
+                            @endphp
                             <div class="nobifashion_single_rating_row">
-                                <span class="nobifashion_single_stars">★★★★★</span>
-                                <span class="nobifashion_single_rating_score">4.9</span>
-                                <span class="nobifashion_single_dot">•</span>
-                                <span class="nobifashion_single_reviews_count" onclick="tabReview()">
-                                    <a href="#nobifashion_review">{{ rand(50, 950) }} đánh giá</a>
-                                </span>
-                                <span class="nobifashion_single_dot">•</span>
-                                <span class="nobifashion_single_sold_badge">
-                                    <svg viewBox="0 0 24 24" width="13" height="13" fill="#8b5cf6"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                                    <span>Đã bán {{ rand(20, 150) }}k</span>
-                                </span>
+                                @if ($realReviewCount > 0)
+                                    <span class="nobifashion_single_stars">★★★★★</span>
+                                    <span class="nobifashion_single_rating_score">{{ $realRatingScore }}</span>
+                                    <span class="nobifashion_single_dot">•</span>
+                                    <span class="nobifashion_single_reviews_count" onclick="tabReview()">
+                                        <a href="#nobifashion_review">{{ $realReviewCount }} đánh giá</a>
+                                    </span>
+                                @else
+                                    <span class="nobifashion_single_stars" style="color: #cbd5e1;">★★★★★</span>
+                                    <span class="nobifashion_single_reviews_count" onclick="tabReview()">
+                                        <a href="#nobifashion_review">Chưa có đánh giá</a>
+                                    </span>
+                                @endif
                             </div>
 
                             {{-- Hidden element for JS saving calculation --}}
@@ -347,7 +353,7 @@
 
                             @if ($product->link_shopee)
                                 <div class="nobifashion_single_sales_note">
-                                    Đã bán {{ rand(20, 150) }}k trên Shopee
+                                    Có bán chính hãng trên Shopee
                                 </div>
                             @endif
 
