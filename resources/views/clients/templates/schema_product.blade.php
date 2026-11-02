@@ -103,6 +103,127 @@
         ];
     }
 
+    // 6. Xây dựng Product Schema (chỉ kèm đánh giá nếu có review thật từ DB)
+    $productSchema = [
+        '@type' => 'Product',
+        '@id' => $productUrl . '#product',
+        'name' => renderMeta($product->meta_title ?? ($product->name ?? 'Sản phẩm thời trang chính hãng | ' . $settings->subname)),
+        'image' => [
+            '@type' => 'ImageObject',
+            'url' => $productImage,
+            'width' => 500,
+            'height' => 500,
+        ],
+        'description' => renderMeta($product->meta_desc ?? 'Mẫu thời trang mới, chất liệu đẹp, form chuẩn, dễ phối đồ. Mua online tại Nobi Fashion, giao nhanh toàn quốc, hỗ trợ đổi size 15 ngày.'),
+        'sku' => $product->sku ?? ('SKU-' . $product->id),
+        'mpn' => $product->sku ?? ('MPN-' . $product->id),
+        'productID' => 'sku:' . ($product->sku ?? ('SKU-' . $product->id)),
+        'brand' => [
+            '@type' => 'Brand',
+            '@id' => $siteUrl . '#brand-' . ($product->brand->slug ?? 'nobi-fashion'),
+            'name' => renderMeta($product->brand->name ?? 'Nobi Fashion'),
+        ],
+        'manufacturer' => [
+            '@type' => 'Organization',
+            '@id' => $siteUrl . '#manufacturer-' . ($product->brand->slug ?? 'nobi-fashion'),
+            'name' => renderMeta($product->brand->name ?? 'Nobi Fashion'),
+        ],
+        'countryOfOrigin' => $product->countryOfOrigin ?? 'VN',
+        'isFamilyFriendly' => true,
+        'keywords' => $product->meta_keywords ?? [
+            'quần áo', 'phụ kiện', 'thời trang nam', 'thời trang nữ',
+            'áo phông', 'sơ mi', 'quần jean', 'váy', 'túi xách', 'mũ nón', 'thắt lưng',
+        ],
+        'releaseDate' => (!empty($product->created_at) ? $product->created_at->format('Y-m-d') : now()->format('Y-m-d')),
+        'audience' => [
+            '@type' => 'PeopleAudience',
+            '@id' => $siteUrl . '#audience-' . ($product->brand->slug ?? 'nobi-fashion'),
+            'audienceType' => 'Người tiêu dùng yêu thời trang',
+        ],
+        'offers' => [
+            '@type' => 'Offer',
+            'url' => $productUrl,
+            'priceCurrency' => 'VND',
+            'price' => (float) ($product->sale_price ?? ($product->price ?? 199000)),
+            'priceValidUntil' => now()->addMonths(6)->format('Y-m-d'),
+            'availability' => ($product->in_stock ?? true) ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+            'itemCondition' => 'https://schema.org/NewCondition',
+            'seller' => [
+                '@type' => 'Organization',
+                '@id' => $siteUrl . '#organization',
+                'name' => renderMeta($settings->subname ?? 'Nobi Fashion'),
+            ],
+            'shippingDetails' => [
+                '@type' => 'OfferShippingDetails',
+                'shippingDestination' => [
+                    '@type' => 'DefinedRegion',
+                    'addressCountry' => 'VN',
+                ],
+                'shippingRate' => [
+                    '@type' => 'MonetaryAmount',
+                    'value' => (float) ($product->shipping_fee ?? 30000),
+                    'currency' => 'VND',
+                ],
+                'deliveryTime' => [
+                    '@type' => 'ShippingDeliveryTime',
+                    'handlingTime' => [
+                        '@type' => 'QuantitativeValue',
+                        'minValue' => 1,
+                        'maxValue' => 2,
+                        'unitCode' => 'DAY',
+                    ],
+                    'transitTime' => [
+                        '@type' => 'QuantitativeValue',
+                        'minValue' => 1,
+                        'maxValue' => 3,
+                        'unitCode' => 'DAY',
+                    ],
+                ],
+            ],
+            'hasMerchantReturnPolicy' => [
+                '@type' => 'MerchantReturnPolicy',
+                'returnPolicyCategory' => 'https://schema.org/MerchantReturnFiniteReturnWindow',
+                'merchantReturnDays' => (int) ($settings->return_days ?? 15),
+                'returnMethod' => 'https://schema.org/ReturnByMail',
+                'returnFees' => 'https://schema.org/FreeReturn',
+                'refundType' => 'https://schema.org/FullRefund',
+                'applicableCountry' => 'VN',
+                'merchantReturnLink' => $siteUrl . '/chinh-sach-doi-tra',
+            ],
+        ],
+    ];
+
+    // CHỈ XUẤT ĐÁNH GIÁ KHI CÓ DỮ LIỆU THẬT TỪ DATABASE - NẾU KHÔNG CÓ THÌ BỎ HẲN CHO ĐỠ RÁC SCHEMA
+    $hasRealReviews = !empty($product->productReviews) && $product->productReviews->count() > 0;
+    if ($hasRealReviews) {
+        $avgScore = round($product->productReviews->avg('rating') ?: 5, 1);
+        $reviewTotal = $product->productReviews->count();
+        $productSchema['aggregateRating'] = [
+            '@type' => 'AggregateRating',
+            'ratingValue' => $avgScore,
+            'reviewCount' => $reviewTotal,
+            'bestRating' => 5,
+            'worstRating' => 1,
+        ];
+        $productSchema['review'] = $product->productReviews->take(5)->map(function ($rev) {
+            return [
+                '@type' => 'Review',
+                'reviewRating' => [
+                    '@type' => 'Rating',
+                    'ratingValue' => $rev->rating ?? 5,
+                    'bestRating' => 5,
+                    'worstRating' => 1,
+                ],
+                'author' => [
+                    '@type' => 'Person',
+                    'name' => $rev->account->name ?? 'Khách hàng',
+                ],
+                'reviewBody' => $rev->comment ?? 'Sản phẩm đẹp, chất lượng tốt.',
+                'datePublished' => !empty($rev->created) ? \Carbon\Carbon::parse($rev->created)->format('Y-m-d') : now()->format('Y-m-d'),
+            ];
+        })->values()->all();
+    }
+
     $schemaGraph = [
         '@context' => 'https://schema.org',
         '@graph' => [
@@ -218,95 +339,8 @@
                 'itemListElement' => $breadcrumbItems,
             ],
 
-            // 6. Product
-            [
-                '@type' => 'Product',
-                '@id' => $productUrl . '#product',
-                'name' => renderMeta($product->meta_title ?? ($product->name ?? 'Sản phẩm thời trang chính hãng | ' . $settings->subname)),
-                'image' => [
-                    '@type' => 'ImageObject',
-                    'url' => $productImage,
-                    'width' => 500,
-                    'height' => 500,
-                ],
-                'description' => renderMeta($product->meta_desc ?? 'Mẫu thời trang mới, chất liệu đẹp, form chuẩn, dễ phối đồ. Mua online tại Nobi Fashion, giao nhanh toàn quốc, hỗ trợ đổi size 15 ngày.'),
-                'sku' => $product->sku ?? ('SKU-' . $product->id),
-                'mpn' => $product->sku ?? ('MPN-' . $product->id),
-                'productID' => 'sku:' . ($product->sku ?? ('SKU-' . $product->id)),
-                'brand' => [
-                    '@type' => 'Brand',
-                    '@id' => $siteUrl . '#brand-' . ($product->brand->slug ?? 'nobi-fashion'),
-                    'name' => renderMeta($product->brand->name ?? 'Nobi Fashion'),
-                ],
-                'manufacturer' => [
-                    '@type' => 'Organization',
-                    '@id' => $siteUrl . '#manufacturer-' . ($product->brand->slug ?? 'nobi-fashion'),
-                    'name' => renderMeta($product->brand->name ?? 'Nobi Fashion'),
-                ],
-                'countryOfOrigin' => $product->countryOfOrigin ?? 'VN',
-                'isFamilyFriendly' => true,
-                'keywords' => $product->meta_keywords ?? [
-                    'quần áo', 'phụ kiện', 'thời trang nam', 'thời trang nữ',
-                    'áo phông', 'sơ mi', 'quần jean', 'váy', 'túi xách', 'mũ nón', 'thắt lưng',
-                ],
-                'releaseDate' => (!empty($product->created_at) ? $product->created_at->format('Y-m-d') : now()->format('Y-m-d')),
-                'audience' => [
-                    '@type' => 'PeopleAudience',
-                    '@id' => $siteUrl . '#audience-' . ($product->brand->slug ?? 'nobi-fashion'),
-                    'audienceType' => 'Người tiêu dùng yêu thời trang',
-                ],
-                'offers' => [
-                    '@type' => 'Offer',
-                    'url' => $productUrl,
-                    'priceCurrency' => 'VND',
-                    'price' => (float) ($product->sale_price ?? ($product->price ?? 199000)),
-                    'priceValidUntil' => now()->addMonths(6)->format('Y-m-d'),
-                    'availability' => ($product->in_stock ?? true) ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
-                    'itemCondition' => 'https://schema.org/NewCondition',
-                    'seller' => [
-                        '@type' => 'Organization',
-                        '@id' => $siteUrl . '#organization',
-                        'name' => renderMeta($settings->subname ?? 'Nobi Fashion'),
-                    ],
-                    'shippingDetails' => [
-                        '@type' => 'OfferShippingDetails',
-                        'shippingDestination' => [
-                            '@type' => 'DefinedRegion',
-                            'addressCountry' => 'VN',
-                        ],
-                        'shippingRate' => [
-                            '@type' => 'MonetaryAmount',
-                            'value' => (float) ($product->shipping_fee ?? 30000),
-                            'currency' => 'VND',
-                        ],
-                        'deliveryTime' => [
-                            '@type' => 'ShippingDeliveryTime',
-                            'handlingTime' => [
-                                '@type' => 'QuantitativeValue',
-                                'minValue' => 1,
-                                'maxValue' => 2,
-                                'unitCode' => 'DAY',
-                            ],
-                            'transitTime' => [
-                                '@type' => 'QuantitativeValue',
-                                'minValue' => 1,
-                                'maxValue' => 3,
-                                'unitCode' => 'DAY',
-                            ],
-                        ],
-                    ],
-                    'hasMerchantReturnPolicy' => [
-                        '@type' => 'MerchantReturnPolicy',
-                        'returnPolicyCategory' => 'https://schema.org/MerchantReturnFiniteReturnWindow',
-                        'merchantReturnDays' => (int) ($settings->return_days ?? 15),
-                        'returnMethod' => 'https://schema.org/ReturnByMail',
-                        'returnFees' => 'https://schema.org/FreeReturn',
-                        'refundType' => 'https://schema.org/FullRefund',
-                        'applicableCountry' => 'VN',
-                        'merchantReturnLink' => $siteUrl . '/chinh-sach-doi-tra',
-                    ],
-                ],
-            ],
+            // 6. Product (Đã bao gồm điều kiện: có đánh giá mới xuất, không có thì bỏ cho sạch)
+            $productSchema,
 
             // 7. FAQPage
             [
