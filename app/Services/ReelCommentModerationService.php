@@ -8,20 +8,83 @@ use Illuminate\Support\Facades\Cache;
 class ReelCommentModerationService implements ReelCommentModeratorInterface
 {
     /**
-     * Danh sách từ tục tĩu tiếng Việt cốt lõi (xử lý cả có dấu và không dấu)
+     * Danh sách cụm từ xúc phạm, chửi bậy, mất dạy 3 miền Bắc - Trung - Nam
      */
-    protected array $vietnameseProfanities = [
-        'đụ', 'địt', 'lồn', 'cặc', 'buồi', 'đéo', 'đếch', 'đậu má', 'đụ má', 'đĩ',
-        'chó đẻ', 'mẹ kiếp', 'bú cặc', 'bú lồn', 'vcl', 'clgt', 'dkm', 'đkm', 'đcm',
-        'vl', 'vcl', 'vcc', 'đmm', 'vkl', 'đm', 'dm', 'đcmm', 'cc', 'sv', 'óc chó'
+    protected array $compoundProfanities = [
+        // 1. Xúc phạm cha mẹ, gia đình, tổ tiên (Bắc - Trung - Nam)
+        'con mẹ mày', 'con me may', 'mẹ mày', 'me may', 'mẹ kiếp', 'me kiep',
+        'con mẹ', 'con me', 'bà mẹ mày', 'ba me may', 'đĩ mẹ mày', 'di me may',
+        'đĩ mẹ', 'di me', 'đụ mẹ mày', 'du me may', 'đụ mẹ', 'du me',
+        'đụ mạ mày', 'du ma may', 'đụ mạ', 'du ma', 'đụ má mày', 'du ma may',
+        'đụ má', 'du ma', 'đậu má mày', 'đậu má', 'dau ma', 'đậu mẹ mày', 'đậu mẹ',
+        'địt mẹ mày', 'dit me may', 'địt mẹ', 'dit me', 'địt con mẹ mày', 'dit con me may',
+        'địt con mẹ', 'dit con me', 'địt cụ mày', 'dit cu may', 'địt cụ', 'dit cu',
+        'địt cha mày', 'dit cha may', 'địt cha', 'dit cha', 'địt bố mày', 'dit bo may',
+        'địt bà mày', 'dit ba may', 'mả cha mày', 'ma cha may', 'mả cha', 'mả mẹ mày',
+        'ma me may', 'mả mẹ', 'tổ cha mày', 'to cha may', 'tổ cha', 'tổ mẹ mày',
+        'to me may', 'tổ mẹ', 'tổ sư mày', 'to su may', 'tổ sư cha mày', 'tổ sư bố mày',
+        'tiên sư mày', 'tien su may', 'tiên sư cha mày', 'thằng bố mày', 'thang bo may',
+        'con mẹ nó', 'mẹ nó', 'cha mày', 'cha mi', 'mẹ mi', 'mụ nội mày', 'thằng cha mày',
+        'con đĩ mẹ', 'bà già mày', 'ông già mày',
+
+        // 2. Tình dục thô tục & bộ phận sinh dục ghép
+        'bú cặc', 'bu cac', 'bú lồn', 'bu lon', 'bú dái', 'bu dai', 'bú cu', 'bu cu',
+        'mút cu', 'mut cu', 'liếm lồn', 'liem lon', 'liếm đít', 'liem dit',
+        'đụ nhau', 'du nhau', 'địt nhau', 'dit nhau', 'chịch nhau', 'chich nhau',
+        'nện nhau', 'bóp vú', 'sờ lồn', 'vãi lồn', 'vai lon', 'vãi lìn', 'vai lin',
+        'vãi cặc', 'vai cac', 'vãi buồi', 'vai buoi', 'xàm lồn', 'xam lon',
+        'xạo lồn', 'xao lon', 'hãm lồn', 'ham lon', 'ngu lồn', 'ngu lon',
+        'nứng lồn', 'nung lon', 'nứng cặc', 'nung cac', 'thèm cặc', 'them cac',
+        'thèm lồn', 'them lon', 'mặt lồn', 'mat lon', 'mặt cặc', 'mat cac',
+        'đầu buồi', 'dau buoi', 'óc cặc', 'oc cac', 'như lồn', 'nhu lon',
+        'như cặc', 'nhu cac', 'như buồi', 'nhu buoi', 'chim cặc', 'củ cặc', 'cu bự',
+
+        // 3. Nhục mạ, sỉ vỗ, làm nhục nhân phẩm (Bắc - Trung - Nam)
+        'con đĩ', 'con di', 'đĩ chó', 'di cho', 'đĩ ngựa', 'di ngua', 'đĩ điếm',
+        'con phò', 'con pho', 'làm phò', 'lam pho', 'phò phạch', 'con điếm',
+        'chó đẻ', 'cho de', 'đồ chó', 'do cho', 'con chó', 'chó hoang', 'đồ súc vật',
+        'súc vật', 'suc vat', 'súc sinh', 'suc sinh', 'óc chó', 'oc cho',
+        'óc lợn', 'oc lon', 'óc heo', 'oc heo', 'ngu như chó', 'ngu nhu cho',
+        'ngu như bò', 'ngu nhu bo', 'đồ rác rưởi', 'thằng rác rưởi',
+        'mất dạy', 'thằng mất dạy', 'con mất dạy', 'đồ vô học',
+        'khốn nạn', 'thằng khốn', 'con khốn', 'tiện nhân', 'dâm tặc', 'biến thái',
+        'thằng mặt lồn', 'con điếm già', 'đồ tiện tì',
+
+        // 4. Chửi thề khác & Teencode cụm
+        'ăn cứt', 'an cut', 'vãi cứt', 'vai cut', 'ăn đái', 'ăn ỉa', 'bố láo', 'bố lếu',
+        'láo chó', 'xàm xí', 'conmemay', 'ditmemay', 'ditconmemay', 'dumamay', 'dume may',
+        'vlol', 'vlon', 'clgt', 'cmnr'
     ];
 
     /**
-     * Danh sách từ tục tĩu tiếng Anh cốt lõi
+     * Danh sách từ đơn tục tĩu (cần kiểm tra ranh giới từ)
+     */
+    protected array $singleProfanities = [
+        'lồn', 'cặc', 'buồi', 'đụ', 'địt', 'chịch', 'xoạc', 'phịch', 'đéo', 'đéch', 'đách', 'đếu',
+        'đĩ', 'phò', 'buoi', 'cac', 'lon', 'loz', 'lozz', 'cứt', 'cẹc', 'dái', 'ỉa', 'đái', 'nện'
+    ];
+
+    /**
+     * Danh sách từ viết tắt / Teencode chửi bậy
+     */
+    protected array $teencodeProfanities = [
+        'dm', 'đm', 'dmm', 'đmm', 'dcm', 'đcm', 'dkm', 'đkm', 'đcmm', 'dcmm', 'đkmm', 'dkmm',
+        'vcl', 'vkl', 'vcc', 'cc', 'cl', 'vl', 'sv'
+    ];
+
+    /**
+     * Danh sách từ tục tĩu tiếng Anh cốt lõi & Hate speech
      */
     protected array $englishProfanities = [
-        'fuck', 'fucking', 'fucker', 'shit', 'bitch', 'asshole', 'dick', 'pussy',
-        'cunt', 'bastard', 'slut', 'whore', 'motherfucker', 'nigger', 'nigga', 'cock'
+        'fuck', 'fucking', 'fucker', 'fck', 'fuk', 'f*ck', 'motherfucker', 'mf',
+        'shit', 'bullshit', 'shitty',
+        'bitch', 'bitches', 'b*tch', 'son of a bitch',
+        'asshole', 'ass', 'dumbass', 'jackass',
+        'dick', 'dickhead', 'cock', 'cocksucker',
+        'pussy', 'cunt',
+        'bastard', 'slut', 'whore', 'hooker',
+        'nigger', 'nigga',
+        'retard', 'stfu', 'wtf', 'wth', 'fag', 'faggot'
     ];
 
     /**
@@ -29,7 +92,8 @@ class ReelCommentModerationService implements ReelCommentModeratorInterface
      */
     protected array $whitelistWords = [
         'thích', 'lịch', 'phúc', 'chúc', 'đức', 'quốc', 'bức', 'mức', 'lực', 'thực',
-        'phục', 'nước', 'được', 'bước', 'trước', 'áo len', 'áo polo', 'quần short', 'chất lượng'
+        'phục', 'nước', 'được', 'bước', 'trước', 'áo len', 'áo polo', 'quần short',
+        'chất lượng', 'áo có', 'màu sắc', 'còn không', 'con không', 'chắc chắn', 'đặc biệt'
     ];
 
     /**
@@ -189,49 +253,74 @@ class ReelCommentModerationService implements ReelCommentModeratorInterface
     }
 
     /**
-     * Nhận diện từ tục tĩu đa tầng (Tiếng Việt + Tiếng Anh)
+     * Nhận diện từ tục tĩu đa tầng (Tiếng Việt 3 miền + Tiếng Anh + Teencode né lọc)
      */
     protected function detectProfanity(string $normalized, string $raw): ?string
     {
-        // Kiểm tra Whitelist trước (nếu chỉ chứa từ trong whitelist thì bỏ qua)
+        // 1. Kiểm tra Whitelist trước (nếu chỉ chứa từ trong whitelist thì bỏ qua)
         foreach ($this->whitelistWords as $white) {
             if ($raw === $white || $normalized === $white) {
                 return null;
             }
         }
 
-        // 1. Kiểm tra tiếng Anh theo ranh giới từ (\b)
+        $noSign = $this->stripVietnameseAccents($normalized);
+        $noPunctNoSign = preg_replace('/[_\-\.\,\*\+\#\@\s\!\?\:\;\~\`\^\&]+/u', '', $noSign);
+
+        // 2. Kiểm tra tiếng Anh theo ranh giới từ
         foreach ($this->englishProfanities as $word) {
-            $pattern = '/\b' . preg_quote($word, '/') . '\b/iu';
+            $pattern = '/(?<=^|[\s\p{P}])' . preg_quote($word, '/') . '(?=$|[\s\p{P}])/iu';
             if (preg_match($pattern, $normalized)) {
                 return $word;
             }
         }
 
-        // 2. Kiểm tra tiếng Việt (có dấu + không dấu + teencode cố tình viết dạng: c_ặ_c, đ.ụ, d_k_m)
-        $noPunctuation = preg_replace('/[_\-\.\,\*\+\#\@\s]/u', '', $normalized);
+        // 3. Kiểm tra cụm từ xúc phạm (Compound profanities) theo ranh giới từ
+        foreach ($this->compoundProfanities as $phrase) {
+            $phraseNorm = mb_strtolower($phrase, 'UTF-8');
+            $phraseNoSign = $this->stripVietnameseAccents($phraseNorm);
+            $phraseCompact = preg_replace('/\s+/u', '', $phraseNoSign);
 
-        $allProfanities = array_merge($this->vietnameseProfanities);
-
-        foreach ($allProfanities as $badWord) {
-            // Chuẩn hóa bad word không dấu để so khớp
-            $badNoSign = $this->stripVietnameseAccents($badWord);
-            $badNoPunct = preg_replace('/\s+/u', '', $badWord);
-            $badNoPunctNoSign = preg_replace('/\s+/u', '', $badNoSign);
-
-            // Khớp chính xác cụm từ có dấu
-            if (mb_strpos($normalized, $badWord) !== false) {
-                return $badWord;
+            // Regex khớp ranh giới từ cho cụm từ có dấu
+            $patternNorm = '/(?<=^|[\s\p{P}])' . preg_quote($phraseNorm, '/') . '(?=$|[\s\p{P}])/iu';
+            if (preg_match($patternNorm, $normalized)) {
+                return $phrase;
             }
 
-            // Khớp dạng viết dính liền né lọc (VD: du ma -> duma, đụ má -> đụmá)
-            if (mb_strlen($badNoPunct) >= 3 && mb_strpos($noPunctuation, $badNoPunct) !== false) {
-                return $badWord;
+            // Regex khớp ranh giới từ cho cụm từ không dấu (ví dụ: con me may)
+            $words = preg_split('/\s+/u', $phraseNoSign);
+            $patternNoSign = '/(?<=^|[\s\p{P}])' . implode('[\s\p{P}]+', array_map(fn($w) => preg_quote($w, '/'), $words)) . '(?=$|[\s\p{P}])/iu';
+            if (preg_match($patternNoSign, $noSign)) {
+                return $phrase;
             }
 
-            // Khớp không dấu dạng dính liền (nếu từ cấm có độ dài >= 3 để tránh chặn nhầm)
-            if (mb_strlen($badNoPunctNoSign) >= 4 && mb_strpos($noPunctuation, $badNoPunctNoSign) !== false) {
-                return $badWord;
+            // Dạng viết liền né lọc (VD: c.o.n.m.e.m.a.y hoặc conmemay) với cụm từ đặc trưng >= 6 ký tự
+            if (mb_strlen($phraseCompact) >= 6 && in_array($phraseCompact, ['conmemay', 'ditmemay', 'ditconmemay', 'dumamay', 'duoccho', 'chode'])) {
+                if (mb_strpos($noPunctNoSign, $phraseCompact) !== false) {
+                    return $phrase;
+                }
+            }
+        }
+
+        // 4. Kiểm tra từ đơn tục tĩu theo ranh giới từ
+        foreach ($this->singleProfanities as $word) {
+            $pattern = '/(?<=^|[\s\p{P}])' . preg_quote($word, '/') . '(?=$|[\s\p{P}])/iu';
+            if (preg_match($pattern, $normalized)) {
+                return $word;
+            }
+
+            $wordNoSign = $this->stripVietnameseAccents($word);
+            $patternNoSign = '/(?<=^|[\s\p{P}])' . preg_quote($wordNoSign, '/') . '(?=$|[\s\p{P}])/iu';
+            if (preg_match($patternNoSign, $noSign)) {
+                return $word;
+            }
+        }
+
+        // 5. Kiểm tra teencode theo ranh giới từ
+        foreach ($this->teencodeProfanities as $code) {
+            $pattern = '/(?<=^|[\s\p{P}])' . preg_quote($code, '/') . '(?=$|[\s\p{P}])/iu';
+            if (preg_match($pattern, $noSign)) {
+                return $code;
             }
         }
 

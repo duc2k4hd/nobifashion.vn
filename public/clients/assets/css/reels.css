@@ -2890,7 +2890,6 @@ body:has(.nobifashion_reels_app) {
 }
 
 .nobifashion_reels_send_btn {
-  background-color: var(--nobifashion_reels_accent);
   color: var(--nobifashion_reels_accent_contrast);
 }
 
