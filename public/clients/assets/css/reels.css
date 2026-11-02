@@ -680,6 +680,11 @@ body:has(.nobifashion_reels_app) {
   margin-top: 3px !important;
 }
 
+.nobifashion_reels_comment_actions svg {
+  width: 15px !important;
+  height: 15px !important;
+}
+
 .nobifashion_reels_comment_like_wrapper {
   position: relative;
   display: inline-flex;
@@ -756,8 +761,8 @@ body:has(.nobifashion_reels_app) {
   transform: translateY(8px) scale(0.92) !important;
   transform-origin: bottom left !important;
   transition: opacity 0.2s cubic-bezier(0.2, 0.9, 0.3, 1),
-              transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1),
-              visibility 0.2s !important;
+    transform 0.2s cubic-bezier(0.2, 0.9, 0.3, 1),
+    visibility 0.2s !important;
   z-index: 999 !important;
   pointer-events: none !important;
 }
@@ -853,6 +858,10 @@ body:has(.nobifashion_reels_app) {
   color: var(--nobifashion_reels_text_secondary) !important;
 }
 
+.nobifashion_reels_comment_likes_badge * {
+  font-size: 13px !important;
+}
+
 .nobifashion_reels_comment_reply_text_btn {
   background: none !important;
   border: none !important;
@@ -924,9 +933,12 @@ body:has(.nobifashion_reels_app) {
 }
 
 @keyframes nobifashion_reels_pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 0.55;
   }
+
   50% {
     opacity: 0.95;
   }
@@ -937,14 +949,17 @@ body:has(.nobifashion_reels_app) {
     opacity: 0;
     transform: translate(-50%, -50%) scale(0.35) rotate(-8deg);
   }
+
   25% {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1.18) rotate(4deg);
   }
+
   55% {
     opacity: 1;
     transform: translate(-50%, -58%) scale(1) rotate(0deg);
   }
+
   100% {
     opacity: 0;
     transform: translate(-50%, -85%) scale(1.35) rotate(0deg);
@@ -955,15 +970,18 @@ body:has(.nobifashion_reels_app) {
   0% {
     transform: scale(1);
   }
+
   40% {
     transform: scale(1.26);
   }
+
   100% {
     transform: scale(1);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
+
   .nobifashion_reels_app,
   .nobifashion_reels_app *,
   .nobifashion_reels_app *::before,
@@ -995,7 +1013,7 @@ body:has(.nobifashion_reels_app) {
   gap: var(--nobifashion_reels_space_3);
   z-index: 40;
   transition: background-color var(--nobifashion_reels_transition_base),
-              border-color var(--nobifashion_reels_transition_base);
+    border-color var(--nobifashion_reels_transition_base);
 }
 
 .nobifashion_reels_header_left {
@@ -1169,7 +1187,7 @@ body:has(.nobifashion_reels_app) {
   background-color: #0e0e11;
   will-change: transform, opacity;
   transition: transform var(--nobifashion_reels_transition_slide),
-              opacity var(--nobifashion_reels_transition_slide);
+    opacity var(--nobifashion_reels_transition_slide);
 }
 
 .nobifashion_reels_slide[data-pos="prev"] {
@@ -1262,8 +1280,8 @@ body:has(.nobifashion_reels_app) {
   overflow: hidden;
   z-index: 30;
   transition: background-color var(--nobifashion_reels_transition_base),
-              border-color var(--nobifashion_reels_transition_base),
-              transform var(--nobifashion_reels_transition_base);
+    border-color var(--nobifashion_reels_transition_base),
+    transform var(--nobifashion_reels_transition_base);
 }
 
 .nobifashion_reels_workspace.nobifashion_reels_sidebar_collapsed .nobifashion_reels_sidebar {
@@ -1294,7 +1312,7 @@ body:has(.nobifashion_reels_app) {
   align-items: center;
   gap: 6px;
   transition: background-color var(--nobifashion_reels_transition_fast),
-              color var(--nobifashion_reels_transition_fast);
+    color var(--nobifashion_reels_transition_fast);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -1325,7 +1343,7 @@ body:has(.nobifashion_reels_app) {
   padding: 0 var(--nobifashion_reels_space_3);
   height: 38px;
   transition: border-color var(--nobifashion_reels_transition_fast),
-              background-color var(--nobifashion_reels_transition_fast);
+    background-color var(--nobifashion_reels_transition_fast);
 }
 
 .nobifashion_reels_search_input_wrap:focus-within {
@@ -1428,8 +1446,8 @@ body:has(.nobifashion_reels_app) {
   border: 1px solid transparent;
   position: relative;
   transition: background-color var(--nobifashion_reels_transition_fast),
-              border-color var(--nobifashion_reels_transition_fast),
-              transform var(--nobifashion_reels_transition_fast);
+    border-color var(--nobifashion_reels_transition_fast),
+    transform var(--nobifashion_reels_transition_fast);
 }
 
 .nobifashion_reels_icon_btn:hover {
@@ -1587,7 +1605,7 @@ body:has(.nobifashion_reels_app) {
   justify-content: center;
   gap: 6px;
   transition: background-color var(--nobifashion_reels_transition_fast),
-              transform var(--nobifashion_reels_transition_fast);
+    transform var(--nobifashion_reels_transition_fast);
 }
 
 .nobifashion_reels_glass_btn:hover {
@@ -1700,14 +1718,12 @@ body:has(.nobifashion_reels_app) {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.05) 20%,
-    rgba(255, 255, 255, 0.22) 50%,
-    rgba(255, 255, 255, 0.05) 80%,
-    transparent 100%
-  );
+  background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.05) 20%,
+      rgba(255, 255, 255, 0.22) 50%,
+      rgba(255, 255, 255, 0.05) 80%,
+      transparent 100%);
   transform: translateX(-100%);
   animation: nobifashion_reels_mui_wave 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
@@ -1716,9 +1732,11 @@ body:has(.nobifashion_reels_app) {
   0% {
     transform: translateX(-100%);
   }
+
   60% {
     transform: translateX(100%);
   }
+
   100% {
     transform: translateX(100%);
   }
@@ -1918,7 +1936,7 @@ body:has(.nobifashion_reels_app) {
   pointer-events: none;
 }
 
-.nobifashion_reels_video_overlay > * {
+.nobifashion_reels_video_overlay>* {
   pointer-events: auto;
 }
 
@@ -1938,7 +1956,7 @@ body:has(.nobifashion_reels_app) {
   font-weight: 500;
   margin-bottom: 2px;
   transition: background-color var(--nobifashion_reels_transition_fast),
-              transform var(--nobifashion_reels_transition_fast);
+    transform var(--nobifashion_reels_transition_fast);
 }
 
 .nobifashion_reels_overlay_product_pill:hover {
@@ -2119,8 +2137,8 @@ body:has(.nobifashion_reels_app) {
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.18s cubic-bezier(0.2, 0.9, 0.3, 1),
-              transform 0.18s cubic-bezier(0.2, 0.9, 0.3, 1),
-              visibility 0.18s;
+    transform 0.18s cubic-bezier(0.2, 0.9, 0.3, 1),
+    visibility 0.18s;
   z-index: 120;
 }
 
@@ -2196,7 +2214,8 @@ body:has(.nobifashion_reels_app) {
   z-index: 5 !important;
 }
 
-@media (max-width: 768px), (hover: none) {
+@media (max-width: 768px),
+(hover: none) {
   .nobifashion_reels_progress_tooltip {
     display: none !important;
   }
@@ -2258,8 +2277,8 @@ body:has(.nobifashion_reels_app) {
   transform: translateY(6px) scale(0.94);
   transform-origin: bottom right;
   transition: opacity 0.18s cubic-bezier(0.2, 0.9, 0.3, 1),
-              transform 0.18s cubic-bezier(0.2, 0.9, 0.3, 1),
-              visibility 0.18s;
+    transform 0.18s cubic-bezier(0.2, 0.9, 0.3, 1),
+    visibility 0.18s;
   pointer-events: none;
   z-index: 100;
 }
@@ -2318,9 +2337,9 @@ body:has(.nobifashion_reels_app) {
   justify-content: center;
   box-shadow: var(--nobifashion_reels_shadow_sm);
   transition: background-color var(--nobifashion_reels_transition_fast),
-              border-color var(--nobifashion_reels_transition_fast),
-              transform var(--nobifashion_reels_transition_fast),
-              color var(--nobifashion_reels_transition_fast);
+    border-color var(--nobifashion_reels_transition_fast),
+    transform var(--nobifashion_reels_transition_fast),
+    color var(--nobifashion_reels_transition_fast);
   position: relative;
 }
 
@@ -2369,7 +2388,7 @@ body:has(.nobifashion_reels_app) {
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--nobifashion_reels_transition_fast),
-              transform var(--nobifashion_reels_transition_fast);
+    transform var(--nobifashion_reels_transition_fast);
   z-index: 40;
 }
 
@@ -2500,7 +2519,7 @@ body:has(.nobifashion_reels_app) {
   padding: 3px 8px;
   border-radius: var(--nobifashion_reels_radius_xs);
   transition: color var(--nobifashion_reels_transition_fast),
-              background-color var(--nobifashion_reels_transition_fast);
+    background-color var(--nobifashion_reels_transition_fast);
 }
 
 .nobifashion_reels_sidebar_tag:hover {
@@ -2520,7 +2539,7 @@ body:has(.nobifashion_reels_app) {
   border-radius: var(--nobifashion_reels_radius_md);
   cursor: pointer;
   transition: border-color var(--nobifashion_reels_transition_fast),
-              transform var(--nobifashion_reels_transition_fast);
+    transform var(--nobifashion_reels_transition_fast);
 }
 
 .nobifashion_reels_sidebar_product_card:hover {
@@ -3164,7 +3183,7 @@ body:has(.nobifashion_reels_app) {
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--nobifashion_reels_transition_fast),
-              transform var(--nobifashion_reels_transition_fast);
+    transform var(--nobifashion_reels_transition_fast);
 }
 
 .nobifashion_reels_modal.nobifashion_reels_is_open {
@@ -3218,7 +3237,7 @@ body:has(.nobifashion_reels_app) {
   opacity: 0;
   pointer-events: none;
   transition: opacity var(--nobifashion_reels_transition_fast),
-              transform var(--nobifashion_reels_transition_fast);
+    transform var(--nobifashion_reels_transition_fast);
 }
 
 .nobifashion_reels_toast.nobifashion_reels_is_visible {
@@ -3258,6 +3277,7 @@ body:has(.nobifashion_reels_app) {
 
 /* Laptop (1024px - 1439px) */
 @media (max-width: 1439px) {
+
   :root,
   .nobifashion_reels_app {
     --nobifashion_reels_sidebar_w: 340px;
@@ -3312,6 +3332,7 @@ body:has(.nobifashion_reels_app) {
 
 /* Mobile (< 768px): TikTok-inspired immersive layout while strictly preserving 9:16 frame */
 @media (max-width: 767px) {
+
   :root,
   .nobifashion_reels_app {
     --nobifashion_reels_header_h: 52px;
@@ -3358,7 +3379,7 @@ body:has(.nobifashion_reels_app) {
     pointer-events: none;
   }
 
-  .nobifashion_reels_stage_topbar > * {
+  .nobifashion_reels_stage_topbar>* {
     pointer-events: auto;
   }
 
@@ -3479,6 +3500,7 @@ body:has(.nobifashion_reels_app) {
 
 /* Landscape Mobile Orientation: strictly preserve 9:16 frame scaled by available height */
 @media (max-height: 540px) and (orientation: landscape) {
+
   :root,
   .nobifashion_reels_app {
     --nobifashion_reels_header_h: 44px;

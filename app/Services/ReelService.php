@@ -122,30 +122,33 @@ class ReelService
 
     /**
      * Thả tim Reel có tính Idempotent (Bắt buộc tối đa 1 Like/video)
+     * Tối ưu hiệu năng cao: Bỏ row-lock cứng, dùng atomic query chống nghẽn DB
      */
     public function likeReel(Reel $reel, AnonymousUser $anonUser, string $ip, ?int $userId = null): array
     {
-        return DB::transaction(function () use ($reel, $anonUser, $ip, $userId) {
-            $existing = ReelLike::where('reel_id', $reel->id)
-                ->where('anonymous_user_id', $anonUser->id)
-                ->lockForUpdate()
-                ->first();
-
-            if (!$existing) {
-                ReelLike::create([
+        try {
+            $like = ReelLike::firstOrCreate(
+                [
                     'reel_id' => $reel->id,
                     'anonymous_user_id' => $anonUser->id,
+                ],
+                [
                     'user_id' => $userId,
                     'ip_address' => $ip,
-                ]);
+                ]
+            );
+
+            if ($like->wasRecentlyCreated) {
                 $reel->increment('like_count');
             }
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Trường hợp 2 request chạm đúng cùng 1 micro-giây, Unique Key chặn duplicate
+        }
 
-            return [
-                'isLiked' => true,
-                'likesCount' => (int) $reel->fresh()->like_count,
-            ];
-        });
+        return [
+            'isLiked' => true,
+            'likesCount' => (int) $reel->fresh()->like_count,
+        ];
     }
 
     /**
@@ -153,22 +156,18 @@ class ReelService
      */
     public function unlikeReel(Reel $reel, AnonymousUser $anonUser): array
     {
-        return DB::transaction(function () use ($reel, $anonUser) {
-            $existing = ReelLike::where('reel_id', $reel->id)
-                ->where('anonymous_user_id', $anonUser->id)
-                ->lockForUpdate()
-                ->first();
+        $deleted = ReelLike::where('reel_id', $reel->id)
+            ->where('anonymous_user_id', $anonUser->id)
+            ->delete();
 
-            if ($existing) {
-                $existing->delete();
-                $reel->where('id', $reel->id)->where('like_count', '>', 0)->decrement('like_count');
-            }
+        if ($deleted > 0) {
+            $reel->where('id', $reel->id)->where('like_count', '>', 0)->decrement('like_count');
+        }
 
-            return [
-                'isLiked' => false,
-                'likesCount' => (int) $reel->fresh()->like_count,
-            ];
-        });
+        return [
+            'isLiked' => false,
+            'likesCount' => (int) $reel->fresh()->like_count,
+        ];
     }
 
     /**
@@ -176,46 +175,44 @@ class ReelService
      */
     public function likeComment(ReelComment $comment, AnonymousUser $anonUser, ?int $userId = null): array
     {
-        return DB::transaction(function () use ($comment, $anonUser, $userId) {
-            $existing = ReelCommentLike::where('comment_id', $comment->id)
-                ->where('anonymous_user_id', $anonUser->id)
-                ->lockForUpdate()
-                ->first();
-
-            if (!$existing) {
-                ReelCommentLike::create([
+        try {
+            $like = ReelCommentLike::firstOrCreate(
+                [
                     'comment_id' => $comment->id,
                     'anonymous_user_id' => $anonUser->id,
+                ],
+                [
                     'user_id' => $userId,
-                ]);
+                ]
+            );
+
+            if ($like->wasRecentlyCreated) {
                 $comment->increment('likes_count');
             }
+        } catch (\Illuminate\Database\QueryException $e) {
+            // Unique key constraint bảo vệ chống trùng lặp
+        }
 
-            return [
-                'isLiked' => true,
-                'likesCount' => (int) $comment->fresh()->likes_count,
-            ];
-        });
+        return [
+            'isLiked' => true,
+            'likesCount' => (int) $comment->fresh()->likes_count,
+        ];
     }
 
     public function unlikeComment(ReelComment $comment, AnonymousUser $anonUser): array
     {
-        return DB::transaction(function () use ($comment, $anonUser) {
-            $existing = ReelCommentLike::where('comment_id', $comment->id)
-                ->where('anonymous_user_id', $anonUser->id)
-                ->lockForUpdate()
-                ->first();
+        $deleted = ReelCommentLike::where('comment_id', $comment->id)
+            ->where('anonymous_user_id', $anonUser->id)
+            ->delete();
 
-            if ($existing) {
-                $existing->delete();
-                $comment->where('id', $comment->id)->where('likes_count', '>', 0)->decrement('likes_count');
-            }
+        if ($deleted > 0) {
+            $comment->where('id', $comment->id)->where('likes_count', '>', 0)->decrement('likes_count');
+        }
 
-            return [
-                'isLiked' => false,
-                'likesCount' => (int) $comment->fresh()->likes_count,
-            ];
-        });
+        return [
+            'isLiked' => false,
+            'likesCount' => (int) $comment->fresh()->likes_count,
+        ];
     }
 
     /**

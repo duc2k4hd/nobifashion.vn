@@ -34,7 +34,37 @@ class ReelsDataStore {
     this.nextCursor = window.__REELS_NEXT_CURSOR__ || null;
     this.hasMore = Boolean(window.__REELS_HAS_MORE__);
     this.isLoadingMore = false;
+
+    // Smart Debounce maps cho Like/Unlike chống spam server
+    this.likeDebounceTimers = new Map();
+    this.likeInitialStates = new Map();
+    this.commentLikeTimers = new Map();
+    this.commentLikeInitialStates = new Map();
+    this.initFlushOnUnload();
+
     this.loadState();
+  }
+
+  initFlushOnUnload() {
+    const handleUnload = () => {
+      this.flushAllPendingLikes();
+    };
+    window.addEventListener('beforeunload', handleUnload);
+    window.addEventListener('pagehide', handleUnload);
+  }
+
+  flushAllPendingLikes() {
+    this.likeDebounceTimers.forEach((timer, reelId) => {
+      clearTimeout(timer);
+      this.sendReelLikeRequest(reelId, true);
+    });
+    this.likeDebounceTimers.clear();
+
+    this.commentLikeTimers.forEach((timer, commentId) => {
+      clearTimeout(timer);
+      this.sendCommentLikeRequest(commentId, true);
+    });
+    this.commentLikeTimers.clear();
   }
 
   loadState() {
@@ -163,21 +193,20 @@ class ReelsDataStore {
     return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
   }
 
-  async toggleLike(reelId, forceLike = null) {
+  async sendReelLikeRequest(reelId, isKeepAlive = false) {
     const reel = this.getReelById(reelId);
-    if (!reel) return null;
-    const nextState = forceLike !== null ? forceLike : !reel.isLiked;
-    if (nextState === reel.isLiked) return reel;
+    if (!reel) return;
+    const initialLiked = this.likeInitialStates.get(reelId);
+    this.likeInitialStates.delete(reelId);
 
-    // Optimistic UI update
-    const prevLiked = reel.isLiked;
-    const prevCount = reel.likesCount;
-    reel.isLiked = nextState;
-    reel.likesCount = Math.max(0, reel.likesCount + (nextState ? 1 : -1));
+    // Nếu trạng thái cuối cùng giống hệt ban đầu (bấm Like rồi bấm Unlike ngay) -> HỦY, KHÔNG GỬI GÌ
+    if (initialLiked !== undefined && reel.isLiked === initialLiked) {
+      return;
+    }
 
     try {
-      const res = await fetch(`/api/v1/reels/${reel.id}/like`, {
-        method: nextState ? 'POST' : 'DELETE',
+      const fetchOptions = {
+        method: reel.isLiked ? 'POST' : 'DELETE',
         credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
@@ -185,21 +214,47 @@ class ReelsDataStore {
           'X-Requested-With': 'XMLHttpRequest',
           'X-CSRF-TOKEN': this.getCsrfToken()
         }
-      });
+      };
+      if (isKeepAlive && 'keepalive' in Request.prototype) {
+        fetchOptions.keepalive = true;
+      }
+      const res = await fetch(`/api/v1/reels/${reel.id}/like`, fetchOptions);
       if (res.ok) {
         const json = await res.json();
         if (json.success) {
           reel.isLiked = json.isLiked;
           reel.likesCount = json.likesCount;
         }
-      } else {
-        reel.isLiked = prevLiked;
-        reel.likesCount = prevCount;
       }
-    } catch (e) {
-      reel.isLiked = prevLiked;
-      reel.likesCount = prevCount;
+    } catch (_) {}
+  }
+
+  async toggleLike(reelId, forceLike = null) {
+    const reel = this.getReelById(reelId);
+    if (!reel) return null;
+    const nextState = forceLike !== null ? forceLike : !reel.isLiked;
+    if (nextState === reel.isLiked) return reel;
+
+    // Ghi nhận trạng thái ban đầu của chuỗi click nếu chưa có
+    if (!this.likeInitialStates.has(reelId)) {
+      this.likeInitialStates.set(reelId, reel.isLiked);
     }
+
+    // 1. Optimistic UI update: Thay đổi tức thì (0ms) cho người dùng
+    reel.isLiked = nextState;
+    reel.likesCount = Math.max(0, reel.likesCount + (nextState ? 1 : -1));
+
+    // 2. Debounce: Hủy timer cũ, tạo timer mới (300ms)
+    if (this.likeDebounceTimers.has(reelId)) {
+      clearTimeout(this.likeDebounceTimers.get(reelId));
+    }
+
+    const timer = setTimeout(() => {
+      this.likeDebounceTimers.delete(reelId);
+      this.sendReelLikeRequest(reelId);
+    }, 300);
+
+    this.likeDebounceTimers.set(reelId, timer);
     return reel;
   }
 
@@ -395,6 +450,62 @@ class ReelsDataStore {
     return { reel, newComment };
   }
 
+  async sendCommentLikeRequest(commentId, isKeepAlive = false) {
+    const initialLiked = this.commentLikeInitialStates.get(commentId);
+    this.commentLikeInitialStates.delete(commentId);
+
+    // Tìm comment trong toàn bộ danh sách
+    let targetComment = null;
+    if (this.reels) {
+      const findItem = (items) => {
+        for (const item of items) {
+          if (String(item.id) === String(commentId)) return item;
+          if (item.replies && item.replies.length > 0) {
+            const found = findItem(item.replies);
+            if (found) return found;
+          }
+        }
+        return null;
+      };
+      for (const r of this.reels) {
+        if (!r.comments) continue;
+        targetComment = findItem(r.comments);
+        if (targetComment) break;
+      }
+    }
+
+    if (!targetComment) return;
+
+    // Nếu trạng thái cuối cùng giống hệt ban đầu -> HỦY, KHÔNG GỬI GÌ
+    if (initialLiked !== undefined && targetComment.isLiked === initialLiked) {
+      return;
+    }
+
+    try {
+      const fetchOptions = {
+        method: targetComment.isLiked ? 'POST' : 'DELETE',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': this.getCsrfToken()
+        }
+      };
+      if (isKeepAlive && 'keepalive' in Request.prototype) {
+        fetchOptions.keepalive = true;
+      }
+      const res = await fetch(`/api/v1/reels/comments/${commentId}/like`, fetchOptions);
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) {
+          targetComment.isLiked = json.isLiked;
+          targetComment.likes = json.likesCount;
+        }
+      }
+    } catch (_) {}
+  }
+
   async toggleCommentLike(reelId, commentId, reactionType = null) {
     const reel = this.getReelById(reelId);
     if (!reel) return null;
@@ -414,29 +525,27 @@ class ReelsDataStore {
     if (!targetComment) return null;
 
     const nextState = !targetComment.isLiked;
+
+    // Ghi nhận trạng thái ban đầu của chuỗi click nếu chưa có
+    if (!this.commentLikeInitialStates.has(commentId)) {
+      this.commentLikeInitialStates.set(commentId, targetComment.isLiked);
+    }
+
+    // 1. Optimistic UI: Nhảy ngay lập tức (0ms) cho người dùng
     targetComment.isLiked = nextState;
     targetComment.likes = Math.max(0, (targetComment.likes || 0) + (nextState ? 1 : -1));
 
-    try {
-      const res = await fetch(`/api/v1/reels/comments/${commentId}/like`, {
-        method: nextState ? 'POST' : 'DELETE',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'X-Requested-With': 'XMLHttpRequest',
-          'X-CSRF-TOKEN': this.getCsrfToken()
-        }
-      });
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success) {
-          targetComment.isLiked = json.isLiked;
-          targetComment.likes = json.likesCount;
-        }
-      }
-    } catch (e) {}
+    // 2. Debounce: Hủy timer cũ, tạo timer mới (300ms)
+    if (this.commentLikeTimers.has(commentId)) {
+      clearTimeout(this.commentLikeTimers.get(commentId));
+    }
 
+    const timer = setTimeout(() => {
+      this.commentLikeTimers.delete(commentId);
+      this.sendCommentLikeRequest(commentId);
+    }, 300);
+
+    this.commentLikeTimers.set(commentId, timer);
     return targetComment;
   }
 

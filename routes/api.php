@@ -90,11 +90,17 @@ Route::prefix('/v1')->name('api.v1.')->group(function () {
         Route::get('/slug/{slug}', [ReelApiController::class, 'showBySlug'])->name('slug');
         Route::post('/{id}/view', [ReelApiController::class, 'view'])->whereNumber('id')->name('view');
         
-        // Thả tim Reel
+        // Thả tim Reel & Comment (Rate Limit chống spam bot)
         Route::get('/{id}/like-status', [ReelApiController::class, 'getLikeStatus'])->whereNumber('id')->name('like.status');
-        Route::put('/{id}/like', [ReelApiController::class, 'like'])->whereNumber('id')->name('like.put');
-        Route::delete('/{id}/like', [ReelApiController::class, 'unlike'])->whereNumber('id')->name('like.delete');
-        Route::post('/{id}/like', [ReelApiController::class, 'like'])->whereNumber('id')->name('like'); // Fallback POST
+        Route::middleware('throttle:60,1')->group(function () {
+            Route::put('/{id}/like', [ReelApiController::class, 'like'])->whereNumber('id')->name('like.put');
+            Route::delete('/{id}/like', [ReelApiController::class, 'unlike'])->whereNumber('id')->name('like.delete');
+            Route::post('/{id}/like', [ReelApiController::class, 'like'])->whereNumber('id')->name('like'); // Fallback POST
+
+            Route::put('/comments/{id}/like', [ReelApiController::class, 'likeComment'])->whereNumber('id')->name('comments.like.put');
+            Route::delete('/comments/{id}/like', [ReelApiController::class, 'unlikeComment'])->whereNumber('id')->name('comments.like.delete');
+            Route::post('/comments/{id}/like', [ReelApiController::class, 'likeComment'])->whereNumber('id')->name('comments.like.post');
+        });
 
         Route::post('/{id}/save', [ReelApiController::class, 'save'])->whereNumber('id')->name('save');
         Route::post('/{id}/share', [ReelApiController::class, 'share'])->whereNumber('id')->name('share');
@@ -102,11 +108,6 @@ Route::prefix('/v1')->name('api.v1.')->group(function () {
         // Bình luận
         Route::get('/{id}/comments', [ReelApiController::class, 'getComments'])->whereNumber('id')->name('comments.get');
         Route::post('/{id}/comments', [ReelApiController::class, 'postComment'])->whereNumber('id')->name('comments.post');
-        
-        // Thả tim bình luận
-        Route::put('/comments/{id}/like', [ReelApiController::class, 'likeComment'])->whereNumber('id')->name('comments.like.put');
-        Route::delete('/comments/{id}/like', [ReelApiController::class, 'unlikeComment'])->whereNumber('id')->name('comments.like.delete');
-        Route::post('/comments/{id}/like', [ReelApiController::class, 'likeComment'])->whereNumber('id')->name('comments.like.post');
     });
 });
 
@@ -121,13 +122,18 @@ Route::prefix('/reels')->middleware('anonymous.identity')->group(function () {
     Route::get('/slug/{slug}', [ReelApiController::class, 'showBySlug']);
     Route::post('/{id}/view', [ReelApiController::class, 'view'])->whereNumber('id');
     Route::get('/{id}/like-status', [ReelApiController::class, 'getLikeStatus'])->whereNumber('id');
-    Route::put('/{id}/like', [ReelApiController::class, 'like'])->whereNumber('id');
-    Route::delete('/{id}/like', [ReelApiController::class, 'unlike'])->whereNumber('id');
-    Route::post('/{id}/like', [ReelApiController::class, 'like'])->whereNumber('id');
+
+    Route::middleware('throttle:60,1')->group(function () {
+        Route::put('/{id}/like', [ReelApiController::class, 'like'])->whereNumber('id');
+        Route::delete('/{id}/like', [ReelApiController::class, 'unlike'])->whereNumber('id');
+        Route::post('/{id}/like', [ReelApiController::class, 'like'])->whereNumber('id');
+
+        Route::put('/comments/{id}/like', [ReelApiController::class, 'likeComment'])->whereNumber('id');
+        Route::delete('/comments/{id}/like', [ReelApiController::class, 'unlikeComment'])->whereNumber('id');
+    });
+
     Route::post('/{id}/save', [ReelApiController::class, 'save'])->whereNumber('id');
     Route::post('/{id}/share', [ReelApiController::class, 'share'])->whereNumber('id');
     Route::get('/{id}/comments', [ReelApiController::class, 'getComments'])->whereNumber('id');
     Route::post('/{id}/comments', [ReelApiController::class, 'postComment'])->whereNumber('id');
-    Route::put('/comments/{id}/like', [ReelApiController::class, 'likeComment'])->whereNumber('id');
-    Route::delete('/comments/{id}/like', [ReelApiController::class, 'unlikeComment'])->whereNumber('id');
 });
