@@ -192,6 +192,26 @@ $webView = $webController->index($webReq);
 assert(!empty($webView->getData()['initialReels']), 'Web view should load initialReels for logged in user');
 echo "  [OK] /reels web view rendered successfully for user ID " . ($userWeb->id ?? 'guest') . "!\n";
 
+// --- TEST 8: Search Functionality - Old & New Videos Full Database Coverage ---
+echo "\n[TEST 8] Testing Search Across Entire Database (Old & New Reels)...\n";
+$oldestReel = Reel::published()->orderBy('id', 'asc')->first();
+$searchKeyword = mb_substr($oldestReel->title, 0, 10);
+$searchReq = \Illuminate\Http\Request::create('/api/v1/reels', 'GET', ['search' => $searchKeyword]);
+$searchRes = $controller->index($searchReq);
+$searchData = $searchRes->getData(true);
+
+assert($searchData['success'] === true, 'Search request must return success');
+assert(!empty($searchData['data']), 'Search must find matching reels');
+$foundOldId = false;
+foreach ($searchData['data'] as $item) {
+    if ($item['id'] === $oldestReel->id) {
+        $foundOldId = true;
+        break;
+    }
+}
+assert($foundOldId, "Search for keyword '{$searchKeyword}' must return the oldest matching reel ID {$oldestReel->id}");
+echo "  [OK] Search successfully retrieved oldest Reel ID {$oldestReel->id} ('{$oldestReel->title}')!\n";
+
 // Clean up test users
 ReelFeedCycle::whereIn('anonymous_user_id', [$userA->id, $userB->id, $testUserCoverage->id, $testUserRefresh->id])->delete();
 AnonymousUser::whereIn('id', [$userA->id, $userB->id, $testUserCoverage->id, $testUserRefresh->id])->delete();

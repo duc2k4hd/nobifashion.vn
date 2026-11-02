@@ -44,12 +44,16 @@ class ReelService
             $query->where('category', $category);
         }
 
-        // Tìm kiếm theo từ khóa
+        // Tìm kiếm theo từ khóa: quét toàn bộ cơ sở dữ liệu (bao gồm cả video cũ, mới, tác giả, hashtag)
         if ($search !== '') {
-            $query->where(function ($q) use ($search) {
+            $rawTag = ltrim($search, '#');
+            $query->where(function ($q) use ($search, $rawTag) {
                 $q->where('title', 'like', "%{$search}%")
                   ->orWhere('caption', 'like', "%{$search}%")
-                  ->orWhereJsonContains('hashtags', '#' . ltrim($search, '#'));
+                  ->orWhere('author_name', 'like', "%{$search}%")
+                  ->orWhere('author_handle', 'like', "%{$search}%")
+                  ->orWhereJsonContains('hashtags', '#' . $rawTag)
+                  ->orWhereJsonContains('hashtags', $rawTag);
             });
         }
 

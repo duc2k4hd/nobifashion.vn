@@ -177,11 +177,12 @@ class ReelsDataStore {
       if (this.activeFilter === 'saved' && !r.isSaved) return false;
 
       if (!q) return true;
-      const inCaption = r.caption.toLowerCase().includes(q);
-      const inAuthor = r.author.name.toLowerCase().includes(q) || r.author.handle.toLowerCase().includes(q);
-      const inTags = r.hashtags.some((t) => t.toLowerCase().includes(q));
-      const inProducts = r.products.some((p) => p.name.toLowerCase().includes(q));
-      return inCaption || inAuthor || inTags || inProducts;
+      const inTitle = (r.title || '').toLowerCase().includes(q);
+      const inCaption = (r.caption || '').toLowerCase().includes(q);
+      const inAuthor = (r.author?.name || '').toLowerCase().includes(q) || (r.author?.handle || '').toLowerCase().includes(q);
+      const inTags = Array.isArray(r.hashtags) && r.hashtags.some((t) => t.toLowerCase().includes(q));
+      const inProducts = Array.isArray(r.products) && r.products.some((p) => (p.name || '').toLowerCase().includes(q));
+      return inTitle || inCaption || inAuthor || inTags || inProducts;
     });
   }
 
@@ -1960,10 +1961,37 @@ class ReelsNavigationController {
 
   /**
    * Jumps directly to a specific reel ID (e.g. from search suggestion or notification)
+   * Tự động nạp video cũ/mới từ Database nếu chưa có trong bộ nhớ cục bộ
    */
-  jumpToReelId(reelId) {
-    const list = this.getReelsList();
-    const idx = list.findIndex((r) => r.id === reelId);
+  async jumpToReelId(reelId, fallbackReel = null) {
+    const targetId = Number(reelId);
+    let list = this.getReelsList();
+    let idx = list.findIndex((r) => Number(r.id) === targetId);
+
+    if (idx === -1) {
+      let targetReel = fallbackReel;
+      if (!targetReel) {
+        try {
+          const res = await fetch(`/api/v1/reels/${targetId}`);
+          if (res.ok) {
+            const json = await res.json();
+            if (json.success && json.data) {
+              targetReel = json.data;
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (targetReel) {
+        const exists = this.store.reels.some((r) => Number(r.id) === targetId);
+        if (!exists) {
+          this.store.reels.unshift(targetReel);
+        }
+        list = this.getReelsList();
+        idx = list.findIndex((r) => Number(r.id) === targetId);
+      }
+    }
+
     if (idx === -1) return false;
 
     this.isTransitioning = false;
@@ -3434,11 +3462,23 @@ class UIController {
     }
 
     try {
-      const res = await fetch(`/api/v1/reels?search=${encodeURIComponent(q)}&limit=10`);
+      const res = await fetch(`/api/v1/reels?search=${encodeURIComponent(q)}&limit=20`);
       if (res.ok) {
         const json = await res.json();
         const results = json.data || [];
+        this.lastSearchResults = new Map();
+
+        // Đồng bộ video khớp tìm kiếm vào store để hiển thị đầy đủ ngay cả video cũ trong DB
+        const existingIds = new Set(this.store.reels.map((r) => Number(r.id)));
+        results.forEach((r) => {
+          this.lastSearchResults.set(Number(r.id), r);
+          if (!existingIds.has(Number(r.id))) {
+            this.store.reels.push(r);
+          }
+        });
+
         this.renderRemoteSearchResults(q, results);
+        this.navigationController.refreshList(false);
         return;
       }
     } catch (err) {
@@ -3831,7 +3871,7 @@ class NobiFashionReelsApp {
   }
 
   bindGlobalDelegation() {
-    this.appEl.addEventListener('click', (e) => {
+    this.appEl.addEventListener('click', async (e) => {
       // Close popovers/dropdowns if clicking outside
       if (!e.target.closest('.nobifashion_reels_search_box')) {
         this.uiController.searchDropdown?.classList.remove('nobifashion_reels_is_open');
@@ -3906,11 +3946,12 @@ class NobiFashionReelsApp {
         case 'jump-notif-reel':
         case 'select-search-reel': {
           const reelId = actionEl.getAttribute('data-reel-id');
+          const fallbackReel = this.uiController.lastSearchResults?.get(Number(reelId)) || null;
           this.store.resetFilters();
           this.uiController.setFilter('all');
           this.uiController.searchDropdown?.classList.remove('nobifashion_reels_is_open');
           this.uiController.popoverEl?.classList.remove('nobifashion_reels_is_open');
-          if (reelId) this.navigationController.jumpToReelId(reelId);
+          if (reelId) await this.navigationController.jumpToReelId(reelId, fallbackReel);
           break;
         }
 
