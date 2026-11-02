@@ -9,6 +9,7 @@ use App\Models\Reel;
 use App\Models\ReelComment;
 use App\Services\AnonymousIdentityService;
 use App\Services\ReelService;
+use App\Services\ReelsFeed\ReelsFeedOrchestrator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -16,7 +17,8 @@ class ReelApiController extends Controller
 {
     public function __construct(
         protected ReelService $reelService,
-        protected AnonymousIdentityService $identityService
+        protected AnonymousIdentityService $identityService,
+        protected ReelsFeedOrchestrator $orchestrator
     ) {}
 
     /**
@@ -41,7 +43,38 @@ class ReelApiController extends Controller
     }
 
     /**
+     * Reels Feed Recommendation & Distribution Engine
+     * Dual-Engine (Trending + Newest), Seeded Random & Full Video Coverage
+     */
+    public function feed(Request $request): JsonResponse
+    {
+        $userId = auth()->id();
+        $clientIp = $request->ip();
+        $anonUser = $this->identityService->resolveUser($request);
+
+        $limit = min((int) ($request->get('limit', 10)), 20);
+        $cursor = $request->get('cursor');
+
+        $batch = $this->orchestrator->getFeedBatch($anonUser, $userId, $clientIp, $limit, $cursor);
+
+        return response()->json([
+            'success' => true,
+            'data' => $batch['items'],
+            'pagination' => [
+                'has_more' => $batch['hasMore'],
+                'next_cursor' => $batch['nextCursor'],
+                'limit' => $limit,
+                'cycle_id' => $batch['cycleId'] ?? null,
+                'snapshot_version' => $batch['snapshotVersion'] ?? 1,
+                'total_videos' => $batch['totalVideos'] ?? 0,
+                'current_index' => $batch['currentIndex'] ?? 0,
+            ]
+        ]);
+    }
+
+    /**
      * Lấy danh sách Reels theo phân trang Cursor
+     * Tự động điều hướng sang Dual Engine nếu là feed chính (all)
      */
     public function index(Request $request): JsonResponse
     {
@@ -49,6 +82,32 @@ class ReelApiController extends Controller
         $clientIp = $request->ip();
         $anonUser = $this->identityService->resolveUser($request);
 
+        $category = $request->get('category', 'all');
+        $search = trim((string) $request->get('search', ''));
+
+        // Feed mặc định ('all' và không có search): Dùng ReelsFeedOrchestrator
+        if (($category === 'all' || empty($category)) && empty($search)) {
+            $limit = min((int) ($request->get('limit', 10)), 20);
+            $cursor = $request->get('cursor');
+
+            $batch = $this->orchestrator->getFeedBatch($anonUser, $userId, $clientIp, $limit, $cursor);
+
+            return response()->json([
+                'success' => true,
+                'data' => $batch['items'],
+                'pagination' => [
+                    'has_more' => $batch['hasMore'],
+                    'next_cursor' => $batch['nextCursor'],
+                    'limit' => $limit,
+                    'cycle_id' => $batch['cycleId'] ?? null,
+                    'snapshot_version' => $batch['snapshotVersion'] ?? 1,
+                    'total_videos' => $batch['totalVideos'] ?? 0,
+                    'current_index' => $batch['currentIndex'] ?? 0,
+                ]
+            ]);
+        }
+
+        // Nếu có bộ lọc category cụ thể hoặc search: Dùng ReelService
         $result = $this->reelService->getFeed($request->all(), $clientIp, $userId, $anonUser);
 
         return response()->json($result);

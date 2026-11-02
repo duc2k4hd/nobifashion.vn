@@ -85,6 +85,8 @@ Route::prefix('/v1')->name('api.v1.')->group(function () {
         Route::get('/stickers', [ReelApiController::class, 'getStickers'])->name('stickers');
         Route::get('/stickers/categories', [ReelApiController::class, 'getStickerCategories'])->name('stickers.categories');
 
+        // Reels Feed Recommendation & Distribution Engine
+        Route::get('/feed', [ReelApiController::class, 'feed'])->name('feed');
         Route::get('/', [ReelApiController::class, 'index'])->name('index');
         Route::get('/{id}', [ReelApiController::class, 'show'])->whereNumber('id')->name('show');
         Route::get('/slug/{slug}', [ReelApiController::class, 'showBySlug'])->name('slug');
@@ -118,6 +120,7 @@ Route::prefix('/reels')->middleware('anonymous.identity')->group(function () {
     Route::get('/stickers', [ReelApiController::class, 'getStickers']);
     Route::get('/stickers/categories', [ReelApiController::class, 'getStickerCategories']);
 
+    Route::get('/feed', [ReelApiController::class, 'feed']);
     Route::get('/', [ReelApiController::class, 'index']);
     Route::get('/{id}', [ReelApiController::class, 'show'])->whereNumber('id');
     Route::get('/slug/{slug}', [ReelApiController::class, 'showBySlug']);

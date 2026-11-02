@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Reel;
 use App\Services\AnonymousIdentityService;
 use App\Services\ReelService;
+use App\Services\ReelsFeed\ReelsFeedOrchestrator;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -13,7 +14,8 @@ class ReelController extends Controller
 {
     public function __construct(
         protected ReelService $reelService,
-        protected AnonymousIdentityService $identityService
+        protected AnonymousIdentityService $identityService,
+        protected ReelsFeedOrchestrator $orchestrator
     ) {}
 
     /**
@@ -25,15 +27,29 @@ class ReelController extends Controller
         $clientIp = $request->ip();
         $anonUser = $request->attributes->get('anonymous_user') ?: $this->identityService->resolveUser($request);
 
-        $feedResult = $this->reelService->getFeed([
-            'limit' => 10,
-            'category' => $request->get('category', 'all'),
-            'search' => $request->get('search', ''),
-        ], $clientIp, $userId, $anonUser);
+        $category = $request->get('category', 'all');
+        $search = trim((string) $request->get('search', ''));
+        $cursor = $request->get('cursor');
 
-        $initialReels = $feedResult['data'];
-        $nextCursor = $feedResult['pagination']['next_cursor'];
-        $hasMore = $feedResult['pagination']['has_more'];
+        // Feed mặc định ('all' và không search): Áp dụng Reels Feed Recommendation Engine
+        if (($category === 'all' || empty($category)) && empty($search)) {
+            $batch = $this->orchestrator->getFeedBatch($anonUser, $userId, $clientIp, 10, $cursor);
+            $initialReels = $batch['items'];
+            $nextCursor = $batch['nextCursor'];
+            $hasMore = $batch['hasMore'];
+        } else {
+            $feedResult = $this->reelService->getFeed([
+                'limit' => 10,
+                'category' => $category,
+                'search' => $search,
+                'cursor' => $cursor,
+            ], $clientIp, $userId, $anonUser);
+
+            $initialReels = $feedResult['data'];
+            $nextCursor = $feedResult['pagination']['next_cursor'];
+            $hasMore = $feedResult['pagination']['has_more'];
+        }
+
         $activeReel = !empty($initialReels) ? $initialReels[0] : null;
 
         $seoTitle = 'Nobi Reels — Video Thời Trang & Xu Hướng Phối Đồ | Nobi Fashion';
@@ -65,14 +81,12 @@ class ReelController extends Controller
         $activeReel['isLiked'] = $this->reelService->hasLiked($reel->id, $clientIp, $userId, $anonUser);
         $activeReel['isSaved'] = $this->reelService->hasSaved($reel->id, $clientIp, $userId);
 
-        $feedResult = $this->reelService->getFeed([
-            'limit' => 10,
-            'cursor' => $reel->id,
-        ], $clientIp, $userId, $anonUser);
+        $batch = $this->orchestrator->getFeedBatch($anonUser, $userId, $clientIp, 10);
+        $subsequentReels = array_values(array_filter($batch['items'], fn($r) => $r['id'] !== $reel->id));
 
-        $initialReels = array_merge([$activeReel], array_filter($feedResult['data'], fn($r) => $r['id'] !== $reel->id));
-        $nextCursor = $feedResult['pagination']['next_cursor'];
-        $hasMore = $feedResult['pagination']['has_more'];
+        $initialReels = array_merge([$activeReel], $subsequentReels);
+        $nextCursor = $batch['nextCursor'];
+        $hasMore = $batch['hasMore'];
 
         $seoTitle = ($reel->seo_title ?: $reel->title) . ' | Nobi Reels';
         $seoDescription = $reel->seo_description ?: ($reel->caption ? mb_substr(strip_tags($reel->caption), 0, 160) : 'Video ngắn thời trang Nobi Reels');
