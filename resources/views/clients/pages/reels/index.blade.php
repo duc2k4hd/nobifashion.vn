@@ -229,6 +229,11 @@
         window.__INITIAL_REELS__ = {!! json_encode($initialReels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!};
         window.__REELS_NEXT_CURSOR__ = {!! json_encode($nextCursor) !!};
         window.__REELS_HAS_MORE__ = {{ $hasMore ? 'true' : 'false' }};
+        window.__ANON_USER__ = {!! json_encode($anonUser ? [
+            'nickname' => $anonUser->nickname,
+            'avatar_key' => $anonUser->avatar_key,
+            'avatar_color' => $anonUser->avatar_color,
+        ] : null, JSON_UNESCAPED_UNICODE) !!};
     </script>
     <script defer
         src="{{ asset('clients/assets/js/reels.js') }}?v={{ filemtime(public_path('clients/assets/js/reels.js')) }}">

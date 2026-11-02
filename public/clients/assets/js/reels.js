@@ -9,6 +9,13 @@
 
 const STORAGE_KEY = 'nobifashion_reels_state_v1';
 
+const ANIMAL_ICONS = {
+  cat: '🐱', dog: '🐶', bear: '🐻', panda: '🐼', rabbit: '🐰',
+  fox: '🦊', tiger: '🐯', lion: '🦁', pig: '🐷', monkey: '🐵',
+  penguin: '🐧', octopus: '🐙', dolphin: '🐬', shark: '🦈',
+  duck: '🦆', squirrel: '🐿️', owl: '🦉', capybara: '🦫', animal: '🐾'
+};
+
 
 const INITIAL_REELS_DATA = Array.isArray(window.__INITIAL_REELS__) && window.__INITIAL_REELS__.length > 0
   ? window.__INITIAL_REELS__
@@ -57,21 +64,6 @@ class ReelsDataStore {
         if (Array.isArray(saved.cart)) {
           this.cart = saved.cart;
         }
-        if (saved.reelOverrides && typeof saved.reelOverrides === 'object') {
-          this.reels.forEach((reel) => {
-            const ov = saved.reelOverrides[reel.id];
-            if (ov) {
-              if (typeof ov.isLiked === 'boolean') reel.isLiked = ov.isLiked;
-              if (typeof ov.likesCount === 'number') reel.likesCount = ov.likesCount;
-              if (typeof ov.isSaved === 'boolean') reel.isSaved = ov.isSaved;
-              if (typeof ov.isFollowing === 'boolean') reel.isFollowing = ov.isFollowing;
-              if (Array.isArray(ov.comments)) {
-                reel.comments = ov.comments;
-                reel.commentsCount = ov.comments.reduce((acc, c) => acc + 1 + (c.replies ? c.replies.length : 0), 0);
-              }
-            }
-          });
-        }
       }
     } catch (err) {
       // Safe fallback when localStorage is unavailable or restricted
@@ -89,21 +81,10 @@ class ReelsDataStore {
 
   saveState() {
     try {
-      const reelOverrides = {};
-      this.reels.forEach((reel) => {
-        reelOverrides[reel.id] = {
-          isLiked: reel.isLiked,
-          likesCount: reel.likesCount,
-          isSaved: reel.isSaved,
-          isFollowing: reel.isFollowing,
-          comments: reel.comments
-        };
-      });
       const payload = {
         theme: this.theme,
         muted: this.muted,
-        cart: this.cart,
-        reelOverrides
+        cart: this.cart
       };
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
     } catch (err) {
@@ -178,24 +159,130 @@ class ReelsDataStore {
     return this.reels.find((r) => r.id === id) || null;
   }
 
-  toggleLike(reelId, forceLike = null) {
+  getCsrfToken() {
+    return document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+  }
+
+  async toggleLike(reelId, forceLike = null) {
     const reel = this.getReelById(reelId);
     if (!reel) return null;
     const nextState = forceLike !== null ? forceLike : !reel.isLiked;
-    if (nextState !== reel.isLiked) {
-      reel.isLiked = nextState;
-      reel.likesCount += nextState ? 1 : -1;
-      this.saveState();
+    if (nextState === reel.isLiked) return reel;
+
+    // Optimistic UI update
+    const prevLiked = reel.isLiked;
+    const prevCount = reel.likesCount;
+    reel.isLiked = nextState;
+    reel.likesCount = Math.max(0, reel.likesCount + (nextState ? 1 : -1));
+
+    try {
+      const res = await fetch(`/api/v1/reels/${reel.id}/like`, {
+        method: nextState ? 'POST' : 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': this.getCsrfToken()
+        }
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) {
+          reel.isLiked = json.isLiked;
+          reel.likesCount = json.likesCount;
+        }
+      } else {
+        reel.isLiked = prevLiked;
+        reel.likesCount = prevCount;
+      }
+    } catch (e) {
+      reel.isLiked = prevLiked;
+      reel.likesCount = prevCount;
     }
     return reel;
   }
 
-  toggleSave(reelId) {
+  async toggleSave(reelId) {
     const reel = this.getReelById(reelId);
     if (!reel) return null;
+    const prevSaved = reel.isSaved;
+    const prevCount = reel.savesCount;
     reel.isSaved = !reel.isSaved;
-    this.saveState();
+    reel.savesCount = Math.max(0, (reel.savesCount || 0) + (reel.isSaved ? 1 : -1));
+
+    try {
+      const res = await fetch(`/api/v1/reels/${reel.id}/save`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': this.getCsrfToken()
+        }
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) {
+          reel.isSaved = json.isSaved;
+          reel.savesCount = json.savesCount;
+        }
+      } else {
+        reel.isSaved = prevSaved;
+        reel.savesCount = prevCount;
+      }
+    } catch (e) {
+      reel.isSaved = prevSaved;
+      reel.savesCount = prevCount;
+    }
     return reel;
+  }
+
+  async recordShare(reelId) {
+    const reel = this.getReelById(reelId);
+    if (!reel) return null;
+    reel.sharesCount = (reel.sharesCount || 0) + 1;
+    try {
+      const res = await fetch(`/api/v1/reels/${reel.id}/share`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': this.getCsrfToken()
+        }
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && typeof json.sharesCount === 'number') {
+          reel.sharesCount = json.sharesCount;
+        }
+      }
+    } catch (e) {}
+    return reel;
+  }
+
+  async fetchComments(reelId) {
+    const reel = this.getReelById(reelId);
+    if (!reel) return [];
+    try {
+      const res = await fetch(`/api/v1/reels/${reel.id}/comments?limit=30`, {
+        headers: {
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && Array.isArray(json.data)) {
+          reel.comments = json.data;
+          if (typeof json.total === 'number') {
+            reel.commentsCount = json.total;
+          }
+          return reel.comments;
+        }
+      }
+    } catch (e) {}
+    return reel.comments || [];
   }
 
   toggleFollow(authorIdentifier) {
@@ -248,85 +335,96 @@ class ReelsDataStore {
     this.hiddenReelIds.clear();
   }
 
-  addComment(reelId, text, replyToCommentId = null) {
+  async addComment(reelId, text, replyToCommentId = null) {
     const reel = this.getReelById(reelId);
     if (!reel || !text.trim()) return null;
     const cleanText = text.trim();
 
-    if (replyToCommentId) {
-      const parent = reel.comments.find((c) => c.id === replyToCommentId);
-      if (parent) {
-        parent.replies = parent.replies || [];
-        parent.replies.push({
-          id: 'r_' + Date.now(),
-          author: 'Bạn (Nobi Member)',
-          initials: 'BN',
-          time: 'Vừa xong',
-          text: cleanText,
-          likes: 0,
-          isLiked: false
-        });
-      }
-    } else {
-      reel.comments.unshift({
-        id: 'c_' + Date.now(),
-        author: 'Bạn (Nobi Member)',
-        initials: 'BN',
-        time: 'Vừa xong',
-        timestamp: Math.floor(Date.now() / 1000),
-        text: cleanText,
-        likes: 0,
-        isLiked: false,
-        replies: []
-      });
+    const res = await fetch(`/api/v1/reels/${reel.id}/comments`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+        'X-CSRF-TOKEN': this.getCsrfToken()
+      },
+      body: JSON.stringify({
+        content: cleanText,
+        parent_id: replyToCommentId ? parseInt(replyToCommentId, 10) : null
+      })
+    });
+
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      throw new Error(json.message || 'Không thể đăng bình luận. Vui lòng thử lại!');
     }
 
-    reel.commentsCount = reel.comments.reduce((acc, c) => acc + 1 + (c.replies ? c.replies.length : 0), 0);
-    this.saveState();
-    return reel;
+    const newComment = json.data;
+    if (typeof json.commentsCount === 'number') {
+      reel.commentsCount = json.commentsCount;
+    } else {
+      reel.commentsCount = (reel.commentsCount || 0) + 1;
+    }
+
+    reel.comments = reel.comments || [];
+    if (replyToCommentId) {
+      const parent = reel.comments.find((c) => String(c.id) === String(replyToCommentId));
+      if (parent) {
+        parent.replies = parent.replies || [];
+        parent.replies.push(newComment);
+        parent.replies_count = (parent.replies_count || 0) + 1;
+      } else {
+        reel.comments.unshift(newComment);
+      }
+    } else {
+      reel.comments.unshift(newComment);
+    }
+
+    return { reel, newComment };
   }
 
-  toggleCommentLike(reelId, commentId, reactionType = null) {
+  async toggleCommentLike(reelId, commentId, reactionType = null) {
     const reel = this.getReelById(reelId);
     if (!reel) return null;
 
-    const traverse = (items) => {
+    const findItem = (items) => {
       for (const item of items) {
-        if (item.id === commentId) {
-          if (reactionType) {
-            if (item.isLiked && item.userReaction === reactionType) {
-              item.isLiked = false;
-              item.userReaction = null;
-              item.likes = Math.max(0, (item.likes || 1) - 1);
-            } else {
-              if (!item.isLiked) {
-                item.likes = (item.likes || 0) + 1;
-              }
-              item.isLiked = true;
-              item.userReaction = reactionType;
-            }
-          } else {
-            item.isLiked = !item.isLiked;
-            if (item.isLiked) {
-              item.userReaction = 'like';
-              item.likes = (item.likes || 0) + 1;
-            } else {
-              item.userReaction = null;
-              item.likes = Math.max(0, (item.likes || 1) - 1);
-            }
-          }
-          this.saveState();
-          return item;
-        }
+        if (String(item.id) === String(commentId)) return item;
         if (item.replies && item.replies.length > 0) {
-          const res = traverse(item.replies);
-          if (res) return res;
+          const found = findItem(item.replies);
+          if (found) return found;
         }
       }
       return null;
     };
 
-    return traverse(reel.comments || []);
+    const targetComment = findItem(reel.comments || []);
+    if (!targetComment) return null;
+
+    const nextState = !targetComment.isLiked;
+    targetComment.isLiked = nextState;
+    targetComment.likes = Math.max(0, (targetComment.likes || 0) + (nextState ? 1 : -1));
+
+    try {
+      const res = await fetch(`/api/v1/reels/comments/${commentId}/like`, {
+        method: nextState ? 'POST' : 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': this.getCsrfToken()
+        }
+      });
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success) {
+          targetComment.isLiked = json.isLiked;
+          targetComment.likes = json.likesCount;
+        }
+      }
+    } catch (e) {}
+
+    return targetComment;
   }
 
   addToCart(product, size, color) {
@@ -743,6 +841,7 @@ class VideoPlaybackController {
     const loader = slideEl.querySelector('.nobifashion_reels_video_loader');
     if (loader) {
       loader.classList.add('nobifashion_reels_is_loading');
+      slideEl.classList.add('nobifashion_reels_slide_loading');
     }
 
     const videoEl = slideEl.querySelector('.nobifashion_reels_video_el');
@@ -830,6 +929,7 @@ class VideoPlaybackController {
     clearTimeout(this.hideLoaderTimer);
     this.hideLoaderTimer = setTimeout(() => {
       loader.classList.remove('nobifashion_reels_is_loading');
+      this.activeSlideEl?.classList.remove('nobifashion_reels_slide_loading');
     }, remainingDelay);
   }
 
@@ -1049,6 +1149,7 @@ class VideoPlaybackController {
       const loader = this.activeSlideEl?.querySelector('.nobifashion_reels_video_loader');
       if (loader && this.activeVideoEl && (this.activeVideoEl.seeking || this.activeVideoEl.readyState < 3)) {
         loader.classList.add('nobifashion_reels_is_loading');
+        this.activeSlideEl?.classList.add('nobifashion_reels_slide_loading');
       }
     }, 250);
   }
@@ -1062,6 +1163,7 @@ class VideoPlaybackController {
     const loader = this.activeSlideEl?.querySelector('.nobifashion_reels_video_loader');
     const errBox = this.activeSlideEl?.querySelector('.nobifashion_reels_video_error');
     if (loader) loader.classList.remove('nobifashion_reels_is_loading');
+    this.activeSlideEl?.classList.remove('nobifashion_reels_slide_loading');
     if (errBox) errBox.classList.add('nobifashion_reels_has_error');
   }
 
@@ -1222,7 +1324,7 @@ class ReelsRenderer {
 
   createSlideElement(reel, pos, immediate) {
     const slide = document.createElement('article');
-    slide.className = 'nobifashion_reels_slide';
+    slide.className = 'nobifashion_reels_slide nobifashion_reels_slide_loading';
     slide.setAttribute('data-reel-id', reel.id);
     slide.setAttribute('data-pos', pos);
     if (immediate) {
@@ -1275,8 +1377,6 @@ class ReelsRenderer {
       <!-- Loading Skeleton Layout-Aware 9:16 (Code tay thuần MUI Wave Animation) -->
       <div class="nobifashion_reels_video_loader nobifashion_reels_is_loading">
         <div class="nobifashion_reels_skeleton_screen">
-          <div class="nobifashion_reels_skeleton_wave"></div>
-
           <!-- Top-Left Mute Button Skeleton -->
           <div class="nobifashion_reels_skel_mute"></div>
 
@@ -1335,6 +1435,9 @@ class ReelsRenderer {
 
           <!-- Bottom Progress Bar Skeleton -->
           <div class="nobifashion_reels_skel_progress_bar"></div>
+
+          <!-- Sóng ánh sáng Shimmer phủ lên trên cùng tất cả các thành phần -->
+          <div class="nobifashion_reels_skeleton_wave"></div>
         </div>
       </div>
 
@@ -1569,7 +1672,7 @@ class ReelsRenderer {
             <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
           </svg>
         </button>
-        <span class="nobifashion_reels_action_count">${formatCount(reel.sharesCount)}</span>
+        <span class="nobifashion_reels_action_count" data-role="share-count">${formatCount(reel.sharesCount)}</span>
       </div>
 
       <div class="nobifashion_reels_action_item">
@@ -1844,12 +1947,21 @@ class CommentsController {
       <div class="nobifashion_reels_sidebar_header" id="nobifashion_reels_sidebar_creator_box"></div>
 
       <div class="nobifashion_reels_sidebar_stats_bar">
-        <span id="nobifashion_reels_sidebar_stats_text">0 lượt thích • 0 bình luận</span>
-        <label class="nobifashion_reels_sr_only" for="nobifashion_reels_comment_sort">Sắp xếp bình luận</label>
-        <select id="nobifashion_reels_comment_sort" class="nobifashion_reels_sort_select" aria-label="Sắp xếp bình luận">
-          <option value="popular">Phù hợp nhất</option>
-          <option value="newest">Mới nhất</option>
-        </select>
+        <div id="nobifashion_reels_sidebar_stats_text" class="nobifashion_reels_sidebar_stats_text">
+          <span><strong class="nobifashion_reels_stat_num">0</strong> lượt thích</span>
+          <span class="nobifashion_reels_stat_sep">•</span>
+          <span><strong class="nobifashion_reels_stat_num">0</strong> bình luận</span>
+        </div>
+        <div class="nobifashion_reels_sort_wrap">
+          <label class="nobifashion_reels_sr_only" for="nobifashion_reels_comment_sort">Sắp xếp bình luận</label>
+          <select id="nobifashion_reels_comment_sort" class="nobifashion_reels_sort_select" aria-label="Sắp xếp bình luận">
+            <option value="popular">Phù hợp nhất</option>
+            <option value="newest">Mới nhất</option>
+          </select>
+          <svg class="nobifashion_reels_sort_arrow" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </div>
       </div>
 
       <div class="nobifashion_reels_comments_list nobifashion_reels_scrollable" id="nobifashion_reels_comments_list"></div>
@@ -1867,11 +1979,14 @@ class CommentsController {
         </div>
 
         <form id="nobifashion_reels_comment_form" class="nobifashion_reels_composer_row" autocomplete="off">
+          <div style="width:28px;height:28px;border-radius:50%;background:${(window.__ANON_USER__ && window.__ANON_USER__.avatar_color) || '#3b82f6'};display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;" title="Biệt danh: ${(window.__ANON_USER__ && window.__ANON_USER__.nickname) || 'Bạn'}">
+            ${(window.__ANON_USER__ && window.__ANON_USER__.avatar_key && ANIMAL_ICONS[window.__ANON_USER__.avatar_key]) || '🐱'}
+          </div>
           <input
             type="text"
             id="nobifashion_reels_comment_input"
             class="nobifashion_reels_composer_input"
-            placeholder="Thêm bình luận tinh tế của bạn..."
+            placeholder="Bình luận với tên ${(window.__ANON_USER__ && window.__ANON_USER__.nickname) || 'bạn'}..."
             maxlength="400"
             aria-label="Nhập nội dung bình luận"
           />
@@ -1919,15 +2034,17 @@ class CommentsController {
       if (action === 'like-comment') {
         const commentId = btn.getAttribute('data-comment-id');
         if (this.currentReel && commentId) {
-          this.store.toggleCommentLike(this.currentReel.id, commentId);
-          this.renderCommentsList();
+          this.store.toggleCommentLike(this.currentReel.id, commentId).then(() => {
+            this.renderCommentsList();
+          });
         }
       } else if (action === 'react-comment') {
         const commentId = btn.getAttribute('data-comment-id');
         const reactionType = btn.getAttribute('data-reaction-type');
         if (this.currentReel && commentId && reactionType) {
-          this.store.toggleCommentLike(this.currentReel.id, commentId, reactionType);
-          this.renderCommentsList();
+          this.store.toggleCommentLike(this.currentReel.id, commentId, reactionType).then(() => {
+            this.renderCommentsList();
+          });
         }
       } else if (action === 'reply-comment') {
         const commentId = btn.getAttribute('data-comment-id');
@@ -1967,7 +2084,7 @@ class CommentsController {
     });
   }
 
-  renderForReel(reel) {
+  async renderForReel(reel) {
     this.currentReel = reel;
     this.clearReplyTarget();
     if (this.emojiPickerEl) {
@@ -1983,7 +2100,25 @@ class CommentsController {
 
     this.renderCreatorHeader(reel);
     this.updateStats(reel);
-    this.renderCommentsList();
+
+    // Hiển thị trạng thái đang tải trước khi có comment thật từ server
+    this.commentsListEl.innerHTML = `
+      <div style="text-align:center;padding:36px 16px;color:var(--nobifashion_reels_text_muted);font-size:13px;">
+        <span style="font-size:18px;">⏳</span><br>Đang tải bình luận...
+      </div>
+    `;
+
+    try {
+      await this.store.fetchComments(reel.id);
+      this.updateStats(reel);
+      this.renderCommentsList();
+      const railCount = document.querySelector('[data-role="comment-count"]');
+      if (railCount) {
+        railCount.textContent = formatCount(reel.commentsCount);
+      }
+    } catch (e) {
+      this.renderCommentsList();
+    }
   }
 
   renderCreatorHeader(reel) {
@@ -2040,7 +2175,11 @@ class CommentsController {
 
   updateStats(reel) {
     if (!this.statsTextEl || !reel) return;
-    this.statsTextEl.textContent = `${formatCount(reel.likesCount)} lượt thích • ${formatCount(reel.commentsCount)} bình luận`;
+    this.statsTextEl.innerHTML = `
+      <span><strong class="nobifashion_reels_stat_num">${formatCount(reel.likesCount)}</strong> lượt thích</span>
+      <span class="nobifashion_reels_stat_sep">•</span>
+      <span><strong class="nobifashion_reels_stat_num">${formatCount(reel.commentsCount)}</strong> bình luận</span>
+    `;
   }
 
   getReactionsPopupHtml(commentId) {
@@ -2102,12 +2241,20 @@ class CommentsController {
     const isVerified = Boolean(c.isVerified);
     const reactionClass = c.userReaction ? `nobifashion_reels_reaction_${c.userReaction}` : '';
 
+    const animalIcon = (c.avatar_key && ANIMAL_ICONS[c.avatar_key]) ? ANIMAL_ICONS[c.avatar_key] : (c.initials || '🐱');
+    const avatarBg = c.avatar_color || '#3b82f6';
+    const authorName = c.nickname || c.author || 'Khách Nobi';
+
+    const stickerHtml = c.sticker && c.sticker.asset_url
+      ? `<div style="margin-top:6px;"><img src="${c.sticker.asset_url}" alt="${this.escapeHtml(c.sticker.name || 'Sticker')}" style="width:72px;height:72px;object-fit:contain;display:block;" /></div>`
+      : '';
+
     return `
       <div class="nobifashion_reels_comment_item" data-comment-id="${c.id}" data-depth="${depth}">
-        <div class="nobifashion_reels_comment_avatar">${c.initials || 'NB'}</div>
+        <div class="nobifashion_reels_comment_avatar" style="background:${avatarBg};color:#ffffff;display:flex;align-items:center;justify-content:center;font-size:15px;" title="${this.escapeHtml(authorName)}">${animalIcon}</div>
         <div class="nobifashion_reels_comment_body">
           <div class="nobifashion_reels_comment_header">
-            <span class="nobifashion_reels_comment_author">${this.escapeHtml(c.author)}</span>
+            <span class="nobifashion_reels_comment_author" style="font-weight:600;">${this.escapeHtml(authorName)}</span>
             ${
               isVerified
                 ? `<span class="nobifashion_reels_comment_verified" title="Đã xác minh">
@@ -2123,6 +2270,7 @@ class CommentsController {
             }
           </div>
           <p class="nobifashion_reels_comment_text">${this.escapeHtml(c.text)}</p>
+          ${stickerHtml}
           <div class="nobifashion_reels_comment_actions">
             <!-- Nút Like kèm thanh chọn cảm xúc Facebook khi hover -->
             <div class="nobifashion_reels_comment_like_wrapper">
@@ -2314,32 +2462,43 @@ class CommentsController {
     }
   }
 
-  submitComment() {
+  async submitComment() {
     if (!this.currentReel) return;
     const text = this.commentInputEl.value.trim();
     if (!text) return;
 
     const replyId = this.replyToComment ? this.replyToComment.id : null;
-    if (replyId) {
-      this.expandedReplies.add(replyId);
-    }
+    const sendBtn = this.commentFormEl ? this.commentFormEl.querySelector('.nobifashion_reels_send_btn') : null;
+    if (sendBtn) sendBtn.disabled = true;
 
-    const updatedReel = this.store.addComment(this.currentReel.id, text, replyId);
-    this.commentInputEl.value = '';
-    this.clearReplyTarget();
-    this.emojiPickerEl.classList.remove('nobifashion_reels_is_open');
+    try {
+      const result = await this.store.addComment(this.currentReel.id, text, replyId);
+      this.commentInputEl.value = '';
+      this.clearReplyTarget();
+      if (this.emojiPickerEl) this.emojiPickerEl.classList.remove('nobifashion_reels_is_open');
 
-    if (updatedReel) {
-      this.updateStats(updatedReel);
+      if (replyId) {
+        this.expandedReplies.add(replyId);
+      }
+
+      this.updateStats(this.currentReel);
       this.renderCommentsList();
-      // Sync comment count badge on action rail
+
       const railCount = document.querySelector('[data-role="comment-count"]');
       if (railCount) {
-        railCount.textContent = formatCount(updatedReel.commentsCount);
+        railCount.textContent = formatCount(this.currentReel.commentsCount);
       }
       if (this.showToast) {
-        this.showToast('Đã đăng bình luận của bạn');
+        this.showToast('Đã đăng bình luận thành công');
       }
+    } catch (err) {
+      if (this.showToast) {
+        this.showToast(err.message || 'Không thể đăng bình luận. Vui lòng thử lại!');
+      } else {
+        alert(err.message);
+      }
+    } finally {
+      if (sendBtn) sendBtn.disabled = false;
     }
   }
 
@@ -2735,8 +2894,8 @@ class InteractionController {
     }
   }
 
-  handleToggleLike(reelId, forceLike = null) {
-    const updated = this.store.toggleLike(reelId, forceLike);
+  async handleToggleLike(reelId, forceLike = null) {
+    const updated = await this.store.toggleLike(reelId, forceLike);
     if (!updated) return;
     this.renderer.renderActionRail(updated);
     this.commentsController.updateStats(updated);
@@ -2745,8 +2904,8 @@ class InteractionController {
     }
   }
 
-  handleToggleSave(reelId) {
-    const updated = this.store.toggleSave(reelId);
+  async handleToggleSave(reelId) {
+    const updated = await this.store.toggleSave(reelId);
     if (!updated) return;
     this.renderer.renderActionRail(updated);
     if (this.showToast) {
@@ -3600,6 +3759,12 @@ class NobiFashionReelsApp {
           const url = actionEl.getAttribute('data-url') || window.location.href;
           this.interactionController.copyTextToClipboard(url);
           this.interactionController.closeModal();
+          if (activeReel) {
+            this.store.recordShare(activeReel.id).then((updated) => {
+              const shareSpan = document.querySelector('[data-role="share-count"]');
+              if (shareSpan && updated) shareSpan.textContent = formatCount(updated.sharesCount);
+            });
+          }
           break;
         }
 
@@ -3607,6 +3772,12 @@ class NobiFashionReelsApp {
           const channel = actionEl.getAttribute('data-channel') || 'Mạng xã hội';
           this.interactionController.closeModal();
           this.uiController.showToast(`Đã mở chia sẻ tới ${channel}`);
+          if (activeReel) {
+            this.store.recordShare(activeReel.id).then((updated) => {
+              const shareSpan = document.querySelector('[data-role="share-count"]');
+              if (shareSpan && updated) shareSpan.textContent = formatCount(updated.sharesCount);
+            });
+          }
           break;
         }
 

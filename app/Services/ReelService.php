@@ -390,4 +390,47 @@ class ReelService
 
         return $query->exists();
     }
+
+    /**
+     * Ghi nhận và tăng số lượt chia sẻ của Reel
+     */
+    public function recordShare(Reel $reel): int
+    {
+        $reel->increment('share_count');
+        return (int) $reel->fresh()->share_count;
+    }
+
+    /**
+     * Toggle Lưu video (Save / Bookmark)
+     */
+    public function toggleSave(Reel $reel, ?string $ip, ?int $userId): array
+    {
+        $query = ReelSave::where('reel_id', $reel->id);
+        if ($userId) {
+            $query->where('user_id', $userId);
+        } else {
+            $query->where('ip_address', $ip);
+        }
+
+        $existing = $query->first();
+
+        if ($existing) {
+            $existing->delete();
+            $reel->where('id', $reel->id)->where('save_count', '>', 0)->decrement('save_count');
+            $isSaved = false;
+        } else {
+            ReelSave::create([
+                'reel_id' => $reel->id,
+                'user_id' => $userId,
+                'ip_address' => $ip,
+            ]);
+            $reel->increment('save_count');
+            $isSaved = true;
+        }
+
+        return [
+            'isSaved' => $isSaved,
+            'savesCount' => (int) $reel->fresh()->save_count,
+        ];
+    }
 }

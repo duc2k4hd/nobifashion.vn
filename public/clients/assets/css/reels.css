@@ -1605,7 +1605,7 @@ body:has(.nobifashion_reels_app) {
 .nobifashion_reels_video_loader {
   position: absolute !important;
   inset: 0 !important;
-  z-index: 25 !important;
+  z-index: 100 !important;
   pointer-events: none !important;
   opacity: 0 !important;
   visibility: hidden !important;
@@ -1617,6 +1617,19 @@ body:has(.nobifashion_reels_app) {
 .nobifashion_reels_video_loader.nobifashion_reels_is_loading {
   opacity: 1 !important;
   visibility: visible !important;
+  z-index: 100 !important;
+}
+
+/* Khi đang tải video skeleton: ẩn triệt để overlay nội dung thật và nút mute để không bị đè lên skeleton wave */
+.nobifashion_reels_slide.nobifashion_reels_slide_loading .nobifashion_reels_video_overlay,
+.nobifashion_reels_slide.nobifashion_reels_slide_loading .nobifashion_reels_video_mute_btn,
+.nobifashion_reels_slide.nobifashion_reels_slide_loading .nobifashion_reels_overlay_caption_wrap,
+.nobifashion_reels_slide:has(.nobifashion_reels_video_loader.nobifashion_reels_is_loading) .nobifashion_reels_video_overlay,
+.nobifashion_reels_slide:has(.nobifashion_reels_video_loader.nobifashion_reels_is_loading) .nobifashion_reels_video_mute_btn,
+.nobifashion_reels_slide:has(.nobifashion_reels_video_loader.nobifashion_reels_is_loading) .nobifashion_reels_overlay_caption_wrap {
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
 }
 
 .nobifashion_reels_skeleton_screen {
@@ -1624,6 +1637,7 @@ body:has(.nobifashion_reels_app) {
   inset: 0;
   background: #15171c;
   overflow: hidden;
+  z-index: 1;
 }
 
 /* Material-UI Wave Animation Shimmer (Code tay 100% không dùng thư viện) */
@@ -1633,9 +1647,9 @@ body:has(.nobifashion_reels_app) {
   left: 0;
   right: 0;
   bottom: 0;
-  pointer-events: none;
+  pointer-events: none !important;
   overflow: hidden;
-  z-index: 10;
+  z-index: 110 !important;
 }
 
 .nobifashion_reels_skeleton_wave::after {
@@ -1648,9 +1662,9 @@ body:has(.nobifashion_reels_app) {
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(255, 255, 255, 0.04) 20%,
-    rgba(255, 255, 255, 0.16) 50%,
-    rgba(255, 255, 255, 0.04) 80%,
+    rgba(255, 255, 255, 0.05) 20%,
+    rgba(255, 255, 255, 0.22) 50%,
+    rgba(255, 255, 255, 0.05) 80%,
     transparent 100%
   );
   transform: translateX(-100%);
@@ -2506,25 +2520,98 @@ body:has(.nobifashion_reels_app) {
   margin-top: 2px;
 }
 
+/* Stats Bar: Tối giản, thon gọn, thời thượng */
 .nobifashion_reels_sidebar_stats_bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--nobifashion_reels_space_3) var(--nobifashion_reels_space_5);
+  padding: 6px 14px;
+  min-height: 38px;
   border-bottom: 1px solid var(--nobifashion_reels_border_subtle);
+  background-color: var(--nobifashion_reels_bg_primary);
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.nobifashion_reels_sidebar_stats_text {
+  display: flex;
+  align-items: center;
+  gap: 3px;
   font-size: 12px;
   color: var(--nobifashion_reels_text_secondary);
-  flex-shrink: 0;
+  letter-spacing: -0.15px;
+  line-height: 1.3;
+}
+
+.nobifashion_reels_stat_num {
+  font-weight: 700;
+  color: var(--nobifashion_reels_text_primary);
+  letter-spacing: -0.1px;
+}
+
+.nobifashion_reels_stat_sep {
+  margin: 0 4px;
+  font-size: 8px;
+  opacity: 0.5;
+  color: var(--nobifashion_reels_text_secondary);
+  line-height: 1;
+}
+
+/* Sắp xếp: Pill selector thon gọn, tinh tế */
+.nobifashion_reels_sort_wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
 }
 
 .nobifashion_reels_sort_select {
-  font-size: 12px;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  font-size: 11.5px;
   font-weight: 600;
-  color: var(--nobifashion_reels_text_primary);
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: var(--nobifashion_reels_radius_xs);
+  color: var(--nobifashion_reels_text_secondary);
   background-color: var(--nobifashion_reels_bg_subtle);
+  cursor: pointer;
+  padding: 3.5px 22px 3.5px 9px;
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  outline: none;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  line-height: 1.25;
+}
+
+.nobifashion_reels_sort_select:hover {
+  color: var(--nobifashion_reels_text_primary);
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.nobifashion_reels_sort_select:focus {
+  color: var(--nobifashion_reels_text_primary);
+  background-color: var(--nobifashion_reels_bg_primary);
+  border-color: rgba(59, 130, 246, 0.35);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.12);
+}
+
+.nobifashion_reels_sort_select option {
+  background-color: var(--nobifashion_reels_bg_primary);
+  color: var(--nobifashion_reels_text_primary);
+  font-size: 12px;
+  padding: 6px 10px;
+}
+
+.nobifashion_reels_sort_arrow {
+  position: absolute;
+  right: 7px;
+  pointer-events: none;
+  color: var(--nobifashion_reels_text_secondary);
+  opacity: 0.8;
+  transition: transform 0.18s ease;
+}
+
+.nobifashion_reels_sort_wrap:focus-within .nobifashion_reels_sort_arrow {
+  color: #3b82f6;
+  opacity: 1;
 }
 
 /* Comments Scrollable List */
