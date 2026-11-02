@@ -33,6 +33,8 @@ class SecurityHeadersMiddleware
                 "https://cdn.ckeditor.com ".
                 "https://*.ckeditor.com ".
                 "https://proxy-event.ckeditor.com ".
+                "https://static.cloudflareinsights.com ".
+                "https://*.cloudflareinsights.com ".
                 "https://www.googletagmanager.com ".
                 "https://www.google-analytics.com; ".
 
@@ -69,6 +71,9 @@ class SecurityHeadersMiddleware
                 "https://stats.g.doubleclick.net ".
                 "https://api-merchant.payos.vn ".
                 "https://pay.payos.vn ".
+                "https://static.cloudflareinsights.com ".
+                "https://cloudflareinsights.com ".
+                "https://*.cloudflareinsights.com ".
                 "https://cdn.tiny.cloud; ".
 
             // Web Workers & Blob (cho CKEditor, media plugins)
