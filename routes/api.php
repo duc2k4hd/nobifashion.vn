@@ -85,6 +85,11 @@ Route::prefix('/v1')->name('api.v1.')->group(function () {
         Route::get('/stickers', [ReelApiController::class, 'getStickers'])->name('stickers');
         Route::get('/stickers/categories', [ReelApiController::class, 'getStickerCategories'])->name('stickers.categories');
 
+        // Phân tích hành vi & Báo cáo Admin (Analytics Tracking)
+        Route::post('/analytics/session', [ReelApiController::class, 'trackSession'])->name('analytics.session');
+        Route::post('/analytics/watch', [ReelApiController::class, 'trackWatch'])->name('analytics.watch');
+        Route::get('/analytics/admin-summary', [ReelApiController::class, 'analyticsOverview'])->name('analytics.admin');
+
         // Reels Feed Recommendation & Distribution Engine
         Route::get('/feed', [ReelApiController::class, 'feed'])->name('feed');
         Route::get('/', [ReelApiController::class, 'index'])->name('index');
@@ -119,6 +124,10 @@ Route::prefix('/reels')->middleware('anonymous.identity')->group(function () {
     Route::get('/identity/me', [ReelApiController::class, 'me']);
     Route::get('/stickers', [ReelApiController::class, 'getStickers']);
     Route::get('/stickers/categories', [ReelApiController::class, 'getStickerCategories']);
+
+    Route::post('/analytics/session', [ReelApiController::class, 'trackSession']);
+    Route::post('/analytics/watch', [ReelApiController::class, 'trackWatch']);
+    Route::get('/analytics/admin-summary', [ReelApiController::class, 'analyticsOverview']);
 
     Route::get('/feed', [ReelApiController::class, 'feed']);
     Route::get('/', [ReelApiController::class, 'index']);

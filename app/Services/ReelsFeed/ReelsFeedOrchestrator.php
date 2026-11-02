@@ -57,12 +57,12 @@ class ReelsFeedOrchestrator
         }
 
         // Nếu có cursor -> Phân trang tiếp tục từ con trỏ của cursor
-        // Nếu không có cursor (load trang đầu / reload) -> Bắt đầu từ đầu chu kỳ hiện tại
+        // Nếu không có cursor (load trang đầu / reload) -> Tiếp tục chính xác từ tiến độ đã xem (current_index)
         if ($cursor) {
             $cursorData = $this->parseCursor($cursor);
             $currentIndex = (isset($cursorData['index'])) ? (int) $cursorData['index'] : (int) $cycle->current_index;
         } else {
-            $currentIndex = 0;
+            $currentIndex = (int) $cycle->current_index;
         }
 
         // 2. Lấy danh sách ID cho batch này từ sequence
@@ -70,17 +70,14 @@ class ReelsFeedOrchestrator
         $fetchedCount = count($targetIds);
 
         if ($fetchedCount === 0) {
-            // Đã đi hết vòng phân phối -> Kết thúc vòng hiện tại
+            // Đã xem hết vòng phân phối -> Hoàn thành chu kỳ cũ và tự động sinh chu kỳ mới (Seed mới, Full Coverage)
             $this->completeCycle($cycle);
-            return [
-                'items' => [],
-                'nextCursor' => null,
-                'hasMore' => false,
-                'cycleId' => $cycle->id,
-                'snapshotVersion' => $cycle->snapshot_version,
-                'totalVideos' => $totalVideos,
-                'currentIndex' => $totalVideos,
-            ];
+            $cycle = $this->createNewCycle($anonUser, $userId);
+            $sequence = $cycle->sequence ?? [];
+            $totalVideos = count($sequence);
+            $currentIndex = 0;
+            $targetIds = array_slice($sequence, $currentIndex, $limit);
+            $fetchedCount = count($targetIds);
         }
 
         // 3. Truy vấn nạp chi tiết các Reel từ Database (Indexed Primary Key lookup)

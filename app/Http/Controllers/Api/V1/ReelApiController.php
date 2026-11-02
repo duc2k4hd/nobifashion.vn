@@ -8,6 +8,7 @@ use App\Models\CommentSticker;
 use App\Models\Reel;
 use App\Models\ReelComment;
 use App\Services\AnonymousIdentityService;
+use App\Services\ReelAnalytics\ReelAnalyticsService;
 use App\Services\ReelService;
 use App\Services\ReelsFeed\ReelsFeedOrchestrator;
 use Illuminate\Http\JsonResponse;
@@ -18,7 +19,8 @@ class ReelApiController extends Controller
     public function __construct(
         protected ReelService $reelService,
         protected AnonymousIdentityService $identityService,
-        protected ReelsFeedOrchestrator $orchestrator
+        protected ReelsFeedOrchestrator $orchestrator,
+        protected ReelAnalyticsService $analyticsService
     ) {}
 
     /**
@@ -114,6 +116,54 @@ class ReelApiController extends Controller
     }
 
     /**
+     * Khởi tạo hoặc cập nhật phiên người dùng (IP, User-Agent, Device, Browser, OS, Screen, Referrer)
+     */
+    public function trackSession(Request $request): JsonResponse
+    {
+        $accountId = auth()->id();
+        $anonUser = $request->attributes->get('anonymous_user') ?: $this->identityService->resolveUser($request);
+
+        $session = $this->analyticsService->recordSession($request, $anonUser, $accountId);
+
+        return response()->json([
+            'success' => true,
+            'session_token' => $session->session_token,
+            'device_type' => $session->device_type,
+            'browser' => $session->browser,
+            'platform' => $session->platform,
+        ]);
+    }
+
+    /**
+     * Ghi nhận phân tích hành vi xem video (thời lượng xem, % hoàn thành, số lần loop replay, tương tác)
+     */
+    public function trackWatch(Request $request): JsonResponse
+    {
+        $accountId = auth()->id();
+        $anonUser = $request->attributes->get('anonymous_user') ?: $this->identityService->resolveUser($request);
+
+        $watchLog = $this->analyticsService->recordWatch($request, $anonUser, $accountId);
+
+        return response()->json([
+            'success' => $watchLog !== null,
+            'watch_log_id' => $watchLog?->id,
+        ]);
+    }
+
+    /**
+     * Báo cáo thống kê tổng quan phân tích video phục vụ Admin
+     */
+    public function analyticsOverview(Request $request): JsonResponse
+    {
+        $overview = $this->analyticsService->getAdminAnalyticsOverview($request->all());
+
+        return response()->json([
+            'success' => true,
+            'data' => $overview,
+        ]);
+    }
+
+    /**
      * Chi tiết 1 video Reel theo ID
      */
     public function show(int $id, Request $request): JsonResponse
@@ -170,7 +220,7 @@ class ReelApiController extends Controller
     }
 
     /**
-     * Ghi nhận lượt xem video (view)
+     * Ghi nhận lượt xem video (view) và cập nhật tiến độ xem của người dùng
      */
     public function view(int $id, Request $request): JsonResponse
     {
@@ -179,7 +229,32 @@ class ReelApiController extends Controller
             return response()->json(['success' => false], 404);
         }
 
+        $anonUser = $request->attributes->get('anonymous_user') ?: $this->identityService->resolveUser($request);
         $counted = $this->reelService->recordView($reel, $request);
+
+        // Cập nhật tiến độ xem video trong ReelFeedCycle của người dùng để khi reload không bị lặp lại video đã xem
+        if ($anonUser) {
+            $cycle = \App\Models\ReelFeedCycle::active()
+                ->where('anonymous_user_id', $anonUser->id)
+                ->latest('id')
+                ->first();
+
+            if ($cycle && is_array($cycle->sequence)) {
+                $pos = array_search($reel->id, $cycle->sequence);
+                if ($pos !== false) {
+                    $nextPos = $pos + 1;
+                    if ($nextPos > (int) $cycle->current_index) {
+                        $cycle->current_index = $nextPos;
+                        $cycle->total_delivered = max((int) $cycle->total_delivered, $nextPos);
+                        if ($cycle->current_index >= count($cycle->sequence)) {
+                            $cycle->status = 'completed';
+                            $cycle->completed_at = now();
+                        }
+                        $cycle->save();
+                    }
+                }
+            }
+        }
 
         return response()->json([
             'success' => true,

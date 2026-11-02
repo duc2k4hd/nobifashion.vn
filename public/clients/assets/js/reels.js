@@ -320,6 +320,22 @@ class ReelsDataStore {
     return reel;
   }
 
+  recordView(reelId) {
+    if (!reelId) return;
+    try {
+      fetch(`/api/v1/reels/${reelId}/view`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': this.getCsrfToken()
+        }
+      }).catch(() => {});
+    } catch (_) {}
+  }
+
   async fetchComments(reelId, page = 1, append = false, sort = 'popular') {
     const reel = this.getReelById(reelId);
     if (!reel) return [];
@@ -957,8 +973,9 @@ class TouchGestureController {
  */
 
 class VideoPlaybackController {
-  constructor({ store, onStateChange, showToast, onEndedNext }) {
+  constructor({ store, onStateChange, showToast, onEndedNext, analyticsTracker }) {
     this.store = store;
+    this.analyticsTracker = analyticsTracker;
     this.onStateChange = onStateChange;
     this.showToast = showToast;
     this.onEndedNext = onEndedNext;
@@ -1052,6 +1069,7 @@ class VideoPlaybackController {
   }
 
   detachCurrent() {
+    this.analyticsTracker?.pauseActiveClock();
     if (!this.activeVideoEl) return;
     const v = this.activeVideoEl;
 
@@ -1115,6 +1133,7 @@ class VideoPlaybackController {
         .then(() => {
           this.hideLoaderWithMinDelay();
           this.notifyUI();
+          this.analyticsTracker?.resumeActiveClock();
         })
         .catch((err) => {
           // Khi trình duyệt chặn unmuted autoplay lần đầu, tạm mute để video chạy mượt mà
@@ -1157,11 +1176,13 @@ class VideoPlaybackController {
     if (this.activeVideoEl.paused) {
       this.playActiveVideo();
       this.flashCenterFeedback('play');
+      this.analyticsTracker?.resumeActiveClock();
       return true;
     } else {
       this.activeVideoEl.pause();
       this.flashCenterFeedback('pause');
       this.notifyUI();
+      this.analyticsTracker?.pauseActiveClock();
       return false;
     }
   }
@@ -1353,8 +1374,10 @@ class VideoPlaybackController {
     if (!this.activeVideoEl) return;
     if (document.hidden) {
       this.activeVideoEl.pause();
+      this.analyticsTracker?.pauseActiveClock();
     } else {
       this.playActiveVideo();
+      this.analyticsTracker?.resumeActiveClock();
     }
   }
 
@@ -2112,9 +2135,10 @@ const FACEBOOK_REACTIONS = [
 ];
 
 class CommentsController {
-  constructor({ store, sidebarEl, onHashtagClick, onOpenProducts, onFollowToggle, showToast }) {
+  constructor({ store, sidebarEl, onHashtagClick, onOpenProducts, onFollowToggle, showToast, analyticsTracker }) {
     this.store = store;
     this.sidebarEl = sidebarEl;
+    this.analyticsTracker = analyticsTracker;
     this.onHashtagClick = onHashtagClick;
     this.onOpenProducts = onOpenProducts;
     this.onFollowToggle = onFollowToggle;
@@ -2820,6 +2844,7 @@ class CommentsController {
       if (this.showToast) {
         this.showToast('Đã đăng bình luận thành công');
       }
+      this.analyticsTracker?.markInteraction('comment');
     } catch (err) {
       if (this.showToast) {
         this.showToast(err.message || 'Không thể đăng bình luận. Vui lòng thử lại!');
@@ -2849,13 +2874,14 @@ class CommentsController {
  */
 
 class ProductController {
-  constructor({ store, productDrawerEl, cartDrawerEl, backdropEl, cartBadgeEl, showToast }) {
+  constructor({ store, productDrawerEl, cartDrawerEl, backdropEl, cartBadgeEl, showToast, analyticsTracker }) {
     this.store = store;
     this.productDrawerEl = productDrawerEl;
     this.cartDrawerEl = cartDrawerEl;
     this.backdropEl = backdropEl;
     this.cartBadgeEl = cartBadgeEl;
     this.showToast = showToast;
+    this.analyticsTracker = analyticsTracker;
 
     this.selectedVariants = new Map(); // productId -> { size, color }
     this.currentReel = null;
@@ -2926,6 +2952,7 @@ class ProductController {
   openProductsForReel(reel) {
     if (!reel || !this.productDrawerEl) return;
     this.currentReel = reel;
+    this.analyticsTracker?.markInteraction('product_click');
     this.renderProductsForReel(reel);
     if (this.cartDrawerEl) this.cartDrawerEl.classList.remove('nobifashion_reels_is_open');
     this.productDrawerEl.classList.add('nobifashion_reels_is_open');
@@ -3167,7 +3194,8 @@ class InteractionController {
     navigationController,
     modalEl,
     backdropEl,
-    showToast
+    showToast,
+    analyticsTracker
   }) {
     this.store = store;
     this.renderer = renderer;
@@ -3178,6 +3206,7 @@ class InteractionController {
     this.modalEl = modalEl;
     this.backdropEl = backdropEl;
     this.showToast = showToast;
+    this.analyticsTracker = analyticsTracker;
 
     this.lastTapTime = 0;
     this.singleTapTimer = null;
@@ -3228,6 +3257,9 @@ class InteractionController {
     if (!updated) return;
     this.renderer.renderActionRail(updated);
     this.commentsController.updateStats(updated);
+    if (updated.isLiked) {
+      this.analyticsTracker?.markInteraction('like');
+    }
     if (this.store.activeFilter === 'liked' && !updated.isLiked) {
       this.navigationController.refreshList(false);
     }
@@ -3237,6 +3269,9 @@ class InteractionController {
     const updated = await this.store.toggleSave(reelId);
     if (!updated) return;
     this.renderer.renderActionRail(updated);
+    if (updated.isSaved) {
+      this.analyticsTracker?.markInteraction('save');
+    }
     if (this.showToast) {
       this.showToast(updated.isSaved ? 'Đã lưu vào bộ sưu tập của bạn' : 'Đã bỏ lưu video');
     }
@@ -3261,6 +3296,7 @@ class InteractionController {
 
   openShareModal(reel) {
     if (!reel || !this.modalEl) return;
+    this.analyticsTracker?.markInteraction('share');
     const shareUrl = `https://nobifashion.vn/reels/${reel.id}`;
 
     this.modalEl.innerHTML = `
@@ -3708,6 +3744,240 @@ class UIController {
 
 
 
+/**
+ * NOBI FASHION REELS — ANALYTICS & VISITOR TRACKER
+ * Tracks anonymous and authenticated user sessions, IP, User-Agent, device, screen resolution,
+ * UTM parameters, referrer, video watch duration, replay loops, completion rates, and interactions.
+ */
+class ReelsAnalyticsTracker {
+  constructor({ store }) {
+    this.store = store;
+    this.sessionToken = this.getOrCreateSessionToken();
+    this.currentReelId = null;
+    this.currentVideoEl = null;
+    this.watchStartMs = 0;
+    this.accumulatedWatchMs = 0;
+    this.isPlaying = false;
+    this.loopCount = 0;
+    this.endedListener = null;
+    this.interactions = {
+      like: false,
+      comment: false,
+      share: false,
+      save: false,
+      product_click: false
+    };
+
+    this.initSession();
+    this.bindWindowEvents();
+  }
+
+  getOrCreateSessionToken() {
+    let token = '';
+    try {
+      token = sessionStorage.getItem('nobifashion_reels_session_token');
+      if (!token) {
+        if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+          token = crypto.randomUUID();
+        } else {
+          token = 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
+        }
+        sessionStorage.setItem('nobifashion_reels_session_token', token);
+      }
+    } catch (_) {
+      token = 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11);
+    }
+    return token;
+  }
+
+  async initSession() {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const payload = {
+        session_token: this.sessionToken,
+        screen_resolution: `${window.screen?.width || window.innerWidth}x${window.screen?.height || window.innerHeight}`,
+        referrer_url: document.referrer || '',
+        landing_page: window.location.href,
+        utm_source: urlParams.get('utm_source') || null,
+        utm_medium: urlParams.get('utm_medium') || null,
+        utm_campaign: urlParams.get('utm_campaign') || null,
+        utm_term: urlParams.get('utm_term') || null,
+        utm_content: urlParams.get('utm_content') || null
+      };
+
+      await fetch('/api/v1/reels/analytics/session', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': this.store.getCsrfToken()
+        },
+        body: JSON.stringify(payload)
+      });
+    } catch (_) {
+      // Bỏ qua lỗi mạng phân tích ngầm để không ảnh hưởng luồng chính
+    }
+  }
+
+  bindWindowEvents() {
+    const handleExit = () => {
+      this.pauseActiveClock();
+      this.flushWatchLog(true);
+    };
+
+    window.addEventListener('pagehide', handleExit);
+    window.addEventListener('beforeunload', handleExit);
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        this.pauseActiveClock();
+        this.flushWatchLog(false);
+      } else {
+        if (this.currentVideoEl && !this.currentVideoEl.paused) {
+          this.resumeActiveClock();
+        }
+      }
+    });
+  }
+
+  onReelChanged(activeReel, videoEl) {
+    // 1. Gửi dữ liệu xem của video trước đó (nếu có)
+    this.flushWatchLog(false);
+
+    // 2. Tháo gỡ listener cũ khỏi video trước
+    if (this.currentVideoEl && this.endedListener) {
+      try {
+        this.currentVideoEl.removeEventListener('ended', this.endedListener);
+      } catch (_) {}
+      this.endedListener = null;
+    }
+
+    if (!activeReel || !activeReel.id) {
+      this.currentReelId = null;
+      this.currentVideoEl = null;
+      return;
+    }
+
+    this.currentReelId = activeReel.id;
+    this.currentVideoEl = videoEl;
+    this.watchStartMs = Date.now();
+    this.accumulatedWatchMs = 0;
+    this.isPlaying = true;
+    this.loopCount = 0;
+    this.interactions = {
+      like: Boolean(activeReel.isLiked),
+      comment: false,
+      share: false,
+      save: Boolean(activeReel.isSaved),
+      product_click: false
+    };
+
+    if (videoEl) {
+      this.endedListener = () => {
+        if (this.currentReelId === activeReel.id) {
+          this.loopCount++;
+        }
+      };
+      videoEl.addEventListener('ended', this.endedListener);
+    }
+  }
+
+  resumeActiveClock() {
+    if (!this.isPlaying) {
+      this.watchStartMs = Date.now();
+      this.isPlaying = true;
+    }
+  }
+
+  pauseActiveClock() {
+    if (this.isPlaying && this.watchStartMs > 0) {
+      this.accumulatedWatchMs += Date.now() - this.watchStartMs;
+      this.isPlaying = false;
+      this.watchStartMs = 0;
+    }
+  }
+
+  markInteraction(type) {
+    if (this.interactions && Object.prototype.hasOwnProperty.call(this.interactions, type)) {
+      this.interactions[type] = true;
+    }
+  }
+
+  flushWatchLog(isFinalBeacon = false) {
+    if (!this.currentReelId) return;
+
+    if (this.isPlaying && this.watchStartMs > 0) {
+      const now = Date.now();
+      this.accumulatedWatchMs += now - this.watchStartMs;
+      this.watchStartMs = now;
+    }
+
+    const totalSeconds = Math.max(0, +(this.accumulatedWatchMs / 1000).toFixed(2));
+    if (totalSeconds < 0.25 && !this.loopCount) {
+      // Bỏ qua các lượt lướt quá nhanh (< 0.25s) mà không có loop để tiết kiệm băng thông và db
+      return;
+    }
+
+    const duration = (this.currentVideoEl && Number.isFinite(this.currentVideoEl.duration) && this.currentVideoEl.duration > 0)
+      ? +this.currentVideoEl.duration.toFixed(2)
+      : null;
+
+    let completionRate = 0;
+    if (duration && duration > 0) {
+      completionRate = Math.min(100, Math.round((totalSeconds / duration) * 100));
+    }
+    const isCompleted = completionRate >= 90 || this.loopCount > 0;
+    const isMuted = this.currentVideoEl ? Boolean(this.currentVideoEl.muted) : Boolean(this.store.muted);
+    const playbackRate = this.currentVideoEl ? +(this.currentVideoEl.playbackRate || 1).toFixed(2) : 1.0;
+
+    const payload = {
+      session_token: this.sessionToken,
+      reel_id: this.currentReelId,
+      watch_time_seconds: totalSeconds,
+      video_duration: duration,
+      completion_rate: completionRate,
+      is_completed: isCompleted,
+      loop_count: this.loopCount,
+      is_muted: isMuted,
+      playback_rate: playbackRate,
+      interacted_like: this.interactions.like,
+      interacted_comment: this.interactions.comment,
+      interacted_share: this.interactions.share,
+      interacted_save: this.interactions.save,
+      interacted_product_click: this.interactions.product_click
+    };
+
+    const url = '/api/v1/reels/analytics/watch';
+
+    if (isFinalBeacon && typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+      try {
+        const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
+        navigator.sendBeacon(url, blob);
+        this.accumulatedWatchMs = 0;
+        return;
+      } catch (_) {}
+    }
+
+    try {
+      fetch(url, {
+        method: 'POST',
+        credentials: 'include',
+        keepalive: isFinalBeacon,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-CSRF-TOKEN': this.store.getCsrfToken()
+        },
+        body: JSON.stringify(payload)
+      }).catch(() => {});
+    } catch (_) {}
+
+    this.accumulatedWatchMs = 0;
+  }
+}
+
 class NobiFashionReelsApp {
   constructor() {
     this.appEl = document.getElementById('nobifashion_reels_app');
@@ -3743,8 +4013,13 @@ class NobiFashionReelsApp {
       store: this.store
     });
 
+    this.analyticsTracker = new ReelsAnalyticsTracker({
+      store: this.store
+    });
+
     this.player = new VideoPlaybackController({
       store: this.store,
+      analyticsTracker: this.analyticsTracker,
       onStateChange: (state) => this.syncPlayerTopbarUI(state),
       showToast: (msg) => this.uiController?.showToast(msg),
       onEndedNext: () => {
@@ -3759,6 +4034,7 @@ class NobiFashionReelsApp {
     this.commentsController = new CommentsController({
       store: this.store,
       sidebarEl: this.sidebarEl,
+      analyticsTracker: this.analyticsTracker,
       onHashtagClick: (tag) => {
         this.uiController.setSearchQuery(tag);
         this.uiController.showToast(`Đang lọc theo hashtag ${tag}`);
@@ -3779,6 +4055,7 @@ class NobiFashionReelsApp {
       cartDrawerEl: this.cartDrawerEl,
       backdropEl: this.backdropEl,
       cartBadgeEl: this.cartBadgeEl,
+      analyticsTracker: this.analyticsTracker,
       showToast: (msg) => this.uiController?.showToast(msg)
     });
 
@@ -3788,6 +4065,12 @@ class NobiFashionReelsApp {
       player: this.player,
       onReelChanged: (activeReel) => {
         this.commentsController.renderForReel(activeReel);
+        if (activeReel && activeReel.id) {
+          this.store.recordView(activeReel.id);
+        }
+        if (this.analyticsTracker) {
+          this.analyticsTracker.onReelChanged(activeReel, this.player?.activeVideoEl);
+        }
       }
     });
 
@@ -3800,6 +4083,7 @@ class NobiFashionReelsApp {
       navigationController: this.navigationController,
       modalEl: this.modalEl,
       backdropEl: this.backdropEl,
+      analyticsTracker: this.analyticsTracker,
       showToast: (msg) => this.uiController?.showToast(msg)
     });
 

@@ -213,8 +213,8 @@ body:has(.nobifashion_reels_app) {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: rgba(18, 18, 20, 0.55);
   backdrop-filter: blur(10px);
+  background: transparent;
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.28);
   color: #ffffff;
@@ -232,7 +232,6 @@ body:has(.nobifashion_reels_app) {
 }
 
 .nobifashion_reels_video_mute_btn:hover {
-  background: rgba(0, 0, 0, 0.78);
   border-color: rgba(255, 255, 255, 0.7);
   transform: scale(1.08);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
@@ -311,6 +310,10 @@ body:has(.nobifashion_reels_app) {
   pointer-events: auto;
   user-select: none;
   white-space: nowrap;
+}
+
+button.nobifashion_reels_subscribe_text_btn {
+  font-size: 11px;
 }
 
 .nobifashion_reels_subscribe_text_btn:hover {
