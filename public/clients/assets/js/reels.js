@@ -1958,7 +1958,7 @@ class CommentsController {
             <option value="popular">Phù hợp nhất</option>
             <option value="newest">Mới nhất</option>
           </select>
-          <svg class="nobifashion_reels_sort_arrow" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+          <svg class="nobifashion_reels_sort_arrow" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
             <polyline points="6 9 12 15 18 9"></polyline>
           </svg>
         </div>

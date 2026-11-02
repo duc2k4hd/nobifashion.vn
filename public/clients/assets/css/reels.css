@@ -2520,13 +2520,14 @@ body:has(.nobifashion_reels_app) {
   margin-top: 2px;
 }
 
-/* Stats Bar: Tối giản, thon gọn, thời thượng */
+/* Stats Bar: Nhỏ gọn, thanh mảnh, sang trọng, không bị rớt dòng */
 .nobifashion_reels_sidebar_stats_bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 6px 14px;
-  min-height: 38px;
+  padding: 3px 12px !important;
+  min-height: 29px !important;
+  max-height: 32px !important;
   border-bottom: 1px solid var(--nobifashion_reels_border_subtle);
   background-color: var(--nobifashion_reels_bg_primary);
   flex-shrink: 0;
@@ -2537,48 +2538,63 @@ body:has(.nobifashion_reels_app) {
   display: flex;
   align-items: center;
   gap: 3px;
-  font-size: 12px;
+  font-size: 11px !important;
   color: var(--nobifashion_reels_text_secondary);
-  letter-spacing: -0.15px;
-  line-height: 1.3;
+  letter-spacing: -0.1px;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nobifashion_reels_sidebar_stats_text span {
+  white-space: nowrap !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
 }
 
 .nobifashion_reels_stat_num {
   font-weight: 700;
+  font-size: 11.5px !important;
   color: var(--nobifashion_reels_text_primary);
   letter-spacing: -0.1px;
 }
 
 .nobifashion_reels_stat_sep {
-  margin: 0 4px;
-  font-size: 8px;
-  opacity: 0.5;
+  margin: 0 3px !important;
+  font-size: 5px !important;
+  opacity: 0.45;
   color: var(--nobifashion_reels_text_secondary);
   line-height: 1;
+  vertical-align: middle;
 }
 
-/* Sắp xếp: Pill selector thon gọn, tinh tế */
+/* Sắp xếp: Pill selector siêu nhỏ gọn, tinh tế */
 .nobifashion_reels_sort_wrap {
   position: relative;
   display: inline-flex;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .nobifashion_reels_sort_select {
   appearance: none;
   -webkit-appearance: none;
   -moz-appearance: none;
-  font-size: 11.5px;
-  font-weight: 600;
+  font-size: 10.5px !important;
+  font-weight: 500;
   color: var(--nobifashion_reels_text_secondary);
   background-color: var(--nobifashion_reels_bg_subtle);
   cursor: pointer;
-  padding: 3.5px 22px 3.5px 9px;
-  border-radius: 9999px;
+  padding: 1.5px 16px 1.5px 7px !important;
+  height: 21px !important;
+  border-radius: 9999px !important;
   border: 1px solid transparent;
   outline: none;
   transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-  line-height: 1.25;
+  line-height: 1 !important;
+  white-space: nowrap !important;
 }
 
 .nobifashion_reels_sort_select:hover {
@@ -2590,22 +2606,24 @@ body:has(.nobifashion_reels_app) {
   color: var(--nobifashion_reels_text_primary);
   background-color: var(--nobifashion_reels_bg_primary);
   border-color: rgba(59, 130, 246, 0.35);
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.12);
+  box-shadow: 0 0 0 1.5px rgba(59, 130, 246, 0.12);
 }
 
 .nobifashion_reels_sort_select option {
   background-color: var(--nobifashion_reels_bg_primary);
   color: var(--nobifashion_reels_text_primary);
-  font-size: 12px;
-  padding: 6px 10px;
+  font-size: 11px;
+  padding: 4px 8px;
 }
 
 .nobifashion_reels_sort_arrow {
   position: absolute;
-  right: 7px;
+  right: 5px !important;
+  width: 8px !important;
+  height: 8px !important;
   pointer-events: none;
   color: var(--nobifashion_reels_text_secondary);
-  opacity: 0.8;
+  opacity: 0.75;
   transition: transform 0.18s ease;
 }
 
