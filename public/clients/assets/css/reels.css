@@ -2547,11 +2547,15 @@ body:has(.nobifashion_reels_app) {
   text-overflow: ellipsis;
 }
 
+.nobifashion_reels_sidebar_stats_text * {
+  font-size: 12px !important;
+}
+
 .nobifashion_reels_sidebar_stats_text span {
   white-space: nowrap !important;
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: 5px;
 }
 
 .nobifashion_reels_stat_num {

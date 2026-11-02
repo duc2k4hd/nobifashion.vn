@@ -80,7 +80,7 @@ Route::prefix('/v1')->name('api.v1.')->group(function () {
     });
 
     // Reels API Routes (v1)
-    Route::prefix('/reels')->name('reels.')->group(function () {
+    Route::prefix('/reels')->middleware('anonymous.identity')->name('reels.')->group(function () {
         Route::get('/identity/me', [ReelApiController::class, 'me'])->name('identity.me');
         Route::get('/stickers', [ReelApiController::class, 'getStickers'])->name('stickers');
         Route::get('/stickers/categories', [ReelApiController::class, 'getStickerCategories'])->name('stickers.categories');
@@ -111,7 +111,7 @@ Route::prefix('/v1')->name('api.v1.')->group(function () {
 });
 
 // Direct alias for /api/reels
-Route::prefix('/reels')->group(function () {
+Route::prefix('/reels')->middleware('anonymous.identity')->group(function () {
     Route::get('/identity/me', [ReelApiController::class, 'me']);
     Route::get('/stickers', [ReelApiController::class, 'getStickers']);
     Route::get('/stickers/categories', [ReelApiController::class, 'getStickerCategories']);

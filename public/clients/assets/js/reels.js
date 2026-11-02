@@ -178,6 +178,7 @@ class ReelsDataStore {
     try {
       const res = await fetch(`/api/v1/reels/${reel.id}/like`, {
         method: nextState ? 'POST' : 'DELETE',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -213,6 +214,7 @@ class ReelsDataStore {
     try {
       const res = await fetch(`/api/v1/reels/${reel.id}/save`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -244,6 +246,7 @@ class ReelsDataStore {
     try {
       const res = await fetch(`/api/v1/reels/${reel.id}/share`, {
         method: 'POST',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
@@ -266,6 +269,7 @@ class ReelsDataStore {
     if (!reel) return [];
     try {
       const res = await fetch(`/api/v1/reels/${reel.id}/comments?limit=30`, {
+        credentials: 'include',
         headers: {
           'Accept': 'application/json',
           'X-Requested-With': 'XMLHttpRequest'
@@ -342,6 +346,7 @@ class ReelsDataStore {
 
     const res = await fetch(`/api/v1/reels/${reel.id}/comments`, {
       method: 'POST',
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -408,6 +413,7 @@ class ReelsDataStore {
     try {
       const res = await fetch(`/api/v1/reels/comments/${commentId}/like`, {
         method: nextState ? 'POST' : 'DELETE',
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',

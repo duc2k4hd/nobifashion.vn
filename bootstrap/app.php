@@ -19,6 +19,10 @@ return tap(Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->encryptCookies(except: [
+            'nobi_anon_token',
+        ]);
+
         $middleware->alias([
             'admin' => AdminOnly::class,
             'anonymous.identity' => AnonymousIdentityMiddleware::class,

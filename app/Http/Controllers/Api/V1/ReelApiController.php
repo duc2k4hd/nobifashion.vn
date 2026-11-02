@@ -141,7 +141,7 @@ class ReelApiController extends Controller
 
         $userId = auth()->id();
         $clientIp = $request->ip();
-        $anonUser = $this->identityService->resolveUser($request);
+        $anonUser = $request->attributes->get('anonymous_user') ?: $this->identityService->resolveUser($request);
 
         return response()->json([
             'success' => true,
@@ -163,7 +163,7 @@ class ReelApiController extends Controller
         $userId = auth()->id();
         $clientIp = $request->ip();
         $newRawToken = null;
-        $anonUser = $this->identityService->resolveUser($request, $newRawToken);
+        $anonUser = $request->attributes->get('anonymous_user') ?: $this->identityService->resolveUser($request, $newRawToken);
 
         $result = $this->reelService->likeReel($reel, $anonUser, $clientIp, $userId);
 
@@ -191,7 +191,7 @@ class ReelApiController extends Controller
             return response()->json(['success' => false], 404);
         }
 
-        $anonUser = $this->identityService->resolveUser($request);
+        $anonUser = $request->attributes->get('anonymous_user') ?: $this->identityService->resolveUser($request);
         $result = $this->reelService->unlikeReel($reel, $anonUser);
 
         return response()->json([
@@ -251,15 +251,15 @@ class ReelApiController extends Controller
             return response()->json(['success' => false], 404);
         }
 
-        $anonUser = $this->identityService->resolveUser($request);
+        $newRawToken = null;
+        $anonUser = $request->attributes->get('anonymous_user') ?: $this->identityService->resolveUser($request, $newRawToken);
         $cursor = $request->query('cursor');
         $limit = min((int) $request->query('limit', 20), 50);
 
         $query = $reel->comments()
             ->whereNull('parent_id')
             ->where('status', 'approved')
-            ->with(['sticker', 'anonymousUser', 'replies.sticker', 'replies.anonymousUser'])
-            ->withCount('likes');
+            ->with(['sticker', 'anonymousUser', 'replies.sticker', 'replies.anonymousUser']);
 
         if ($cursor) {
             $query->where('id', '<', (int) $cursor);
@@ -335,7 +335,7 @@ class ReelApiController extends Controller
             ];
         });
 
-        return response()->json([
+        $response = response()->json([
             'success' => true,
             'data' => $data,
             'pagination' => [
@@ -344,6 +344,13 @@ class ReelApiController extends Controller
             ],
             'total' => (int) $reel->comment_count,
         ]);
+
+        if ($newRawToken) {
+            $cookie = $this->identityService->makeIdentityCookie($newRawToken, $request);
+            $response->withCookie($cookie);
+        }
+
+        return $response;
     }
 
     /**
@@ -451,7 +458,7 @@ class ReelApiController extends Controller
 
         $userId = auth()->id();
         $newRawToken = null;
-        $anonUser = $this->identityService->resolveUser($request, $newRawToken);
+        $anonUser = $request->attributes->get('anonymous_user') ?: $this->identityService->resolveUser($request, $newRawToken);
 
         $result = $this->reelService->likeComment($comment, $anonUser, $userId);
 
@@ -479,7 +486,7 @@ class ReelApiController extends Controller
             return response()->json(['success' => false, 'message' => 'Bình luận không tồn tại!'], 404);
         }
 
-        $anonUser = $this->identityService->resolveUser($request);
+        $anonUser = $request->attributes->get('anonymous_user') ?: $this->identityService->resolveUser($request);
         $result = $this->reelService->unlikeComment($comment, $anonUser);
 
         return response()->json([
