@@ -193,24 +193,82 @@ class PostService
         });
     }
 
-    public function incrementViews(Post $post, Request $request, int $cooldownMinutes = 15): void
+    public function incrementViews(Post $post, Request $request, int $cooldownMinutes = 60): void
     {
-        $userAgent = (string) $request->userAgent();
-        // Bỏ qua bot crawler / Google Lighthouse để không lock bảng posts và không làm chậm PageSpeed
-        if (preg_match('/Lighthouse|PageSpeed|Chrome-Lighthouse|HeadlessChrome|bot|spider|crawl/i', $userAgent)) {
+        // 1. Chỉ chấp nhận phương thức GET từ client
+        if (! $request->isMethod('GET')) {
             return;
         }
 
-        $cacheKey = sprintf(
-            'post:view:%s:%s',
-            $post->id,
-            sha1($request->ip().'|'.$userAgent)
-        );
-
-        if (! Cache::has($cacheKey)) {
-            $post->increment('views');
-            Cache::put($cacheKey, true, now()->addMinutes($cooldownMinutes));
+        // 2. Chặn 100% các loại bot cào, tool tự động, bot tìm kiếm và bot AI
+        if (! $this->isRealHumanVisitor($request)) {
+            return;
         }
+
+        $ip = (string) $request->ip();
+        if (empty($ip) || ! filter_var($ip, FILTER_VALIDATE_IP)) {
+            return;
+        }
+
+        // 3. Khóa cache theo IP duy nhất cho từng bài viết:
+        // Cùng 1 IP trong thời gian cooldown chỉ được tính tối đa 1 lượt xem (ngăn chặn xoay User-Agent cày view)
+        // Dùng Cache::add nguyên tử (Atomic): nếu key đã tồn tại sẽ dừng ngay lập tức, không tốn truy vấn DB
+        $cacheKey = sprintf('post:view:%d:%s', $post->id, md5($ip));
+
+        if (Cache::add($cacheKey, 1, now()->addMinutes($cooldownMinutes))) {
+            $post->increment('views');
+        }
+    }
+
+    /**
+     * Xác thực xem lượt truy cập có phải từ người dùng thật bằng trình duyệt hay không.
+     * Chặn tuyệt đối: bot tìm kiếm (Googlebot, Bingbot...), bot AI (GPT, Claude, Perplexity),
+     * tool cào dữ liệu (curl, python, requests...), các crawler và headless browser.
+     */
+    protected function isRealHumanVisitor(Request $request): bool
+    {
+        $userAgent = (string) $request->userAgent();
+
+        // User-Agent rỗng hoặc quá ngắn (< 15 ký tự) chắc chắn không phải trình duyệt người thật
+        if (trim($userAgent) === '' || strlen($userAgent) < 15) {
+            return false;
+        }
+
+        // Danh sách định danh toàn diện của Bot, Crawler, Scraper, AI Harvester, Tool tự động
+        $botPatterns = [
+            // Công cụ dòng lệnh & thư viện HTTP
+            'curl', 'wget', 'python', 'urllib', 'requests', 'httpclient', 'aiohttp',
+            'axios', 'guzzle', 'postman', 'insomnia', 'node-fetch', 'go-http-client',
+            'apachebench', 'ab', 'okhttp', 'java', 'libwww', 'zgrab',
+            // Bot tìm kiếm chính thống & công cụ SEO
+            'googlebot', 'bingbot', 'slurp', 'duckduckbot', 'baiduspider', 'yandex',
+            'sogou', 'exabot', 'facebot', 'ia_archiver', 'ahrefs', 'semrush',
+            'mj12bot', 'dotbot', 'rogerbot', 'screaming frog', 'petalbot', 'bytespider',
+            // Bot AI & LLM Harvester
+            'gptbot', 'chatgpt', 'claudebot', 'anthropic', 'perplexity', 'cohere',
+            'omgili', 'ccbot', 'applebot', 'diffbot', 'meta-externalagent',
+            // Trình duyệt không đầu (Headless) & Automation testing
+            'headlesschrome', 'headless', 'phantomjs', 'selenium', 'puppeteer',
+            'playwright', 'cypress', 'lighthouse', 'pagespeed', 'chrome-lighthouse',
+            // Mạng xã hội preview bot & Chatbot
+            'facebookexternalhit', 'whatsapp', 'telegrambot', 'discordbot', 'twitterbot',
+            'pinterest', 'slackbot', 'vkshare', 'w3c_validator',
+            // Từ khóa bot tổng quát
+            'bot', 'spider', 'crawl', 'scraper', 'extractor', 'archive', 'monitor'
+        ];
+
+        $pattern = '/' . implode('|', $botPatterns) . '/i';
+        if (preg_match($pattern, $userAgent)) {
+            return false;
+        }
+
+        // Kiểm tra Header chuẩn của trình duyệt người thật
+        $accept = (string) $request->header('Accept', '');
+        if ($accept !== '' && ! str_contains($accept, 'text/html') && ! str_contains($accept, '*/*')) {
+            return false;
+        }
+
+        return true;
     }
 
     protected function preparePayload(array $payload, ?Post $post = null): array

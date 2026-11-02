@@ -45,9 +45,9 @@
         ],
     ];
 
-    // FAQ Entities
+    // FAQ Entities (Chỉ lấy khi thực sự có trong DB, nếu không có thì bỏ hẳn không tạo câu hỏi ảo)
     $faqItems = [];
-    if (!empty($product->faqs) && $product->faqs->count()) {
+    if (!empty($product->faqs) && $product->faqs->count() > 0) {
         foreach ($product->faqs as $faq) {
             $faqItems[] = [
                 '@type' => 'Question',
@@ -58,49 +58,6 @@
                 ],
             ];
         }
-    } else {
-        $faqItems = [
-            [
-                '@type' => 'Question',
-                'name' => 'Sản phẩm này chất lượng thế nào vậy shop?',
-                'acceptedAnswer' => [
-                    '@type' => 'Answer',
-                    'text' => 'Hàng mới chính hãng, chất liệu đẹp, đường may tỉ mỉ, bảo hành đổi size 15 ngày.',
-                ],
-            ],
-            [
-                '@type' => 'Question',
-                'name' => 'Chất liệu vải của sản phẩm là gì?',
-                'acceptedAnswer' => [
-                    '@type' => 'Answer',
-                    'text' => 'Tùy mẫu: cotton, poly, kate, thun lạnh... Thông tin chất liệu luôn ghi rõ ở mô tả.',
-                ],
-            ],
-            [
-                '@type' => 'Question',
-                'name' => 'Size có vừa không nếu đặt online?',
-                'acceptedAnswer' => [
-                    '@type' => 'Answer',
-                    'text' => 'Có bảng size theo chiều cao/cân nặng. Không vừa hỗ trợ đổi size trong 15 ngày.',
-                ],
-            ],
-            [
-                '@type' => 'Question',
-                'name' => 'Thời gian giao hàng?',
-                'acceptedAnswer' => [
-                    '@type' => 'Answer',
-                    'text' => 'Toàn quốc 1–3 ngày làm việc; nội thành nhận nhanh hơn.',
-                ],
-            ],
-            [
-                '@type' => 'Question',
-                'name' => 'Có đồng kiểm trước khi thanh toán không?',
-                'acceptedAnswer' => [
-                    '@type' => 'Answer',
-                    'text' => 'Có, hỗ trợ đồng kiểm trước khi thanh toán.',
-                ],
-            ],
-        ];
     }
 
     // 6. Xây dựng Product Schema (chỉ kèm đánh giá nếu có review thật từ DB)
@@ -341,15 +298,17 @@
 
             // 6. Product (Đã bao gồm điều kiện: có đánh giá mới xuất, không có thì bỏ cho sạch)
             $productSchema,
-
-            // 7. FAQPage
-            [
-                '@type' => 'FAQPage',
-                'name' => 'Câu hỏi thường gặp về ' . renderMeta($product->name ?? 'sản phẩm thời trang Nobi Fashion'),
-                'mainEntity' => $faqItems,
-            ],
         ],
     ];
+
+    // 7. FAQPage (Chỉ đưa vào Schema khi thực sự có FAQs trong database, nếu không có thì bỏ hẳn)
+    if (!empty($faqItems)) {
+        $schemaGraph['@graph'][] = [
+            '@type' => 'FAQPage',
+            'name' => 'Câu hỏi thường gặp về ' . renderMeta($product->name ?? 'sản phẩm thời trang Nobi Fashion'),
+            'mainEntity' => $faqItems,
+        ];
+    }
 @endphp
 <script type="application/ld+json">
 {!! json_encode($schemaGraph, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) !!}
