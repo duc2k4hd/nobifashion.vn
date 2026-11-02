@@ -339,7 +339,7 @@
     @endif
 
     <form action="{{ $isEdit ? route('admin.categories.update', $category) : route('admin.categories.store') }}"
-          method="POST" enctype="multipart/form-data" id="categoryForm">
+          method="POST" enctype="multipart/form-data" id="categoryForm" spellcheck="false">
         @csrf
         @if($isEdit)
             @method('PUT')
@@ -475,7 +475,7 @@
             <h3>Mô tả</h3>
             <div class="form-group">
                 <label for="description">Mô tả danh mục</label>
-                <textarea name="description" id="description" class="form-control tinymce-editor" rows="4">{{ old('description', $category->description) }}</textarea>
+                <textarea name="description" id="description" class="form-control tinymce-editor" rows="4" spellcheck="false" autocorrect="off" autocomplete="off" autocapitalize="off">{{ old('description', $category->description) }}</textarea>
                 <div class="form-help">Mô tả chi tiết về danh mục (hỗ trợ HTML, hình ảnh, định dạng văn bản)</div>
                 @error('description')
                     <div style="color:#ef4444;font-size:12px;margin-top:4px;">{{ $message }}</div>

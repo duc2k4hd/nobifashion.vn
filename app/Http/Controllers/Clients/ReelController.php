@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Clients;
 
 use App\Http\Controllers\Controller;
 use App\Models\Reel;
+use App\Services\AnonymousIdentityService;
 use App\Services\ReelService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -11,7 +12,8 @@ use Illuminate\View\View;
 class ReelController extends Controller
 {
     public function __construct(
-        protected ReelService $reelService
+        protected ReelService $reelService,
+        protected AnonymousIdentityService $identityService
     ) {}
 
     /**
@@ -21,12 +23,13 @@ class ReelController extends Controller
     {
         $userId = auth()->id();
         $clientIp = $request->ip();
+        $anonUser = $request->attributes->get('anonymous_user') ?: $this->identityService->resolveUser($request);
 
         $feedResult = $this->reelService->getFeed([
             'limit' => 10,
             'category' => $request->get('category', 'all'),
             'search' => $request->get('search', ''),
-        ], $clientIp, $userId);
+        ], $clientIp, $userId, $anonUser);
 
         $initialReels = $feedResult['data'];
         $nextCursor = $feedResult['pagination']['next_cursor'];
@@ -41,6 +44,7 @@ class ReelController extends Controller
             'nextCursor',
             'hasMore',
             'activeReel',
+            'anonUser',
             'seoTitle',
             'seoDescription'
         ));
@@ -51,44 +55,36 @@ class ReelController extends Controller
      */
     public function show(string $slug, Request $request): View
     {
-        $reel = Reel::published()
-            ->where('slug', $slug)
-            ->with(['products.primaryImage'])
-            ->first();
-
-        if (!$reel) {
-            abort(404, 'Không tìm thấy video Reel!');
-        }
+        $reel = Reel::published()->where('slug', $slug)->with(['brand', 'products.primaryImage'])->firstOrFail();
 
         $userId = auth()->id();
         $clientIp = $request->ip();
+        $anonUser = $request->attributes->get('anonymous_user') ?: $this->identityService->resolveUser($request);
 
-        // Ghi nhận view
-        $this->reelService->recordView($reel, $request);
+        $activeReel = $reel->toFeedArray($clientIp, $userId);
+        $activeReel['isLiked'] = $this->reelService->hasLiked($reel->id, $clientIp, $userId, $anonUser);
+        $activeReel['isSaved'] = $this->reelService->hasSaved($reel->id, $clientIp, $userId);
 
-        // Lấy thêm 9 video tiếp theo để tiếp tục cuộn mượt mà
         $feedResult = $this->reelService->getFeed([
-            'limit' => 9,
+            'limit' => 10,
             'cursor' => $reel->id,
-        ], $clientIp, $userId);
+        ], $clientIp, $userId, $anonUser);
 
-        $activeFeedItem = $reel->toFeedArray($clientIp, $userId);
-        $initialReels = array_merge([$activeFeedItem], $feedResult['data']);
+        $initialReels = array_merge([$activeReel], array_filter($feedResult['data'], fn($r) => $r['id'] !== $reel->id));
         $nextCursor = $feedResult['pagination']['next_cursor'];
         $hasMore = $feedResult['pagination']['has_more'];
 
-        $seoTitle = ($reel->seo_title ?: $reel->title) . ' | Nobi Fashion Reels';
-        $seoDescription = $reel->seo_description ?: ($reel->caption ?: 'Xem video thời trang ' . $reel->title . ' tại Nobi Fashion Reels.');
+        $seoTitle = ($reel->seo_title ?: $reel->title) . ' | Nobi Reels';
+        $seoDescription = $reel->seo_description ?: ($reel->caption ? mb_substr(strip_tags($reel->caption), 0, 160) : 'Video ngắn thời trang Nobi Reels');
 
-        return view('clients.pages.reels.index', [
-            'initialReels' => $initialReels,
-            'nextCursor' => $nextCursor,
-            'hasMore' => $hasMore,
-            'activeReel' => $activeFeedItem,
-            'reelModel' => $reel,
-            'seoTitle' => $seoTitle,
-            'seoDescription' => $seoDescription,
-        ]);
+        return view('clients.pages.reels.index', compact(
+            'initialReels',
+            'nextCursor',
+            'hasMore',
+            'activeReel',
+            'anonUser',
+            'seoTitle',
+            'seoDescription'
+        ));
     }
 }
-

@@ -38,7 +38,7 @@
         </div>
     </div>
 
-    <form id="post-form" action="{{ route('admin.posts.update', $post) }}" method="POST">
+    <form id="post-form" action="{{ route('admin.posts.update', $post) }}" method="POST" spellcheck="false">
         @csrf
         @method('PUT')
         @include('admins.posts.partials.form', [

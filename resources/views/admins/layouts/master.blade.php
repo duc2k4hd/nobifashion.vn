@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" spellcheck="false">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -481,13 +481,32 @@
             z-index: 1;
         }
 
-        /* CKEditor 5 Styles */
-        .ck-editor__editable {
-            min-height: 500px;
+        /* CKEditor 5 Styles & Disable Browser Spellcheck Red Squiggly Lines */
+        ::spelling-error {
+            text-decoration: none !important;
+            -webkit-text-decoration-line: none !important;
         }
-        
-        .ck-editor__editable_inline {
+        ::grammar-error {
+            text-decoration: none !important;
+            -webkit-text-decoration-line: none !important;
+        }
+        .ck-editor__editable,
+        .ck-editor__editable_inline,
+        .ck.ck-content,
+        .ck-content,
+        [contenteditable="true"] {
             min-height: 500px;
+            outline: none !important;
+        }
+        .ck-editor__editable *,
+        .ck-editor__editable_inline *,
+        .ck-content * {
+            text-decoration-line: none;
+        }
+        .ck-editor__editable a,
+        .ck-editor__editable_inline a,
+        .ck-content a {
+            text-decoration: underline;
         }
         
         /* Responsive design */
@@ -512,7 +531,7 @@
     <link rel="shortcut icon" href="{{ asset('admins/img/icons/icon-admin.gif') }}" type="image/x-icon">
     <link rel="icon" href="{{ asset('admins/img/icons/icon-admin.gif') }}" type="image/gif">
 </head>
-<body>
+<body spellcheck="false">
     <!-- Sidebar -->
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">

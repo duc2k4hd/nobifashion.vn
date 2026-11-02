@@ -392,10 +392,18 @@
 
         const applyAttributes = (el) => {
             if (!el) return;
+            el.spellcheck = false;
             el.setAttribute('spellcheck', 'false');
             el.setAttribute('autocorrect', 'off');
             el.setAttribute('autocomplete', 'off');
             el.setAttribute('autocapitalize', 'off');
+            // Đảm bảo các node con cũng không bị trình duyệt quét spellcheck
+            if (el.querySelectorAll) {
+                el.querySelectorAll('[contenteditable]').forEach(child => {
+                    child.spellcheck = false;
+                    child.setAttribute('spellcheck', 'false');
+                });
+            }
         };
 
         // 1. Áp dụng vào Model View của CKEditor
@@ -407,30 +415,39 @@
                     writer.setAttribute('autocorrect', 'off', root);
                     writer.setAttribute('autocomplete', 'off', root);
                 }
+                if (editor.editing.view.document.roots) {
+                    for (const r of editor.editing.view.document.roots) {
+                        writer.setAttribute('spellcheck', 'false', r);
+                        writer.setAttribute('autocorrect', 'off', r);
+                        writer.setAttribute('autocomplete', 'off', r);
+                    }
+                }
             });
         } catch (e) {}
 
         // 2. Áp dụng trực tiếp vào DOM Element
-        try {
-            if (editor.ui && editor.ui.view && editor.ui.view.editable) {
-                applyAttributes(editor.ui.view.editable.element);
-            }
-            if (editor.editing && editor.editing.view) {
-                applyAttributes(editor.editing.view.getDomRoot());
-            }
-        } catch (e) {}
+        const updateDom = () => {
+            try {
+                if (editor.ui && editor.ui.view && editor.ui.view.editable) {
+                    applyAttributes(editor.ui.view.editable.element);
+                }
+                if (editor.editing && editor.editing.view) {
+                    applyAttributes(editor.editing.view.getDomRoot());
+                }
+            } catch (e) {}
+        };
 
-        // 3. Đảm bảo khi người dùng click/focus vào soạn thảo, spellcheck không bị bật lại
+        updateDom();
+
+        // 3. Đảm bảo khi gõ, render hoặc focus vào soạn thảo, spellcheck luôn luôn là false
         try {
+            if (editor.editing && editor.editing.view && editor.editing.view.document) {
+                editor.editing.view.document.on('render', updateDom);
+            }
             if (editor.ui && editor.ui.focusTracker) {
                 editor.ui.focusTracker.on('change:isFocused', (evt, name, isFocused) => {
                     if (isFocused) {
-                        if (editor.ui.view && editor.ui.view.editable) {
-                            applyAttributes(editor.ui.view.editable.element);
-                        }
-                        if (editor.editing && editor.editing.view) {
-                            applyAttributes(editor.editing.view.getDomRoot());
-                        }
+                        updateDom();
                     }
                 });
             }
@@ -601,7 +618,8 @@
 
     // Cơ chế quét toàn cục để tắt spellcheck trên mọi phần tử soạn thảo
     function enforceDisableSpellcheck() {
-        document.querySelectorAll('.ck-editor__editable, [contenteditable="true"], textarea, .tinymce-editor').forEach(el => {
+        document.querySelectorAll('.ck-editor__editable, .ck-editor__editable_inline, .ck-content, [contenteditable="true"], textarea, .tinymce-editor, form').forEach(el => {
+            el.spellcheck = false;
             if (el.getAttribute('spellcheck') !== 'false') {
                 el.setAttribute('spellcheck', 'false');
                 el.setAttribute('autocorrect', 'off');
@@ -612,8 +630,10 @@
     }
 
     document.addEventListener('focusin', enforceDisableSpellcheck, true);
+    document.addEventListener('input', enforceDisableSpellcheck, true);
     document.addEventListener('DOMContentLoaded', enforceDisableSpellcheck);
-    setTimeout(enforceDisableSpellcheck, 500);
+    setTimeout(enforceDisableSpellcheck, 300);
+    setTimeout(enforceDisableSpellcheck, 800);
     setTimeout(enforceDisableSpellcheck, 1500);
     setInterval(enforceDisableSpellcheck, 3000);
 

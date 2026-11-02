@@ -42,7 +42,7 @@
 
                 <div class="mb-3">
                     <label class="form-label fw-semibold">Nội dung</label>
-                    <textarea id="post-content-editor" name="content" class="form-control" rows="15">{{ old('content', $post->content ?? '') }}</textarea>
+                    <textarea id="post-content-editor" name="content" class="form-control" rows="15" spellcheck="false" autocorrect="off" autocomplete="off" autocapitalize="off">{{ old('content', $post->content ?? '') }}</textarea>
                     <small class="text-muted" id="autosave-status">Autosave sẽ hiển thị sau khi bạn chỉnh sửa.</small>
                 </div>
             </div>

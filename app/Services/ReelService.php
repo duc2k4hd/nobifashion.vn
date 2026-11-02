@@ -2,19 +2,27 @@
 
 namespace App\Services;
 
+use App\Models\AnonymousUser;
+use App\Models\CommentSticker;
 use App\Models\Reel;
 use App\Models\ReelComment;
+use App\Models\ReelCommentLike;
 use App\Models\ReelLike;
 use App\Models\ReelSave;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 
 class ReelService
 {
+    public function __construct(
+        protected ReelCommentModerationService $moderator
+    ) {}
+
     /**
      * Lấy danh sách video Reels theo phân trang Cursor hiệu năng cao
      */
-    public function getFeed(array $params, ?string $clientIp = null, ?int $userId = null): array
+    public function getFeed(array $params, ?string $clientIp = null, ?int $userId = null, ?AnonymousUser $anonUser = null): array
     {
         $limit = min((int) ($params['limit'] ?? 10), 20);
         $cursor = isset($params['cursor']) ? (int) $params['cursor'] : null;
@@ -45,7 +53,7 @@ class ReelService
             });
         }
 
-        // Phân trang bằng Cursor (Sử dụng index [status, published_at, id])
+        // Phân trang bằng Cursor
         if ($cursor) {
             $query->where('id', '<', $cursor);
         }
@@ -61,14 +69,12 @@ class ReelService
 
         $nextCursor = $items->isNotEmpty() ? $items->last()->id : null;
 
-        // Bổ sung trạng thái isLiked và isSaved theo IP/User
-        $data = $items->map(function (Reel $reel) use ($clientIp, $userId) {
+        // Bổ sung trạng thái isLiked và isSaved theo Anonymous User & IP
+        $data = $items->map(function (Reel $reel) use ($clientIp, $userId, $anonUser) {
             $feedItem = $reel->toFeedArray($clientIp, $userId);
 
-            if ($clientIp || $userId) {
-                $feedItem['isLiked'] = $this->hasLiked($reel->id, $clientIp, $userId);
-                $feedItem['isSaved'] = $this->hasSaved($reel->id, $clientIp, $userId);
-            }
+            $feedItem['isLiked'] = $this->hasLiked($reel->id, $clientIp, $userId, $anonUser);
+            $feedItem['isSaved'] = $this->hasSaved($reel->id, $clientIp, $userId);
 
             return $feedItem;
         })->values()->all();
@@ -94,7 +100,6 @@ class ReelService
             return false;
         }
 
-        // Loại bỏ bot crawler
         if (preg_match('/bot|crawl|spider|slurp|curl|wget|python|requests|axios|headless/i', $userAgent)) {
             return false;
         }
@@ -116,124 +121,261 @@ class ReelService
     }
 
     /**
-     * Toggle Like cho Reel
+     * Thả tim Reel có tính Idempotent (Bắt buộc tối đa 1 Like/video)
      */
-    public function toggleLike(Reel $reel, string $ip, ?int $userId = null): array
+    public function likeReel(Reel $reel, AnonymousUser $anonUser, string $ip, ?int $userId = null): array
     {
-        $query = ReelLike::where('reel_id', $reel->id);
-        if ($userId) {
-            $query->where('user_id', $userId);
-        } else {
-            $query->where('ip_address', $ip);
-        }
+        return DB::transaction(function () use ($reel, $anonUser, $ip, $userId) {
+            $existing = ReelLike::where('reel_id', $reel->id)
+                ->where('anonymous_user_id', $anonUser->id)
+                ->lockForUpdate()
+                ->first();
 
-        $like = $query->first();
+            if (!$existing) {
+                ReelLike::create([
+                    'reel_id' => $reel->id,
+                    'anonymous_user_id' => $anonUser->id,
+                    'user_id' => $userId,
+                    'ip_address' => $ip,
+                ]);
+                $reel->increment('like_count');
+            }
 
-        if ($like) {
-            $like->delete();
-            $reel->where('id', $reel->id)->where('like_count', '>', 0)->decrement('like_count');
-            $isLiked = false;
-        } else {
-            ReelLike::create([
-                'reel_id' => $reel->id,
-                'user_id' => $userId,
-                'ip_address' => $ip,
-            ]);
-            $reel->increment('like_count');
-            $isLiked = true;
-        }
-
-        return [
-            'isLiked' => $isLiked,
-            'likesCount' => (int) $reel->fresh()->like_count,
-        ];
+            return [
+                'isLiked' => true,
+                'likesCount' => (int) $reel->fresh()->like_count,
+            ];
+        });
     }
 
     /**
-     * Toggle Save / Bookmark cho Reel
+     * Bỏ tim Reel có tính Idempotent
      */
-    public function toggleSave(Reel $reel, string $ip, ?int $userId = null): array
+    public function unlikeReel(Reel $reel, AnonymousUser $anonUser): array
     {
-        $query = ReelSave::where('reel_id', $reel->id);
-        if ($userId) {
-            $query->where('user_id', $userId);
-        } else {
-            $query->where('ip_address', $ip);
-        }
+        return DB::transaction(function () use ($reel, $anonUser) {
+            $existing = ReelLike::where('reel_id', $reel->id)
+                ->where('anonymous_user_id', $anonUser->id)
+                ->lockForUpdate()
+                ->first();
 
-        $save = $query->first();
+            if ($existing) {
+                $existing->delete();
+                $reel->where('id', $reel->id)->where('like_count', '>', 0)->decrement('like_count');
+            }
 
-        if ($save) {
-            $save->delete();
-            $reel->where('id', $reel->id)->where('save_count', '>', 0)->decrement('save_count');
-            $isSaved = false;
-        } else {
-            ReelSave::create([
-                'reel_id' => $reel->id,
-                'user_id' => $userId,
-                'ip_address' => $ip,
-            ]);
-            $reel->increment('save_count');
-            $isSaved = true;
-        }
-
-        return [
-            'isSaved' => $isSaved,
-            'savesCount' => (int) $reel->fresh()->save_count,
-        ];
+            return [
+                'isLiked' => false,
+                'likesCount' => (int) $reel->fresh()->like_count,
+            ];
+        });
     }
 
     /**
-     * Tăng số lượt chia sẻ
+     * Thả tim hoặc Bỏ tim Bình luận (Comment Like)
      */
-    public function recordShare(Reel $reel): int
+    public function likeComment(ReelComment $comment, AnonymousUser $anonUser, ?int $userId = null): array
     {
-        $reel->increment('share_count');
-        return (int) $reel->fresh()->share_count;
+        return DB::transaction(function () use ($comment, $anonUser, $userId) {
+            $existing = ReelCommentLike::where('comment_id', $comment->id)
+                ->where('anonymous_user_id', $anonUser->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$existing) {
+                ReelCommentLike::create([
+                    'comment_id' => $comment->id,
+                    'anonymous_user_id' => $anonUser->id,
+                    'user_id' => $userId,
+                ]);
+                $comment->increment('likes_count');
+            }
+
+            return [
+                'isLiked' => true,
+                'likesCount' => (int) $comment->fresh()->likes_count,
+            ];
+        });
+    }
+
+    public function unlikeComment(ReelComment $comment, AnonymousUser $anonUser): array
+    {
+        return DB::transaction(function () use ($comment, $anonUser) {
+            $existing = ReelCommentLike::where('comment_id', $comment->id)
+                ->where('anonymous_user_id', $anonUser->id)
+                ->lockForUpdate()
+                ->first();
+
+            if ($existing) {
+                $existing->delete();
+                $comment->where('id', $comment->id)->where('likes_count', '>', 0)->decrement('likes_count');
+            }
+
+            return [
+                'isLiked' => false,
+                'likesCount' => (int) $comment->fresh()->likes_count,
+            ];
+        });
     }
 
     /**
-     * Thêm bình luận cho Reel
+     * Thêm bình luận cho Reel với kiểm duyệt đa tầng & chống Spam
      */
-    public function addComment(Reel $reel, string $authorName, string $content, ?int $parentId = null, ?int $userId = null): ReelComment
-    {
-        $comment = ReelComment::create([
-            'reel_id' => $reel->id,
-            'user_id' => $userId,
-            'parent_id' => $parentId,
-            'author_name' => strip_tags(trim($authorName)),
-            'content' => strip_tags(trim($content)),
-            'status' => 'approved',
+    public function addComment(
+        Reel $reel,
+        AnonymousUser $anonUser,
+        string $content,
+        string $commentType = 'TEXT',
+        ?int $stickerId = null,
+        ?int $parentId = null,
+        ?int $userId = null,
+        string $ip = ''
+    ): array {
+        // 1. Kiểm tra tài khoản ẩn danh có bị cấm không
+        if ($anonUser->isCurrentlyBanned()) {
+            return [
+                'success' => false,
+                'status_code' => 403,
+                'message' => 'Tài khoản của bạn đang bị giới hạn tương tác. ' . ($anonUser->ban_reason ? "Lý do: {$anonUser->ban_reason}" : ''),
+            ];
+        }
+
+        // 2. Chống spam bình luận (Tối đa 5 bình luận/phút & cooldown 3 giây)
+        $rateKey = sprintf('reels:comment:rate:%d', $anonUser->id);
+        $attempts = (int) Cache::get($rateKey, 0);
+        if ($attempts >= 5) {
+            return [
+                'success' => false,
+                'status_code' => 429,
+                'message' => 'Bạn đang bình luận quá nhanh. Vui lòng đợi 1 phút trước khi thử lại.',
+            ];
+        }
+
+        $cooldownKey = sprintf('reels:comment:cooldown:%d', $anonUser->id);
+        if (Cache::has($cooldownKey)) {
+            return [
+                'success' => false,
+                'status_code' => 429,
+                'message' => 'Vui lòng chờ giây lát trước khi gửi bình luận tiếp theo.',
+            ];
+        }
+
+        // 3. Kiểm tra nội dung trùng lặp liên tục
+        $contentHash = md5($content . ($stickerId ?? 0));
+        $dupKey = sprintf('reels:comment:dup:%d:%s', $anonUser->id, $contentHash);
+        if (Cache::has($dupKey)) {
+            return [
+                'success' => false,
+                'status_code' => 422,
+                'message' => 'Nội dung bình luận bị trùng lặp với bình luận vừa gửi.',
+            ];
+        }
+
+        // 4. Nếu là STICKER, kiểm tra sticker có tồn tại trong hệ thống không
+        $verifiedSticker = null;
+        if ($commentType === 'STICKER') {
+            if (!$stickerId) {
+                return [
+                    'success' => false,
+                    'status_code' => 422,
+                    'message' => 'Sticker không hợp lệ.',
+                ];
+            }
+            $verifiedSticker = CommentSticker::active()->find($stickerId);
+            if (!$verifiedSticker) {
+                return [
+                    'success' => false,
+                    'status_code' => 422,
+                    'message' => 'Sticker được chọn không tồn tại hoặc đã ngừng hỗ trợ.',
+                ];
+            }
+            if ($content === '') {
+                $content = $verifiedSticker->name;
+            }
+        }
+
+        // 5. Kiểm duyệt nội dung qua Moderation Engine
+        $moderation = $this->moderator->moderate($content, [
+            'anonymous_user_id' => $anonUser->id,
+            'ip' => $ip,
+            'comment_type' => $commentType,
+            'sticker_id' => $stickerId,
         ]);
 
-        $reel->increment('comment_count');
+        if ($moderation['decision'] === 'BLOCK') {
+            return [
+                'success' => false,
+                'status_code' => 422,
+                'message' => $moderation['user_message'] ?? 'Nội dung bình luận chưa phù hợp quy tắc cộng đồng.',
+            ];
+        }
 
-        return $comment;
+        $status = ($moderation['decision'] === 'REVIEW') ? 'pending_review' : 'approved';
+
+        // 6. Lưu vào Database an toàn
+        $comment = ReelComment::create([
+            'reel_id' => $reel->id,
+            'anonymous_user_id' => $anonUser->id,
+            'user_id' => $userId,
+            'parent_id' => $parentId,
+            'author_name' => $anonUser->nickname,
+            'content' => e(strip_tags(trim($content))), // XSS prevention
+            'comment_type' => $commentType,
+            'sticker_id' => $verifiedSticker?->id,
+            'status' => $status,
+        ]);
+
+        // Tăng đếm replies_count nếu là phản hồi
+        if ($parentId && $status === 'approved') {
+            ReelComment::where('id', $parentId)->increment('replies_count');
+        }
+
+        if ($status === 'approved') {
+            $reel->increment('comment_count');
+        }
+
+        // Cập nhật Cache Rate Limits
+        Cache::put($rateKey, $attempts + 1, now()->addMinute());
+        Cache::put($cooldownKey, 1, now()->addSeconds(3));
+        Cache::put($dupKey, 1, now()->addMinutes(2));
+
+        return [
+            'success' => true,
+            'status_code' => 201,
+            'data' => $comment->load(['sticker', 'anonymousUser']),
+            'is_pending_review' => ($status === 'pending_review'),
+            'message' => ($status === 'pending_review') 
+                ? 'Bình luận của bạn đang được kiểm duyệt trước khi hiển thị.' 
+                : 'Bình luận thành công!',
+        ];
     }
 
     /**
-     * Kiểm tra trạng thái đã Like
+     * Kiểm tra trạng thái đã Like Reel
      */
-    protected function hasLiked(int $reelId, ?string $ip, ?int $userId): bool
+    public function hasLiked(int $reelId, ?string $ip, ?int $userId, ?AnonymousUser $anonUser = null): bool
     {
-        if (!$ip && !$userId) {
-            return false;
-        }
-
         $query = ReelLike::where('reel_id', $reelId);
-        if ($userId) {
-            $query->where('user_id', $userId);
-        } else {
-            $query->where('ip_address', $ip);
+
+        if ($anonUser) {
+            return $query->where('anonymous_user_id', $anonUser->id)->exists();
         }
 
-        return $query->exists();
+        if ($userId) {
+            return $query->where('user_id', $userId)->exists();
+        }
+
+        if ($ip) {
+            return $query->where('ip_address', $ip)->exists();
+        }
+
+        return false;
     }
 
     /**
-     * Kiểm tra trạng thái đã Save
+     * Kiểm tra trạng thái đã Save Reel
      */
-    protected function hasSaved(int $reelId, ?string $ip, ?int $userId): bool
+    public function hasSaved(int $reelId, ?string $ip, ?int $userId): bool
     {
         if (!$ip && !$userId) {
             return false;
@@ -249,4 +391,3 @@ class ReelService
         return $query->exists();
     }
 }
-

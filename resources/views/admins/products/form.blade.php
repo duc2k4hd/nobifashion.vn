@@ -660,7 +660,7 @@ $productMediaInitialPagination = [
 @endpush
 
 @section('content')
-<form id="product-form" data-dirty-guard="true" action="{{ $isEdit ? route('admin.products.update', $product) : route('admin.products.store') }}" method="POST" enctype="multipart/form-data">
+<form id="product-form" data-dirty-guard="true" action="{{ $isEdit ? route('admin.products.update', $product) : route('admin.products.store') }}" method="POST" enctype="multipart/form-data" spellcheck="false">
     @csrf
     @if($isEdit)
     @method('PUT')
