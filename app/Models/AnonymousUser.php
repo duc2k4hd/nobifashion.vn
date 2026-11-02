@@ -36,6 +36,11 @@ class AnonymousUser extends Model
         return $this->hasMany(ReelLike::class, 'anonymous_user_id');
     }
 
+    public function saves(): HasMany
+    {
+        return $this->hasMany(ReelSave::class, 'anonymous_user_id');
+    }
+
     public function comments(): HasMany
     {
         return $this->hasMany(ReelComment::class, 'anonymous_user_id');

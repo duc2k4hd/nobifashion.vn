@@ -590,6 +590,53 @@
             
             <div class="menu-section">Nội Dung</div>
             <div class="menu-group">
+                <div class="menu-group-header {{ request()->routeIs('admin.reels.*') ? 'expanded' : '' }}" data-group="reels">
+                    <span class="menu-icon">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                        </svg>
+                    </span>
+                    <span>Nobi Reels</span>
+                    <svg class="menu-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </div>
+                <div class="menu-group-items {{ request()->routeIs('admin.reels.*') ? 'expanded' : '' }}" id="reels-group">
+                    <a href="{{ route('admin.reels.dashboard') }}" class="menu-sub-item {{ request()->routeIs('admin.reels.dashboard') || request()->routeIs('admin.reels.index') ? 'active' : '' }}">
+                        Tổng quan Dashboard
+                    </a>
+                    <a href="{{ route('admin.reels.videos.index') }}" class="menu-sub-item {{ request()->routeIs('admin.reels.videos.index') && !request()->routeIs('admin.reels.videos.create') ? 'active' : '' }}">
+                        Tất cả Video
+                    </a>
+                    <a href="{{ route('admin.reels.videos.create') }}" class="menu-sub-item {{ request()->routeIs('admin.reels.videos.create') ? 'active' : '' }}">
+                        + Thêm Video mới
+                    </a>
+                    <a href="{{ route('admin.reels.comments.index') }}" class="menu-sub-item {{ request()->routeIs('admin.reels.comments.*') ? 'active' : '' }}">
+                        Quản lý Bình luận
+                    </a>
+                    <a href="{{ route('admin.reels.anonymous-users.index') }}" class="menu-sub-item {{ request()->routeIs('admin.reels.anonymous-users.*') ? 'active' : '' }}">
+                        Người dùng ẩn danh
+                    </a>
+                    <a href="{{ route('admin.reels.moderation.index') }}" class="menu-sub-item {{ request()->routeIs('admin.reels.moderation.*') ? 'active' : '' }}">
+                        Kiểm duyệt nội dung
+                    </a>
+                    <a href="{{ route('admin.reels.stickers.index') }}" class="menu-sub-item {{ request()->routeIs('admin.reels.stickers.*') ? 'active' : '' }}">
+                        Thư viện Sticker
+                    </a>
+                    <a href="{{ route('admin.reels.distribution.index') }}" class="menu-sub-item {{ request()->routeIs('admin.reels.distribution.*') ? 'active' : '' }}">
+                        Trung tâm Phân phối
+                    </a>
+                    <a href="{{ route('admin.reels.analytics.index') }}" class="menu-sub-item {{ request()->routeIs('admin.reels.analytics.*') ? 'active' : '' }}">
+                        Báo cáo & Analytics
+                    </a>
+                    <a href="{{ route('admin.reels.import.index') }}" class="menu-sub-item {{ request()->routeIs('admin.reels.import.*') ? 'active' : '' }}">
+                        Import Video
+                    </a>
+                    <a href="{{ route('admin.reels.settings.index') }}" class="menu-sub-item {{ request()->routeIs('admin.reels.settings.*') ? 'active' : '' }}">
+                        Cài đặt Reels
+                    </a>
+                </div>
+            </div>
+            <div class="menu-group">
                 <div class="menu-group-header {{ request()->routeIs('admin.posts.*') || request()->routeIs('admin.post-categories.*') ? 'expanded' : '' }}" data-group="posts">
                     <span class="menu-icon">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>

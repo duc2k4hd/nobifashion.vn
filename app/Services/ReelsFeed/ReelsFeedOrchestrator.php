@@ -12,6 +12,12 @@ use Illuminate\Support\Facades\Cache;
 
 class ReelsFeedOrchestrator
 {
+    /**
+     * Giới hạn tối đa số video trong một Feed Cycle Window (cửa sổ trượt)
+     * Ngăn ngừa phình to bộ nhớ RAM và dung lượng database khi hệ thống có hàng triệu video
+     */
+    public const MAX_CYCLE_WINDOW_SIZE = 500;
+
     protected FeedSnapshotService $snapshotService;
 
     public function __construct(FeedSnapshotService $snapshotService)
@@ -196,6 +202,22 @@ class ReelsFeedOrchestrator
 
         if ($totalExpected === 0) {
             return [];
+        }
+
+        // Tối ưu hóa hiệu năng: Khi tổng số video lớn hơn MAX_CYCLE_WINDOW_SIZE (500 video),
+        // chỉ lấy Window tối đa 500 candidate IDs theo tỷ lệ 60/40 để đảm bảo kích thước chuỗi JSON
+        // luôn dưới 2.5 KB, không gây tràn bộ nhớ RAM hoặc phình to DB.
+        if ($totalExpected > self::MAX_CYCLE_WINDOW_SIZE) {
+            $maxTrending = (int) round(self::MAX_CYCLE_WINDOW_SIZE * 0.60); // 300
+            $maxNewest = self::MAX_CYCLE_WINDOW_SIZE - $maxTrending;         // 200
+
+            $trendingIds = array_slice($trendingIds, 0, $maxTrending);
+            $newestIds = array_slice($newestIds, 0, $maxNewest);
+
+            // Cập nhật lại allValidMap theo window đã chọn
+            $allValidMap = [];
+            foreach ($trendingIds as $id) $allValidMap[$id] = true;
+            foreach ($newestIds as $id) $allValidMap[$id] = true;
         }
 
         // 1. Áp dụng Bounded Chunk-based Seeded Shuffle cho từng Engine

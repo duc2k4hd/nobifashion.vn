@@ -817,6 +817,98 @@ Route::prefix('admin')->name('admin.')->group(function () {
                 ->where('path', '.*')
                 ->name('preview-image');
         });
+
+        // ==========================================
+        // NOBI FASHION REELS ENTERPRISE ADMIN SYSTEM
+        // ==========================================
+        Route::prefix('reels')->name('reels.')->group(function () {
+            // Dashboard
+            Route::get('/', [\App\Http\Controllers\Admins\Reels\ReelDashboardController::class, 'index'])->name('index');
+            Route::get('/dashboard', [\App\Http\Controllers\Admins\Reels\ReelDashboardController::class, 'index'])->name('dashboard');
+            Route::get('/chart-data', [\App\Http\Controllers\Admins\Reels\ReelDashboardController::class, 'chartData'])->name('chart-data');
+
+            // Video Management
+            Route::prefix('videos')->name('videos.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admins\Reels\ReelManageController::class, 'index'])->name('index');
+                Route::get('/create', [\App\Http\Controllers\Admins\Reels\ReelManageController::class, 'create'])->name('create');
+                Route::post('/', [\App\Http\Controllers\Admins\Reels\ReelManageController::class, 'store'])->name('store');
+                Route::get('/search-products', [\App\Http\Controllers\Admins\Reels\ReelManageController::class, 'searchProducts'])->name('search-products');
+                Route::post('/check-video-url', [\App\Http\Controllers\Admins\Reels\ReelManageController::class, 'checkVideoUrl'])->name('check-video-url');
+                Route::post('/bulk-action', [\App\Http\Controllers\Admins\Reels\ReelManageController::class, 'bulkAction'])->name('bulk-action');
+                Route::get('/{id}', [\App\Http\Controllers\Admins\Reels\ReelManageController::class, 'show'])->name('show');
+                Route::get('/{id}/edit', [\App\Http\Controllers\Admins\Reels\ReelManageController::class, 'edit'])->name('edit');
+                Route::put('/{id}', [\App\Http\Controllers\Admins\Reels\ReelManageController::class, 'update'])->name('update');
+                Route::delete('/{id}', [\App\Http\Controllers\Admins\Reels\ReelManageController::class, 'destroy'])->name('destroy');
+                Route::patch('/{id}/restore', [\App\Http\Controllers\Admins\Reels\ReelManageController::class, 'restore'])->name('restore');
+                Route::delete('/{id}/force-delete', [\App\Http\Controllers\Admins\Reels\ReelManageController::class, 'forceDelete'])->name('force-delete');
+            });
+
+            // Comments Management
+            Route::prefix('comments')->name('comments.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admins\Reels\ReelCommentAdminController::class, 'index'])->name('index');
+                Route::post('/bulk-action', [\App\Http\Controllers\Admins\Reels\ReelCommentAdminController::class, 'bulkAction'])->name('bulk-action');
+                Route::patch('/{id}/status', [\App\Http\Controllers\Admins\Reels\ReelCommentAdminController::class, 'updateStatus'])->name('status');
+                Route::delete('/{id}', [\App\Http\Controllers\Admins\Reels\ReelCommentAdminController::class, 'destroy'])->name('destroy');
+                Route::patch('/{id}/restore', [\App\Http\Controllers\Admins\Reels\ReelCommentAdminController::class, 'restore'])->name('restore');
+            });
+
+            // Anonymous Users Management
+            Route::prefix('anonymous-users')->name('anonymous-users.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admins\Reels\ReelAnonymousUserController::class, 'index'])->name('index');
+                Route::get('/{id}', [\App\Http\Controllers\Admins\Reels\ReelAnonymousUserController::class, 'show'])->name('show');
+                Route::post('/{id}/ban', [\App\Http\Controllers\Admins\Reels\ReelAnonymousUserController::class, 'ban'])->name('ban');
+                Route::post('/{id}/unban', [\App\Http\Controllers\Admins\Reels\ReelAnonymousUserController::class, 'unban'])->name('unban');
+                Route::patch('/{id}/toggle-mute', [\App\Http\Controllers\Admins\Reels\ReelAnonymousUserController::class, 'toggleMute'])->name('toggle-mute');
+            });
+
+            // Moderation Center
+            Route::prefix('moderation')->name('moderation.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admins\Reels\ReelModerationController::class, 'index'])->name('index');
+                Route::post('/rules', [\App\Http\Controllers\Admins\Reels\ReelModerationController::class, 'storeRule'])->name('rules.store');
+                Route::put('/rules/{id}', [\App\Http\Controllers\Admins\Reels\ReelModerationController::class, 'updateRule'])->name('rules.update');
+                Route::patch('/rules/{id}/toggle', [\App\Http\Controllers\Admins\Reels\ReelModerationController::class, 'toggleRule'])->name('rules.toggle');
+                Route::delete('/rules/{id}', [\App\Http\Controllers\Admins\Reels\ReelModerationController::class, 'destroyRule'])->name('rules.destroy');
+                Route::post('/whitelist', [\App\Http\Controllers\Admins\Reels\ReelModerationController::class, 'storeWhitelist'])->name('whitelist.store');
+                Route::delete('/whitelist/{id}', [\App\Http\Controllers\Admins\Reels\ReelModerationController::class, 'destroyWhitelist'])->name('whitelist.destroy');
+                Route::post('/test-rule', [\App\Http\Controllers\Admins\Reels\ReelModerationController::class, 'testRule'])->name('test-rule');
+            });
+
+            // Stickers Management
+            Route::prefix('stickers')->name('stickers.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admins\Reels\ReelStickerController::class, 'index'])->name('index');
+                Route::post('/', [\App\Http\Controllers\Admins\Reels\ReelStickerController::class, 'store'])->name('store');
+                Route::put('/{id}', [\App\Http\Controllers\Admins\Reels\ReelStickerController::class, 'update'])->name('update');
+                Route::patch('/{id}/toggle', [\App\Http\Controllers\Admins\Reels\ReelStickerController::class, 'toggle'])->name('toggle');
+                Route::delete('/{id}', [\App\Http\Controllers\Admins\Reels\ReelStickerController::class, 'destroy'])->name('destroy');
+            });
+
+            // Distribution Center
+            Route::prefix('distribution')->name('distribution.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admins\Reels\ReelDistributionController::class, 'index'])->name('index');
+                Route::post('/rebuild-snapshot', [\App\Http\Controllers\Admins\Reels\ReelDistributionController::class, 'rebuildSnapshot'])->name('rebuild-snapshot');
+                Route::post('/simulate', [\App\Http\Controllers\Admins\Reels\ReelDistributionController::class, 'simulate'])->name('simulate');
+            });
+
+            // Analytics & Visitors
+            Route::prefix('analytics')->name('analytics.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admins\Reels\ReelAnalyticsAdminController::class, 'index'])->name('index');
+                Route::get('/visitors', [\App\Http\Controllers\Admins\Reels\ReelAnalyticsAdminController::class, 'visitors'])->name('visitors');
+            });
+
+            // Import Center
+            Route::prefix('import')->name('import.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admins\Reels\ReelImportController::class, 'index'])->name('index');
+                Route::get('/sample-csv', [\App\Http\Controllers\Admins\Reels\ReelImportController::class, 'sampleCsv'])->name('sample-csv');
+                Route::post('/preview', [\App\Http\Controllers\Admins\Reels\ReelImportController::class, 'preview'])->name('preview');
+                Route::post('/process', [\App\Http\Controllers\Admins\Reels\ReelImportController::class, 'process'])->name('process');
+            });
+
+            // Settings
+            Route::prefix('settings')->name('settings.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admins\Reels\ReelSettingController::class, 'index'])->name('index');
+                Route::post('/', [\App\Http\Controllers\Admins\Reels\ReelSettingController::class, 'update'])->name('update');
+            });
+        });
     });
 });
 

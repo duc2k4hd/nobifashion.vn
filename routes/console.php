@@ -24,3 +24,10 @@ Schedule::command('voucher:update-status')
     ->everyMinute()
     ->withoutOverlapping()
     ->runInBackground();
+
+// Schedule Reels Daily Analytics Rollup
+Schedule::command('reels:rollup-metrics')
+    ->dailyAt('00:05')
+    ->withoutOverlapping()
+    ->runInBackground();
+

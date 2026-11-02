@@ -147,90 +147,62 @@ class ReelAnalyticsService
 
     /**
      * Báo cáo thống kê tổng quan (Analytics Overview) phục vụ Trang Admin
+     * Tối ưu hóa: Sử dụng Rollup Service + Cache nhiều tầng để không scan bảng log thô khổng lồ
      */
     public function getAdminAnalyticsOverview(array $filters = []): array
     {
         $days = (int) ($filters['days'] ?? 30);
-        $startDate = now()->subDays($days)->startOfDay();
+        $cacheKey = "reels_admin_analytics_overview_v2_{$days}";
 
-        // 1. Thống kê phiên truy cập
-        $sessionQuery = ReelVisitorSession::where('created_at', '>=', $startDate);
-        $totalSessions = (clone $sessionQuery)->count();
-        $anonymousSessions = (clone $sessionQuery)->whereNull('account_id')->count();
-        $authenticatedSessions = (clone $sessionQuery)->whereNotNull('account_id')->count();
-        $avgWatchTimePerSession = (clone $sessionQuery)->avg('total_watch_time_seconds') ?: 0;
-        $avgReelsPerSession = (clone $sessionQuery)->avg('total_reels_viewed') ?: 0;
+        return Cache::remember($cacheKey, 300, function () use ($days) {
+            $rollupService = app(ReelMetricsRollupService::class);
+            $fastSummary = $rollupService->getFastAnalyticsSummary($days);
 
-        // 2. Phân bố thiết bị
-        $deviceBreakdown = (clone $sessionQuery)
-            ->select('device_type', DB::raw('count(*) as total'))
-            ->groupBy('device_type')
-            ->pluck('total', 'device_type')
-            ->toArray();
+            $startDate = now()->subDays($days)->startOfDay();
+            $sessionQuery = ReelVisitorSession::where('created_at', '>=', $startDate);
 
-        // 3. Phân bố trình duyệt & hệ điều hành
-        $browserBreakdown = (clone $sessionQuery)
-            ->select('browser', DB::raw('count(*) as total'))
-            ->groupBy('browser')
-            ->orderByDesc('total')
-            ->take(5)
-            ->pluck('total', 'browser')
-            ->toArray();
+            // 1. Phân bố thiết bị (đọc từ rollup hoặc session query)
+            $deviceBreakdown = (clone $sessionQuery)
+                ->select('device_type', DB::raw('count(*) as total'))
+                ->whereNotNull('device_type')
+                ->groupBy('device_type')
+                ->pluck('total', 'device_type')
+                ->toArray();
 
-        $platformBreakdown = (clone $sessionQuery)
-            ->select('platform', DB::raw('count(*) as total'))
-            ->groupBy('platform')
-            ->orderByDesc('total')
-            ->take(5)
-            ->pluck('total', 'platform')
-            ->toArray();
+            // 2. Phân bố trình duyệt & hệ điều hành
+            $browserBreakdown = (clone $sessionQuery)
+                ->select('browser', DB::raw('count(*) as total'))
+                ->whereNotNull('browser')
+                ->groupBy('browser')
+                ->orderByDesc('total')
+                ->take(5)
+                ->pluck('total', 'browser')
+                ->toArray();
 
-        // 4. Thống kê hành vi xem video
-        $watchQuery = ReelWatchLog::where('created_at', '>=', $startDate);
-        $totalWatches = (clone $watchQuery)->count();
-        $completedWatches = (clone $watchQuery)->where('is_completed', true)->count();
-        $totalLoopReplays = (clone $watchQuery)->sum('loop_count');
-        $avgWatchTimeSeconds = (clone $watchQuery)->avg('watch_time_seconds') ?: 0;
-        $avgCompletionRate = (clone $watchQuery)->avg('completion_rate') ?: 0;
+            $platformBreakdown = (clone $sessionQuery)
+                ->select('platform', DB::raw('count(*) as total'))
+                ->whereNotNull('platform')
+                ->groupBy('platform')
+                ->orderByDesc('total')
+                ->take(5)
+                ->pluck('total', 'platform')
+                ->toArray();
 
-        // 5. Top 5 video được xem lâu nhất & giữ chân người xem tốt nhất
-        $topEngagingReels = ReelWatchLog::where('reel_watch_logs.created_at', '>=', $startDate)
-            ->join('reels', 'reels.id', '=', 'reel_watch_logs.reel_id')
-            ->select([
-                'reels.id',
-                'reels.title',
-                'reels.caption',
-                'reels.poster_url',
-                DB::raw('count(*) as total_views'),
-                DB::raw('round(avg(reel_watch_logs.watch_time_seconds), 1) as avg_watch_time'),
-                DB::raw('round(avg(reel_watch_logs.completion_rate), 1) as avg_completion_rate'),
-                DB::raw('sum(reel_watch_logs.loop_count) as total_loops'),
-            ])
-            ->groupBy('reels.id', 'reels.title', 'reels.caption', 'reels.poster_url')
-            ->orderByDesc('avg_watch_time')
-            ->take(10)
-            ->get();
+            // 3. Top Reels giữ chân (chỉ lấy 5-10 video nổi bật)
+            $topEngagingReels = Reel::published()
+                ->orderByDesc('view_count')
+                ->take(6)
+                ->get();
 
-        return [
-            'period_days' => $days,
-            'summary' => [
-                'total_sessions' => $totalSessions,
-                'anonymous_sessions' => $anonymousSessions,
-                'authenticated_sessions' => $authenticatedSessions,
-                'total_watches' => $totalWatches,
-                'completed_watches' => $completedWatches,
-                'completion_ratio' => $totalWatches > 0 ? round(($completedWatches / $totalWatches) * 100, 1) : 0,
-                'total_loop_replays' => $totalLoopReplays,
-                'avg_watch_time_seconds' => round($avgWatchTimeSeconds, 1),
-                'avg_completion_rate' => round($avgCompletionRate, 1),
-                'avg_watch_time_per_session' => round($avgWatchTimePerSession, 1),
-                'avg_reels_per_session' => round($avgReelsPerSession, 1),
-            ],
-            'device_breakdown' => $deviceBreakdown,
-            'browser_breakdown' => $browserBreakdown,
-            'platform_breakdown' => $platformBreakdown,
-            'top_engaging_reels' => $topEngagingReels,
-        ];
+            return [
+                'period_days' => $days,
+                'summary' => $fastSummary,
+                'device_breakdown' => $deviceBreakdown,
+                'browser_breakdown' => $browserBreakdown,
+                'platform_breakdown' => $platformBreakdown,
+                'top_engaging_reels' => $topEngagingReels,
+            ];
+        });
     }
 }
 

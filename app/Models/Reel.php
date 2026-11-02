@@ -130,6 +130,11 @@ class Reel extends Model
         return $this->hasMany(ReelSave::class, 'reel_id');
     }
 
+    public function watchLogs(): HasMany
+    {
+        return $this->hasMany(ReelWatchLog::class, 'reel_id');
+    }
+
     // ==========================================
     // Accessors & Formatters cho Frontend
     // ==========================================
