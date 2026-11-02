@@ -2247,6 +2247,56 @@ class CommentsController {
     return '👍❤️';
   }
 
+  getKnownAuthors() {
+    const set = new Set();
+    if (this.currentReel) {
+      if (this.currentReel.author) set.add(this.currentReel.author);
+      if (this.currentReel.brand_name) set.add(this.currentReel.brand_name);
+      if (this.currentReel.author_name) set.add(this.currentReel.author_name);
+      if (Array.isArray(this.currentReel.comments)) {
+        this.currentReel.comments.forEach((cm) => {
+          if (cm.nickname) set.add(cm.nickname);
+          if (cm.author) set.add(cm.author);
+          if (Array.isArray(cm.replies)) {
+            cm.replies.forEach((rp) => {
+              if (rp.nickname) set.add(rp.nickname);
+              if (rp.author) set.add(rp.author);
+            });
+          }
+        });
+      }
+    }
+    return Array.from(set);
+  }
+
+  formatCommentText(rawText, authors = null) {
+    if (!rawText) return '';
+    let text = this.escapeHtml(rawText);
+    const knownAuthors = authors || this.getKnownAuthors();
+
+    // 1. Khớp chính xác tên tác giả đã biết (ưu tiên tên dài trước)
+    const sortedAuthors = [...new Set(knownAuthors.filter(Boolean))].sort((a, b) => b.length - a.length);
+    for (const author of sortedAuthors) {
+      const escaped = this.escapeHtml(author).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp('(^|\\s)@(' + escaped + ')(?=\\s|$|[.,:!?])', 'g');
+      text = text.replace(regex, '$1<span class="nobifashion_reels_mention">@$2</span>');
+    }
+
+    // 2. Mẫu tổng quát cho nickname Nobi (ví dụ @Heo Lắc Lư 759, @Cá Voi Mơ Mộng 38)
+    text = text.replace(/(^|\s)@([\p{L}][\p{L}\s]{1,30}?\s+\d{1,4})(?=\s|$|[.,:!?])/gu, (match, prefix, name) => {
+      if (match.includes('class="nobifashion_reels_mention"')) return match;
+      return prefix + '<span class="nobifashion_reels_mention">@' + name.trim() + '</span>';
+    });
+
+    // 3. Mẫu tổng quát cho username/brand viết liền (ví dụ @Coolmate, @admin, @mixigaming)
+    text = text.replace(/(^|\s)@([\p{L}\p{N}_.\-]+)(?=\s|$|[.,:!?])/gu, (match, prefix, name) => {
+      if (match.includes('class="nobifashion_reels_mention"')) return match;
+      return prefix + '<span class="nobifashion_reels_mention">@' + name + '</span>';
+    });
+
+    return text;
+  }
+
   renderCommentItem(c, depth = 0, rootId = null) {
     const currentRootId = depth === 0 ? c.id : rootId;
     const replies = c.replies || [];
@@ -2284,7 +2334,7 @@ class CommentsController {
                 : ''
             }
           </div>
-          <p class="nobifashion_reels_comment_text">${this.escapeHtml(c.text)}</p>
+          <p class="nobifashion_reels_comment_text">${this.formatCommentText(c.text)}</p>
           ${stickerHtml}
           <div class="nobifashion_reels_comment_actions">
             <!-- Nút Like kèm thanh chọn cảm xúc Facebook khi hover -->
@@ -2387,7 +2437,7 @@ class CommentsController {
                 <span class="nobifashion_reels_comment_author">${this.escapeHtml(c.author)}</span>
                 <span class="nobifashion_reels_comment_time">${c.time}</span>
               </div>
-              <p class="nobifashion_reels_comment_text">${this.escapeHtml(c.text)}</p>
+              <p class="nobifashion_reels_comment_text">${this.formatCommentText(c.text)}</p>
               <div class="nobifashion_reels_comment_actions">
                 <button
                   type="button"
@@ -2425,7 +2475,7 @@ class CommentsController {
                           <span class="nobifashion_reels_comment_author">${this.escapeHtml(r.author)}</span>
                           <span class="nobifashion_reels_comment_time">${r.time}</span>
                         </div>
-                        <p class="nobifashion_reels_comment_text">${this.escapeHtml(r.text)}</p>
+                        <p class="nobifashion_reels_comment_text">${this.formatCommentText(r.text)}</p>
                         <div class="nobifashion_reels_comment_actions">
                           <button
                             type="button"
