@@ -9,6 +9,7 @@ use App\Models\ReelComment;
 use App\Models\ReelCommentLike;
 use App\Models\ReelLike;
 use App\Models\ReelSave;
+use App\Models\ReelWatchLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -71,9 +72,7 @@ class ReelService
             $query->whereIn('id', $savedReelIds);
         } elseif ($category === 'trending') {
             $query->orderByDesc('view_count')->orderByDesc('like_count');
-        } elseif ($category === 'new') {
-            $query->orderByDesc('published_at')->orderByDesc('id');
-        } elseif ($category !== 'all' && $category !== '') {
+        } elseif ($category !== 'all' && $category !== '' && $category !== 'new') {
             $query->where('category', $category);
         }
 
@@ -90,21 +89,85 @@ class ReelService
             });
         }
 
-        // Phân trang bằng Cursor
-        if ($cursor) {
-            $query->where('id', '<', $cursor);
+        if ($category === 'new') {
+            // Sắp xếp chuẩn xác từ MỚI NHẤT đến CŨ NHẤT theo ngày phát hành & ID
+            $query->orderByDesc('published_at')->orderByDesc('id');
+
+            // Khi tải trang đầu (không có con trỏ cursor):
+            // Tự động bỏ qua các video người dùng đã xem gần đây để khi load trang luôn xem video KHÁC, KHÔNG XEM LẠI VIDEO CŨ
+            if (!$cursor) {
+                $watchedIds = [];
+                if ($anonUser && $anonUser->id) {
+                    $watchedIds = ReelWatchLog::where('anonymous_user_id', $anonUser->id)
+                        ->latest('id')->take(300)->pluck('reel_id')->all();
+                } elseif ($userId) {
+                    $watchedIds = ReelWatchLog::where('account_id', $userId)
+                        ->latest('id')->take(300)->pluck('reel_id')->all();
+                } elseif ($clientIp) {
+                    $watchedIds = ReelWatchLog::where('ip_address', $clientIp)
+                        ->latest('id')->take(300)->pluck('reel_id')->all();
+                }
+
+                if (!empty($watchedIds)) {
+                    // Tìm video mới nhất mà user CHƯA TỪNG XEM
+                    $latestUnwatched = (clone $query)->whereNotIn('id', $watchedIds)->first();
+                    if ($latestUnwatched) {
+                        // Bắt đầu danh sách từ video mới nhất chưa xem này trở về trước
+                        $query->where(function ($q) use ($latestUnwatched) {
+                            $q->where('published_at', '<', $latestUnwatched->published_at)
+                              ->orWhere(function ($sub) use ($latestUnwatched) {
+                                  $sub->where('published_at', '=', $latestUnwatched->published_at)
+                                      ->where('id', '<=', $latestUnwatched->id);
+                              });
+                        });
+                    }
+                }
+            } elseif ($cursor) {
+                // Phân trang cursor cho danh mục New (hỗ trợ composite cursor dạng timestamp_id hoặc id)
+                $cursorData = null;
+                if (str_contains((string) $cursor, '_')) {
+                    $parts = explode('_', (string) $cursor, 2);
+                    $cursorData = ['published_at' => $parts[0], 'id' => (int) $parts[1]];
+                } elseif (is_numeric($cursor)) {
+                    $cursorReel = Reel::find($cursor);
+                    if ($cursorReel) {
+                        $cursorData = ['published_at' => (string) $cursorReel->published_at, 'id' => $cursorReel->id];
+                    }
+                }
+
+                if ($cursorData) {
+                    $query->where(function ($q) use ($cursorData) {
+                        $q->where('published_at', '<', $cursorData['published_at'])
+                          ->orWhere(function ($sub) use ($cursorData) {
+                              $sub->where('published_at', '=', $cursorData['published_at'])
+                                  ->where('id', '<', $cursorData['id']);
+                          });
+                    });
+                }
+            }
+        } else {
+            // Các danh mục khác: Phân trang bằng Cursor ID
+            if ($cursor) {
+                $query->where('id', '<', $cursor);
+            }
+            $query->orderByDesc('id');
         }
 
-        $items = $query->orderByDesc('id')
-            ->take($limit + 1)
-            ->get();
+        $items = $query->take($limit + 1)->get();
 
         $hasMore = $items->count() > $limit;
         if ($hasMore) {
             $items = $items->slice(0, $limit);
         }
 
-        $nextCursor = $items->isNotEmpty() ? $items->last()->id : null;
+        if ($category === 'new' && $items->isNotEmpty()) {
+            $lastItem = $items->last();
+            $nextCursor = $lastItem->published_at
+                ? ((string) $lastItem->published_at . '_' . $lastItem->id)
+                : (string) $lastItem->id;
+        } else {
+            $nextCursor = $items->isNotEmpty() ? (string) $items->last()->id : null;
+        }
 
         // Bổ sung trạng thái isLiked và isSaved theo Anonymous User & IP
         $data = $items->map(function (Reel $reel) use ($clientIp, $userId, $anonUser) {

@@ -108,7 +108,7 @@
                 </a>
 
                 <nav class="nobifashion_reels_nav_tabs" aria-label="Điều hướng danh mục Reels">
-                    <button type="button" class="nobifashion_reels_nav_tab nobifashion_reels_is_active" data-filter="all">
+                    <button type="button" class="nobifashion_reels_nav_tab {{ request()->get('category', 'all') === 'all' ? 'nobifashion_reels_is_active' : '' }}" data-filter="all">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2">
                             <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18" />
@@ -118,7 +118,7 @@
                         </svg>
                         <span>Tất cả</span>
                     </button>
-                    <button type="button" class="nobifashion_reels_nav_tab" data-filter="trending">
+                    <button type="button" class="nobifashion_reels_nav_tab {{ request()->get('category') === 'trending' ? 'nobifashion_reels_is_active' : '' }}" data-filter="trending">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2">
                             <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
@@ -126,7 +126,7 @@
                         </svg>
                         <span>Xu hướng</span>
                     </button>
-                    <button type="button" class="nobifashion_reels_nav_tab" data-filter="new">
+                    <button type="button" class="nobifashion_reels_nav_tab {{ request()->get('category') === 'new' ? 'nobifashion_reels_is_active' : '' }}" data-filter="new">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2">
                             <circle cx="12" cy="12" r="10" />
@@ -134,7 +134,7 @@
                         </svg>
                         <span>Mới ra mắt</span>
                     </button>
-                    <button type="button" class="nobifashion_reels_nav_tab" data-filter="liked">
+                    <button type="button" class="nobifashion_reels_nav_tab {{ request()->get('category') === 'liked' ? 'nobifashion_reels_is_active' : '' }}" data-filter="liked">
                         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2">
                             <path
@@ -295,6 +295,7 @@
 
 @section('foot')
     <script>
+        window.__ACTIVE_FILTER__ = {!! json_encode(request()->get('category', 'all')) !!};
         window.__INITIAL_REELS__ = {!! json_encode($initialReels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!};
         window.__REELS_NEXT_CURSOR__ = {!! json_encode($nextCursor) !!};
         window.__REELS_HAS_MORE__ = {{ $hasMore ? 'true' : 'false' }};

@@ -29,7 +29,7 @@ class ReelsDataStore {
     this.theme = 'light';
     this.muted = false; // Mặc định mở tiếng khi xem video
     this.playbackRate = 1;
-    this.activeFilter = 'all'; // 'all' | 'trending' | 'new' | 'liked' | 'saved'
+    this.activeFilter = window.__ACTIVE_FILTER__ || 'all'; // 'all' | 'trending' | 'new' | 'liked' | 'saved'
     this.searchQuery = '';
     this.nextCursor = window.__REELS_NEXT_CURSOR__ || null;
     this.hasMore = Boolean(window.__REELS_HAS_MORE__);
@@ -171,12 +171,13 @@ class ReelsDataStore {
 
   getFilteredReels() {
     const q = this.searchQuery.trim().toLowerCase();
-    return this.reels.filter((r) => {
+    let filtered = this.reels.filter((r) => {
       if (this.hiddenReelIds.has(r.id)) return false;
-      if (this.activeFilter === 'trending' && r.category !== 'trending') return false;
-      if (this.activeFilter === 'new' && r.category !== 'new') return false;
       if (this.activeFilter === 'liked' && !r.isLiked) return false;
       if (this.activeFilter === 'saved' && !r.isSaved) return false;
+      // Tab 'trending' và 'new' hiển thị các video theo thuật toán phân phối và sắp xếp riêng
+      if (this.activeFilter === 'trending') return true;
+      if (this.activeFilter === 'new') return true;
 
       if (!q) return true;
       const inTitle = (r.title || '').toLowerCase().includes(q);
@@ -186,6 +187,20 @@ class ReelsDataStore {
       const inProducts = Array.isArray(r.products) && r.products.some((p) => (p.name || '').toLowerCase().includes(q));
       return inTitle || inCaption || inAuthor || inTags || inProducts;
     });
+
+    if (this.activeFilter === 'new') {
+      // Sắp xếp chuẩn xác từ MỚI NHẤT đến CŨ NHẤT theo timestamp (published_at) và ID
+      filtered.sort((a, b) => {
+        const timeA = a.timestamp || (Number(a.id) * 1000);
+        const timeB = b.timestamp || (Number(b.id) * 1000);
+        if (timeB !== timeA) return timeB - timeA;
+        return Number(b.id) - Number(a.id);
+      });
+    } else if (this.activeFilter === 'trending') {
+      filtered.sort((a, b) => (b.viewsCount || b.view_count || 0) - (a.viewsCount || a.view_count || 0));
+    }
+
+    return filtered;
   }
 
   getReelById(id) {
@@ -4023,12 +4038,16 @@ class UIController {
         if (res.ok) {
           const json = await res.json();
           const items = json.data || [];
-          const existingIds = new Set(this.store.reels.map((r) => Number(r.id)));
+          this.store.nextCursor = json.pagination?.next_cursor || null;
+          this.store.hasMore = Boolean(json.pagination?.has_more);
+
+          const existingIds = new Set(this.store.reels.map((r) => String(r.id)));
           items.forEach((r) => {
-            if (!existingIds.has(Number(r.id))) {
+            if (!existingIds.has(String(r.id))) {
               this.store.reels.push(r);
+              existingIds.add(String(r.id));
             } else {
-              const existing = this.store.reels.find((x) => Number(x.id) === Number(r.id));
+              const existing = this.store.reels.find((x) => String(x.id) === String(r.id));
               if (existing) {
                 existing.isLiked = r.isLiked;
                 existing.isSaved = r.isSaved;
