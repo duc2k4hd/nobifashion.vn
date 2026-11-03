@@ -48,19 +48,19 @@ class ReelSettingController extends Controller
         ];
 
         // Lấy các giá trị hiện có từ bảng settings
-        $settings = [];
+        $reelSettings = [];
         $existing = Setting::where('group', 'reels')->get()->keyBy('key');
 
         foreach ($defaultSettings as $key => $config) {
             if ($existing->has($key)) {
                 $item = $existing->get($key);
-                $settings[$key] = $item->type === 'boolean' ? (bool) $item->value : $item->value;
+                $reelSettings[$key] = $item->type === 'boolean' ? (bool) $item->value : $item->value;
             } else {
-                $settings[$key] = $config['type'] === 'boolean' ? (bool) $config['value'] : $config['value'];
+                $reelSettings[$key] = $config['type'] === 'boolean' ? (bool) $config['value'] : $config['value'];
             }
         }
 
-        return view('admins.reels.settings.index', compact('settings'));
+        return view('admins.reels.settings.index', compact('reelSettings'));
     }
 
     /**
@@ -115,6 +115,18 @@ class ReelSettingController extends Controller
         $this->adminService->logAudit('update_reels_settings', ['keys' => array_keys($keys)]);
 
         return back()->with('success', 'Đã lưu cấu hình cài đặt Reels thành công.');
+    }
+
+    /**
+     * Khôi phục toàn bộ cài đặt Reels về mặc định
+     */
+    public function reset(): RedirectResponse
+    {
+        Setting::where('group', 'reels')->delete();
+        Cache::forget('settings_all');
+        $this->adminService->logAudit('reset_reels_settings', []);
+
+        return back()->with('success', 'Đã khôi phục toàn bộ cài đặt Reels về cấu hình mặc định ban đầu.');
     }
 }
 

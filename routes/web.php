@@ -927,6 +927,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::prefix('settings')->name('settings.')->group(function () {
                 Route::get('/', [\App\Http\Controllers\Admins\Reels\ReelSettingController::class, 'index'])->name('index');
                 Route::post('/', [\App\Http\Controllers\Admins\Reels\ReelSettingController::class, 'update'])->name('update');
+                Route::post('/reset', [\App\Http\Controllers\Admins\Reels\ReelSettingController::class, 'reset'])->name('reset');
             });
         });
     });
