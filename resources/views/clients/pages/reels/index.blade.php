@@ -162,7 +162,7 @@
                             <line x1="21" y1="21" x2="16.65" y2="16.65" />
                         </svg>
                         <input type="search" id="nobifashion_reels_search_input" class="nobifashion_reels_search_input"
-                            placeholder="Tìm video, bộ sưu tập, #hashtag hoặc NTK..." autocomplete="off"
+                            placeholder="Tìm video, bộ sưu tập, #hashtag..." autocomplete="off"
                             aria-label="Tìm kiếm trên Nobi Reels" />
                         <button type="button" id="nobifashion_reels_search_clear" class="nobifashion_reels_search_clear"
                             aria-label="Xóa từ khóa">✕</button>

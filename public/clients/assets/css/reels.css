@@ -1087,9 +1087,9 @@ button.nobifashion_reels_subscribe_text_btn {
   gap: var(--nobifashion_reels_space_3);
   position: relative;
   margin-left: auto;
-  margin-right: var(--nobifashion_reels_space_3);
-  flex: 0 1 360px;
-  min-width: 180px;
+  margin-right: 14px;
+  flex: 0 1 420px;
+  min-width: 220px;
 }
 
 .nobifashion_reels_header_right {
@@ -1342,54 +1342,126 @@ button.nobifashion_reels_subscribe_text_btn {
 .nobifashion_reels_search_box {
   position: relative;
   width: 100%;
-  max-width: 340px;
+  max-width: 420px;
 }
 
 .nobifashion_reels_search_input_wrap {
   display: flex;
   align-items: center;
-  background-color: var(--nobifashion_reels_bg_subtle);
-  border: 1px solid transparent;
+  background-color: rgba(0, 0, 0, 0.045);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: var(--nobifashion_reels_radius_pill);
-  padding: 0 var(--nobifashion_reels_space_3);
-  height: 38px;
-  transition: border-color var(--nobifashion_reels_transition_fast),
-    background-color var(--nobifashion_reels_transition_fast);
+  padding: 0 14px;
+  height: 40px;
+  box-sizing: border-box;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nobifashion_reels_search_input_wrap:hover {
+  background-color: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.14);
 }
 
 .nobifashion_reels_search_input_wrap:focus-within {
-  background-color: var(--nobifashion_reels_bg_elevated);
-  border-color: var(--nobifashion_reels_border_strong);
-  box-shadow: var(--nobifashion_reels_shadow_sm);
+  background-color: #ffffff;
+  border-color: var(--nobifashion_reels_accent, #0284c7);
+  box-shadow: 0 0 0 3.5px rgba(2, 132, 199, 0.16), 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .nobifashion_reels_search_icon {
-  color: var(--nobifashion_reels_text_muted);
+  color: #8c939d;
   flex-shrink: 0;
-  margin-right: var(--nobifashion_reels_space_2);
+  margin-right: 9px;
+  transition: color 0.2s ease;
+}
+
+.nobifashion_reels_search_input_wrap:focus-within .nobifashion_reels_search_icon {
+  color: var(--nobifashion_reels_accent, #0284c7);
 }
 
 .nobifashion_reels_search_input {
-  width: 100%;
-  font-size: 13px;
-  color: var(--nobifashion_reels_text_primary);
-  outline: none;
+  width: 100% !important;
+  height: 100% !important;
+  background: transparent !important;
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  font-size: 13.5px !important;
+  font-weight: 450 !important;
+  line-height: normal !important;
+  color: var(--nobifashion_reels_text_primary) !important;
+  caret-color: var(--nobifashion_reels_accent, #0284c7);
   user-select: text;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.nobifashion_reels_search_input::-webkit-search-decoration,
+.nobifashion_reels_search_input::-webkit-search-cancel-button,
+.nobifashion_reels_search_input::-webkit-search-results-button,
+.nobifashion_reels_search_input::-webkit-search-results-decoration {
+  display: none !important;
+  -webkit-appearance: none;
 }
 
 .nobifashion_reels_search_input::placeholder {
   color: var(--nobifashion_reels_text_muted);
+  font-size: 13.5px;
 }
 
 .nobifashion_reels_search_clear {
   color: var(--nobifashion_reels_text_muted);
-  padding: 4px;
+  background: rgba(0, 0, 0, 0.08);
+  border: none;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-left: 6px;
+  transition: all 0.15s ease;
+}
+
+.nobifashion_reels_search_clear:hover {
+  background: rgba(0, 0, 0, 0.18);
+  color: var(--nobifashion_reels_text_primary);
 }
 
 .nobifashion_reels_search_clear.nobifashion_reels_is_visible {
   display: inline-flex;
+}
+
+/* Dark mode theme support for search */
+.nobifashion_reels_app[data-theme="dark"] .nobifashion_reels_search_input_wrap {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.nobifashion_reels_app[data-theme="dark"] .nobifashion_reels_search_input_wrap:hover {
+  background-color: rgba(255, 255, 255, 0.11);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.nobifashion_reels_app[data-theme="dark"] .nobifashion_reels_search_input_wrap:focus-within {
+  background-color: #1a1d24;
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3.5px rgba(56, 189, 248, 0.22);
+}
+
+.nobifashion_reels_app[data-theme="dark"] .nobifashion_reels_search_clear {
+  background: rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.nobifashion_reels_app[data-theme="dark"] .nobifashion_reels_search_clear:hover {
+  background: rgba(255, 255, 255, 0.28);
+  color: #ffffff;
 }
 
 /* Search Suggestions Dropdown */
