@@ -214,9 +214,6 @@
                     NB
                 </button>
             </div>
-
-            <!-- Popover for Notifications / Profile -->
-            <div id="nobifashion_reels_popover" class="nobifashion_reels_popover"></div>
         </header>
 
         <!-- MAIN WORKSPACE (CENTER VIDEO STAGE + RIGHT COMMENTS SIDEBAR) -->
@@ -278,7 +275,11 @@
         </main>
 
         <!-- DRAWERS & MODALS -->
+        <!-- Mobile overlay: tap-to-close backdrop cho sidebar/popover/menu trên mobile -->
+        <div id="nobifashion_reels_mobile_overlay" class="nobifashion_reels_mobile_overlay" aria-hidden="true"></div>
         <div id="nobifashion_reels_backdrop" class="nobifashion_reels_backdrop"></div>
+        <!-- Popover for Notifications / Profile -->
+        <div id="nobifashion_reels_popover" class="nobifashion_reels_popover"></div>
         <aside id="nobifashion_reels_product_drawer" class="nobifashion_reels_drawer"
             aria-label="Chi tiết sản phẩm trong video"></aside>
         <aside id="nobifashion_reels_cart_drawer" class="nobifashion_reels_drawer" aria-label="Giỏ hàng Nobi Fashion">

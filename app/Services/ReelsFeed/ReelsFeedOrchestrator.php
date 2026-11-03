@@ -16,7 +16,7 @@ class ReelsFeedOrchestrator
      * Giới hạn tối đa số video trong một Feed Cycle Window (cửa sổ trượt)
      * Ngăn ngừa phình to bộ nhớ RAM và dung lượng database khi hệ thống có hàng triệu video
      */
-    public const MAX_CYCLE_WINDOW_SIZE = 500;
+    public const MAX_CYCLE_WINDOW_SIZE = 5000;
 
     protected FeedSnapshotService $snapshotService;
 
@@ -75,33 +75,44 @@ class ReelsFeedOrchestrator
         $targetIds = array_slice($sequence, $currentIndex, $limit);
         $fetchedCount = count($targetIds);
 
-        if ($fetchedCount === 0) {
-            // Đã xem hết vòng phân phối -> Hoàn thành chu kỳ cũ và tự động sinh chu kỳ mới (Seed mới, Full Coverage)
+        // Nếu chuỗi còn lại ít hơn $limit hoặc đã chạm cuối sequence -> Rollover sang chu kỳ mới ngay lập tức
+        if ($fetchedCount < $limit) {
             $this->completeCycle($cycle);
-            $cycle = $this->createNewCycle($anonUser, $userId);
-            $sequence = $cycle->sequence ?? [];
-            $totalVideos = count($sequence);
+            $newCycle = $this->createNewCycle($anonUser, $userId);
+            $newSequence = $newCycle->sequence ?? [];
+            $needed = $limit - $fetchedCount;
+            $moreIds = array_slice($newSequence, 0, $needed);
+
+            $targetIds = array_merge($targetIds, $moreIds);
+            $newCycle->current_index = count($moreIds);
+            $newCycle->total_delivered = count($moreIds);
+            $newCycle->save();
+
+            $cycle = $newCycle;
             $currentIndex = 0;
-            $targetIds = array_slice($sequence, $currentIndex, $limit);
-            $fetchedCount = count($targetIds);
+            $newIndex = count($moreIds);
+            $totalVideos = count($newSequence);
+        } else {
+            $newIndex = $currentIndex + $fetchedCount;
+            $cycle->current_index = max((int) $cycle->current_index, $newIndex);
+            $cycle->total_delivered = max((int) $cycle->total_delivered, $newIndex);
+
+            // Nếu vừa chạm đúng cuối chu kỳ hiện tại -> Hoàn thành và tạo chu kỳ mới sẵn sàng
+            if ($newIndex >= $totalVideos) {
+                $this->completeCycle($cycle);
+                $newCycle = $this->createNewCycle($anonUser, $userId);
+                $cycle = $newCycle;
+                $newIndex = 0;
+            } else {
+                $cycle->save();
+            }
         }
 
         // 3. Truy vấn nạp chi tiết các Reel từ Database (Indexed Primary Key lookup)
         $reels = $this->fetchReelsByIds($targetIds, $clientIp, $userId, $anonUser);
 
-        // Cập nhật vị trí con trỏ của cycle
-        $newIndex = $currentIndex + $fetchedCount;
-        $cycle->current_index = max((int) $cycle->current_index, $newIndex);
-        $cycle->total_delivered = max((int) $cycle->total_delivered, $newIndex);
-        $hasMore = $newIndex < $totalVideos;
-
-        if (!$hasMore) {
-            $cycle->status = 'completed';
-            $cycle->completed_at = now();
-        }
-        $cycle->save();
-
-        // 4. Tạo signed cursor an toàn cho lần gọi tiếp theo
+        // 4. Trong Reels: Luôn có video tiếp theo (Vòng phân phối vô tận - Infinite Feed)
+        $hasMore = count($reels) > 0;
         $nextCursor = $hasMore ? $this->generateCursorForIndex($cycle, $newIndex) : null;
 
         return [

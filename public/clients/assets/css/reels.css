@@ -3230,6 +3230,25 @@ button.nobifashion_reels_subscribe_text_btn {
   pointer-events: none;
 }
 
+/* --- Mobile Overlay: tap-to-close backdrop cho sidebar/popover/more-menu trên mobile --- */
+.nobifashion_reels_mobile_overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.50);
+  z-index: 80 !important; /* Dưới sidebar (90), dưới popover (95), dưới more menu (100) */
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+}
+.nobifashion_reels_mobile_overlay.nobifashion_reels_is_open {
+  display: block;
+  animation: nobifashion_reels_overlay_fadein 0.22s ease;
+}
+@keyframes nobifashion_reels_overlay_fadein {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
 /* --- Drawers & Modals (Product Details, Cart Drawer, Share, More Menu) --- */
 .nobifashion_reels_backdrop {
   position: fixed;
@@ -4048,7 +4067,7 @@ button.nobifashion_reels_subscribe_text_btn {
     border-top: 1px solid var(--nobifashion_reels_border_color) !important;
     border-radius: var(--nobifashion_reels_radius_xl) var(--nobifashion_reels_radius_xl) 0 0 !important;
     transform: translateY(100%) !important;
-    z-index: 85 !important;
+    z-index: 90 !important;
     padding-bottom: env(safe-area-inset-bottom, 0px) !important;
   }
 

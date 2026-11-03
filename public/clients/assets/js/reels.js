@@ -145,16 +145,18 @@ class ReelsDataStore {
         this.nextCursor = json.pagination?.next_cursor || null;
         this.hasMore = Boolean(json.pagination?.has_more);
 
-        // Chống thêm video trùng id
-        const existingIds = new Set(this.reels.map((r) => r.id));
+        // Chống thêm video trùng id trong 15 video gần nhất (hỗ trợ quay vòng cycle vô tận không bao giờ dừng)
+        const recentTail = this.reels.slice(-15);
+        const recentTailIds = new Set(recentTail.map((r) => String(r.id)));
         newReels.forEach((r) => {
-          if (!existingIds.has(r.id)) {
+          if (!recentTailIds.has(String(r.id))) {
             const keyId = r.author?.id;
             const keyName = r.author?.name;
             if ((keyId && this.followedAuthors.has(keyId)) || (keyName && this.followedAuthors.has(keyName))) {
               r.isFollowing = true;
             }
             this.reels.push(r);
+            recentTailIds.add(String(r.id));
           }
         });
         return true;
@@ -1942,14 +1944,24 @@ class ReelsNavigationController {
 
     if (targetIndex < 0 || targetIndex >= list.length) {
       this.updateNavButtons(list.length);
+      // Nếu user cuộn xuống tiếp mà đã chạm đáy bộ nhớ đệm, tự động fetch trang tiếp và bước tiếp
+      if (direction > 0 && this.store.hasMore && !this.store.isLoadingMore) {
+        this.store.fetchNextPage().then((loaded) => {
+          if (loaded) {
+            const updatedList = this.getReelsList();
+            this.updateNavButtons(updatedList.length);
+            this.step(1);
+          }
+        });
+      }
       return false;
     }
 
     this.isTransitioning = true;
     this.activeIndex = targetIndex;
 
-    // Tự động tải tiếp trang khi người dùng cuộn gần tới cuối danh sách video
-    if (this.activeIndex >= list.length - 3 && this.store.hasMore && !this.store.isLoadingMore) {
+    // Tự động tải tiếp trang khi người dùng cuộn gần tới cuối danh sách video (còn 5 video)
+    if (this.activeIndex >= list.length - 5 && this.store.hasMore && !this.store.isLoadingMore) {
       this.store.fetchNextPage().then((loaded) => {
         if (loaded) {
           const updatedList = this.getReelsList();
@@ -2063,7 +2075,8 @@ class ReelsNavigationController {
       this.prevBtn.disabled = total === 0 || this.activeIndex <= 0;
     }
     if (this.nextBtn) {
-      this.nextBtn.disabled = total === 0 || this.activeIndex >= total - 1;
+      // Chỉ disable khi danh sách rỗng, hoặc đang ở video cuối và thực sự không còn video nào trên server
+      this.nextBtn.disabled = total === 0 || (this.activeIndex >= total - 1 && !this.store.hasMore);
     }
   }
 }
@@ -2396,6 +2409,11 @@ class CommentsController {
       } else if (action === 'close-mobile-comments') {
         const ws = document.querySelector('.nobifashion_reels_workspace');
         if (ws) ws.classList.remove('nobifashion_reels_mobile_comments_open');
+        const overlay = document.getElementById('nobifashion_reels_mobile_overlay');
+        if (overlay) {
+          overlay.classList.remove('nobifashion_reels_is_open');
+          overlay.setAttribute('aria-hidden', 'true');
+        }
       }
     });
 
@@ -4630,6 +4648,7 @@ class NobiFashionReelsApp {
     this.modalEl = document.getElementById('nobifashion_reels_modal');
     this.morePopoverEl = document.getElementById('nobifashion_reels_more_popover');
     this.backdropEl = document.getElementById('nobifashion_reels_backdrop');
+    this.mobileOverlayEl = document.getElementById('nobifashion_reels_mobile_overlay');
     this.cartBadgeEl = document.getElementById('nobifashion_reels_cart_badge');
 
     this.store = new ReelsDataStore();
@@ -4760,7 +4779,9 @@ class NobiFashionReelsApp {
       if (
         this.productController.isAnyDrawerOpen() ||
         this.modalEl?.classList.contains('nobifashion_reels_is_open') ||
-        this.morePopoverEl?.classList.contains('nobifashion_reels_is_open')
+        this.morePopoverEl?.classList.contains('nobifashion_reels_is_open') ||
+        this.workspaceEl?.classList.contains('nobifashion_reels_mobile_comments_open') ||
+        this.mobileOverlayEl?.classList.contains('nobifashion_reels_is_open')
       ) {
         return true;
       }
@@ -4851,6 +4872,8 @@ class NobiFashionReelsApp {
         case 'reset-home':
           this.store.resetFilters();
           this.uiController.setSearchQuery('');
+          this.uiController.popoverEl?.classList.remove('nobifashion_reels_is_open');
+          this.hideMobileOverlay();
           this.uiController.setFilter('all');
           break;
 
@@ -4860,6 +4883,12 @@ class NobiFashionReelsApp {
 
         case 'open-notifications':
           this.uiController.openNotificationsPopover();
+          // Nếu popover vừa mở (không phải toggle đóng): hiện overlay mobile
+          if (this.uiController.popoverEl?.classList.contains('nobifashion_reels_is_open')) {
+            this.showMobileOverlay();
+          } else {
+            this.hideMobileOverlay();
+          }
           break;
 
         case 'mark-all-read':
@@ -4868,27 +4897,37 @@ class NobiFashionReelsApp {
 
         case 'close-popover':
           this.uiController.popoverEl?.classList.remove('nobifashion_reels_is_open');
+          this.hideMobileOverlay();
           break;
 
         case 'open-profile':
           this.uiController.openProfilePopover();
+          // Nếu popover vừa mở: hiện overlay mobile
+          if (this.uiController.popoverEl?.classList.contains('nobifashion_reels_is_open')) {
+            this.showMobileOverlay();
+          } else {
+            this.hideMobileOverlay();
+          }
           break;
 
         case 'open-cart':
         case 'profile-open-cart':
           this.uiController.popoverEl?.classList.remove('nobifashion_reels_is_open');
+          this.hideMobileOverlay();
           this.productController.openCartDrawer();
           break;
 
         case 'profile-filter': {
           const f = actionEl.getAttribute('data-filter') || 'all';
           this.uiController.popoverEl?.classList.remove('nobifashion_reels_is_open');
+          this.hideMobileOverlay();
           await this.uiController.setFilter(f);
           break;
         }
 
         case 'profile-reset-data':
           this.uiController.popoverEl?.classList.remove('nobifashion_reels_is_open');
+          this.hideMobileOverlay();
           this.store.resetFilters();
           this.uiController.setSearchQuery('');
           this.uiController.setFilter('all');
@@ -4905,6 +4944,7 @@ class NobiFashionReelsApp {
           this.uiController.setFilter('all');
           this.uiController.searchDropdown?.classList.remove('nobifashion_reels_is_open');
           this.uiController.popoverEl?.classList.remove('nobifashion_reels_is_open');
+          this.hideMobileOverlay();
           if (reelId) await this.navigationController.jumpToReelId(reelId, fallbackReel);
           break;
         }
@@ -5009,6 +5049,12 @@ class NobiFashionReelsApp {
 
         case 'toggle-comments-panel':
           this.uiController.toggleCommentsSidebar();
+          // Kiểm tra trạng thái sau khi toggle để show/hide overlay trên mobile
+          if (this.workspaceEl?.classList.contains('nobifashion_reels_mobile_comments_open')) {
+            this.showMobileOverlay();
+          } else {
+            this.hideMobileOverlay();
+          }
           break;
 
         case 'open-products':
@@ -5024,12 +5070,15 @@ class NobiFashionReelsApp {
           const targetReel = (reelId && this.store.getReelById(reelId)) || activeReel;
           if (targetReel) {
             this.interactionController.openMorePopover(actionEl, targetReel);
+            // Hiện overlay mobile khi more-popover vừa mở
+            this.showMobileOverlay();
           }
           break;
         }
 
         case 'more-interested':
           this.interactionController.closeMorePopover();
+          this.hideMobileOverlay();
           if (activeReel) {
             this.analyticsTracker?.markInteraction('interest');
           }
@@ -5039,6 +5088,7 @@ class NobiFashionReelsApp {
         case 'more-uninterested': {
           const rId = actionEl.getAttribute('data-reel-id') || activeReel?.id;
           this.interactionController.closeMorePopover();
+          this.hideMobileOverlay();
           if (rId) {
             this.store.hideReel(rId);
             this.navigationController.next();
@@ -5050,6 +5100,7 @@ class NobiFashionReelsApp {
         case 'more-toggle-save': {
           const rId = actionEl.getAttribute('data-reel-id') || activeReel?.id;
           this.interactionController.closeMorePopover();
+          this.hideMobileOverlay();
           if (rId) {
             this.interactionController.handleToggleSave(rId);
           }
@@ -5059,6 +5110,7 @@ class NobiFashionReelsApp {
         case 'more-copy-link': {
           const rId = actionEl.getAttribute('data-reel-id') || activeReel?.id;
           this.interactionController.closeMorePopover();
+          this.hideMobileOverlay();
           if (rId) {
             const target = (rId && this.store.getReelById(rId)) || activeReel;
             const shareSlug = target?.slug || rId;
@@ -5074,6 +5126,7 @@ class NobiFashionReelsApp {
 
         case 'more-report':
           this.interactionController.closeMorePopover();
+          this.hideMobileOverlay();
           this.uiController.showToast('Cảm ơn bạn. Chúng tôi đã tiếp nhận báo cáo thước phim này.');
           break;
 
@@ -5093,6 +5146,7 @@ class NobiFashionReelsApp {
           const spd = actionEl.getAttribute('data-speed');
           this.player.setPlaybackSpeed(spd);
           this.interactionController.closeMorePopover();
+          this.hideMobileOverlay();
           this.uiController.showToast(`Đã chọn tốc độ phát ${spd}x`);
           break;
         }
@@ -5278,6 +5332,43 @@ class NobiFashionReelsApp {
         this.interactionController.closeModal();
       });
     }
+
+    // Mobile overlay click: đóng toàn bộ components đang mở trên mobile
+    if (this.mobileOverlayEl) {
+      this.mobileOverlayEl.addEventListener('click', () => {
+        this.closeAllMobileComponents();
+      });
+    }
+  }
+
+  // --- Mobile Overlay Helpers ---
+
+  /** Chỉ hiện overlay khi đang ở giao diện mobile/tablet (<= 1023px) */
+  showMobileOverlay() {
+    if (window.innerWidth > 1023) return;
+    if (!this.mobileOverlayEl) return;
+    this.mobileOverlayEl.classList.add('nobifashion_reels_is_open');
+    this.mobileOverlayEl.setAttribute('aria-hidden', 'false');
+  }
+
+  hideMobileOverlay() {
+    if (!this.mobileOverlayEl) return;
+    this.mobileOverlayEl.classList.remove('nobifashion_reels_is_open');
+    this.mobileOverlayEl.setAttribute('aria-hidden', 'true');
+  }
+
+  /** Đóng tất cả mobile components và ẩn overlay */
+  closeAllMobileComponents() {
+    // Đóng comments sidebar (mobile bottom sheet)
+    this.workspaceEl?.classList.remove('nobifashion_reels_mobile_comments_open');
+    // Đóng popover (notifications / profile)
+    this.uiController?.popoverEl?.classList.remove('nobifashion_reels_is_open');
+    // Đóng search dropdown
+    this.uiController?.searchDropdown?.classList.remove('nobifashion_reels_is_open');
+    // Đóng more-options popover
+    this.interactionController?.closeMorePopover();
+    // Ẩn overlay
+    this.hideMobileOverlay();
   }
 
   bindKeyboardNavigation() {
@@ -5296,6 +5387,7 @@ class NobiFashionReelsApp {
         this.uiController.searchDropdown?.classList.remove('nobifashion_reels_is_open');
         this.uiController.popoverEl?.classList.remove('nobifashion_reels_is_open');
         this.workspaceEl?.classList.remove('nobifashion_reels_mobile_comments_open');
+        this.hideMobileOverlay();
         return;
       }
 
