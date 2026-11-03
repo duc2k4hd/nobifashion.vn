@@ -39,7 +39,17 @@ class ReelModerationController extends Controller
             ->latest('id')
             ->paginate(20, ['*'], 'logs_page');
 
-        return view('admins.reels.moderation.index', compact('activeTab', 'rules', 'whitelists', 'logs'));
+        // Thống kê KPI kiểm duyệt
+        $counts = [
+            'total_rules' => $rules->count(),
+            'active_rules' => $rules->where('is_active', true)->count(),
+            'block_rules' => $rules->where('action', 'block')->count(),
+            'review_rules' => $rules->where('action', 'review')->count(),
+            'whitelists' => $whitelists->count(),
+            'logs' => CommentModerationLog::count(),
+        ];
+
+        return view('admins.reels.moderation.index', compact('activeTab', 'rules', 'whitelists', 'logs', 'counts'));
     }
 
     /**
@@ -151,14 +161,20 @@ class ReelModerationController extends Controller
      */
     public function storeWhitelist(Request $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'word' => ['required', 'string', 'max:100', 'unique:comment_moderation_whitelists,word'],
-            'note' => ['nullable', 'string', 'max:255'],
-        ]);
+        $word = trim((string) ($request->input('word') ?: $request->input('term', '')));
+        $note = trim((string) ($request->input('note') ?: $request->input('reason', '')));
+
+        if (empty($word)) {
+            return back()->with('error', 'Vui lòng nhập cụm từ ngoại lệ.');
+        }
+
+        if (CommentModerationWhitelist::where('word', $word)->exists()) {
+            return back()->with('error', "Cụm từ \"{$word}\" đã có trong danh sách ngoại lệ.");
+        }
 
         $entry = CommentModerationWhitelist::create([
-            'word' => trim($validated['word']),
-            'note' => $validated['note'] ?? null,
+            'word' => $word,
+            'note' => $note ?: null,
         ]);
 
         $this->adminService->logAudit('create_whitelist_entry', ['word' => $entry->word]);
@@ -183,11 +199,64 @@ class ReelModerationController extends Controller
     }
 
     /**
+     * Khởi tạo bộ quy tắc kiểm duyệt mẫu tiếng Việt chuẩn cho thời trang
+     */
+    public function seedPresets(Request $request): RedirectResponse
+    {
+        $presetRules = [
+            // Link & Spam lừa đảo
+            ['pattern' => 'https?://', 'rule_type' => 'link', 'language' => 'all', 'severity' => 'high', 'action' => 'block'],
+            ['pattern' => 'zalo.me', 'rule_type' => 'link', 'language' => 'vi', 'severity' => 'high', 'action' => 'block'],
+            ['pattern' => 't.me/', 'rule_type' => 'link', 'language' => 'all', 'severity' => 'high', 'action' => 'block'],
+            ['pattern' => 'bit.ly', 'rule_type' => 'link', 'language' => 'all', 'severity' => 'high', 'action' => 'block'],
+            ['pattern' => '/\\b(0|\\+84)(3|5|7|8|9)[0-9]{8}\\b/', 'rule_type' => 'spam', 'language' => 'vi', 'severity' => 'medium', 'action' => 'review'],
+            // Từ ngữ thô tục / Nhạy cảm
+            ['pattern' => 'đụ', 'rule_type' => 'profanity', 'language' => 'vi', 'severity' => 'high', 'action' => 'block'],
+            ['pattern' => 'đm', 'rule_type' => 'profanity', 'language' => 'vi', 'severity' => 'high', 'action' => 'block'],
+            ['pattern' => 'dcm', 'rule_type' => 'profanity', 'language' => 'vi', 'severity' => 'high', 'action' => 'block'],
+            ['pattern' => 'địt', 'rule_type' => 'profanity', 'language' => 'vi', 'severity' => 'high', 'action' => 'block'],
+            ['pattern' => 'vcl', 'rule_type' => 'profanity', 'language' => 'vi', 'severity' => 'medium', 'action' => 'review'],
+            ['pattern' => 'lừa đảo', 'rule_type' => 'harassment', 'language' => 'vi', 'severity' => 'high', 'action' => 'review'],
+            ['pattern' => 'đồ giả', 'rule_type' => 'harassment', 'language' => 'vi', 'severity' => 'medium', 'action' => 'review'],
+            ['pattern' => 'hàng fake', 'rule_type' => 'harassment', 'language' => 'vi', 'severity' => 'medium', 'action' => 'review'],
+            ['pattern' => 'buồi', 'rule_type' => 'profanity', 'language' => 'vi', 'severity' => 'high', 'action' => 'block'],
+            ['pattern' => 'cặc', 'rule_type' => 'profanity', 'language' => 'vi', 'severity' => 'high', 'action' => 'block'],
+        ];
+
+        $presetWhitelists = [
+            ['word' => 'quần què', 'note' => 'Thuật ngữ địa phương / Phong cách thời trang'],
+            ['word' => 'đầm xòe', 'note' => 'Thiết kế váy đầm'],
+            ['word' => 'chất lừ', 'note' => 'Khen trang phục đẹp'],
+        ];
+
+        $addedRules = 0;
+        foreach ($presetRules as $item) {
+            $exists = CommentModerationRule::where('pattern', $item['pattern'])->exists();
+            if (!$exists) {
+                CommentModerationRule::create(array_merge($item, ['is_active' => true]));
+                $addedRules++;
+            }
+        }
+
+        $addedWl = 0;
+        foreach ($presetWhitelists as $item) {
+            $exists = CommentModerationWhitelist::where('word', $item['word'])->exists();
+            if (!$exists) {
+                CommentModerationWhitelist::create($item);
+                $addedWl++;
+            }
+        }
+
+        return redirect()->route('admin.reels.moderation.index', ['tab' => 'rules'])
+            ->with('success', "Đã nạp thành công {$addedRules} quy tắc kiểm duyệt và {$addedWl} từ khóa ngoại lệ chuẩn tiếng Việt!");
+    }
+
+    /**
      * Công cụ tương tác: Kiểm tra thử một đoạn bình luận với các rules hiện hành
      */
     public function testRule(Request $request): JsonResponse
     {
-        $text = trim((string) $request->input('text', ''));
+        $text = trim((string) ($request->input('text') ?: $request->input('content', '')));
         if (empty($text)) {
             return response()->json([
                 'success' => false,

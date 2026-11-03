@@ -759,13 +759,26 @@ class ReelApiController extends Controller
      */
     public function getStickerCategories(): JsonResponse
     {
+        $categories = CommentSticker::active()
+            ->select('category')
+            ->distinct()
+            ->pluck('category')
+            ->map(function ($cat) {
+                $name = match ($cat) {
+                    'shopping' => 'Mua sắm',
+                    'fashion' => 'Thời trang',
+                    'emotion' => 'Cảm xúc',
+                    'brand' => 'Thương hiệu',
+                    default => \Illuminate\Support\Str::startsWith($cat, 'zalo-') 
+                        ? \Illuminate\Support\Str::title(str_replace('-', ' ', \Illuminate\Support\Str::after($cat, 'zalo-'))) 
+                        : ucfirst($cat),
+                };
+                return ['id' => $cat, 'name' => $name];
+            });
+
         return response()->json([
             'success' => true,
-            'data' => [
-                ['id' => 'cute', 'name' => 'Đáng yêu'],
-                ['id' => 'reaction', 'name' => 'Cảm xúc'],
-                ['id' => 'fashion', 'name' => 'Thời trang'],
-            ],
+            'data' => $categories,
         ]);
     }
 }

@@ -874,6 +874,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
                 Route::post('/whitelist', [\App\Http\Controllers\Admins\Reels\ReelModerationController::class, 'storeWhitelist'])->name('whitelist.store');
                 Route::delete('/whitelist/{id}', [\App\Http\Controllers\Admins\Reels\ReelModerationController::class, 'destroyWhitelist'])->name('whitelist.destroy');
                 Route::post('/test-rule', [\App\Http\Controllers\Admins\Reels\ReelModerationController::class, 'testRule'])->name('test-rule');
+                Route::post('/seed-presets', [\App\Http\Controllers\Admins\Reels\ReelModerationController::class, 'seedPresets'])->name('seed-presets');
             });
 
             // Stickers Management
@@ -883,6 +884,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
                 Route::put('/{id}', [\App\Http\Controllers\Admins\Reels\ReelStickerController::class, 'update'])->name('update');
                 Route::patch('/{id}/toggle', [\App\Http\Controllers\Admins\Reels\ReelStickerController::class, 'toggle'])->name('toggle');
                 Route::delete('/{id}', [\App\Http\Controllers\Admins\Reels\ReelStickerController::class, 'destroy'])->name('destroy');
+                Route::post('/seed-presets', [\App\Http\Controllers\Admins\Reels\ReelStickerController::class, 'seedPresets'])->name('seed-presets');
+
+                // Zalo Stickers Sync Tool
+                Route::get('/zalo/packs', [\App\Http\Controllers\Admins\Reels\ReelStickerController::class, 'zaloPacks'])->name('zalo.packs');
+                Route::post('/zalo/sync-pack', [\App\Http\Controllers\Admins\Reels\ReelStickerController::class, 'syncZaloPack'])->name('zalo.sync-pack');
             });
 
             // Distribution Center

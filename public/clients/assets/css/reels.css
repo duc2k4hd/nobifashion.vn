@@ -2726,7 +2726,7 @@ button.nobifashion_reels_subscribe_text_btn {
 
 /* Fixed Comment Input Footer */
 .nobifashion_reels_comment_composer {
-  padding: 4px 10px !important;
+  padding: 8px 12px !important;
   border-top: 1px solid var(--nobifashion_reels_border_color);
   background-color: var(--nobifashion_reels_bg_elevated);
   position: relative;
@@ -2737,101 +2737,441 @@ button.nobifashion_reels_subscribe_text_btn {
   display: none;
   align-items: center;
   justify-content: space-between;
-  font-size: 10.5px !important;
+  font-size: 11.5px !important;
   color: var(--nobifashion_reels_text_secondary);
   background-color: var(--nobifashion_reels_bg_subtle);
-  padding: 3px 8px !important;
-  border-radius: var(--nobifashion_reels_radius_xs);
-  margin-bottom: 3px !important;
+  padding: 4px 10px !important;
+  border-radius: var(--nobifashion_reels_radius_sm);
+  margin-bottom: 6px !important;
+  border: 1px solid var(--nobifashion_reels_border_color);
 }
 
 .nobifashion_reels_reply_banner.nobifashion_reels_is_active {
   display: flex;
 }
 
+/* Khung Sticker đính kèm chuẩn Zalo (Xem trước + Nút hủy) */
+.nobifashion_reels_attached_sticker_wrap {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  margin-bottom: 6px;
+  background-color: var(--nobifashion_reels_bg_subtle);
+  border: 1px solid var(--nobifashion_reels_border_color);
+  border-radius: 12px;
+  animation: nobifashion_reels_sticker_pop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nobifashion_reels_attached_sticker_wrap.is_visible {
+  display: flex;
+}
+
+.nobifashion_reels_attached_sticker_box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.nobifashion_reels_attached_sticker_img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.nobifashion_reels_attached_sticker_info {
+  display: flex;
+  flex-direction: column;
+}
+
+.nobifashion_reels_attached_sticker_name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--nobifashion_reels_text_primary);
+  line-height: 1.2;
+}
+
+.nobifashion_reels_attached_sticker_tag {
+  font-size: 11px;
+  color: #3b82f6;
+  margin-top: 2px;
+}
+
+.nobifashion_reels_attached_sticker_remove {
+  background: rgba(0, 0, 0, 0.06);
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--nobifashion_reels_text_secondary);
+  transition: all var(--nobifashion_reels_transition_fast);
+}
+
+.nobifashion_reels_attached_sticker_remove:hover {
+  background: #ef4444;
+  color: #ffffff;
+  transform: scale(1.1);
+}
+
+@keyframes nobifashion_reels_sticker_pop {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .nobifashion_reels_composer_row {
   display: flex;
   align-items: center;
-  gap: 5px !important;
+  gap: 8px !important;
   background-color: var(--nobifashion_reels_bg_subtle);
   border: 1px solid var(--nobifashion_reels_border_color);
   border-radius: 999px !important;
-  padding: 2px 4px 2px 7px !important;
-  min-height: 28px !important;
-  height: 28px !important;
+  padding: 4px 6px 4px 10px !important;
+  min-height: 40px !important;
+  height: auto !important;
+  transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
 }
 
 .nobifashion_reels_composer_row:focus-within {
-  border-color: var(--nobifashion_reels_border_strong);
+  border-color: #3b82f6;
   background-color: var(--nobifashion_reels_bg_elevated);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
 }
 
 .nobifashion_reels_composer_input {
   flex: 1;
-  font-size: 11.5px !important;
+  font-size: 13.5px !important;
   outline: none;
+  border: none;
+  background: transparent;
   color: var(--nobifashion_reels_text_primary);
   user-select: text;
+  padding: 4px 0 !important;
+  line-height: 1.4;
 }
 
 .nobifashion_reels_composer_input::placeholder {
   color: var(--nobifashion_reels_text_muted);
-  font-size: 11px !important;
+  font-size: 13px !important;
 }
 
 .nobifashion_reels_emoji_trigger,
 .nobifashion_reels_send_btn {
-  width: 22px !important;
-  height: 22px !important;
+  width: 32px !important;
+  height: 32px !important;
   border-radius: 50%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   color: var(--nobifashion_reels_text_secondary);
+  cursor: pointer;
+  border: none;
+  background: transparent;
   transition: all var(--nobifashion_reels_transition_fast);
+  flex-shrink: 0;
+}
+
+.nobifashion_reels_emoji_trigger:hover {
+  background-color: var(--nobifashion_reels_bg_hover);
+  color: #3b82f6;
+  transform: scale(1.08);
 }
 
 .nobifashion_reels_emoji_trigger svg,
 .nobifashion_reels_send_btn svg {
-  width: 12px !important;
-  height: 12px !important;
+  width: 16px !important;
+  height: 16px !important;
 }
 
 .nobifashion_reels_send_btn {
-  color: var(--nobifashion_reels_accent_contrast);
+  background-color: #3b82f6 !important;
+  color: #ffffff !important;
 }
 
-.nobifashion_reels_emoji_picker {
+.nobifashion_reels_send_btn:hover {
+  background-color: #2563eb !important;
+  transform: scale(1.08);
+}
+
+.nobifashion_reels_send_btn:disabled {
+  opacity: 0.45 !important;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Khay Drawer Chọn Sticker & Emoji Đa Năng Chuẩn Zalo Studio */
+.nobifashion_reels_sticker_drawer {
   position: absolute;
-  bottom: calc(100% + 6px);
-  right: var(--nobifashion_reels_space_4);
+  bottom: calc(100% + 8px);
+  left: 6px;
+  right: 6px;
+  height: 350px;
   background-color: var(--nobifashion_reels_bg_elevated);
   border: 1px solid var(--nobifashion_reels_border_color);
-  border-radius: var(--nobifashion_reels_radius_md);
-  box-shadow: var(--nobifashion_reels_shadow_md);
-  padding: var(--nobifashion_reels_space_2);
+  border-radius: 16px;
+  box-shadow: 0 14px 35px 0 rgba(0, 0, 0, 0.18), 0 2px 6px 0 rgba(0, 0, 0, 0.08);
   display: none;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 4px;
-  z-index: 50;
+  flex-direction: column;
+  z-index: 100;
+  overflow: hidden;
+  animation: nobifashion_reels_drawer_pop 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.nobifashion_reels_emoji_picker.nobifashion_reels_is_open {
+.nobifashion_reels_sticker_drawer.is_open {
+  display: flex;
+}
+
+@keyframes nobifashion_reels_drawer_pop {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* 1. Header Tabs: STICKER / EMOJI */
+.nobifashion_reels_sticker_main_tabs {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--nobifashion_reels_border_color);
+  background-color: var(--nobifashion_reels_bg_elevated);
+  padding: 0 12px;
+  flex-shrink: 0;
+}
+
+.nobifashion_reels_sticker_main_tab_btn {
+  flex: 1;
+  text-align: center;
+  padding: 10px 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--nobifashion_reels_text_muted);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.15s ease;
+}
+
+.nobifashion_reels_sticker_main_tab_btn:hover {
+  color: var(--nobifashion_reels_text_primary);
+}
+
+.nobifashion_reels_sticker_main_tab_btn.active {
+  color: #0284c7;
+}
+
+.nobifashion_reels_sticker_main_tab_btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 20%;
+  right: 20%;
+  height: 2.5px;
+  background-color: #0284c7;
+  border-radius: 999px;
+}
+
+/* 2. Thanh Search Sticker */
+.nobifashion_reels_sticker_search_wrap {
+  padding: 8px 12px 6px 12px;
+  position: relative;
+  flex-shrink: 0;
+  background-color: var(--nobifashion_reels_bg_elevated);
+}
+
+.nobifashion_reels_sticker_search_input {
+  width: 100%;
+  border-radius: 999px;
+  border: 1px solid var(--nobifashion_reels_border_color);
+  background-color: var(--nobifashion_reels_bg_subtle);
+  padding: 6px 12px 6px 32px;
+  font-size: 12px;
+  color: var(--nobifashion_reels_text_primary);
+  outline: none;
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.nobifashion_reels_sticker_search_input:focus {
+  border-color: #0284c7;
+  background-color: var(--nobifashion_reels_bg_elevated);
+}
+
+.nobifashion_reels_sticker_search_icon {
+  position: absolute;
+  left: 22px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--nobifashion_reels_text_muted);
+  pointer-events: none;
+}
+
+/* 3. Vùng cuộn nội dung Stickers / Emoji */
+.nobifashion_reels_sticker_body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 12px 14px 12px;
+  scroll-behavior: smooth;
+}
+
+.nobifashion_reels_sticker_pack_section {
+  margin-bottom: 16px;
+}
+
+.nobifashion_reels_sticker_pack_title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--nobifashion_reels_text_secondary);
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: capitalize;
+}
+
+.nobifashion_reels_sticker_grid {
   display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
 }
 
-.nobifashion_reels_emoji_btn {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--nobifashion_reels_radius_xs);
-  font-size: 16px;
+.nobifashion_reels_sticker_item_btn {
+  border: 1px solid transparent;
+  background-color: var(--nobifashion_reels_bg_subtle);
+  border-radius: 12px;
+  padding: 6px;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  aspect-ratio: 1;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
+}
+
+.nobifashion_reels_sticker_item_btn:hover {
+  transform: scale(1.12);
+  background-color: #ffffff;
+  border-color: #0284c7;
+  box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.12);
+  z-index: 2;
+}
+
+.nobifashion_reels_sticker_item_img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.nobifashion_reels_emoji_grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+  padding: 4px 0;
+}
+
+.nobifashion_reels_emoji_btn {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--nobifashion_reels_radius_xs);
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: transform 0.12s, background-color 0.12s;
 }
 
 .nobifashion_reels_emoji_btn:hover {
+  background-color: var(--nobifashion_reels_bg_hover);
+  transform: scale(1.28);
+}
+
+/* 4. Thanh Bottom Pack Bar ở đáy (Ảnh 2 Zalo) */
+.nobifashion_reels_sticker_bottom_bar {
+  display: flex;
+  align-items: center;
   background-color: var(--nobifashion_reels_bg_subtle);
+  border-top: 1px solid var(--nobifashion_reels_border_color);
+  padding: 4px 6px;
+  flex-shrink: 0;
+  height: 44px;
+  gap: 4px;
+}
+
+.nobifashion_reels_sticker_bottom_nav_btn {
+  width: 24px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--nobifashion_reels_text_muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.nobifashion_reels_sticker_bottom_nav_btn:hover {
+  background-color: var(--nobifashion_reels_bg_hover);
+  color: var(--nobifashion_reels_text_primary);
+}
+
+.nobifashion_reels_sticker_bottom_list {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  flex: 1;
+  padding: 2px 4px;
+}
+
+.nobifashion_reels_sticker_bottom_list::-webkit-scrollbar {
+  display: none;
+}
+
+.nobifashion_reels_sticker_pack_avatar_btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background-color: transparent;
+  padding: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+}
+
+.nobifashion_reels_sticker_pack_avatar_btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.nobifashion_reels_sticker_pack_avatar_btn.active {
+  background-color: #ffffff;
+  border-color: #0284c7;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);
+  transform: translateY(-1px);
+}
+
+.nobifashion_reels_sticker_pack_avatar_img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  pointer-events: none;
 }
 
 /* --- Drawers & Modals (Product Details, Cart Drawer, Share, More Menu) --- */

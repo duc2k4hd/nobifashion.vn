@@ -50,6 +50,7 @@
 /tests
 /tests/
 /Tools PHP/
+/public/uploads/
 
 # Bootstrap cache temp files
 /bootstrap/cache/*.tmp

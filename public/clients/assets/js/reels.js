@@ -453,10 +453,23 @@ class ReelsDataStore {
     this.hiddenReelIds.clear();
   }
 
-  async addComment(reelId, text, replyToCommentId = null) {
+  async fetchStickers() {
+    if (this._cachedStickers) return this._cachedStickers;
+    try {
+      const res = await fetch('/api/v1/reels/stickers');
+      const json = await res.json();
+      if (json.success && json.data) {
+        this._cachedStickers = json.data;
+        return this._cachedStickers;
+      }
+    } catch (_) {}
+    return [];
+  }
+
+  async addComment(reelId, text, replyToCommentId = null, stickerId = null) {
     const reel = this.getReelById(reelId);
-    if (!reel || !text.trim()) return null;
-    const cleanText = text.trim();
+    const cleanText = (text || '').trim();
+    if (!reel || (!cleanText && !stickerId)) return null;
 
     const res = await fetch(`/api/v1/reels/${reel.id}/comments`, {
       method: 'POST',
@@ -469,7 +482,9 @@ class ReelsDataStore {
       },
       body: JSON.stringify({
         content: cleanText,
-        parent_id: replyToCommentId ? parseInt(replyToCommentId, 10) : null
+        parent_id: replyToCommentId ? parseInt(replyToCommentId, 10) : null,
+        comment_type: stickerId ? 'STICKER' : 'TEXT',
+        sticker_id: stickerId ? parseInt(stickerId, 10) : null
       })
     });
 
@@ -2052,7 +2067,13 @@ class ReelsNavigationController {
  * nested replies, comment liking, reply banner, and emoji picker.
  */
 
-const EMOJI_LIST = ['🖤', '🤍', '✨', '🔥', '👏', '😍', '🥂', '💎', '🧥', '👗', '👜', '💯'];
+const EMOJI_LIST = [
+  '❤️', '💖', '😍', '🥰', '😘', '😂', '🤣', '😭',
+  '🔥', '✨', '⭐', '💯', '👏', '🙌', '👍', '🙏',
+  '🎉', '🥳', '😎', '🤩', '😻', '🥺', '🤤', '🤤',
+  '🛍️', '👗', '👠', '👜', '💄', '💍', '💎', '🥂',
+  '🖤', '🤍', '🤎', '🌸', '🌹', '☕', '🍰', '💃'
+];
 
 const FACEBOOK_REACTIONS = [
   {
@@ -2162,14 +2183,45 @@ class CommentsController {
           <button type="button" data-action="cancel-reply" aria-label="Hủy trả lời" style="font-weight:700;">✕</button>
         </div>
 
-        <div class="nobifashion_reels_emoji_picker" id="nobifashion_reels_emoji_picker">
-          ${EMOJI_LIST.map(
-            (em) => `<button type="button" class="nobifashion_reels_emoji_btn" data-action="insert-emoji" data-emoji="${em}">${em}</button>`
-          ).join('')}
+        <!-- Khung Sticker đính kèm chuẩn Zalo (Hiển thị song song với tin nhắn) -->
+        <div class="nobifashion_reels_attached_sticker_wrap" id="nobifashion_reels_attached_sticker_wrap">
+          <div class="nobifashion_reels_attached_sticker_box">
+            <img id="nobifashion_reels_attached_sticker_img" class="nobifashion_reels_attached_sticker_img" src="" alt="Sticker đính kèm" />
+            <div class="nobifashion_reels_attached_sticker_info">
+              <span id="nobifashion_reels_attached_sticker_name" class="nobifashion_reels_attached_sticker_name"></span>
+              <span class="nobifashion_reels_attached_sticker_tag">Đã đính kèm sticker (kèm lời nhắn)</span>
+            </div>
+          </div>
+          <button type="button" class="nobifashion_reels_attached_sticker_remove" data-action="remove-attached-sticker" aria-label="Hủy đính kèm" title="Hủy đính kèm sticker">✕</button>
+        </div>
+
+        <!-- Khay Drawer Sticker & Emoji Thông Minh Chuẩn Zalo Store Pro -->
+        <div class="nobifashion_reels_sticker_drawer" id="nobifashion_reels_sticker_drawer">
+          <!-- 1. Header Tabs: STICKER / EMOJI -->
+          <div class="nobifashion_reels_sticker_main_tabs">
+            <button type="button" class="nobifashion_reels_sticker_main_tab_btn active" data-action="switch-sticker-main-tab" data-tab="sticker">STICKER</button>
+            <button type="button" class="nobifashion_reels_sticker_main_tab_btn" data-action="switch-sticker-main-tab" data-tab="emoji">EMOJI</button>
+          </div>
+
+          <!-- 2. Search Bar -->
+          <div class="nobifashion_reels_sticker_search_wrap" id="nobifashion_reels_sticker_search_wrap">
+            <svg class="nobifashion_reels_sticker_search_icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            <input type="text" id="nobifashion_reels_sticker_search_input" class="nobifashion_reels_sticker_search_input" placeholder="Tìm kiếm sticker..." />
+          </div>
+
+          <!-- 3. Body Cuộn Nội Dung -->
+          <div class="nobifashion_reels_sticker_body" id="nobifashion_reels_sticker_body"></div>
+
+          <!-- 4. Bottom Pack Bar (Thanh chọn bộ ở đáy chuẩn Ảnh 2 Zalo) -->
+          <div class="nobifashion_reels_sticker_bottom_bar" id="nobifashion_reels_sticker_bottom_bar">
+            <button type="button" class="nobifashion_reels_sticker_bottom_nav_btn" data-action="scroll-pack-bar-left" title="Xem trước">❮</button>
+            <div class="nobifashion_reels_sticker_bottom_list" id="nobifashion_reels_sticker_bottom_list"></div>
+            <button type="button" class="nobifashion_reels_sticker_bottom_nav_btn" data-action="scroll-pack-bar-right" title="Xem tiếp">❯</button>
+          </div>
         </div>
 
         <form id="nobifashion_reels_comment_form" class="nobifashion_reels_composer_row" autocomplete="off">
-          <div style="width:22px;height:22px;border-radius:50%;background:${(window.__ANON_USER__ && window.__ANON_USER__.avatar_color) || '#3b82f6'};display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;" title="Biệt danh: ${(window.__ANON_USER__ && window.__ANON_USER__.nickname) || 'Bạn'}">
+          <div style="width:28px;height:28px;border-radius:50%;background:${(window.__ANON_USER__ && window.__ANON_USER__.avatar_color) || '#3b82f6'};display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;" title="Biệt danh: ${(window.__ANON_USER__ && window.__ANON_USER__.nickname) || 'Bạn'}">
             ${(window.__ANON_USER__ && window.__ANON_USER__.avatar_key && ANIMAL_ICONS[window.__ANON_USER__.avatar_key]) || '🐱'}
           </div>
           <input
@@ -2180,11 +2232,16 @@ class CommentsController {
             maxlength="400"
             aria-label="Nhập nội dung bình luận"
           />
-          <button type="button" class="nobifashion_reels_emoji_trigger" data-action="toggle-emoji" aria-label="Chọn biểu tượng cảm xúc" style="font-size:13px;">
-            ☺
+          <button type="button" class="nobifashion_reels_emoji_trigger" data-action="toggle-sticker-drawer" aria-label="Mở khay sticker và cảm xúc" title="Mở Sticker & Emoji">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+              <line x1="9" y1="9" x2="9.01" y2="9"></line>
+              <line x1="15" y1="9" x2="15.01" y2="9"></line>
+            </svg>
           </button>
-          <button type="submit" class="nobifashion_reels_send_btn" aria-label="Gửi bình luận">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <button type="submit" class="nobifashion_reels_send_btn" aria-label="Gửi bình luận" title="Gửi bình luận">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
             </svg>
           </button>
@@ -2198,9 +2255,23 @@ class CommentsController {
     this.commentsListEl = this.sidebarEl.querySelector('#nobifashion_reels_comments_list');
     this.replyBannerEl = this.sidebarEl.querySelector('#nobifashion_reels_reply_banner');
     this.replyLabelEl = this.sidebarEl.querySelector('#nobifashion_reels_reply_label');
-    this.emojiPickerEl = this.sidebarEl.querySelector('#nobifashion_reels_emoji_picker');
+    this.attachedStickerWrapEl = this.sidebarEl.querySelector('#nobifashion_reels_attached_sticker_wrap');
+    this.attachedStickerImgEl = this.sidebarEl.querySelector('#nobifashion_reels_attached_sticker_img');
+    this.attachedStickerNameEl = this.sidebarEl.querySelector('#nobifashion_reels_attached_sticker_name');
+    this.stickerDrawerEl = this.sidebarEl.querySelector('#nobifashion_reels_sticker_drawer');
+    this.stickerSearchWrapEl = this.sidebarEl.querySelector('#nobifashion_reels_sticker_search_wrap');
+    this.stickerSearchInputEl = this.sidebarEl.querySelector('#nobifashion_reels_sticker_search_input');
+    this.stickerBodyEl = this.sidebarEl.querySelector('#nobifashion_reels_sticker_body');
+    this.stickerBottomBarEl = this.sidebarEl.querySelector('#nobifashion_reels_sticker_bottom_bar');
+    this.stickerBottomListEl = this.sidebarEl.querySelector('#nobifashion_reels_sticker_bottom_list');
     this.commentFormEl = this.sidebarEl.querySelector('#nobifashion_reels_comment_form');
     this.commentInputEl = this.sidebarEl.querySelector('#nobifashion_reels_comment_input');
+
+    this.selectedSticker = null;
+    this.activeStickerMainTab = 'sticker';
+    this.activePackCategory = null;
+    this.stickerSearchQuery = '';
+    this.cachedStickersList = null;
 
     this.bindEvents();
   }
@@ -2278,8 +2349,26 @@ class CommentsController {
             btn.innerHTML = '<span>↳ Thử lại xem thêm...</span>';
           });
         }
-      } else if (action === 'toggle-emoji') {
-        this.emojiPickerEl.classList.toggle('nobifashion_reels_is_open');
+      } else if (action === 'toggle-sticker-drawer') {
+        this.toggleStickerDrawer();
+      } else if (action === 'switch-sticker-main-tab') {
+        const tab = btn.getAttribute('data-tab');
+        this.switchStickerMainTab(tab);
+      } else if (action === 'scroll-to-pack') {
+        const packCat = btn.getAttribute('data-pack');
+        this.scrollToPack(packCat);
+      } else if (action === 'scroll-pack-bar-left') {
+        if (this.stickerBottomListEl) this.stickerBottomListEl.scrollBy({ left: -140, behavior: 'smooth' });
+      } else if (action === 'scroll-pack-bar-right') {
+        if (this.stickerBottomListEl) this.stickerBottomListEl.scrollBy({ left: 140, behavior: 'smooth' });
+      } else if (action === 'select-sticker-tab') {
+        const tab = btn.getAttribute('data-tab');
+        this.selectStickerTab(tab);
+      } else if (action === 'select-sticker-item') {
+        const stickerId = parseInt(btn.getAttribute('data-sticker-id'), 10);
+        this.onSelectStickerItem(stickerId);
+      } else if (action === 'remove-attached-sticker') {
+        this.removeAttachedSticker();
       } else if (action === 'insert-emoji') {
         const emoji = btn.getAttribute('data-emoji') || '';
         this.commentInputEl.value += emoji;
@@ -2298,6 +2387,55 @@ class CommentsController {
       } else if (action === 'close-mobile-comments') {
         const ws = document.querySelector('.nobifashion_reels_workspace');
         if (ws) ws.classList.remove('nobifashion_reels_mobile_comments_open');
+      }
+    });
+
+    // Xử lý sự kiện tương tác trực tiếp bên trong khay Sticker (chặn nổi bọt ra document nhưng kích hoạt đúng action)
+    if (this.stickerDrawerEl) {
+      this.stickerDrawerEl.addEventListener('click', (e) => {
+        e.stopPropagation();
+
+        const btn = e.target.closest('[data-action]');
+        if (!btn) return;
+
+        const action = btn.getAttribute('data-action');
+        if (action === 'switch-sticker-main-tab') {
+          const tab = btn.getAttribute('data-tab');
+          this.switchStickerMainTab(tab);
+        } else if (action === 'scroll-to-pack') {
+          const packCat = btn.getAttribute('data-pack');
+          this.scrollToPack(packCat);
+        } else if (action === 'scroll-pack-bar-left') {
+          if (this.stickerBottomListEl) this.stickerBottomListEl.scrollBy({ left: -140, behavior: 'smooth' });
+        } else if (action === 'scroll-pack-bar-right') {
+          if (this.stickerBottomListEl) this.stickerBottomListEl.scrollBy({ left: 140, behavior: 'smooth' });
+        } else if (action === 'select-sticker-item') {
+          const stickerId = parseInt(btn.getAttribute('data-sticker-id'), 10);
+          this.onSelectStickerItem(stickerId);
+        } else if (action === 'insert-emoji') {
+          const emoji = btn.getAttribute('data-emoji') || '';
+          if (this.commentInputEl) {
+            this.commentInputEl.value += emoji;
+            this.commentInputEl.focus();
+          }
+        }
+      });
+    }
+
+    // Lắng nghe tìm kiếm Sticker tức thì (Instant Search)
+    if (this.stickerSearchInputEl) {
+      this.stickerSearchInputEl.addEventListener('input', (e) => {
+        this.stickerSearchQuery = (e.target.value || '').trim().toLowerCase();
+        this.renderStickerPacksBody();
+      });
+    }
+
+    document.addEventListener('click', (e) => {
+      if (this.stickerDrawerEl && this.stickerDrawerEl.classList.contains('is_open')) {
+        // Chỉ đóng khi người dùng click ra ngoài toàn bộ cụm comment composer
+        if (!e.target.closest('.nobifashion_reels_comment_composer')) {
+          this.stickerDrawerEl.classList.remove('is_open');
+        }
       }
     });
   }
@@ -2541,8 +2679,13 @@ class CommentsController {
     const avatarBg = c.avatar_color || '#3b82f6';
     const authorName = c.nickname || c.author || 'Khách Nobi';
 
+    const isOnlyStickerName = c.sticker && c.text && c.text.trim() === (c.sticker.name || '').trim();
+    const textHtml = (!c.text || isOnlyStickerName) 
+      ? '' 
+      : `<p class="nobifashion_reels_comment_text">${this.formatCommentText(c.text)}</p>`;
+
     const stickerHtml = c.sticker && c.sticker.asset_url
-      ? `<div style="margin-top:4px;"><img src="${c.sticker.asset_url}" alt="${this.escapeHtml(c.sticker.name || 'Sticker')}" style="width:42px;height:42px;object-fit:contain;display:block;" /></div>`
+      ? `<div style="margin-top:6px;"><img src="${c.sticker.asset_url}" alt="${this.escapeHtml(c.sticker.name || 'Sticker')}" style="width:64px;height:64px;object-fit:contain;display:block;border-radius:6px;" loading="lazy" /></div>`
       : '';
 
     return `
@@ -2565,7 +2708,7 @@ class CommentsController {
                 : ''
             }
           </div>
-          <p class="nobifashion_reels_comment_text">${this.formatCommentText(c.text)}</p>
+          ${textHtml}
           ${stickerHtml}
           <div class="nobifashion_reels_comment_actions">
             <!-- Nút Like kèm thanh chọn cảm xúc Facebook khi hover -->
@@ -2785,7 +2928,8 @@ class CommentsController {
   async submitComment() {
     if (!this.currentReel) return;
     const text = this.commentInputEl.value.trim();
-    if (!text) return;
+    const stickerId = this.selectedSticker ? this.selectedSticker.id : null;
+    if (!text && !stickerId) return;
 
     const replyId = this.replyToComment ? this.replyToComment.id : null;
     const rootId = (this.replyToComment && this.replyToComment.rootId) ? this.replyToComment.rootId : replyId;
@@ -2793,10 +2937,11 @@ class CommentsController {
     if (sendBtn) sendBtn.disabled = true;
 
     try {
-      const result = await this.store.addComment(this.currentReel.id, text, replyId);
+      const result = await this.store.addComment(this.currentReel.id, text, replyId, stickerId);
       this.commentInputEl.value = '';
+      this.removeAttachedSticker();
       this.clearReplyTarget();
-      if (this.emojiPickerEl) this.emojiPickerEl.classList.remove('nobifashion_reels_is_open');
+      if (this.stickerDrawerEl) this.stickerDrawerEl.classList.remove('is_open');
 
       if (rootId) {
         this.expandedReplies.add(String(rootId));
@@ -2819,12 +2964,211 @@ class CommentsController {
       this.analyticsTracker?.markInteraction('comment');
     } catch (err) {
       if (this.showToast) {
-        this.showToast(err.message || 'Không thể đăng bình luận. Vui lòng thử lại!');
-      } else {
-        alert(err.message);
+        this.showToast(err.message || 'Lỗi khi gửi bình luận');
       }
     } finally {
       if (sendBtn) sendBtn.disabled = false;
+    }
+  }
+
+  async toggleStickerDrawer() {
+    if (!this.stickerDrawerEl) return;
+    const isOpen = this.stickerDrawerEl.classList.contains('is_open');
+    if (isOpen) {
+      this.stickerDrawerEl.classList.remove('is_open');
+    } else {
+      this.stickerDrawerEl.classList.add('is_open');
+      if (!this.cachedStickersList) {
+        if (this.stickerBodyEl) {
+          this.stickerBodyEl.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--nobifashion_reels_text_muted);font-size:13px;"><span class="spinner-border spinner-border-sm me-2"></span> Đang nạp sticker...</div>`;
+        }
+        this.cachedStickersList = await this.store.fetchStickers();
+      }
+      this.renderStickerDrawer();
+    }
+  }
+
+  switchStickerMainTab(tabKey) {
+    this.activeStickerMainTab = tabKey;
+    const tabBtns = this.stickerDrawerEl ? this.stickerDrawerEl.querySelectorAll('.nobifashion_reels_sticker_main_tab_btn') : [];
+    tabBtns.forEach(btn => {
+      btn.classList.toggle('active', btn.getAttribute('data-tab') === tabKey);
+    });
+    this.renderStickerDrawer();
+  }
+
+  getCategoryDisplayName(catKey) {
+    if (catKey === 'shopping') return '🛍️ Mua sắm';
+    if (catKey === 'fashion') return '👗 Thời trang';
+    if (catKey === 'emotion') return '💖 Biểu cảm';
+    if (catKey === 'brand') return '✨ Nobi Brand';
+    if (catKey.startsWith('zalo-')) {
+      const raw = catKey.replace('zalo-', '').replace(/-/g, ' ');
+      return '🎨 ' + raw.replace(/\b\w/g, l => l.toUpperCase());
+    }
+    return '📁 ' + catKey;
+  }
+
+  renderStickerDrawer() {
+    if (!this.stickerDrawerEl || !this.stickerBodyEl) return;
+
+    // Cập nhật trạng thái active cho Header tabs
+    const tabBtns = this.stickerDrawerEl.querySelectorAll('.nobifashion_reels_sticker_main_tab_btn');
+    tabBtns.forEach(btn => {
+      btn.classList.toggle('active', btn.getAttribute('data-tab') === this.activeStickerMainTab);
+    });
+
+    if (this.activeStickerMainTab === 'emoji') {
+      if (this.stickerSearchWrapEl) this.stickerSearchWrapEl.style.display = 'none';
+      if (this.stickerBottomBarEl) this.stickerBottomBarEl.style.display = 'none';
+      this.stickerBodyEl.innerHTML = `
+        <div class="nobifashion_reels_emoji_grid">
+          ${EMOJI_LIST.map(em => `
+            <button type="button" class="nobifashion_reels_emoji_btn" data-action="insert-emoji" data-emoji="${em}" title="${em}">${em}</button>
+          `).join('')}
+        </div>
+      `;
+    } else {
+      if (this.stickerSearchWrapEl) this.stickerSearchWrapEl.style.display = 'block';
+      if (this.stickerBottomBarEl) this.stickerBottomBarEl.style.display = 'flex';
+      this.renderStickerPacksBody();
+      this.renderStickerBottomBar();
+    }
+  }
+
+  renderStickerPacksBody() {
+    if (!this.stickerBodyEl) return;
+    const stickers = this.cachedStickersList || [];
+    const query = this.stickerSearchQuery || '';
+
+    // Lọc theo từ khóa tìm kiếm nếu có
+    const filtered = query
+      ? stickers.filter(s => (s.name && s.name.toLowerCase().includes(query)) || (s.code && s.code.toLowerCase().includes(query)) || (s.category && s.category.toLowerCase().includes(query)))
+      : stickers;
+
+    if (filtered.length === 0) {
+      this.stickerBodyEl.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--nobifashion_reels_text_muted);font-size:13px;">Không tìm thấy sticker nào phù hợp</div>`;
+      return;
+    }
+
+    // Nhóm sticker theo category
+    const grouped = {};
+    filtered.forEach(s => {
+      const cat = s.category || 'default';
+      if (!grouped[cat]) grouped[cat] = [];
+      grouped[cat].push(s);
+    });
+
+    const categoryKeys = Object.keys(grouped);
+    let html = '';
+
+    categoryKeys.forEach(catKey => {
+      const items = grouped[catKey] || [];
+      const displayName = this.getCategoryDisplayName(catKey);
+
+      html += `
+        <div class="nobifashion_reels_sticker_pack_section" id="pack-section-${catKey}" data-pack="${catKey}">
+          <div class="nobifashion_reels_sticker_pack_title">
+            <span>${displayName}</span>
+            <span style="font-size:11px;opacity:0.6;font-weight:400;">(${items.length})</span>
+          </div>
+          <div class="nobifashion_reels_sticker_grid">
+            ${items.map(st => `
+              <button type="button" class="nobifashion_reels_sticker_item_btn" data-action="select-sticker-item" data-sticker-id="${st.id}" title="${this.escapeHtml(st.name)}">
+                <img src="${st.asset_url}" alt="${this.escapeHtml(st.name)}" class="nobifashion_reels_sticker_item_img" loading="lazy" />
+              </button>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    });
+
+    this.stickerBodyEl.innerHTML = html;
+  }
+
+  renderStickerBottomBar() {
+    if (!this.stickerBottomListEl) return;
+    const stickers = this.cachedStickersList || [];
+
+    const grouped = {};
+    stickers.forEach(s => {
+      const cat = s.category || 'default';
+      if (!grouped[cat]) grouped[cat] = [];
+      grouped[cat].push(s);
+    });
+
+    const categoryKeys = Object.keys(grouped);
+    if (!this.activePackCategory && categoryKeys.length > 0) {
+      this.activePackCategory = categoryKeys[0];
+    }
+
+    let bottomHtml = '';
+    categoryKeys.forEach(catKey => {
+      const packItems = grouped[catKey] || [];
+      const firstSticker = packItems[0];
+      const displayName = this.getCategoryDisplayName(catKey);
+      const isActive = this.activePackCategory === catKey;
+
+      if (firstSticker) {
+        bottomHtml += `
+          <button type="button" class="nobifashion_reels_sticker_pack_avatar_btn ${isActive ? 'active' : ''}" data-action="scroll-to-pack" data-pack="${catKey}" title="${displayName}">
+            <img src="${firstSticker.asset_url}" alt="${displayName}" style="width:24px;height:24px;object-fit:contain;pointer-events:none;" />
+          </button>
+        `;
+      }
+    });
+
+    this.stickerBottomListEl.innerHTML = bottomHtml;
+  }
+
+  scrollToPack(catKey) {
+    this.activePackCategory = catKey;
+    if (this.stickerBottomListEl) {
+      const btns = this.stickerBottomListEl.querySelectorAll('.nobifashion_reels_sticker_pack_avatar_btn');
+      btns.forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-pack') === catKey);
+      });
+    }
+
+    if (this.stickerBodyEl) {
+      const targetSec = this.stickerBodyEl.querySelector(`[data-pack="${catKey}"]`);
+      if (targetSec) {
+        targetSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  }
+
+  selectStickerTab(tabKey) {
+    this.scrollToPack(tabKey);
+  }
+
+  onSelectStickerItem(stickerId) {
+    const stickers = this.cachedStickersList || [];
+    const target = stickers.find(s => s.id === stickerId);
+    if (!target) return;
+
+    this.attachSticker(target);
+  }
+
+  attachSticker(sticker) {
+    this.selectedSticker = sticker;
+    if (this.attachedStickerWrapEl && this.attachedStickerImgEl && this.attachedStickerNameEl) {
+      this.attachedStickerImgEl.src = sticker.asset_url;
+      this.attachedStickerNameEl.textContent = sticker.name;
+      this.attachedStickerWrapEl.classList.add('is_visible');
+    }
+    if (this.stickerDrawerEl) {
+      this.stickerDrawerEl.classList.remove('is_open');
+    }
+    if (this.commentInputEl) {
+      this.commentInputEl.focus();
+    }
+  }
+
+  removeAttachedSticker() {
+    this.selectedSticker = null;
+    if (this.attachedStickerWrapEl) {
+      this.attachedStickerWrapEl.classList.remove('is_visible');
     }
   }
 
