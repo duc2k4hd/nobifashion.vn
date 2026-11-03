@@ -163,7 +163,7 @@ strong {
 }
 
 /* Khoảng đệm cho các trang con không bị header fixed che khuất */
-body:not(.nobifashion_home_page) {
+body:not(.nobifashion_home_page):not(.nobifashion_reels_page) {
     padding-top: var(--nobifashion_home_header_height, 64px);
 }
 
@@ -171,7 +171,7 @@ body:not(.nobifashion_home_page) {
     .nobifashion_home_container {
         padding-inline: 12px;
     }
-    body:not(.nobifashion_home_page) {
+    body:not(.nobifashion_home_page):not(.nobifashion_reels_page) {
         padding-top: 92px !important;
     }
 }

@@ -77,11 +77,13 @@
     <style>
         .nobifashion_reels_page,
         .nobifashion_reels_page body,
-        .nobifashion_reels_page html {
+        .nobifashion_reels_page html,
+        html body.nobifashion_reels_page {
             overflow: hidden !important;
             height: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
+            padding-top: 0 !important;
         }
         .nobifashion_reels_page #main-content {
             padding: 0 !important;
