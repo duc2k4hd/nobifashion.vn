@@ -3339,7 +3339,6 @@ button.nobifashion_reels_subscribe_text_btn {
   flex: 1;
   height: 40px;
   border-radius: var(--nobifashion_reels_radius_sm);
-  background-color: var(--nobifashion_reels_accent);
   color: var(--nobifashion_reels_accent_contrast);
   font-size: 13px;
   font-weight: 600;
@@ -3348,10 +3347,6 @@ button.nobifashion_reels_subscribe_text_btn {
   justify-content: center;
   gap: 8px;
   transition: background-color var(--nobifashion_reels_transition_fast);
-}
-
-.nobifashion_reels_btn_block:hover {
-  background-color: var(--nobifashion_reels_accent_hover);
 }
 
 .nobifashion_reels_btn_outline {
