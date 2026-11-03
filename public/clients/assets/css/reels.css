@@ -1510,16 +1510,29 @@ button.nobifashion_reels_subscribe_text_btn {
 /* Header Popover Menus (Notifications & Profile) */
 .nobifashion_reels_popover {
   position: absolute;
-  top: calc(var(--nobifashion_reels_header_h) - 6px);
-  right: var(--nobifashion_reels_space_6);
-  width: 320px;
-  background-color: var(--nobifashion_reels_bg_elevated);
-  border: 1px solid var(--nobifashion_reels_border_color);
-  border-radius: var(--nobifashion_reels_radius_md);
-  box-shadow: var(--nobifashion_reels_shadow_lg);
-  padding: var(--nobifashion_reels_space_3);
-  z-index: 70;
+  top: calc(var(--nobifashion_reels_header_h, 54px) + 6px);
+  right: 18px;
+  width: 350px;
+  max-width: calc(100vw - 24px);
+  background-color: var(--nobifashion_reels_bg_elevated, #ffffff);
+  border: 1px solid var(--nobifashion_reels_border_color, #e2e8f0);
+  border-radius: var(--nobifashion_reels_radius_md, 12px);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.22);
+  padding: 14px;
+  z-index: 100;
   display: none;
+  animation: nobifashion_reels_popover_fade 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes nobifashion_reels_popover_fade {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .nobifashion_reels_popover.nobifashion_reels_is_open {
@@ -1530,27 +1543,34 @@ button.nobifashion_reels_subscribe_text_btn {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-bottom: var(--nobifashion_reels_space_2);
-  margin-bottom: var(--nobifashion_reels_space_2);
-  border-bottom: 1px solid var(--nobifashion_reels_border_subtle);
-  font-size: 13px;
-  font-weight: 600;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--nobifashion_reels_border_subtle, #f1f5f9);
+  font-size: 13.5px;
+  font-weight: 700;
 }
 
 .nobifashion_reels_notif_item {
   display: flex;
   align-items: flex-start;
-  gap: var(--nobifashion_reels_space_3);
-  padding: 8px;
-  border-radius: var(--nobifashion_reels_radius_sm);
+  gap: 10px;
+  padding: 10px;
+  border-radius: 8px;
   font-size: 12px;
   line-height: 1.4;
   cursor: pointer;
-  transition: background-color var(--nobifashion_reels_transition_fast);
+  transition: background-color 0.15s ease, transform 0.15s ease;
+  background-color: transparent;
+  border: 1px solid transparent;
 }
 
 .nobifashion_reels_notif_item:hover {
-  background-color: var(--nobifashion_reels_bg_subtle);
+  background-color: var(--nobifashion_reels_bg_subtle, #f8fafc);
+  border-color: var(--nobifashion_reels_border_subtle, #e2e8f0);
+}
+
+.nobifashion_reels_notif_item.nobifashion_reels_notif_unread {
+  background-color: rgba(3, 105, 161, 0.05);
 }
 
 /* --- Stage Filter Pills --- */
@@ -3964,6 +3984,25 @@ button.nobifashion_reels_subscribe_text_btn {
     height: 4px;
     border-radius: var(--nobifashion_reels_radius_pill);
     background-color: var(--nobifashion_reels_border_strong);
+  }
+
+  /* 6. Mobile Popover (Notifications & Profile) Bottom Sheet */
+  .nobifashion_reels_popover {
+    position: fixed !important;
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border-radius: 18px 18px 0 0 !important;
+    border: none !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.35) !important;
+    padding: 16px 16px calc(20px + env(safe-area-inset-bottom, 0px)) 16px !important;
+    z-index: 105 !important;
+    background-color: var(--nobifashion_reels_bg_elevated, #ffffff) !important;
+    max-height: 75dvh !important;
   }
 }
 

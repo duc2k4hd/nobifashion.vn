@@ -3943,6 +3943,8 @@ class UIController {
     this.searchClearBtn = document.getElementById('nobifashion_reels_search_clear');
     this.searchDropdown = document.getElementById('nobifashion_reels_search_dropdown');
     this.popoverEl = document.getElementById('nobifashion_reels_popover');
+    this.notifBadgeEl = document.getElementById('nobifashion_reels_notif_badge') || document.querySelector('[data-action="open-notifications"] .nobifashion_reels_badge');
+    this.notifications = this.getInitialNotifications();
     this.toastTimer = null;
 
     this.applyTheme(this.store.theme);
@@ -4125,6 +4127,77 @@ class UIController {
     `;
   }
 
+  getInitialNotifications() {
+    const topReels = this.store.reels || [];
+    const r1 = topReels[0] || null;
+    const r2 = topReels[1] || null;
+
+    return [
+      {
+        id: 'notif_welcome',
+        title: 'Chào mừng bạn đến với Nobi Reels!',
+        desc: 'Khám phá video thời trang xu hướng, xem phối đồ OOTD và mua sắm trực tiếp.',
+        time: 'Vừa xong',
+        type: 'system',
+        unread: true,
+        reelId: r1 ? r1.id : null,
+      },
+      {
+        id: 'notif_promo',
+        title: '🎁 Ưu đãi độc quyền Nobi Reels: Giảm 15%',
+        desc: 'Nhập mã NOBIREELS để được giảm ngay 15% cho đơn hàng thời trang gắn liền với video.',
+        time: '30 phút trước',
+        type: 'promo',
+        unread: true,
+        action: 'open-cart',
+      },
+      {
+        id: 'notif_trending',
+        title: '🔥 Video xu hướng đang thịnh hành',
+        desc: r1 ? `${r1.author?.name || 'Nobi Fashion'}: ${r1.title}` : 'Khám phá bộ sưu tập phong cách mới nhất tại Nobi Fashion.',
+        time: '2 giờ trước',
+        type: 'trending',
+        unread: true,
+        reelId: r1 ? r1.id : null,
+      },
+      {
+        id: 'notif_collection',
+        title: '✨ Gợi ý phong cách dành riêng cho bạn',
+        desc: r2 ? `Đừng bỏ lỡ video "${r2.title}" đang được yêu thích trong tuần.` : 'Khám phá bộ sưu tập thời trang Thu Đông mới cập nhật.',
+        time: '1 ngày trước',
+        type: 'suggestion',
+        unread: false,
+        reelId: r2 ? r2.id : null,
+      }
+    ];
+  }
+
+  updateNotifBadge() {
+    if (!this.notifBadgeEl) {
+      this.notifBadgeEl = document.getElementById('nobifashion_reels_notif_badge') || document.querySelector('[data-action="open-notifications"] .nobifashion_reels_badge');
+    }
+    if (!this.notifBadgeEl) return;
+    const count = (this.notifications || []).filter(n => n.unread).length;
+    this.notifBadgeEl.textContent = count;
+    this.notifBadgeEl.style.display = count > 0 ? 'inline-flex' : 'none';
+  }
+
+  markAllNotificationsRead() {
+    (this.notifications || []).forEach(n => { n.unread = false; });
+    this.updateNotifBadge();
+    this.renderNotificationsContent();
+    this.showToast?.('Đã đánh dấu đọc tất cả thông báo');
+  }
+
+  markNotificationRead(notifId) {
+    if (!notifId || !this.notifications) return;
+    const notif = this.notifications.find(n => n.id === notifId);
+    if (notif && notif.unread) {
+      notif.unread = false;
+      this.updateNotifBadge();
+    }
+  }
+
   openNotificationsPopover() {
     if (!this.popoverEl) return;
     const isSameOpen =
@@ -4136,26 +4209,71 @@ class UIController {
       return;
     }
 
+    // Tự động gán video thực tế nếu chưa có
+    if (this.store.reels && this.store.reels.length > 0) {
+      const topReel = this.store.reels[0];
+      this.notifications.forEach(n => {
+        if (!n.reelId && topReel) n.reelId = topReel.id;
+      });
+    }
+
     this.popoverEl.setAttribute('data-mode', 'notifications');
+    this.renderNotificationsContent();
+    this.popoverEl.classList.add('nobifashion_reels_is_open');
+  }
+
+  renderNotificationsContent() {
+    if (!this.popoverEl) return;
+    const unreadCount = (this.notifications || []).filter(n => n.unread).length;
+
     this.popoverEl.innerHTML = `
       <div class="nobifashion_reels_popover_header">
-        <span>Thông báo Nobi Reels</span>
-        <span style="font-size:11px;color:var(--nobifashion_reels_text_muted);">Mới nhất</span>
-      </div>
-      ${INITIAL_NOTIFICATIONS.map(
-        (n) => `
-        <div class="nobifashion_reels_notif_item" data-action="jump-notif-reel" data-reel-id="${n.reelId}" role="button" tabindex="0">
-          <div style="width:8px;height:8px;border-radius:50%;background:var(--nobifashion_reels_accent);margin-top:5px;flex-shrink:0;"></div>
-          <div>
-            <div style="font-weight:600;color:var(--nobifashion_reels_text_primary);">${n.title}</div>
-            <div style="color:var(--nobifashion_reels_text_secondary);margin-top:2px;">${n.desc}</div>
-            <div style="font-size:10px;color:var(--nobifashion_reels_text_muted);margin-top:3px;">${n.time}</div>
-          </div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+          </svg>
+          <span style="font-size:13.5px;font-weight:700;color:var(--nobifashion_reels_text_primary);">Thông báo Reels</span>
+          ${unreadCount > 0 ? `<span class="badge rounded-pill bg-danger text-white px-2 py-0" style="font-size:10px;">${unreadCount} mới</span>` : ''}
         </div>
-      `
-      ).join('')}
+        <div style="display:flex;align-items:center;gap:10px;">
+          ${unreadCount > 0 ? `
+            <button type="button" data-action="mark-all-read" style="background:none;border:none;color:var(--nobifashion_reels_accent,#0284c7);font-size:11.5px;font-weight:600;cursor:pointer;padding:0;">
+              Đã đọc tất cả
+            </button>
+          ` : `
+            <span style="font-size:11px;color:var(--nobifashion_reels_text_muted);">Đã cập nhật</span>
+          `}
+          <button type="button" data-action="close-popover" style="background:none;border:none;color:var(--nobifashion_reels_text_muted);cursor:pointer;padding:2px 6px;font-size:16px;line-height:1;" aria-label="Đóng">✕</button>
+        </div>
+      </div>
+      <div class="nobifashion_reels_notif_list" style="max-height:360px;overflow-y:auto;display:flex;flex-direction:column;gap:4px;">
+        ${(this.notifications || []).map((n) => `
+          <div class="nobifashion_reels_notif_item ${n.unread ? 'nobifashion_reels_notif_unread' : ''}" 
+               data-action="${n.action || 'jump-notif-reel'}" 
+               data-reel-id="${n.reelId || ''}" 
+               data-notif-id="${n.id}"
+               role="button" tabindex="0">
+            <div style="width:8px;height:8px;border-radius:50%;background:${n.unread ? '#ef4444' : 'transparent'};margin-top:6px;flex-shrink:0;"></div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:${n.unread ? '700' : '600'};color:var(--nobifashion_reels_text_primary);font-size:12.5px;line-height:1.35;">${n.title}</div>
+              <div style="color:var(--nobifashion_reels_text_secondary);margin-top:2px;font-size:11.5px;line-height:1.4;">${n.desc}</div>
+              <div style="font-size:10px;color:var(--nobifashion_reels_text_muted);margin-top:4px;">${n.time}</div>
+            </div>
+            ${n.action === 'open-cart' ? `
+              <span class="badge bg-warning text-dark" style="font-size:9.5px;margin-top:4px;flex-shrink:0;padding:2px 6px;">Mua sắm</span>
+            ` : (n.reelId ? `
+              <span class="badge bg-light text-secondary border" style="font-size:9.5px;margin-top:4px;flex-shrink:0;padding:2px 6px;">Xem ngay</span>
+            ` : '')}
+          </div>
+        `).join('')}
+      </div>
+      <div style="padding-top:10px;margin-top:6px;border-top:1px solid var(--nobifashion_reels_border_subtle);text-align:center;">
+        <button type="button" data-action="reset-home" style="background:none;border:none;color:var(--nobifashion_reels_text_secondary);font-size:11.5px;font-weight:600;cursor:pointer;padding:4px 8px;">
+          ✦ Khám phá toàn bộ video xu hướng
+        </button>
+      </div>
     `;
-    this.popoverEl.classList.add('nobifashion_reels_is_open');
   }
 
   openProfilePopover() {
@@ -4735,6 +4853,14 @@ class NobiFashionReelsApp {
           this.uiController.openNotificationsPopover();
           break;
 
+        case 'mark-all-read':
+          this.uiController.markAllNotificationsRead();
+          break;
+
+        case 'close-popover':
+          this.uiController.popoverEl?.classList.remove('nobifashion_reels_is_open');
+          break;
+
         case 'open-profile':
           this.uiController.openProfilePopover();
           break;
@@ -4763,6 +4889,8 @@ class NobiFashionReelsApp {
         case 'jump-notif-reel':
         case 'select-search-reel': {
           const reelId = actionEl.getAttribute('data-reel-id');
+          const notifId = actionEl.getAttribute('data-notif-id');
+          if (notifId) this.uiController.markNotificationRead(notifId);
           const fallbackReel = this.uiController.lastSearchResults?.get(Number(reelId)) || null;
           this.store.resetFilters();
           this.uiController.setFilter('all');
