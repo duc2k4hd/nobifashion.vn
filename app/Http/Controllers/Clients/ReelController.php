@@ -67,38 +67,58 @@ class ReelController extends Controller
     }
 
     /**
-     * Trang chi tiết 1 video Reel (/reels/{slug}) - Tối ưu 100% SEO & VideoObject Schema
+     * Trang SEO riêng cho video Reel (/reel/{slug}) - Tối ưu 100% SEO, Open Graph & VideoObject Schema
      */
-    public function show(string $slug, Request $request): View
+    public function show(string $slug, Request $request)
     {
-        $reel = Reel::published()->where('slug', $slug)->with(['brand', 'products.primaryImage'])->firstOrFail();
+        $reel = Reel::published()
+            ->where('slug', $slug)
+            ->with(['brand', 'products.primaryImage', 'products.brand'])
+            ->first();
+
+        // Fallback: nếu người dùng truy cập bằng ID số thay vì slug, chuyển hướng 301 chuẩn SEO
+        if (!$reel && is_numeric($slug)) {
+            $reelById = Reel::published()->where('id', (int) $slug)->first();
+            if ($reelById && $reelById->slug) {
+                return redirect()->route('client.reel.show', ['slug' => $reelById->slug], 301);
+            }
+        }
+
+        if (!$reel) {
+            abort(404, 'Video không tồn tại hoặc đã bị gỡ');
+        }
 
         $userId = auth()->id();
         $clientIp = $request->ip();
         $anonUser = $request->attributes->get('anonymous_user') ?: $this->identityService->resolveUser($request);
 
-        $activeReel = $reel->toFeedArray($clientIp, $userId);
-        $activeReel['isLiked'] = $this->reelService->hasLiked($reel->id, $clientIp, $userId, $anonUser);
-        $activeReel['isSaved'] = $this->reelService->hasSaved($reel->id, $clientIp, $userId);
+        // Ghi nhận lượt xem video
+        $this->reelService->recordView($reel, $request);
 
-        $batch = $this->orchestrator->getFeedBatch($anonUser, $userId, $clientIp, 10);
-        $subsequentReels = array_values(array_filter($batch['items'], fn($r) => $r['id'] !== $reel->id));
+        $feedReel = $reel->toFeedArray($clientIp, $userId);
 
-        $initialReels = array_merge([$activeReel], $subsequentReels);
+        // Lấy danh sách video tiếp theo để người xem có thể cuộn lướt tiếp mượt mà như TikTok/Facebook Reels
+        $batch = $this->orchestrator->getFeedBatch($anonUser, $userId, $clientIp, 10, null);
+        $otherReels = array_values(array_filter($batch['items'], fn($item) => ($item['id'] ?? null) != $reel->id));
+        $initialReels = array_merge([$feedReel], $otherReels);
         $nextCursor = $batch['nextCursor'];
         $hasMore = $batch['hasMore'];
+        $activeReel = $feedReel;
 
         $seoTitle = ($reel->seo_title ?: $reel->title) . ' | Nobi Reels';
-        $seoDescription = $reel->seo_description ?: ($reel->caption ? mb_substr(strip_tags($reel->caption), 0, 160) : 'Video ngắn thời trang Nobi Reels');
+        $seoDescription = $reel->seo_description ?: ($reel->caption ? mb_substr(strip_tags($reel->caption), 0, 160) : 'Xem video ngắn thời trang ' . $reel->title . ' tại Nobi Reels.');
+        $canonicalUrl = url('/reel/' . $reel->slug);
 
         return view('clients.pages.reels.index', compact(
+            'reel',
             'initialReels',
             'nextCursor',
             'hasMore',
             'activeReel',
             'anonUser',
             'seoTitle',
-            'seoDescription'
+            'seoDescription',
+            'canonicalUrl'
         ));
     }
 }

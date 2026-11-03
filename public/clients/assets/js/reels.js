@@ -1724,26 +1724,6 @@ class ReelsRenderer {
           </div>
         </div>
       </div>
-
-      <!-- Video Speed Pill & Vertical Popup (Góc dưới bên phải khung video) -->
-      <div class="nobifashion_reels_speed_wrapper">
-        <div class="nobifashion_reels_speed_popup" role="menu" aria-label="Tốc độ phát">
-          <button type="button" class="nobifashion_reels_speed_opt" data-action="select-speed" data-speed="0.75">0.75x</button>
-          <button type="button" class="nobifashion_reels_speed_opt nobifashion_reels_is_active" data-action="select-speed" data-speed="1">1.0x</button>
-          <button type="button" class="nobifashion_reels_speed_opt" data-action="select-speed" data-speed="1.25">1.25x</button>
-          <button type="button" class="nobifashion_reels_speed_opt" data-action="select-speed" data-speed="1.5">1.5x</button>
-          <button type="button" class="nobifashion_reels_speed_opt" data-action="select-speed" data-speed="2">2.0x</button>
-        </div>
-        <button
-          type="button"
-          class="nobifashion_reels_speed_btn"
-          data-action="toggle-speed-menu"
-          aria-label="Tốc độ phát"
-          title="Chọn tốc độ phát video"
-        >
-          <span class="nobifashion_reels_speed_btn_text">1.0x</span>
-        </button>
-      </div>
     `;
 
     return slide;
@@ -1769,14 +1749,6 @@ class ReelsRenderer {
       muteBtn.setAttribute('aria-label', this.store.muted ? 'Bật âm thanh' : 'Tắt âm thanh');
       muteBtn.setAttribute('title', this.store.muted ? 'Bật âm thanh' : 'Tắt âm thanh');
     }
-    const speedBtnText = slideEl.querySelector('.nobifashion_reels_speed_btn_text');
-    if (speedBtnText) {
-      speedBtnText.textContent = '1.0x';
-    }
-    const speedOpts = slideEl.querySelectorAll('.nobifashion_reels_speed_opt');
-    speedOpts.forEach((opt) => {
-      opt.classList.toggle('nobifashion_reels_is_active', opt.getAttribute('data-speed') === '1');
-    });
   }
 
   renderActionRail(reel) {
@@ -3300,7 +3272,8 @@ class InteractionController {
   openShareModal(reel) {
     if (!reel || !this.modalEl) return;
     this.analyticsTracker?.markInteraction('share');
-    const shareUrl = `https://nobifashion.vn/reels/${reel.id}`;
+    const shareSlug = reel.slug || reel.id;
+    const shareUrl = `https://nobifashion.vn/reel/${shareSlug}`;
 
     this.modalEl.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;">
@@ -3529,7 +3502,8 @@ class InteractionController {
 
   openMoreOptionsModal(reel) {
     if (!reel || !this.modalEl) return;
-    const shareUrl = `https://nobifashion.vn/reels/${reel.id}`;
+    const shareSlug = reel.slug || reel.id;
+    const shareUrl = `https://nobifashion.vn/reel/${shareSlug}`;
 
     this.modalEl.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;">
@@ -3538,7 +3512,7 @@ class InteractionController {
       </div>
       <div class="nobifashion_reels_modal_list">
         <button type="button" class="nobifashion_reels_modal_option" data-action="copy-reel-link" data-url="${shareUrl}">
-          <span>Sao chép đường dẫn (${reel.id})</span>
+          <span>Sao chép đường dẫn (${shareSlug})</span>
         </button>
         <button type="button" class="nobifashion_reels_modal_option" data-action="toggle-fit-modal">
           <span>Chuyển đổi chế độ khung hình (Cover / Contain)</span>
@@ -4263,6 +4237,10 @@ class NobiFashionReelsApp {
         if (activeReel && activeReel.id) {
           this.store.recordView(activeReel.id);
         }
+        // Trang /reels giữ nguyên URL, cập nhật linh hoạt title và meta khi cuộn
+        if (activeReel) {
+          this.updateDocumentSEO(activeReel);
+        }
         if (this.analyticsTracker) {
           this.analyticsTracker.onReelChanged(activeReel, this.player?.activeVideoEl);
         }
@@ -4341,7 +4319,6 @@ class NobiFashionReelsApp {
 
     const muteIconSlot = slideEl.querySelector('.nobifashion_reels_mute_icon_slot');
     const muteLabelSlot = slideEl.querySelector('.nobifashion_reels_mute_label_slot');
-    const speedLabelSlot = slideEl.querySelector('.nobifashion_reels_speed_label_slot');
     const fitLabelSlot = slideEl.querySelector('.nobifashion_reels_fit_label_slot');
     const videoMuteBtn = slideEl.querySelector('.nobifashion_reels_video_mute_btn');
 
@@ -4360,19 +4337,6 @@ class NobiFashionReelsApp {
     if (muteLabelSlot) {
       muteLabelSlot.textContent = state.muted ? 'Bật tiếng' : 'Có tiếng';
     }
-    if (speedLabelSlot) {
-      speedLabelSlot.textContent = `${state.playbackRate}x`;
-    }
-    const speedBtnText = slideEl.querySelector('.nobifashion_reels_speed_btn_text');
-    if (speedBtnText) {
-      const spd = state.playbackRate || 1;
-      speedBtnText.textContent = `${spd === 1 ? '1.0' : spd}x`;
-    }
-    const speedOpts = slideEl.querySelectorAll('.nobifashion_reels_speed_opt');
-    speedOpts.forEach((opt) => {
-      const val = parseFloat(opt.getAttribute('data-speed'));
-      opt.classList.toggle('nobifashion_reels_is_active', Math.abs(val - (state.playbackRate || 1)) < 0.01);
-    });
     if (fitLabelSlot) {
       fitLabelSlot.textContent = state.fitMode === 'contain' ? 'Nguyên bản' : '9:16 Đầy';
     }
@@ -4390,11 +4354,6 @@ class NobiFashionReelsApp {
         !e.target.closest('[data-action="open-profile"]')
       ) {
         this.uiController.popoverEl?.classList.remove('nobifashion_reels_is_open');
-      }
-      if (!e.target.closest('.nobifashion_reels_speed_wrapper')) {
-        document.querySelectorAll('.nobifashion_reels_speed_wrapper.nobifashion_reels_is_open').forEach((el) => {
-          el.classList.remove('nobifashion_reels_is_open');
-        });
       }
       if (
         !e.target.closest('#nobifashion_reels_more_popover') &&
@@ -4493,30 +4452,6 @@ class NobiFashionReelsApp {
         case 'toggle-mute':
           this.player.toggleMute();
           break;
-
-        case 'toggle-speed-menu': {
-          const wrapper = actionEl.closest('.nobifashion_reels_speed_wrapper');
-          if (wrapper) {
-            const isOpen = wrapper.classList.contains('nobifashion_reels_is_open');
-            document.querySelectorAll('.nobifashion_reels_speed_wrapper.nobifashion_reels_is_open').forEach((el) => {
-              el.classList.remove('nobifashion_reels_is_open');
-            });
-            if (!isOpen) {
-              wrapper.classList.add('nobifashion_reels_is_open');
-            }
-          }
-          break;
-        }
-
-        case 'select-speed': {
-          const speedVal = actionEl.getAttribute('data-speed');
-          this.player.setPlaybackSpeed(speedVal);
-          const wrapper = actionEl.closest('.nobifashion_reels_speed_wrapper');
-          if (wrapper) {
-            wrapper.classList.remove('nobifashion_reels_is_open');
-          }
-          break;
-        }
 
         case 'cycle-speed':
           this.player.cyclePlaybackSpeed();
@@ -4644,7 +4579,10 @@ class NobiFashionReelsApp {
           const rId = actionEl.getAttribute('data-reel-id') || activeReel?.id;
           this.interactionController.closeMorePopover();
           if (rId) {
-            this.interactionController.copyTextToClipboard(`https://nobifashion.vn/reels/${rId}`);
+            const target = (rId && this.store.getReelById(rId)) || activeReel;
+            const shareSlug = target?.slug || rId;
+            const shareUrl = `https://nobifashion.vn/reel/${shareSlug}`;
+            this.interactionController.copyTextToClipboard(shareUrl);
             this.store.recordShare(rId).then((updated) => {
               const shareSpan = document.querySelector('[data-role="share-count"]');
               if (shareSpan && updated) shareSpan.textContent = formatCount(updated.sharesCount);
@@ -4948,6 +4886,69 @@ class NobiFashionReelsApp {
     }
 
     return true;
+  }
+
+  /**
+   * Cập nhật dynamic Title và các thẻ Meta khi cuộn video trên trang /reels
+   * Giữ nguyên URL /reels trên thanh địa chỉ theo yêu cầu
+   */
+  updateDocumentSEO(reel) {
+    if (!reel) return;
+    const titleText = `${reel.title} | Nobi Reels`;
+    const descText = reel.caption
+      ? reel.caption.replace(/<[^>]*>/g, '').trim().slice(0, 160)
+      : reel.title;
+    const directReelUrl = `https://nobifashion.vn/reel/${reel.slug || reel.id}`;
+
+    // 1. Cập nhật Title trang
+    document.title = titleText;
+
+    // 2. Tự động thay đổi URL trên thanh địa chỉ nếu đang ở trang chi tiết /reel/{slug}
+    const currentPath = window.location.pathname;
+    if (currentPath.startsWith('/reel/')) {
+      const newSlug = reel.slug || reel.id;
+      const newPath = `/reel/${newSlug}`;
+      if (currentPath !== newPath) {
+        window.history.replaceState(null, titleText, newPath + window.location.search);
+      }
+    }
+    // Nếu đang ở /reels hoặc trang khác: giữ nguyên URL /reels theo đúng yêu cầu SEO
+
+    // 3. Helper cập nhật hoặc tạo mới thẻ meta
+    const setMeta = (attr, key, content) => {
+      if (!content) return;
+      let el = document.querySelector(`meta[${attr}="${key}"]`);
+      if (!el) {
+        el = document.createElement('meta');
+        el.setAttribute(attr, key);
+        document.head.appendChild(el);
+      }
+      el.setAttribute('content', content);
+    };
+
+    // 4. Meta Description
+    setMeta('name', 'description', descText);
+
+    // 5. Open Graph Meta Tags
+    setMeta('property', 'og:title', titleText);
+    setMeta('property', 'og:description', descText);
+    setMeta('property', 'og:url', directReelUrl);
+    if (reel.posterUrl) setMeta('property', 'og:image', reel.posterUrl);
+    if (reel.videoUrl) setMeta('property', 'og:video', reel.videoUrl);
+
+    // 6. Twitter Card Tags
+    setMeta('name', 'twitter:title', titleText);
+    setMeta('name', 'twitter:description', descText);
+    if (reel.posterUrl) setMeta('name', 'twitter:image', reel.posterUrl);
+    setMeta('name', 'twitter:player', directReelUrl);
+
+    // 7. Cập nhật thẻ canonical tương ứng nếu đang ở trang /reel/
+    if (currentPath.startsWith('/reel/')) {
+      let canonicalEl = document.querySelector('link[rel="canonical"]');
+      if (canonicalEl) {
+        canonicalEl.setAttribute('href', directReelUrl);
+      }
+    }
   }
 }
 

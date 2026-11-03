@@ -10,7 +10,70 @@
     <meta name="robots" content="follow, index, max-snippet:-1, max-video-preview:-1, max-image-preview:large" />
     <meta name="description"
         content="{{ $seoDescription ?? 'Xem video ngắn thời trang Nobi Reels, cập nhật xu hướng phối đồ và mua sắm thời trang chính hãng.' }}" />
-    <link rel="canonical" href="{{ url('/reels') }}">
+    <link rel="canonical" href="{{ $canonicalUrl ?? url('/reels') }}">
+
+    @if(isset($reel) && $reel)
+    <!-- Open Graph (Facebook / Zalo / Telegram) cho Video trực tiếp -->
+    <meta property="og:type" content="video.other">
+    <meta property="og:site_name" content="Nobi Fashion">
+    <meta property="og:title" content="{{ $seoTitle }}">
+    <meta property="og:description" content="{{ $seoDescription }}">
+    <meta property="og:url" content="{{ $canonicalUrl }}">
+    <meta property="og:image" content="{{ $reel->poster_url ?: asset('clients/assets/img/clothes/no-image.webp') }}">
+    <meta property="og:image:width" content="1080">
+    <meta property="og:image:height" content="1920">
+    <meta property="og:video" content="{{ $reel->video_url }}">
+    <meta property="og:video:secure_url" content="{{ $reel->video_url }}">
+    <meta property="og:video:type" content="video/mp4">
+    <meta property="og:video:width" content="1080">
+    <meta property="og:video:height" content="1920">
+
+    <!-- Twitter Cards -->
+    <meta name="twitter:card" content="player">
+    <meta name="twitter:title" content="{{ $seoTitle }}">
+    <meta name="twitter:description" content="{{ $seoDescription }}">
+    <meta name="twitter:image" content="{{ $reel->poster_url ?: asset('clients/assets/img/clothes/no-image.webp') }}">
+    <meta name="twitter:player" content="{{ $canonicalUrl }}">
+    <meta name="twitter:player:width" content="1080">
+    <meta name="twitter:player:height" content="1920">
+
+    <!-- Schema.org VideoObject cho Google SEO -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "VideoObject",
+      "name": "{{ $reel->title }}",
+      "description": "{{ $seoDescription }}",
+      "thumbnailUrl": [
+        "{{ $reel->poster_url ?: asset('clients/assets/img/clothes/no-image.webp') }}"
+      ],
+      "uploadDate": "{{ ($reel->published_at ?? $reel->created_at)->toIso8601String() }}",
+      "contentUrl": "{{ $reel->video_url }}",
+      "embedUrl": "{{ $canonicalUrl }}",
+      "duration": "PT{{ $reel->duration ?: 15 }}S",
+      "interactionStatistic": [
+        {
+          "@type": "InteractionCounter",
+          "interactionType": { "@type": "https://schema.org/WatchAction" },
+          "userInteractionCount": {{ $reel->view_count ?: 0 }}
+        },
+        {
+          "@type": "InteractionCounter",
+          "interactionType": { "@type": "https://schema.org/LikeAction" },
+          "userInteractionCount": {{ $reel->like_count ?: 0 }}
+        }
+      ],
+      "publisher": {
+        "@type": "Organization",
+        "name": "Nobi Fashion",
+        "logo": {
+          "@type": "ImageObject",
+          "url": "{{ asset('clients/assets/img/business/nobifashion-logo.png') }}"
+        }
+      }
+    }
+    </script>
+    @endif
     <style>
         .nobifashion_reels_page,
         .nobifashion_reels_page body,

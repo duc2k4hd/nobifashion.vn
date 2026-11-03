@@ -298,7 +298,10 @@ Route::post('/api/contact', [ContactController::class, 'store'])->name('client.c
 
 Route::get('/', [HomeController::class, 'index'])->name('client.home.index');
 Route::get('/reels', [\App\Http\Controllers\Clients\ReelController::class, 'index'])->middleware('anonymous.identity')->name('client.reels.index');
-Route::get('/reels/{slug}', [\App\Http\Controllers\Clients\ReelController::class, 'show'])->middleware('anonymous.identity')->name('client.reels.show');
+Route::get('/reel/{slug}', [\App\Http\Controllers\Clients\ReelController::class, 'show'])->middleware('anonymous.identity')->name('client.reel.show');
+Route::get('/reels/{slug}', function ($slug) {
+    return redirect()->route('client.reel.show', ['slug' => $slug], 301);
+});
 Route::get('/san-pham/{slug}', [ProductDetailController::class, 'index'])->name('client.product.detail');
 
 Route::get('/shop', [ShopController::class, 'index'])->name('client.product.shop.index');
