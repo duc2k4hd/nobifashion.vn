@@ -91,8 +91,8 @@ class SecurityHeadersMiddleware
             "worker-src 'self' blob:; ".
             "child-src 'self' blob:; ".
 
-            // Frame embed (Youtube, PayOS)
-            "frame-src 'self' https://pay.payos.vn https://www.youtube.com https://youtube.com; ".
+            // Frame embed (Youtube, PayOS, Google Maps)
+            "frame-src 'self' https://pay.payos.vn https://www.youtube.com https://youtube.com https://www.google.com https://maps.google.com https://*.google.com; ".
 
             // No iframe embed
             "frame-ancestors 'none'; ".
