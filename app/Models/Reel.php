@@ -139,6 +139,28 @@ class Reel extends Model
     // Accessors & Formatters cho Frontend
     // ==========================================
 
+    /**
+     * Accessor tự động chuyển đổi URL video sang CDN hiện tại siêu tốc
+     */
+    public function getVideoUrlAttribute($value): ?string
+    {
+        if (empty($value)) {
+            return $value;
+        }
+
+        $cdnUrl = rtrim(env('CLOUDFLARE_R2_PUBLIC_URL', 'https://media.nobifashion.vn'), '/');
+
+        // Nếu video vẫn mang domain r2.dev cũ, tự động đổi sang CDN mới
+        if (str_contains($value, '.r2.dev/')) {
+            $parts = explode('.r2.dev/', $value, 2);
+            if (isset($parts[1])) {
+                return $cdnUrl . '/' . ltrim($parts[1], '/');
+            }
+        }
+
+        return $value;
+    }
+
     public function toFeedArray(?string $clientIp = null, ?int $userId = null): array
     {
         // 1. Kiểm tra Brand liên kết: nếu có gắn hãng thì lấy tên và logo từ cột logo bảng brands

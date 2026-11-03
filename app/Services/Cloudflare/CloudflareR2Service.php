@@ -21,7 +21,7 @@ class CloudflareR2Service
         $this->accessKeyId = (string) env('CLOUDFLARE_R2_ACCESS_KEY_ID', '27ec34b9a6efbdaf3662bd0aaa878db5');
         $this->secretAccessKey = (string) env('CLOUDFLARE_R2_SECRET_ACCESS_KEY', '350d15a39358bbb78f8c963408715c279c688b552e66eb2aec73459eb5a4963a');
         $this->bucketName = (string) env('CLOUDFLARE_R2_BUCKET_NAME', 'nobifashion-reels');
-        $this->publicUrl = rtrim((string) env('CLOUDFLARE_R2_PUBLIC_URL', 'https://pub-c715ae431df54007bca13242d8aff912.r2.dev'), '/');
+        $this->publicUrl = rtrim((string) env('CLOUDFLARE_R2_PUBLIC_URL', 'https://media.nobifashion.vn'), '/');
         $this->apiToken = env('CLOUDFLARE_API_TOKEN', 'cfat_9GbVFk6aeVpnP7sJjyX3gkpYaSHc2IY8FzJCMFTv00462c14');
         $this->s3Host = "{$this->accountId}.r2.cloudflarestorage.com";
     }

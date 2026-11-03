@@ -58,15 +58,26 @@ class CloudflareR2AdminController extends Controller
             session()->put($tokenSessionKey, $tokenMap);
         }
 
-        // 3. Tối ưu hiệu năng: Chỉ kiểm tra đúng 15 video của trang hiện tại trong database
+        // 3. Tối ưu hiệu năng: Kiểm tra video của trang hiện tại trong database (đối chiếu URL và key)
         $currentUrls = array_column($rawItems, 'public_url');
+        $currentKeys = array_column($rawItems, 'key');
         $existingMap = [];
-        if (!empty($currentUrls)) {
-            $matchedReels = Reel::whereIn('video_url', $currentUrls)
-                ->select(['id', 'title', 'slug', 'video_url', 'view_count'])
-                ->get();
+
+        if (!empty($currentKeys)) {
+            $matchedReels = Reel::where(function ($query) use ($currentUrls, $currentKeys) {
+                $query->whereIn('video_url', $currentUrls);
+                foreach ($currentKeys as $k) {
+                    $query->orWhere('video_url', 'like', "%{$k}%");
+                }
+            })->select(['id', 'title', 'slug', 'video_url', 'view_count'])->get();
+
             foreach ($matchedReels as $r) {
                 $existingMap[$r->video_url] = $r;
+                foreach ($currentKeys as $k) {
+                    if (str_contains($r->video_url, $k)) {
+                        $existingMap[$k] = $r;
+                    }
+                }
             }
         }
 
@@ -76,7 +87,7 @@ class CloudflareR2AdminController extends Controller
         $pageNotImportedCount = 0;
 
         foreach ($rawItems as $item) {
-            $matchedReel = $existingMap[$item['public_url']] ?? null;
+            $matchedReel = $existingMap[$item['public_url']] ?? ($existingMap[$item['key']] ?? null);
             $isImported = !empty($matchedReel);
 
             if ($isImported) {
@@ -230,9 +241,15 @@ class CloudflareR2AdminController extends Controller
         $totalImported = 0;
         $totalSkipped = 0;
 
-        // Đọc toàn bộ video_url hiện có để đối chiếu nhanh
-        $existingUrls = Reel::pluck('video_url')->toArray();
-        $existingUrlSet = array_flip($existingUrls);
+        // Đọc toàn bộ video_url và key hiện có để đối chiếu O(1) siêu tốc
+        $existingUrlSet = [];
+        foreach (Reel::pluck('video_url') as $u) {
+            $existingUrlSet[$u] = true;
+            $path = parse_url($u, PHP_URL_PATH);
+            if ($path) {
+                $existingUrlSet[ltrim($path, '/')] = true;
+            }
+        }
 
         do {
             $res = $this->r2Service->listObjects($prefix, $continuationToken, 500);
@@ -247,7 +264,7 @@ class CloudflareR2AdminController extends Controller
                 $key = $item['key'];
                 $publicUrl = $item['public_url'];
 
-                if (isset($existingUrlSet[$publicUrl])) {
+                if (isset($existingUrlSet[$publicUrl]) || isset($existingUrlSet[$key])) {
                     $totalSkipped++;
                     continue;
                 }

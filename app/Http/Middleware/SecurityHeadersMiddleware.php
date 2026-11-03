@@ -57,8 +57,8 @@ class SecurityHeadersMiddleware
             // Images
             "img-src 'self' data: https: http: blob:; ".
 
-            // Media (Cho phép phát Video Reels từ Cloudflare R2)
-            "media-src 'self' blob: data: https: https://*.r2.dev https://pub-c715ae431df54007bca13242d8aff912.r2.dev; ".
+            // Media (Cho phép phát Video Reels từ Cloudflare R2 / Custom CDN)
+            "media-src 'self' blob: data: https: https://media.nobifashion.vn https://*.r2.dev https://pub-c715ae431df54007bca13242d8aff912.r2.dev; ".
 
             // Ajax/Fetch
             "connect-src 'self' ".
@@ -83,6 +83,7 @@ class SecurityHeadersMiddleware
                 "https://static.cloudflareinsights.com ".
                 "https://cloudflareinsights.com ".
                 "https://*.cloudflareinsights.com ".
+                "https://media.nobifashion.vn ".
                 "https://pub-c715ae431df54007bca13242d8aff912.r2.dev ".
                 "https://cdn.tiny.cloud; ".
 
