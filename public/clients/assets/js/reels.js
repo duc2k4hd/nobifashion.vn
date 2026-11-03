@@ -1041,6 +1041,7 @@ class VideoPlaybackController {
       loader.classList.add('nobifashion_reels_is_loading');
       slideEl.classList.add('nobifashion_reels_slide_loading');
     }
+    document.getElementById('nobifashion_reels_app')?.classList.add('nobifashion_reels_is_video_loading');
 
     const videoEl = slideEl.querySelector('.nobifashion_reels_video_el');
     if (!videoEl) return;
@@ -1129,6 +1130,7 @@ class VideoPlaybackController {
     this.hideLoaderTimer = setTimeout(() => {
       loader.classList.remove('nobifashion_reels_is_loading');
       this.activeSlideEl?.classList.remove('nobifashion_reels_slide_loading');
+      document.getElementById('nobifashion_reels_app')?.classList.remove('nobifashion_reels_is_video_loading');
     }, remainingDelay);
   }
 
@@ -1352,6 +1354,7 @@ class VideoPlaybackController {
       if (loader && this.activeVideoEl && (this.activeVideoEl.seeking || this.activeVideoEl.readyState < 3)) {
         loader.classList.add('nobifashion_reels_is_loading');
         this.activeSlideEl?.classList.add('nobifashion_reels_slide_loading');
+        document.getElementById('nobifashion_reels_app')?.classList.add('nobifashion_reels_is_video_loading');
       }
     }, 250);
   }
@@ -1366,6 +1369,7 @@ class VideoPlaybackController {
     const errBox = this.activeSlideEl?.querySelector('.nobifashion_reels_video_error');
     if (loader) loader.classList.remove('nobifashion_reels_is_loading');
     this.activeSlideEl?.classList.remove('nobifashion_reels_slide_loading');
+    document.getElementById('nobifashion_reels_app')?.classList.remove('nobifashion_reels_is_video_loading');
     if (errBox) errBox.classList.add('nobifashion_reels_has_error');
   }
 
@@ -1642,6 +1646,11 @@ class ReelsRenderer {
 
           <!-- Sóng ánh sáng Shimmer phủ lên trên cùng tất cả các thành phần -->
           <div class="nobifashion_reels_skeleton_wave"></div>
+
+          <!-- Center Loading Spinner -->
+          <div class="nobifashion_reels_loader_spinner_wrap">
+            <div class="nobifashion_reels_loader_spinner"></div>
+          </div>
         </div>
       </div>
 

@@ -1773,6 +1773,34 @@ button.nobifashion_reels_subscribe_text_btn {
   }
 }
 
+/* Center Spinner Animation cho màn hình Load */
+.nobifashion_reels_loader_spinner_wrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 120;
+  pointer-events: none;
+}
+
+.nobifashion_reels_loader_spinner {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 3.5px solid rgba(255, 255, 255, 0.15);
+  border-top-color: #ff3b4e;
+  border-right-color: #ff5e62;
+  box-shadow: 0 0 15px rgba(255, 59, 78, 0.35);
+  animation: nobifashion_reels_spin 0.8s linear infinite;
+}
+
+@keyframes nobifashion_reels_spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* 1. Mute Button Skeleton (Góc trên trái) */
 .nobifashion_reels_skel_mute {
   position: absolute;
@@ -3724,6 +3752,65 @@ button.nobifashion_reels_subscribe_text_btn {
     height: 100% !important;
     object-fit: cover !important;
     border-radius: 0 !important;
+  }
+
+  /* MÀN HÌNH LOAD ĐEN CHE PHỦ TRÊN TẤT CẢ MỌI PHẦN TỬ TRÊN MOBILE */
+  .nobifashion_reels_video_loader.nobifashion_reels_is_loading {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    z-index: 99999 !important;
+    background: #000000 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+
+  .nobifashion_reels_video_loader.nobifashion_reels_is_loading .nobifashion_reels_skeleton_screen {
+    position: absolute !important;
+    inset: 0 !important;
+    background: #000000 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Ẩn hoàn toàn các khối skeleton xám giả lập trên mobile để không làm nham nhở màn hình */
+  .nobifashion_reels_video_loader .nobifashion_reels_skel_mute,
+  .nobifashion_reels_video_loader .nobifashion_reels_skel_rail,
+  .nobifashion_reels_video_loader .nobifashion_reels_skel_bottom,
+  .nobifashion_reels_video_loader .nobifashion_reels_skel_progress_bar,
+  .nobifashion_reels_video_loader .nobifashion_reels_skeleton_wave {
+    display: none !important;
+  }
+
+  .nobifashion_reels_loader_spinner_wrap {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Khi đang load / cuộn video mới: ẩn triệt để Action Rail, Header và Overlay để không đè lên load */
+  .nobifashion_reels_app.nobifashion_reels_is_video_loading .nobifashion_reels_header,
+  .nobifashion_reels_app.nobifashion_reels_is_video_loading .nobifashion_reels_action_rail,
+  .nobifashion_reels_app.nobifashion_reels_is_video_loading .nobifashion_reels_video_overlay,
+  .nobifashion_reels_app.nobifashion_reels_is_video_loading .nobifashion_reels_video_mute_btn {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    transition: opacity 0.2s ease !important;
+  }
+
+  .nobifashion_reels_app:not(.nobifashion_reels_is_video_loading) .nobifashion_reels_header,
+  .nobifashion_reels_app:not(.nobifashion_reels_is_video_loading) .nobifashion_reels_action_rail,
+  .nobifashion_reels_app:not(.nobifashion_reels_is_video_loading) .nobifashion_reels_video_overlay,
+  .nobifashion_reels_app:not(.nobifashion_reels_is_video_loading) .nobifashion_reels_video_mute_btn {
+    transition: opacity 0.3s ease-out !important;
   }
 
   /* Nút Mute trên Mobile: Kính mờ sang trọng dưới header */
