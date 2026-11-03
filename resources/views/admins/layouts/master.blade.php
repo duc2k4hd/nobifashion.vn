@@ -22,6 +22,8 @@
             color: #333;
             display: flex;
             min-height: 100vh;
+            overflow-x: hidden;
+            max-width: 100vw;
         }
         
         /* Modern Sidebar Design */
@@ -242,13 +244,18 @@
         /* Main Content */
         .main-content {
             flex: 1;
+            min-width: 0;
+            max-width: calc(100vw - 260px);
             margin-left: 260px;
             padding: 20px;
             min-height: 100vh;
-            transition: margin-left 0.3s ease;
+            overflow-x: hidden;
+            box-sizing: border-box;
+            transition: margin-left 0.3s ease, max-width 0.3s ease;
         }
         .main-content.sidebar-collapsed {
             margin-left: 0;
+            max-width: 100vw;
         }
         
         /* Top Bar */

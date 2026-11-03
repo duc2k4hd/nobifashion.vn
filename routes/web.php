@@ -906,6 +906,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
                 Route::post('/process', [\App\Http\Controllers\Admins\Reels\ReelImportController::class, 'process'])->name('process');
             });
 
+            // Cloudflare R2 Remote Storage Manager & Import
+            Route::prefix('cloudflare')->name('cloudflare.')->group(function () {
+                Route::get('/', [\App\Http\Controllers\Admins\Reels\CloudflareR2AdminController::class, 'index'])->name('index');
+                Route::post('/import-selected', [\App\Http\Controllers\Admins\Reels\CloudflareR2AdminController::class, 'importSelected'])->name('import-selected');
+                Route::post('/sync-all', [\App\Http\Controllers\Admins\Reels\CloudflareR2AdminController::class, 'syncAll'])->name('sync-all');
+                Route::post('/upload', [\App\Http\Controllers\Admins\Reels\CloudflareR2AdminController::class, 'upload'])->name('upload');
+                Route::delete('/delete', [\App\Http\Controllers\Admins\Reels\CloudflareR2AdminController::class, 'delete'])->name('delete');
+            });
+
             // Settings
             Route::prefix('settings')->name('settings.')->group(function () {
                 Route::get('/', [\App\Http\Controllers\Admins\Reels\ReelSettingController::class, 'index'])->name('index');

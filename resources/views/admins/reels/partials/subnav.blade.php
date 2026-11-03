@@ -29,6 +29,9 @@
     <a href="{{ route('admin.reels.import.index') }}" class="nobifashion_admin_reels_subnav_item {{ request()->routeIs('admin.reels.import.*') ? 'active' : '' }}">
         <i class="fa-solid fa-file-import"></i> Import Center
     </a>
+    <a href="{{ route('admin.reels.cloudflare.index') }}" class="nobifashion_admin_reels_subnav_item {{ request()->routeIs('admin.reels.cloudflare.*') ? 'active' : '' }}">
+        <i class="fa-brands fa-cloudflare text-warning"></i> Cloudflare R2
+    </a>
     <a href="{{ route('admin.reels.settings.index') }}" class="nobifashion_admin_reels_subnav_item {{ request()->routeIs('admin.reels.settings.*') ? 'active' : '' }}">
         <i class="fa-solid fa-gear"></i> Cài đặt
     </a>

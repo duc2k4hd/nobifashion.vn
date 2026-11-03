@@ -23,9 +23,13 @@
 
 /* Wrapper & Subnav */
 .nobifashion_admin_reels_container {
-  padding: 24px;
+  padding: 16px 20px;
   background: var(--nobifashion_admin_reels_bg_page);
   min-height: calc(100vh - 70px);
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 .nobifashion_admin_reels_header {
@@ -56,14 +60,16 @@
 .nobifashion_admin_reels_subnav {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   background: #ffffff;
   padding: 6px;
   border-radius: 12px;
   border: 1px solid var(--nobifashion_admin_reels_border);
-  margin-bottom: 24px;
+  margin-bottom: 20px;
   overflow-x: auto;
   white-space: nowrap;
+  max-width: 100%;
+  scrollbar-width: thin;
 }
 
 .nobifashion_admin_reels_subnav_item {
