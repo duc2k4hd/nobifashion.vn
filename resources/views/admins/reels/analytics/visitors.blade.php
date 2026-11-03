@@ -2,8 +2,12 @@
 
 @section('title', 'Nhật ký phiên khách truy cập Reels (Visitor Sessions)')
 
+@push('styles')
+<link rel="stylesheet" href="{{ asset('admins/css/reels_admin.css') }}?v={{ time() }}">
+@endpush
+
 @section('content')
-<div class="nobifashion_admin_reels_wrapper container-fluid px-3 py-3">
+<div class="nobifashion_admin_reels_container">
     <!-- Header -->
     <div class="nobifashion_admin_reels_page_header mb-3">
         <div>

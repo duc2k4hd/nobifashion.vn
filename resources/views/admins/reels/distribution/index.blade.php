@@ -2,22 +2,98 @@
 
 @section('title', 'Trung tâm phân phối video Nobi Reels (Distribution Center)')
 
+@push('styles')
+<link rel="stylesheet" href="{{ asset('admins/css/reels_admin.css') }}?v={{ time() }}">
+<style>
+    .distribution_kpi_grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+    @media (max-width: 1200px) {
+        .distribution_kpi_grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+    @media (max-width: 640px) {
+        .distribution_kpi_grid {
+            grid-template-columns: 1fr;
+        }
+    }
+    .engine_progress_bar {
+        height: 6px;
+        border-radius: 999px;
+        display: flex;
+        overflow: hidden;
+        margin-top: 8px;
+    }
+    .engine_progress_trending {
+        width: 60%;
+        background-color: #ef4444;
+    }
+    .engine_progress_newest {
+        width: 40%;
+        background-color: #3b82f6;
+    }
+    .sim_video_card {
+        border-radius: 12px;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        padding: 10px;
+        text-align: center;
+        position: relative;
+        transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+    }
+    .sim_video_card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 20px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    }
+    .sim_video_thumb_box {
+        position: relative;
+        width: 100%;
+        padding-top: 133%; /* Tỷ lệ 3:4 gọn gàng */
+        border-radius: 8px;
+        overflow: hidden;
+        background: #0f172a;
+        margin-bottom: 8px;
+    }
+    .sim_video_thumb_box img {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .sim_chip_badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 12.5px;
+        font-weight: 600;
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+    }
+</style>
+@endpush
+
 @section('content')
-<div class="nobifashion_admin_reels_wrapper container-fluid px-3 py-3">
+<div class="nobifashion_admin_reels_container">
     <!-- Header -->
-    <div class="nobifashion_admin_reels_page_header mb-3">
+    <div class="nobifashion_admin_reels_header mb-3">
         <div>
-            <h1 class="nobifashion_admin_reels_page_title">
-                <i class="fa-solid fa-satellite-dish text-primary me-2"></i>Trung tâm phân phối & Thuật toán Feed
+            <h1 class="nobifashion_admin_reels_title" style="font-size: 20px;">
+                <i class="fa-solid fa-satellite-dish text-primary me-2"></i> Trung tâm phân phối & Thuật toán Feed
             </h1>
-            <div class="nobifashion_admin_reels_breadcrumb">
-                <a href="{{ route('admin.reels.dashboard') }}">Reels</a>
-                <span>/</span>
-                <span>Thuật toán phân phối Dual-Engine</span>
-            </div>
+            <p class="nobifashion_admin_reels_subtitle mb-0">
+                Điều phối luồng video theo thuật toán Dual-Engine (60% Trending / 40% Khám phá Mới) và kiểm soát chu kỳ Full Coverage.
+            </p>
         </div>
-        <div class="nobifashion_admin_reels_page_actions">
-            <form action="{{ route('admin.reels.distribution.rebuild-snapshot') }}" method="POST" class="d-inline" onsubmit="return confirm('Bạn muốn tái tạo Ranking Snapshot mới ngay bây giờ? Việc này sẽ tính toán lại toàn bộ điểm Trending và Newest.');">
+        <div class="d-flex align-items-center gap-2">
+            <form action="{{ route('admin.reels.distribution.rebuild-snapshot') }}" method="POST" onsubmit="return confirm('Bạn muốn tái tạo Ranking Snapshot mới ngay bây giờ? Việc này sẽ tính toán lại toàn bộ điểm Trending và Newest.');">
                 @csrf
                 <button type="submit" class="nobifashion_admin_reels_btn nobifashion_admin_reels_btn_primary">
                     <i class="fa-solid fa-arrows-rotate me-1"></i> Tái tạo Ranking Snapshot
@@ -29,125 +105,90 @@
     <!-- Subnav Tabs -->
     @include('admins.reels.partials.subnav')
 
-    <!-- Flash message -->
-    @if(session('success'))
-        <div class="alert alert-success alert-dismissible fade show d-flex align-items-center mb-3" role="alert">
-            <i class="fa-solid fa-circle-check me-2"></i>
-            <div>{{ session('success') }}</div>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-    @if(session('error'))
-        <div class="alert alert-danger alert-dismissible fade show d-flex align-items-center mb-3" role="alert">
-            <i class="fa-solid fa-triangle-exclamation me-2"></i>
-            <div>{{ session('error') }}</div>
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-
-    <!-- CURRENT SNAPSHOT & CYCLE METRICS -->
-    <div class="row g-3 mb-4">
-        <!-- Active Snapshot Card -->
-        <div class="col-lg-6">
-            <div class="nobifashion_admin_reels_card h-100">
-                <div class="nobifashion_admin_reels_card_header d-flex justify-content-between align-items-center">
-                    <h3 class="nobifashion_admin_reels_card_title">
-                        <i class="fa-solid fa-database text-primary me-2"></i>Ranking Snapshot Hiện Hành
-                    </h3>
-                    @if($currentSnapshot)
-                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
-                            <i class="fa-solid fa-circle me-1" style="font-size: 8px;"></i>Đang áp dụng
-                        </span>
-                    @else
-                        <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1">
-                            Chưa có Snapshot
-                        </span>
-                    @endif
+    <!-- 4 THẺ KPI METRICS CHUẨN THIẾT KẾ NOBI REELS -->
+    <div class="distribution_kpi_grid">
+        <!-- Thẻ 1: Snapshot Hiện Hành -->
+        <div class="nobifashion_admin_reels_kpi_card">
+            <div class="nobifashion_admin_reels_kpi_header">
+                <span class="nobifashion_admin_reels_kpi_label">RANKING SNAPSHOT</span>
+                <div class="nobifashion_admin_reels_kpi_icon" style="color: #3b82f6; background: #eff6ff;">
+                    <i class="fa-solid fa-database"></i>
                 </div>
-                <div class="nobifashion_admin_reels_card_body">
-                    @if($currentSnapshot)
-                        <div class="row text-center mb-3">
-                            <div class="col-4 border-end">
-                                <span class="text-muted small d-block">Phiên bản</span>
-                                <span class="fs-4 fw-bold text-dark">v{{ $currentSnapshot->version }}</span>
-                            </div>
-                            <div class="col-4 border-end">
-                                <span class="text-muted small d-block">Tổng Video Pool</span>
-                                <span class="fs-4 fw-bold text-primary">{{ number_format($currentSnapshot->total_videos) }}</span>
-                            </div>
-                            <div class="col-4">
-                                <span class="text-muted small d-block">Khởi tạo</span>
-                                <span class="small fw-semibold text-muted d-block mt-1">
-                                    {{ $currentSnapshot->created_at ? $currentSnapshot->created_at->diffForHumans() : '—' }}
-                                </span>
-                            </div>
-                        </div>
-                        <div class="p-3 bg-light rounded small">
-                            <div class="d-flex justify-content-between mb-1">
-                                <span>Engine A (Trending Pool):</span>
-                                <span class="fw-bold">{{ count($currentSnapshot->trending_ids ?? []) }} video</span>
-                            </div>
-                            <div class="d-flex justify-content-between mb-1">
-                                <span>Engine B (Newest Pool):</span>
-                                <span class="fw-bold">{{ count($currentSnapshot->newest_ids ?? []) }} video</span>
-                            </div>
-                            <div class="d-flex justify-content-between">
-                                <span>Tỷ lệ phân phối hòa trộn:</span>
-                                <span class="badge bg-info text-dark">60% Trending / 40% Khám phá Mới</span>
-                            </div>
-                        </div>
-                    @else
-                        <div class="text-center py-4 text-muted">
-                            <i class="fa-solid fa-layer-group fa-2x mb-2 d-block text-secondary"></i>
-                            Chưa có snapshot phân phối nào được sinh. Bấm <strong>"Tái tạo Ranking Snapshot"</strong> để khởi tạo.
-                        </div>
-                    @endif
-                </div>
+            </div>
+            <div class="nobifashion_admin_reels_kpi_value">
+                v{{ $currentSnapshot ? $currentSnapshot->version : 1 }}
+            </div>
+            <div class="nobifashion_admin_reels_kpi_footer">
+                @if($currentSnapshot)
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 me-1">
+                        <i class="fa-solid fa-circle me-1" style="font-size: 7px;"></i>Đang áp dụng
+                    </span>
+                    <span class="text-muted">{{ $currentSnapshot->created_at ? $currentSnapshot->created_at->diffForHumans() : 'Mới tạo' }}</span>
+                @else
+                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1">
+                        Chưa có Snapshot
+                    </span>
+                @endif
             </div>
         </div>
 
-        <!-- Full Coverage Feed Cycles -->
-        <div class="col-lg-6">
-            <div class="nobifashion_admin_reels_card h-100">
-                <div class="nobifashion_admin_reels_card_header">
-                    <h3 class="nobifashion_admin_reels_card_title">
-                        <i class="fa-solid fa-arrows-spin text-info me-2"></i>Chu kỳ xem Full Coverage (Không trùng lặp)
-                    </h3>
+        <!-- Thẻ 2: Tổng Video Phân Phối -->
+        <div class="nobifashion_admin_reels_kpi_card">
+            <div class="nobifashion_admin_reels_kpi_header">
+                <span class="nobifashion_admin_reels_kpi_label">TỔNG VIDEO PHÂN PHỐI</span>
+                <div class="nobifashion_admin_reels_kpi_icon" style="color: #10b981; background: #ecfdf5;">
+                    <i class="fa-solid fa-layer-group"></i>
                 </div>
-                <div class="nobifashion_admin_reels_card_body">
-                    <p class="text-muted small">Thuật toán đảm bảo mỗi người dùng (đã đăng nhập hoặc ẩn danh) xem hết toàn bộ video trong hệ thống theo seed xáo trộn trước khi lặp lại.</p>
-                    <div class="row g-2 text-center mt-2">
-                        <div class="col-6 col-sm-3">
-                            <div class="p-2 border rounded bg-white">
-                                <div class="fs-5 fw-bold text-dark">{{ number_format($totalCycles) }}</div>
-                                <div class="text-muted" style="font-size: 11px;">Tổng chu kỳ tạo</div>
-                            </div>
-                        </div>
-                        <div class="col-6 col-sm-3">
-                            <div class="p-2 border rounded bg-white">
-                                <div class="fs-5 fw-bold text-success">{{ number_format($activeCycles) }}</div>
-                                <div class="text-muted" style="font-size: 11px;">Đang tiếp diễn</div>
-                            </div>
-                        </div>
-                        <div class="col-6 col-sm-3">
-                            <div class="p-2 border rounded bg-white">
-                                <div class="fs-5 fw-bold text-primary">{{ number_format($completedCycles) }}</div>
-                                <div class="text-muted" style="font-size: 11px;">Xem trọn vẹn 100%</div>
-                            </div>
-                        </div>
-                        <div class="col-6 col-sm-3">
-                            <div class="p-2 border rounded bg-white">
-                                <div class="fs-5 fw-bold text-warning">{{ $avgDelivered }}</div>
-                                <div class="text-muted" style="font-size: 11px;">Tb video / cycle</div>
-                            </div>
-                        </div>
-                    </div>
+            </div>
+            <div class="nobifashion_admin_reels_kpi_value">
+                {{ number_format($currentSnapshot ? $currentSnapshot->total_videos : 0) }}
+            </div>
+            <div class="nobifashion_admin_reels_kpi_footer justify-content-between">
+                <span><i class="fa-solid fa-fire text-danger me-1"></i>Trending: <strong>{{ count($currentSnapshot->trending_ids ?? []) }}</strong></span>
+                <span><i class="fa-solid fa-wand-magic-sparkles text-primary me-1"></i>Newest: <strong>{{ count($currentSnapshot->newest_ids ?? []) }}</strong></span>
+            </div>
+        </div>
+
+        <!-- Thẻ 3: Tỷ Lệ Phối Trộn Dual-Engine -->
+        <div class="nobifashion_admin_reels_kpi_card">
+            <div class="nobifashion_admin_reels_kpi_header">
+                <span class="nobifashion_admin_reels_kpi_label">TỶ LỆ PHỐI TRỘN DUAL-ENGINE</span>
+                <div class="nobifashion_admin_reels_kpi_icon" style="color: #8b5cf6; background: #f5f3ff;">
+                    <i class="fa-solid fa-shuffle"></i>
                 </div>
+            </div>
+            <div class="nobifashion_admin_reels_kpi_value" style="font-size: 22px;">
+                <span class="text-danger">60%</span> <span class="text-muted fw-normal" style="font-size: 16px;">/</span> <span class="text-primary">40%</span>
+            </div>
+            <div class="engine_progress_bar">
+                <div class="engine_progress_trending" title="60% Trending"></div>
+                <div class="engine_progress_newest" title="40% Newest"></div>
+            </div>
+            <div class="nobifashion_admin_reels_kpi_footer justify-content-between mt-1">
+                <span class="text-danger small">60% Trending</span>
+                <span class="text-primary small">40% Khám phá</span>
+            </div>
+        </div>
+
+        <!-- Thẻ 4: Chu Kỳ Full Coverage -->
+        <div class="nobifashion_admin_reels_kpi_card">
+            <div class="nobifashion_admin_reels_kpi_header">
+                <span class="nobifashion_admin_reels_kpi_label">CHU KỲ FULL COVERAGE</span>
+                <div class="nobifashion_admin_reels_kpi_icon" style="color: #f59e0b; background: #fffbeb;">
+                    <i class="fa-solid fa-arrows-spin"></i>
+                </div>
+            </div>
+            <div class="nobifashion_admin_reels_kpi_value">
+                {{ number_format($totalCycles) }}
+            </div>
+            <div class="nobifashion_admin_reels_kpi_footer justify-content-between">
+                <span>Đang lướt: <strong class="text-success">{{ $activeCycles }}</strong></span>
+                <span>Xem hết 100%: <strong class="text-primary">{{ $completedCycles }}</strong></span>
             </div>
         </div>
     </div>
 
-    <!-- DUAL ENGINE CANDIDATE PREVIEW -->
+    <!-- SO SÁNH 2 ENGINE: DUAL-ENGINE CANDIDATE POOL -->
     <div class="row g-3 mb-4">
         <!-- Engine A -->
         <div class="col-lg-6">
@@ -156,17 +197,19 @@
                     <h3 class="nobifashion_admin_reels_card_title">
                         <i class="fa-solid fa-fire text-danger me-2"></i>Engine A: Top Trending & Tương tác
                     </h3>
-                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Trọng số 60%</span>
+                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1">
+                        Trọng số 60% Trending
+                    </span>
                 </div>
                 <div class="nobifashion_admin_reels_card_body p-0">
                     <div class="table-responsive">
                         <table class="nobifashion_admin_reels_table">
                             <thead>
                                 <tr>
-                                    <th>Video</th>
-                                    <th>Lượt xem</th>
-                                    <th>Thích</th>
-                                    <th>Bình luận</th>
+                                    <th style="width: 50%;">Video</th>
+                                    <th style="width: 20%; text-align: right;">Lượt xem</th>
+                                    <th style="width: 15%; text-align: center;">Thích</th>
+                                    <th style="width: 15%; text-align: center;">Bình luận</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -174,22 +217,28 @@
                                     <tr>
                                         <td>
                                             <div class="d-flex align-items-center gap-2">
-                                                <img src="{{ $reel->thumbnail_url ?: 'https://placehold.co/40x55' }}" class="rounded" style="width: 32px; height: 42px; object-fit: cover;">
-                                                <div class="text-truncate" style="max-width: 200px;">
-                                                    <a href="{{ route('admin.reels.show', $reel->id) }}" class="fw-semibold text-dark text-decoration-none">
+                                                <img src="{{ $reel->thumbnail_url ?: 'https://placehold.co/40x55' }}" class="rounded shadow-sm" style="width: 34px; height: 46px; object-fit: cover;" onerror="this.src='https://placehold.co/40x55'">
+                                                <div class="text-truncate" style="max-width: 220px;">
+                                                    <a href="{{ route('admin.reels.videos.show', $reel->id) }}" class="fw-semibold text-dark text-decoration-none">
                                                         {{ $reel->title ?: 'Video #' . $reel->id }}
                                                     </a>
-                                                    <div class="small text-muted">ID: {{ $reel->id }}</div>
+                                                    <div class="small text-muted" style="font-size: 11px;">ID: {{ $reel->id }}</div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="fw-bold">{{ number_format($reel->view_count) }}</td>
-                                        <td class="text-danger"><i class="fa-solid fa-heart me-1"></i>{{ number_format($reel->like_count) }}</td>
-                                        <td class="text-primary"><i class="fa-solid fa-comment me-1"></i>{{ number_format($reel->comment_count) }}</td>
+                                        <td style="text-align: right;">
+                                            <span class="badge bg-light text-dark border fw-bold">{{ number_format($reel->view_count) }}</span>
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <span class="text-danger small fw-semibold"><i class="fa-solid fa-heart me-1"></i>{{ number_format($reel->like_count) }}</span>
+                                        </td>
+                                        <td style="text-align: center;">
+                                            <span class="text-primary small fw-semibold"><i class="fa-solid fa-comment me-1"></i>{{ number_format($reel->comment_count) }}</span>
+                                        </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="text-center py-3 text-muted">Chưa có video dữ liệu.</td>
+                                        <td colspan="4" class="text-center py-4 text-muted">Chưa có video dữ liệu.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -206,17 +255,18 @@
                     <h3 class="nobifashion_admin_reels_card_title">
                         <i class="fa-solid fa-wand-magic-sparkles text-primary me-2"></i>Engine B: Khám Phá Video Mới
                     </h3>
-                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle">Trọng số 40%</span>
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+                        Trọng số 40% Khám phá mới
+                    </span>
                 </div>
                 <div class="nobifashion_admin_reels_card_body p-0">
                     <div class="table-responsive">
                         <table class="nobifashion_admin_reels_table">
                             <thead>
                                 <tr>
-                                    <th>Video mới</th>
-                                    <th>Tác giả</th>
-                                    <th>Thời lượng</th>
-                                    <th>Thời gian xuất bản</th>
+                                    <th style="width: 50%;">Video mới</th>
+                                    <th style="width: 25%;">Tác giả</th>
+                                    <th style="width: 25%; text-align: right;">Thời gian</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -224,28 +274,25 @@
                                     <tr>
                                         <td>
                                             <div class="d-flex align-items-center gap-2">
-                                                <img src="{{ $reel->thumbnail_url ?: 'https://placehold.co/40x55' }}" class="rounded" style="width: 32px; height: 42px; object-fit: cover;">
-                                                <div class="text-truncate" style="max-width: 200px;">
-                                                    <a href="{{ route('admin.reels.show', $reel->id) }}" class="fw-semibold text-dark text-decoration-none">
+                                                <img src="{{ $reel->thumbnail_url ?: 'https://placehold.co/40x55' }}" class="rounded shadow-sm" style="width: 34px; height: 46px; object-fit: cover;" onerror="this.src='https://placehold.co/40x55'">
+                                                <div class="text-truncate" style="max-width: 220px;">
+                                                    <a href="{{ route('admin.reels.videos.show', $reel->id) }}" class="fw-semibold text-dark text-decoration-none">
                                                         {{ $reel->title ?: 'Video #' . $reel->id }}
                                                     </a>
-                                                    <div class="small text-muted">ID: {{ $reel->id }}</div>
+                                                    <div class="small text-muted" style="font-size: 11px;">ID: {{ $reel->id }} • <span class="badge bg-light text-dark border">{{ $reel->duration_seconds ?? 0 }}s</span></div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td>
                                             <span class="small text-muted">{{ $reel->creator ? $reel->creator->fullname : 'Nobi Admin' }}</span>
                                         </td>
-                                        <td>
-                                            <span class="badge bg-light text-dark border">{{ $reel->duration_seconds ?? 0 }}s</span>
-                                        </td>
-                                        <td class="small text-muted">
-                                            {{ $reel->published_at ? $reel->published_at->diffForHumans() : 'Mới đây' }}
+                                        <td style="text-align: right;">
+                                            <span class="small text-muted">{{ $reel->published_at ? $reel->published_at->diffForHumans() : 'Mới đây' }}</span>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="4" class="text-center py-3 text-muted">Chưa có video mới.</td>
+                                        <td colspan="3" class="text-center py-4 text-muted">Chưa có video mới.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
@@ -256,55 +303,71 @@
         </div>
     </div>
 
-    <!-- FEED SIMULATOR (MÔ PHỎNG LUỒNG XEM) -->
+    <!-- FEED SIMULATOR STUDIO (GIẢ LẬP TRẢI NGHIỆM NGƯỜI XEM) -->
     <div class="nobifashion_admin_reels_card mb-4">
-        <div class="nobifashion_admin_reels_card_header d-flex justify-content-between align-items-center">
+        <div class="nobifashion_admin_reels_card_header d-flex justify-content-between align-items-center flex-wrap gap-2">
             <div>
                 <h3 class="nobifashion_admin_reels_card_title">
-                    <i class="fa-solid fa-gamepad text-success me-2"></i>Feed Simulator — Giả lập trải nghiệm người xem
+                    <i class="fa-solid fa-vial-virus text-success me-2"></i>Feed Simulator Studio — Giả lập luồng xem thực tế
                 </h3>
-                <p class="text-muted small mb-0">Mô phỏng chính xác thứ tự video người dùng sẽ lướt thấy trên Reels Player, kiểm tra tỷ lệ phối trộn 3:2 và xác nhận không có bất kỳ video nào bị lặp.</p>
+                <p class="nobifashion_admin_reels_subtitle mb-0" style="font-size: 12.5px;">
+                    Mô phỏng chính xác thứ tự video người dùng sẽ lướt thấy trên Reels Player, kiểm tra tỷ lệ phối trộn 3:2 và bảo đảm 100% không trùng lặp video.
+                </p>
             </div>
         </div>
         <div class="nobifashion_admin_reels_card_body">
-            <form id="simulatorForm" class="row g-2 align-items-end mb-3">
-                <div class="col-md-3">
-                    <label class="nobifashion_admin_reels_form_label">Seed định danh mô phỏng</label>
-                    <input type="number" id="simSeed" class="nobifashion_admin_reels_form_control" placeholder="Tự sinh ngẫu nhiên nếu để trống">
+            <!-- Form Giả Lập -->
+            <form id="simulatorForm" class="row g-2 align-items-end mb-3 p-3 bg-light rounded-3 border">
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold text-muted mb-1">Seed định danh mô phỏng (Người dùng)</label>
+                    <input type="number" id="simSeed" class="form-control form-control-sm" placeholder="Tự sinh ngẫu nhiên nếu để trống">
                 </div>
-                <div class="col-md-3">
-                    <label class="nobifashion_admin_reels_form_label">Số video muốn lấy</label>
-                    <select id="simLimit" class="nobifashion_admin_reels_form_control">
+                <div class="col-md-4">
+                    <label class="form-label small fw-semibold text-muted mb-1">Số lượng video muốn kiểm tra</label>
+                    <select id="simLimit" class="form-select form-select-sm">
                         <option value="10">10 video đầu tiên</option>
-                        <option value="20" selected>20 video đầu tiên</option>
+                        <option value="20" selected>20 video đầu tiên (Chuẩn)</option>
                         <option value="30">30 video</option>
                         <option value="50">50 video</option>
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <button type="submit" id="btnRunSim" class="nobifashion_admin_reels_btn nobifashion_admin_reels_btn_primary w-100">
+                <div class="col-md-4">
+                    <button type="submit" id="btnRunSim" class="nobifashion_admin_reels_btn nobifashion_admin_reels_btn_primary w-100 py-1">
                         <i class="fa-solid fa-play me-1"></i> Bắt đầu giả lập luồng
                     </button>
                 </div>
             </form>
 
-            <div id="simResultsPlaceholder" class="text-center py-4 text-muted bg-light rounded">
-                <i class="fa-solid fa-film fa-2x mb-2 d-block text-secondary"></i>
-                Bấm <strong>"Bắt đầu giả lập luồng"</strong> để xem sơ đồ thứ tự video hiển thị cho khách truy cập.
+            <div id="simResultsPlaceholder" class="text-center py-5 text-muted bg-light rounded-3 border border-dashed">
+                <i class="fa-solid fa-film fa-2x mb-2 d-block text-secondary opacity-50"></i>
+                Bấm nút <strong>"Bắt đầu giả lập luồng"</strong> để xem sơ đồ thứ tự video hiển thị cho người xem.
             </div>
 
             <div id="simResultsContainer" class="d-none">
-                <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-light rounded small">
-                    <div>
-                        <strong>Seed sử dụng:</strong> <code id="resSeed"></code> | 
-                        <strong>Tổng video:</strong> <span id="resTotal" class="badge bg-dark"></span>
+                <!-- Thanh Tóm Tắt Thông Số -->
+                <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-light rounded-3 border flex-wrap gap-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="sim_chip_badge">
+                            <i class="fa-solid fa-fingerprint text-secondary"></i>
+                            Seed: <code id="resSeed" class="text-dark"></code>
+                        </span>
+                        <span class="sim_chip_badge">
+                            <i class="fa-solid fa-list-ol text-primary"></i>
+                            Tổng video: <strong id="resTotal" class="text-dark"></strong>
+                        </span>
                     </div>
-                    <div>
-                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle me-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="sim_chip_badge" style="border-color: #fecaca; background: #fef2f2; color: #b91c1c;">
+                            <i class="fa-solid fa-fire text-danger"></i>
                             Trending: <span id="resTrendingCount"></span>
                         </span>
-                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                        <span class="sim_chip_badge" style="border-color: #bfdbfe; background: #eff6ff; color: #1d4ed8;">
+                            <i class="fa-solid fa-wand-magic-sparkles text-primary"></i>
                             Newest: <span id="resNewestCount"></span>
+                        </span>
+                        <span class="sim_chip_badge" style="border-color: #bbf7d0; background: #f0fdf4; color: #15803d;">
+                            <i class="fa-solid fa-circle-check text-success"></i>
+                            100% Không trùng lặp
                         </span>
                     </div>
                 </div>
@@ -315,42 +378,44 @@
         </div>
     </div>
 
-    <!-- SNAPSHOT HISTORY TABLE -->
+    <!-- BẢNG LỊCH SỬ RANKING SNAPSHOT -->
     <div class="nobifashion_admin_reels_card">
         <div class="nobifashion_admin_reels_card_header">
-            <h3 class="nobifashion_admin_reels_card_title">Lịch sử các Ranking Snapshot gần đây</h3>
+            <h3 class="nobifashion_admin_reels_card_title">
+                <i class="fa-solid fa-clock-rotate-left text-muted me-2"></i>Lịch sử các Ranking Snapshot gần đây
+            </h3>
         </div>
         <div class="nobifashion_admin_reels_card_body p-0">
             <div class="table-responsive">
                 <table class="nobifashion_admin_reels_table">
                     <thead>
                         <tr>
-                            <th>Phiên bản</th>
-                            <th>Tổng video đủ chuẩn</th>
-                            <th>Pool Trending</th>
-                            <th>Pool Newest</th>
-                            <th>Thời gian khởi tạo</th>
-                            <th>Trạng thái</th>
+                            <th style="width: 15%;">Phiên bản</th>
+                            <th style="width: 18%;">Tổng video đủ chuẩn</th>
+                            <th style="width: 18%;">Pool Trending</th>
+                            <th style="width: 18%;">Pool Newest</th>
+                            <th style="width: 18%;">Thời gian khởi tạo</th>
+                            <th style="width: 13%; text-align: center;">Trạng thái</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($snapshots as $idx => $snap)
                             <tr>
                                 <td>
-                                    <strong>v{{ $snap->version }}</strong>
+                                    <strong class="text-dark">v{{ $snap->version }}</strong>
                                     @if($idx === 0)
-                                        <span class="badge bg-success ms-1">Mới nhất</span>
+                                        <span class="badge bg-success ms-1" style="font-size: 10px;">Mới nhất</span>
                                     @endif
                                 </td>
-                                <td><span class="badge bg-dark">{{ $snap->total_videos }} video</span></td>
-                                <td>{{ count($snap->trending_ids ?? []) }} video</td>
-                                <td>{{ count($snap->newest_ids ?? []) }} video</td>
+                                <td><span class="badge bg-dark fw-normal">{{ number_format($snap->total_videos) }} video</span></td>
+                                <td><span class="text-danger fw-semibold">{{ count($snap->trending_ids ?? []) }}</span> video</td>
+                                <td><span class="text-primary fw-semibold">{{ count($snap->newest_ids ?? []) }}</span> video</td>
                                 <td class="small text-muted">{{ $snap->created_at ? $snap->created_at->format('d/m/Y H:i:s') : '—' }}</td>
-                                <td>
+                                <td style="text-align: center;">
                                     @if($idx === 0)
-                                        <span class="badge bg-success-subtle text-success border border-success-subtle">Đang phục vụ feed</span>
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">Đang phục vụ feed</span>
                                     @else
-                                        <span class="badge bg-light text-muted border">Lịch sử</span>
+                                        <span class="badge bg-light text-muted border px-2 py-1">Lưu trữ</span>
                                     @endif
                                 </td>
                             </tr>
@@ -398,32 +463,33 @@ if (simForm) {
             const container = document.getElementById('simResultsContainer');
             container.classList.remove('d-none');
 
-            document.getElementById('resSeed').textContent = data.seed;
-            document.getElementById('resTotal').textContent = data.total_in_batch;
-            document.getElementById('resTrendingCount').textContent = data.trending_count;
-            document.getElementById('resNewestCount').textContent = data.newest_count;
+            const list = data.videos || data.items || [];
+            document.getElementById('resSeed').textContent = data.seed || data.seed_used || 'N/A';
+            document.getElementById('resTotal').textContent = (data.total_in_batch || list.length) + ' video';
+            document.getElementById('resTrendingCount').textContent = data.trending_count !== undefined ? data.trending_count : list.filter(v => (v.engine || '').includes('Trending')).length;
+            document.getElementById('resNewestCount').textContent = data.newest_count !== undefined ? data.newest_count : list.filter(v => (v.engine || '').includes('Newest')).length;
 
             const track = document.getElementById('simVideoTrack');
             let trackHtml = '';
 
-            (data.videos || []).forEach((item, index) => {
-                const isTrending = item.engine.includes('Trending');
-                const badgeClass = isTrending ? 'bg-danger' : 'bg-primary';
+            list.forEach((item, index) => {
+                const isTrending = (item.engine || '').includes('Trending');
+                const badgeBg = isTrending ? '#ef4444' : '#3b82f6';
                 const borderClass = isTrending ? 'border-danger-subtle' : 'border-primary-subtle';
 
                 trackHtml += `
                     <div class="col-6 col-sm-4 col-md-3 col-lg-2">
-                        <div class="border ${borderClass} rounded p-2 text-center bg-white position-relative shadow-sm">
-                            <span class="position-absolute top-0 start-0 badge bg-dark rounded-end rounded-bottom" style="font-size: 10px;">
+                        <div class="sim_video_card ${borderClass} h-100">
+                            <span class="position-absolute top-0 start-0 badge bg-dark rounded-end rounded-bottom" style="font-size: 10px; z-index: 2;">
                                 #${index + 1}
                             </span>
-                            <span class="badge ${badgeClass} text-white mb-1" style="font-size: 9px;">
+                            <div class="sim_video_thumb_box">
+                                <img src="${item.thumbnail_url || 'https://placehold.co/60x80'}" alt="${item.title || 'Video'}" loading="lazy" onerror="this.src='https://placehold.co/60x80'">
+                            </div>
+                            <span class="badge text-white mb-1" style="background-color: ${badgeBg}; font-size: 9px; font-weight: 600;">
                                 ${item.engine}
                             </span>
-                            <div class="d-flex justify-content-center my-1">
-                                <img src="${item.thumbnail_url || 'https://placehold.co/60x80'}" class="rounded" style="width: 50px; height: 70px; object-fit: cover;">
-                            </div>
-                            <div class="small fw-bold text-truncate" title="${item.title}">${item.title}</div>
+                            <div class="small fw-bold text-truncate" title="${item.title || 'Video'}">${item.title || 'Video #' + item.id}</div>
                             <div class="text-muted" style="font-size: 10px;">ID: ${item.id}</div>
                         </div>
                     </div>
@@ -442,4 +508,3 @@ if (simForm) {
 }
 </script>
 @endpush
-

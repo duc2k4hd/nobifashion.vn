@@ -829,6 +829,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             Route::get('/', [\App\Http\Controllers\Admins\Reels\ReelDashboardController::class, 'index'])->name('index');
             Route::get('/dashboard', [\App\Http\Controllers\Admins\Reels\ReelDashboardController::class, 'index'])->name('dashboard');
             Route::get('/chart-data', [\App\Http\Controllers\Admins\Reels\ReelDashboardController::class, 'chartData'])->name('chart-data');
+            Route::get('/show/{id}', [\App\Http\Controllers\Admins\Reels\ReelManageController::class, 'show'])->name('show');
 
             // Video Management
             Route::prefix('videos')->name('videos.')->group(function () {

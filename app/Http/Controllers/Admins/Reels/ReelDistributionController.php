@@ -144,14 +144,23 @@ class ReelDistributionController extends Controller
         // Lấy thông tin video để hiển thị chi tiết
         $reels = Reel::whereIn('id', $sliceIds)->get()->keyBy('id');
 
+        $trendingCountInSlice = 0;
+        $newestCountInSlice = 0;
         $resultItems = [];
         foreach ($slice as $pos => $item) {
             $reel = $reels->get($item['id']);
+            $isTrending = str_contains($item['engine'], 'Trending');
+            if ($isTrending) {
+                $trendingCountInSlice++;
+            } else {
+                $newestCountInSlice++;
+            }
             $resultItems[] = [
                 'position' => $pos + 1,
                 'id' => $item['id'],
                 'engine' => $item['engine'],
                 'title' => $reel ? $reel->title : 'N/A',
+                'thumbnail_url' => $reel ? $reel->thumbnail_url : null,
                 'view_count' => $reel ? $reel->view_count : 0,
                 'like_count' => $reel ? $reel->like_count : 0,
                 'comment_count' => $reel ? $reel->comment_count : 0,
@@ -165,13 +174,18 @@ class ReelDistributionController extends Controller
 
         return response()->json([
             'success' => true,
-            'snapshot_version' => $snapshot->version,
+            'seed' => $seed,
             'seed_used' => $seed,
+            'snapshot_version' => $snapshot ? $snapshot->version : 1,
             'total_videos_in_cycle' => $totalSimulated,
+            'total_in_batch' => count($resultItems),
+            'trending_count' => $trendingCountInSlice,
+            'newest_count' => $newestCountInSlice,
             'has_duplicates' => $hasDuplicates,
-            'is_full_coverage' => $totalSimulated === $snapshot->total_videos,
+            'is_full_coverage' => $totalSimulated === ($snapshot ? $snapshot->total_videos : 0),
             'limit' => $limit,
             'items' => $resultItems,
+            'videos' => $resultItems,
         ]);
     }
 }
