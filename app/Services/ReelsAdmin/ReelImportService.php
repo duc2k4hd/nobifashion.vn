@@ -56,7 +56,9 @@ class ReelImportService
             'file_name' => $file->getClientOriginalName(),
             'file_size' => $file->getSize(),
             'headers' => $headers,
+            'rows' => $rows,
             'preview_rows' => $rows,
+            'total_rows' => count($rows),
             'total_preview' => count($rows),
         ];
     }

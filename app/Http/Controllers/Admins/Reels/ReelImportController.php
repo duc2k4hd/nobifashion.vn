@@ -28,11 +28,18 @@ class ReelImportController extends Controller
      */
     public function index(): View
     {
+        $stats = [
+            'total_jobs' => ReelImportJob::count(),
+            'total_success' => (int) ReelImportJob::sum('successful_rows'),
+            'total_skipped' => (int) ReelImportJob::sum('skipped_rows'),
+            'total_failed' => (int) ReelImportJob::sum('failed_rows'),
+        ];
+
         $jobs = ReelImportJob::with(['creator'])
             ->latest('id')
             ->paginate(15);
 
-        return view('admins.reels.import.index', compact('jobs'));
+        return view('admins.reels.import.index', compact('jobs', 'stats'));
     }
 
     /**

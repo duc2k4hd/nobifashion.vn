@@ -908,6 +908,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
             // Import Center
             Route::prefix('import')->name('import.')->group(function () {
                 Route::get('/', [\App\Http\Controllers\Admins\Reels\ReelImportController::class, 'index'])->name('index');
+                Route::get('/sample', [\App\Http\Controllers\Admins\Reels\ReelImportController::class, 'sampleCsv'])->name('sample');
                 Route::get('/sample-csv', [\App\Http\Controllers\Admins\Reels\ReelImportController::class, 'sampleCsv'])->name('sample-csv');
                 Route::post('/preview', [\App\Http\Controllers\Admins\Reels\ReelImportController::class, 'preview'])->name('preview');
                 Route::post('/process', [\App\Http\Controllers\Admins\Reels\ReelImportController::class, 'process'])->name('process');
