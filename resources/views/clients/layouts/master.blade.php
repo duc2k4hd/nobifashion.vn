@@ -37,7 +37,7 @@
         {!! $settings->google_tag_body !!}
     @endif
     <div class="nobifashion">
-        @if(!request()->is('reels*'))
+        @if(!request()->is('reels*', 'reel*'))
             @include('clients.pages.loading.index')
             @include('clients.templates.header')
         @endif
@@ -46,11 +46,11 @@
             @yield('content')
         </main>
 
-        @if(!request()->is('reels*'))
+        @if(!request()->is('reels*', 'reel*'))
             @include('clients.templates.footer')
         @endif
     </div>
-    @if(!request()->is('reels*'))
+    @if(!request()->is('reels*', 'reel*'))
         @include('clients.templates.notice')
         @include('clients.templates.bottom_nav')
         @if (!$isPageSpeedBot)
