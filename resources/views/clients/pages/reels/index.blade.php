@@ -220,6 +220,9 @@
         </aside>
         <div id="nobifashion_reels_modal" class="nobifashion_reels_modal" role="dialog" aria-modal="true"
             aria-label="Hộp thoại tùy chọn"></div>
+        <!-- Popover Tùy chọn video (More Options Popover chuẩn Facebook Reels) -->
+        <div id="nobifashion_reels_more_popover" class="nobifashion_reels_more_popover" role="menu"
+            aria-label="Tùy chọn video"></div>
         <div id="nobifashion_reels_toast" class="nobifashion_reels_toast" role="status" aria-live="polite"></div>
     </div>
 @endsection

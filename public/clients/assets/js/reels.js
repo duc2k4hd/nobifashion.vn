@@ -3194,6 +3194,7 @@ class InteractionController {
     navigationController,
     modalEl,
     backdropEl,
+    morePopoverEl,
     showToast,
     analyticsTracker
   }) {
@@ -3205,9 +3206,11 @@ class InteractionController {
     this.navigationController = navigationController;
     this.modalEl = modalEl;
     this.backdropEl = backdropEl;
+    this.morePopoverEl = morePopoverEl || document.getElementById('nobifashion_reels_more_popover');
     this.showToast = showToast;
     this.analyticsTracker = analyticsTracker;
 
+    this.activeMoreReel = null;
     this.lastTapTime = 0;
     this.singleTapTimer = null;
   }
@@ -3332,6 +3335,196 @@ class InteractionController {
 
     this.modalEl.classList.add('nobifashion_reels_is_open');
     if (this.backdropEl) this.backdropEl.classList.add('nobifashion_reels_is_open');
+  }
+
+  openMorePopover(triggerBtn, reel) {
+    if (!this.morePopoverEl || !reel) return;
+
+    // Toggle đóng nếu click lại vào cùng nút
+    if (
+      this.morePopoverEl.classList.contains('nobifashion_reels_is_open') &&
+      this.activeMoreReel &&
+      this.activeMoreReel.id === reel.id
+    ) {
+      this.closeMorePopover();
+      return;
+    }
+
+    this.activeMoreReel = reel;
+    this.renderMorePopoverMain(reel);
+
+    // Tính toán toạ độ hiển thị nổi ngay phía trên nút ba chấm
+    const rect = triggerBtn.getBoundingClientRect();
+    const pop = this.morePopoverEl;
+    pop.classList.add('nobifashion_reels_is_open');
+
+    const popHeight = pop.offsetHeight || 300;
+    const windowH = window.innerHeight;
+    const windowW = window.innerWidth;
+
+    const spaceAbove = rect.top;
+    let bottom = windowH - rect.top + 8;
+    let top = 'auto';
+
+    // Nếu khoảng trống bên trên quá hẹp thì mở xuống dưới
+    if (spaceAbove < popHeight + 16 && windowH - rect.bottom > popHeight + 16) {
+      top = `${rect.bottom + 8}px`;
+      bottom = 'auto';
+    } else {
+      bottom = `${Math.max(12, bottom)}px`;
+    }
+
+    // Căn theo lề phải của trigger button
+    const right = Math.max(12, windowW - rect.right - 4);
+
+    pop.style.bottom = bottom;
+    pop.style.top = top;
+    pop.style.right = `${right}px`;
+    pop.style.left = 'auto';
+  }
+
+  closeMorePopover() {
+    if (this.morePopoverEl) {
+      this.morePopoverEl.classList.remove('nobifashion_reels_is_open');
+    }
+  }
+
+  renderMorePopoverMain(reel) {
+    if (!this.morePopoverEl || !reel) return;
+    const currentSpeed = this.player?.currentSpeed || 1;
+    const speedLabel = currentSpeed === 1 ? '1 (Bình thường)' : `${currentSpeed}x`;
+    const saveLabel = reel.isSaved ? 'Bỏ lưu thước phim' : 'Lưu thước phim';
+    const isSaved = Boolean(reel.isSaved);
+
+    this.morePopoverEl.innerHTML = `
+      <div class="nobifashion_reels_more_list" role="menu">
+        <!-- 1. Quan tâm -->
+        <button type="button" class="nobifashion_reels_more_item" data-action="more-interested" data-reel-id="${reel.id}" role="menuitem">
+          <div class="nobifashion_reels_more_item_icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="16"/>
+              <line x1="8" y1="12" x2="16" y2="12"/>
+            </svg>
+          </div>
+          <div class="nobifashion_reels_more_item_content">
+            <span class="nobifashion_reels_more_item_title">Quan tâm</span>
+            <span class="nobifashion_reels_more_item_sub">Bạn sẽ nhìn thấy nhiều thước phim tương tự hơn.</span>
+          </div>
+        </button>
+
+        <!-- 2. Không quan tâm -->
+        <button type="button" class="nobifashion_reels_more_item" data-action="more-uninterested" data-reel-id="${reel.id}" role="menuitem">
+          <div class="nobifashion_reels_more_item_icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="8" y1="12" x2="16" y2="12"/>
+            </svg>
+          </div>
+          <div class="nobifashion_reels_more_item_content">
+            <span class="nobifashion_reels_more_item_title">Không quan tâm</span>
+            <span class="nobifashion_reels_more_item_sub">Bạn sẽ nhìn thấy ít thước phim tương tự hơn.</span>
+          </div>
+        </button>
+
+        <!-- 3. Lưu thước phim -->
+        <button type="button" class="nobifashion_reels_more_item" data-action="more-toggle-save" data-reel-id="${reel.id}" role="menuitem">
+          <div class="nobifashion_reels_more_item_icon">
+            <svg viewBox="0 0 24 24" fill="${isSaved ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="1.8" style="${isSaved ? 'color:#f59e0b;' : ''}">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
+            </svg>
+          </div>
+          <div class="nobifashion_reels_more_item_content">
+            <span class="nobifashion_reels_more_item_title">${saveLabel}</span>
+          </div>
+        </button>
+
+        <!-- 4. Sao chép liên kết -->
+        <button type="button" class="nobifashion_reels_more_item" data-action="more-copy-link" data-reel-id="${reel.id}" role="menuitem">
+          <div class="nobifashion_reels_more_item_icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+            </svg>
+          </div>
+          <div class="nobifashion_reels_more_item_content">
+            <span class="nobifashion_reels_more_item_title">Sao chép liên kết</span>
+          </div>
+        </button>
+
+        <!-- 5. Báo cáo thước phim -->
+        <button type="button" class="nobifashion_reels_more_item" data-action="more-report" data-reel-id="${reel.id}" role="menuitem">
+          <div class="nobifashion_reels_more_item_icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <rect x="3" y="3" width="18" height="18" rx="4"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <circle cx="12" cy="16" r="0.9" fill="currentColor"/>
+            </svg>
+          </div>
+          <div class="nobifashion_reels_more_item_content">
+            <span class="nobifashion_reels_more_item_title">Báo cáo thước phim</span>
+          </div>
+        </button>
+
+        <!-- 6. Tốc độ phát lại -->
+        <button type="button" class="nobifashion_reels_more_item" data-action="more-open-speed" data-reel-id="${reel.id}" role="menuitem">
+          <div class="nobifashion_reels_more_item_icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <circle cx="17" cy="4" r="2"/>
+              <path d="M15 8l-4 3 2 4-4 4"/>
+              <path d="M9 11l-3 2 2 4"/>
+              <path d="M13 15l2 4 4-2"/>
+            </svg>
+          </div>
+          <div class="nobifashion_reels_more_item_content">
+            <span class="nobifashion_reels_more_item_title">Tốc độ phát lại</span>
+            <span class="nobifashion_reels_more_item_sub">${speedLabel}</span>
+          </div>
+          <svg class="nobifashion_reels_more_item_chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </button>
+      </div>
+    `;
+  }
+
+  renderMorePopoverSpeed(reel) {
+    if (!this.morePopoverEl || !reel) return;
+    const currentSpeed = this.player?.currentSpeed || 1;
+    const speeds = [0.75, 1, 1.25, 1.5, 2];
+
+    this.morePopoverEl.innerHTML = `
+      <div class="nobifashion_reels_more_list" role="menu">
+        <button type="button" class="nobifashion_reels_more_back_btn" data-action="more-back-main" aria-label="Quay lại">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="15 18 9 12 15 6"/>
+          </svg>
+          <span>Tốc độ phát lại</span>
+        </button>
+
+        ${speeds
+          .map((spd) => {
+            const isActive = currentSpeed === spd;
+            const label = spd === 1 ? '1.0x (Bình thường)' : `${spd}x`;
+            return `
+              <button
+                type="button"
+                class="nobifashion_reels_more_speed_opt ${isActive ? 'nobifashion_reels_is_active' : ''}"
+                data-action="more-select-speed"
+                data-speed="${spd}"
+                role="menuitemradio"
+                aria-checked="${isActive}"
+              >
+                <span>${label}</span>
+                <svg class="nobifashion_reels_more_speed_check" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </button>
+            `;
+          })
+          .join('')}
+      </div>
+    `;
   }
 
   openMoreOptionsModal(reel) {
@@ -3990,6 +4183,7 @@ class NobiFashionReelsApp {
     this.productDrawerEl = document.getElementById('nobifashion_reels_product_drawer');
     this.cartDrawerEl = document.getElementById('nobifashion_reels_cart_drawer');
     this.modalEl = document.getElementById('nobifashion_reels_modal');
+    this.morePopoverEl = document.getElementById('nobifashion_reels_more_popover');
     this.backdropEl = document.getElementById('nobifashion_reels_backdrop');
     this.cartBadgeEl = document.getElementById('nobifashion_reels_cart_badge');
 
@@ -4064,6 +4258,7 @@ class NobiFashionReelsApp {
       renderer: this.renderer,
       player: this.player,
       onReelChanged: (activeReel) => {
+        this.interactionController?.closeMorePopover();
         this.commentsController.renderForReel(activeReel);
         if (activeReel && activeReel.id) {
           this.store.recordView(activeReel.id);
@@ -4083,6 +4278,7 @@ class NobiFashionReelsApp {
       navigationController: this.navigationController,
       modalEl: this.modalEl,
       backdropEl: this.backdropEl,
+      morePopoverEl: this.morePopoverEl,
       analyticsTracker: this.analyticsTracker,
       showToast: (msg) => this.uiController?.showToast(msg)
     });
@@ -4105,6 +4301,7 @@ class NobiFashionReelsApp {
         target.closest('#nobifashion_reels_sidebar') ||
         target.closest('.nobifashion_reels_drawer') ||
         target.closest('.nobifashion_reels_modal') ||
+        target.closest('#nobifashion_reels_more_popover') ||
         target.closest('.nobifashion_reels_search_dropdown') ||
         target.closest('.nobifashion_reels_popover') ||
         target.closest('.nobifashion_reels_progress_container')
@@ -4113,7 +4310,8 @@ class NobiFashionReelsApp {
       }
       if (
         this.productController.isAnyDrawerOpen() ||
-        this.modalEl?.classList.contains('nobifashion_reels_is_open')
+        this.modalEl?.classList.contains('nobifashion_reels_is_open') ||
+        this.morePopoverEl?.classList.contains('nobifashion_reels_is_open')
       ) {
         return true;
       }
@@ -4197,6 +4395,12 @@ class NobiFashionReelsApp {
         document.querySelectorAll('.nobifashion_reels_speed_wrapper.nobifashion_reels_is_open').forEach((el) => {
           el.classList.remove('nobifashion_reels_is_open');
         });
+      }
+      if (
+        !e.target.closest('#nobifashion_reels_more_popover') &&
+        !e.target.closest('[data-action="open-more-menu"]')
+      ) {
+        this.interactionController?.closeMorePopover();
       }
 
       // Check for filter buttons
@@ -4399,9 +4603,80 @@ class NobiFashionReelsApp {
           if (activeReel) this.interactionController.openShareModal(activeReel);
           break;
 
-        case 'open-more-menu':
-          if (activeReel) this.interactionController.openMoreOptionsModal(activeReel);
+        case 'open-more-menu': {
+          const reelId = actionEl.getAttribute('data-reel-id');
+          const targetReel = (reelId && this.store.getReelById(reelId)) || activeReel;
+          if (targetReel) {
+            this.interactionController.openMorePopover(actionEl, targetReel);
+          }
           break;
+        }
+
+        case 'more-interested':
+          this.interactionController.closeMorePopover();
+          if (activeReel) {
+            this.analyticsTracker?.markInteraction('interest');
+          }
+          this.uiController.showToast('Cảm ơn bạn! Chúng tôi sẽ gợi ý nhiều thước phim tương tự hơn.');
+          break;
+
+        case 'more-uninterested': {
+          const rId = actionEl.getAttribute('data-reel-id') || activeReel?.id;
+          this.interactionController.closeMorePopover();
+          if (rId) {
+            this.store.hideReel(rId);
+            this.navigationController.next();
+            this.uiController.showToast('Đã ẩn thước phim. Bạn sẽ nhìn thấy ít thước phim tương tự hơn.');
+          }
+          break;
+        }
+
+        case 'more-toggle-save': {
+          const rId = actionEl.getAttribute('data-reel-id') || activeReel?.id;
+          this.interactionController.closeMorePopover();
+          if (rId) {
+            this.interactionController.handleToggleSave(rId);
+          }
+          break;
+        }
+
+        case 'more-copy-link': {
+          const rId = actionEl.getAttribute('data-reel-id') || activeReel?.id;
+          this.interactionController.closeMorePopover();
+          if (rId) {
+            this.interactionController.copyTextToClipboard(`https://nobifashion.vn/reels/${rId}`);
+            this.store.recordShare(rId).then((updated) => {
+              const shareSpan = document.querySelector('[data-role="share-count"]');
+              if (shareSpan && updated) shareSpan.textContent = formatCount(updated.sharesCount);
+            });
+          }
+          break;
+        }
+
+        case 'more-report':
+          this.interactionController.closeMorePopover();
+          this.uiController.showToast('Cảm ơn bạn. Chúng tôi đã tiếp nhận báo cáo thước phim này.');
+          break;
+
+        case 'more-open-speed': {
+          const r = this.interactionController.activeMoreReel || activeReel;
+          this.interactionController.renderMorePopoverSpeed(r);
+          break;
+        }
+
+        case 'more-back-main': {
+          const r = this.interactionController.activeMoreReel || activeReel;
+          this.interactionController.renderMorePopoverMain(r);
+          break;
+        }
+
+        case 'more-select-speed': {
+          const spd = actionEl.getAttribute('data-speed');
+          this.player.setPlaybackSpeed(spd);
+          this.interactionController.closeMorePopover();
+          this.uiController.showToast(`Đã chọn tốc độ phát ${spd}x`);
+          break;
+        }
 
         case 'close-modal':
           this.interactionController.closeModal();
@@ -4598,6 +4873,7 @@ class NobiFashionReelsApp {
       if (e.key === 'Escape') {
         this.productController.closeAllDrawers();
         this.interactionController.closeModal();
+        this.interactionController.closeMorePopover();
         this.uiController.searchDropdown?.classList.remove('nobifashion_reels_is_open');
         this.uiController.popoverEl?.classList.remove('nobifashion_reels_is_open');
         this.workspaceEl?.classList.remove('nobifashion_reels_mobile_comments_open');
