@@ -51,67 +51,67 @@
 @endpush
 
 @section('content')
-    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
         <div>
-            <h2 class="fw-bold mb-1 d-flex align-items-center gap-2">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
+            <h3 class="fw-bold mb-1 d-flex align-items-center gap-2 fs-5">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
                 <span>Quản lý chuyển hướng 301</span>
-            </h2>
-            <p class="text-muted mb-0">Hệ thống chuyển hướng URL chuẩn SEO, tự động chống vòng lặp và link 404, xử lý nhanh chóng.</p>
+            </h3>
+            <p class="text-muted mb-0 small">Hệ thống chuyển hướng URL chuẩn SEO, tự động chống vòng lặp và link 404, xử lý nhanh chóng.</p>
         </div>
         <div class="d-flex gap-2">
-            <button type="button" class="btn btn-outline-success d-inline-flex align-items-center gap-1 fw-semibold" data-bs-toggle="modal" data-bs-target="#exportModal">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            <button type="button" class="btn btn-sm btn-outline-success d-inline-flex align-items-center gap-1 fw-semibold" data-bs-toggle="modal" data-bs-target="#exportModal">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                 <span>Xuất CSV/Excel</span>
             </button>
-            <button type="button" class="btn btn-outline-info d-inline-flex align-items-center gap-1 fw-semibold" data-bs-toggle="modal" data-bs-target="#importModal">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            <button type="button" class="btn btn-sm btn-outline-info d-inline-flex align-items-center gap-1 fw-semibold" data-bs-toggle="modal" data-bs-target="#importModal">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
                 <span>Nhập CSV/Excel</span>
             </button>
-            <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-1 fw-semibold" data-bs-toggle="modal" data-bs-target="#createModal">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            <button type="button" class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1 fw-semibold" data-bs-toggle="modal" data-bs-target="#createModal">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                 <span>Thêm chuyển hướng</span>
             </button>
         </div>
     </div>
 
     {{-- Thống kê nhanh --}}
-    <div class="row g-3 mb-4">
+    <div class="row g-2 mb-3">
         <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+            <div class="card border-0 shadow-sm rounded-2 px-3 py-2 bg-white">
                 <div class="d-flex align-items-center">
-                    <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center text-primary me-3 flex-shrink-0" style="width: 54px; height: 54px;">
-                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
+                    <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center text-primary me-2 flex-shrink-0" style="width: 34px; height: 34px;">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path></svg>
                     </div>
                     <div>
-                        <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.5px;">Tổng chuyển hướng</div>
-                        <div class="h3 fw-bold mb-0 text-dark">{{ number_format($stats['total'] ?? 0) }}</div>
+                        <div class="text-muted fw-semibold text-uppercase" style="font-size: 11px; letter-spacing: 0.3px;">Tổng chuyển hướng</div>
+                        <div class="fw-bold text-dark fs-6">{{ number_format($stats['total'] ?? 0) }}</div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+            <div class="card border-0 shadow-sm rounded-2 px-3 py-2 bg-white">
                 <div class="d-flex align-items-center">
-                    <div class="rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center text-success me-3 flex-shrink-0" style="width: 54px; height: 54px;">
-                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    <div class="rounded-circle bg-success bg-opacity-10 d-flex align-items-center justify-content-center text-success me-2 flex-shrink-0" style="width: 34px; height: 34px;">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                     </div>
                     <div>
-                        <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.5px;">Đang hoạt động</div>
-                        <div class="h3 fw-bold mb-0 text-success">{{ number_format($stats['active'] ?? 0) }}</div>
+                        <div class="text-muted fw-semibold text-uppercase" style="font-size: 11px; letter-spacing: 0.3px;">Đang hoạt động</div>
+                        <div class="fw-bold text-success fs-6">{{ number_format($stats['active'] ?? 0) }}</div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-3 p-3 bg-white h-100">
+            <div class="card border-0 shadow-sm rounded-2 px-3 py-2 bg-white">
                 <div class="d-flex align-items-center">
-                    <div class="rounded-circle bg-info bg-opacity-10 d-flex align-items-center justify-content-center text-info me-3 flex-shrink-0" style="width: 54px; height: 54px;">
-                        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                    <div class="rounded-circle bg-info bg-opacity-10 d-flex align-items-center justify-content-center text-info me-2 flex-shrink-0" style="width: 34px; height: 34px;">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
                     </div>
                     <div>
-                        <div class="text-muted small fw-semibold text-uppercase" style="letter-spacing: 0.5px;">Lượt kích hoạt (Hits)</div>
-                        <div class="h3 fw-bold mb-0 text-info">{{ number_format($stats['total_hits'] ?? 0) }}</div>
+                        <div class="text-muted fw-semibold text-uppercase" style="font-size: 11px; letter-spacing: 0.3px;">Lượt kích hoạt (Hits)</div>
+                        <div class="fw-bold text-info fs-6">{{ number_format($stats['total_hits'] ?? 0) }}</div>
                     </div>
                 </div>
             </div>
@@ -119,29 +119,26 @@
     </div>
 
     {{-- Bộ lọc & Tìm kiếm --}}
-    <div class="card border-0 shadow-sm rounded-3 mb-4">
-        <div class="card-body">
-            <form action="{{ route('admin.redirects.index') }}" method="GET" class="row g-3 align-items-end">
+    <div class="card border-0 shadow-sm rounded-2 mb-3">
+        <div class="card-body p-2">
+            <form action="{{ route('admin.redirects.index') }}" method="GET" class="row g-2 align-items-center">
                 <div class="col-md-5">
-                    <label class="form-label small text-muted text-uppercase fw-semibold">Tìm kiếm</label>
-                    <div class="input-group">
+                    <div class="input-group input-group-sm">
                         <span class="input-group-text bg-white border-end-0 text-muted">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                         </span>
                         <input type="text" name="search" class="form-control border-start-0 ps-0" placeholder="Tìm theo ID, link cũ, link mới, ghi chú..." value="{{ $filters['search'] ?? '' }}">
                     </div>
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label small text-muted text-uppercase fw-semibold">Trạng thái</label>
-                    <select name="status" class="form-select">
-                        <option value="">Tất cả trạng thái</option>
+                    <select name="status" class="form-select form-select-sm">
+                        <option value="">Trạng thái: Tất cả</option>
                         <option value="active" @selected(($filters['status'] ?? '') === 'active')>Đang hoạt động</option>
                         <option value="inactive" @selected(($filters['status'] ?? '') === 'inactive')>Đang tạm dừng</option>
                     </select>
                 </div>
                 <div class="col-md-2">
-                    <label class="form-label small text-muted text-uppercase fw-semibold">Sắp xếp</label>
-                    <select name="sort" class="form-select">
+                    <select name="sort" class="form-select form-select-sm">
                         <option value="latest" @selected(($filters['sort'] ?? '') === 'latest')>Mới nhất</option>
                         <option value="oldest" @selected(($filters['sort'] ?? '') === 'oldest')>Cũ nhất</option>
                         <option value="hits_desc" @selected(($filters['sort'] ?? '') === 'hits_desc')>Lượt kích hoạt (Cao → Thấp)</option>
@@ -149,20 +146,19 @@
                     </select>
                 </div>
                 <div class="col-md-1">
-                    <label class="form-label small text-muted text-uppercase fw-semibold">Hiển thị</label>
-                    <select name="limit" class="form-select">
+                    <select name="limit" class="form-select form-select-sm">
                         <option value="50" @selected(($filters['limit'] ?? 50) == 50)>50</option>
                         <option value="100" @selected(($filters['limit'] ?? 50) == 100)>100</option>
                         <option value="300" @selected(($filters['limit'] ?? 50) == 300)>300</option>
                         <option value="1000" @selected(($filters['limit'] ?? 50) == 1000)>1000</option>
                     </select>
                 </div>
-                <div class="col-md-2 text-end">
-                    <button type="submit" class="btn btn-dark me-1 d-inline-flex align-items-center gap-1">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                <div class="col-md-2 text-end d-flex gap-1 justify-content-end">
+                    <button type="submit" class="btn btn-sm btn-dark d-inline-flex align-items-center gap-1">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
                         <span>Lọc</span>
                     </button>
-                    <a href="{{ route('admin.redirects.index') }}" class="btn btn-outline-secondary">Xóa lọc</a>
+                    <a href="{{ route('admin.redirects.index') }}" class="btn btn-sm btn-outline-secondary">Xóa lọc</a>
                 </div>
             </form>
         </div>
