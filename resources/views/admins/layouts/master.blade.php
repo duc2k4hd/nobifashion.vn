@@ -261,42 +261,105 @@
         /* Top Bar */
         .top-bar {
             background: white;
-            padding: 15px 25px;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-            margin-bottom: 30px;
+            padding: 8px 16px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+            margin-bottom: 18px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            min-height: 50px;
         }
         .top-bar-title {
-            font-size: 24px;
-            font-weight: 600;
-            color: #333;
+            font-size: 15px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-left: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
         }
         .top-bar-actions {
             display: flex;
-            gap: 15px;
+            gap: 8px;
             align-items: center;
         }
-        .user-info {
+        .topbar-btn {
+            display: inline-flex;
+            align-items: center;
+            height: 33px;
+            padding: 0 11px;
+            font-size: 12.5px;
+            color: #475569;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            text-decoration: none;
+            transition: all 0.15s ease;
+            cursor: pointer;
+        }
+        .topbar-btn:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+            border-color: #cbd5e1;
+        }
+        .topbar-btn-primary {
+            background: #2563eb;
+            color: #ffffff;
+            border-color: #2563eb;
+        }
+        .topbar-btn-primary:hover {
+            background: #1d4ed8;
+            border-color: #1d4ed8;
+            color: #ffffff;
+        }
+        .topbar-divider {
+            width: 1px;
+            height: 20px;
+            background: #e2e8f0;
+            margin: 0 4px;
+        }
+        .topbar-user-btn {
             display: flex;
             align-items: center;
-            gap: 10px;
-            padding: 8px 15px;
+            gap: 8px;
+            padding: 3px 8px 3px 4px;
             background: #f8f9fa;
-            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .topbar-user-btn:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+        .topbar-user-btn::after {
+            display: none;
         }
         .user-avatar {
-            width: 32px;
-            height: 32px;
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
+            font-weight: 700;
+            font-size: 12px;
+        }
+        .user-name-text {
+            font-size: 12px;
             font-weight: 600;
+            color: #1e293b;
+            line-height: 1.2;
+        }
+        .user-role-text {
+            font-size: 10px;
+            color: #64748b;
+            line-height: 1.2;
         }
         
         /* Content Area */
@@ -320,22 +383,24 @@
             }
         }
         .menu-toggle {
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            background: #f1f3f5;
-            color: #495057;
-            border: 1px solid #dee2e6;
-            padding: 8px 12px;
+            background: #f8fafc;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+            width: 33px;
+            height: 33px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 18px;
-            transition: all 0.2s;
-            margin-right: 15px;
+            font-size: 14px;
+            transition: all 0.15s ease;
+            padding: 0;
         }
         .menu-toggle:hover {
-            background: #e9ecef;
-            border-color: #ced4da;
+            background: #eff6ff;
+            color: #2563eb;
+            border-color: #bfdbfe;
         }
         
         /* Pagination Container */
@@ -867,26 +932,119 @@
     <main class="main-content">
         <!-- Top Bar -->
         <div class="top-bar">
-            <div style="display: flex; align-items: center;">
-                <button class="menu-toggle" id="sidebarToggle" onclick="toggleSidebar()" title="Đóng/Mở menu">
-                    <span id="toggleIcon">☰</span>
+            <div class="d-flex align-items-center">
+                <button class="menu-toggle" id="sidebarToggle" onclick="toggleSidebar()" title="Đóng/Mở thanh menu">
+                    <i class="fa-solid fa-bars" id="toggleIcon"></i>
                 </button>
                 <span class="top-bar-title">@yield('page-title', 'Dashboard')</span>
             </div>
             <div class="top-bar-actions">
-                <div class="user-info">
-                    <div class="user-avatar">
-                        @php
-                            $user = auth('web')->user() ?? auth()->user();
-                            $userInitial = $user ? strtoupper(substr($user->name ?? 'A', 0, 1)) : 'A';
-                            $userName = $user ? ($user->name ?? 'Admin') : 'Admin';
-                        @endphp
-                        {{ $userInitial }}
-                    </div>
-                    <div>
-                        <div style="font-size: 14px; font-weight: 600;">{{ $userName }}</div>
-                        <div style="font-size: 12px; color: #666;">Quản trị viên</div>
-                    </div>
+                <!-- Nút Xem Website Ngoài Khách Hàng -->
+                <a href="{{ url('/') }}" target="_blank" class="topbar-btn" title="Mở trang chủ website (tab mới)">
+                    <i class="fa-solid fa-arrow-up-right-from-square text-primary"></i>
+                    <span class="d-none d-md-inline ms-1.5 fw-medium">Xem website</span>
+                </a>
+
+                <!-- Nút Tạo Mới Nhanh Dropdown -->
+                <div class="dropdown">
+                    <button class="topbar-btn topbar-btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Tạo mới nội dung nhanh">
+                        <i class="fa-solid fa-plus"></i>
+                        <span class="d-none d-sm-inline ms-1 fw-semibold">Tạo mới</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-2" style="min-width: 210px; border-radius: 8px; border: 1px solid #e2e8f0 !important;">
+                        <li class="dropdown-header text-uppercase small fw-bold text-muted px-3 py-1" style="font-size: 11px;">Thao tác nhanh</li>
+                        @if(Route::has('admin.posts.create'))
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2 px-3 py-1.5" href="{{ route('admin.posts.create') }}">
+                                    <i class="fa-regular fa-newspaper text-primary" style="width: 16px;"></i>
+                                    <span>Viết bài mới</span>
+                                </a>
+                            </li>
+                        @endif
+                        @if(Route::has('admin.products.create'))
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2 px-3 py-1.5" href="{{ route('admin.products.create') }}">
+                                    <i class="fa-solid fa-box text-success" style="width: 16px;"></i>
+                                    <span>Thêm sản phẩm</span>
+                                </a>
+                            </li>
+                        @endif
+                        @if(Route::has('admin.vouchers.index'))
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2 px-3 py-1.5" href="{{ route('admin.vouchers.index') }}">
+                                    <i class="fa-solid fa-ticket text-danger" style="width: 16px;"></i>
+                                    <span>Mã giảm giá (Voucher)</span>
+                                </a>
+                            </li>
+                        @endif
+                        @if(Route::has('admin.redirects.index'))
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2 px-3 py-1.5" href="{{ route('admin.redirects.index') }}">
+                                    <i class="fa-solid fa-route text-secondary" style="width: 16px;"></i>
+                                    <span>Chuyển hướng 301</span>
+                                </a>
+                            </li>
+                        @endif
+                    </ul>
+                </div>
+
+                <!-- Nút Xóa Cache Nhanh -->
+                @if(Route::has('admin.clear-cache'))
+                    <form action="{{ route('admin.clear-cache') }}" method="POST" class="d-inline m-0" onsubmit="return confirm('Bạn có chắc muốn làm mới cache hệ thống?');">
+                        @csrf
+                        <button type="submit" class="topbar-btn" title="Làm mới cache hệ thống & sitemap">
+                            <i class="fa-solid fa-broom text-warning"></i>
+                            <span class="d-none d-lg-inline ms-1.5 fw-medium">Xóa Cache</span>
+                        </button>
+                    </form>
+                @endif
+
+                <div class="topbar-divider d-none d-sm-block"></div>
+
+                <!-- User Dropdown Menu -->
+                @php
+                    $user = auth('web')->user() ?? auth()->user();
+                    $userInitial = $user ? strtoupper(substr($user->name ?? 'A', 0, 1)) : 'A';
+                    $userName = $user ? ($user->name ?? 'Admin') : 'Admin';
+                    $userEmail = $user ? ($user->email ?? 'admin@nobifashion.vn') : 'admin@nobifashion.vn';
+                @endphp
+                <div class="dropdown">
+                    <button class="topbar-user-btn dropdown-toggle border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="user-avatar">
+                            {{ $userInitial }}
+                        </div>
+                        <div class="d-none d-md-block text-start">
+                            <div class="user-name-text">{{ $userName }}</div>
+                            <div class="user-role-text">Quản trị viên</div>
+                        </div>
+                        <i class="fa-solid fa-chevron-down text-muted ms-1" style="font-size: 10px;"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-2" style="min-width: 190px; border-radius: 8px; border: 1px solid #e2e8f0 !important;">
+                        <li class="px-3 py-2 border-bottom">
+                            <div class="fw-bold text-dark small">{{ $userName }}</div>
+                            <div class="text-muted" style="font-size: 11px;">{{ $userEmail }}</div>
+                        </li>
+                        @if(Route::has('admin.settings.index'))
+                            <li>
+                                <a class="dropdown-item d-flex align-items-center gap-2 px-3 py-2" href="{{ route('admin.settings.index') }}">
+                                    <i class="fa-solid fa-gear text-muted" style="width: 16px;"></i>
+                                    <span>Cài đặt website</span>
+                                </a>
+                            </li>
+                        @endif
+                        <li><hr class="dropdown-divider my-1"></li>
+                        @if(Route::has('admin.logout'))
+                            <li>
+                                <form action="{{ route('admin.logout') }}" method="POST" class="m-0">
+                                    @csrf
+                                    <button type="submit" class="dropdown-item d-flex align-items-center gap-2 px-3 py-2 text-danger">
+                                        <i class="fa-solid fa-arrow-right-from-bracket" style="width: 16px;"></i>
+                                        <span>Đăng xuất</span>
+                                    </button>
+                                </form>
+                            </li>
+                        @endif
+                    </ul>
                 </div>
             </div>
         </div>
@@ -1055,11 +1213,11 @@
             if (isCollapsed) {
                 sidebar.classList.add('collapsed');
                 mainContent.classList.add('sidebar-collapsed');
-                toggleIcon.textContent = '☰';
+                if (toggleIcon) toggleIcon.className = 'fa-solid fa-bars';
             } else {
                 sidebar.classList.remove('collapsed');
                 mainContent.classList.remove('sidebar-collapsed');
-                toggleIcon.textContent = '✕';
+                if (toggleIcon) toggleIcon.className = 'fa-solid fa-bars-staggered';
             }
             
             // Initialize mobile sidebar state
@@ -1084,12 +1242,12 @@
                 if (isCollapsed) {
                     sidebar.classList.remove('collapsed');
                     mainContent.classList.remove('sidebar-collapsed');
-                    toggleIcon.textContent = '✕';
+                    if (toggleIcon) toggleIcon.className = 'fa-solid fa-bars-staggered';
                     localStorage.setItem('sidebarCollapsed', 'false');
                 } else {
                     sidebar.classList.add('collapsed');
                     mainContent.classList.add('sidebar-collapsed');
-                    toggleIcon.textContent = '☰';
+                    if (toggleIcon) toggleIcon.className = 'fa-solid fa-bars';
                     localStorage.setItem('sidebarCollapsed', 'true');
                 }
             }
