@@ -6,7 +6,7 @@
     <meta name="robots" content="noindex, nofollow">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Admin Panel') | {{ $settings->site_name }}</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link rel="stylesheet" href="{{ asset('admins/css/custom.css') }}?v={{ env('APP_VERSION') }}">
     @stack('styles')
@@ -58,7 +58,6 @@
             background: #cbd5e1;
         }
         .sidebar-header {
-            padding: 16px 20px;
             border-bottom: 1px solid #f1f5f9;
             background: #ffffff;
             display: flex;
@@ -247,7 +246,7 @@
             min-width: 0;
             max-width: calc(100vw - 260px);
             margin-left: 260px;
-            padding: 20px;
+            padding: 5px;
             min-height: 100vh;
             overflow-x: hidden;
             box-sizing: border-box;
@@ -261,11 +260,13 @@
         /* Top Bar */
         .top-bar {
             background: white;
-            padding: 8px 16px;
+            position: relative;
+            z-index: 1020;
+            padding: 4px 8px;
             border-radius: 10px;
             border: 1px solid #e2e8f0;
             box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
-            margin-bottom: 18px;
+            margin-bottom: 5px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -288,6 +289,7 @@
         .topbar-btn {
             display: inline-flex;
             align-items: center;
+            gap: 7px;
             height: 33px;
             padding: 0 11px;
             font-size: 12.5px;
@@ -360,6 +362,38 @@
             font-size: 10px;
             color: #64748b;
             line-height: 1.2;
+        }
+
+        /* Topbar Dropdown Menus */
+        .top-bar .dropdown {
+            position: relative;
+        }
+        .top-bar .dropdown-menu {
+            display: none;
+            position: absolute !important;
+            top: calc(100% + 6px) !important;
+            right: 0 !important;
+            left: auto !important;
+            margin: 0 !important;
+            z-index: 1060 !important;
+            background: #ffffff !important;
+            box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.12), 0 8px 10px -6px rgba(15, 23, 42, 0.08) !important;
+        }
+        .top-bar .dropdown-menu.show {
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            animation: topbarDropdownFadeIn 0.15s ease-out forwards;
+        }
+        @keyframes topbarDropdownFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         
         /* Content Area */
@@ -673,7 +707,7 @@
                     <svg class="menu-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
                 </div>
                 <div class="menu-group-items {{ request()->routeIs('admin.reels.*') ? 'expanded' : '' }}" id="reels-group">
-                    <a href="{{ route('admin.reels.dashboard') }}" class="menu-sub-item {{ request()->routeIs('admin.reels.dashboard') || request()->routeIs('admin.reels.index') ? 'active' : '' }}">
+                    <a href="{{ Route::has('admin.reels.dashboard') ? route('admin.reels.dashboard') : (Route::has('admin.reels.index') ? route('admin.reels.index') : url('admin/reels')) }}" class="menu-sub-item {{ request()->routeIs('admin.reels.dashboard') || request()->routeIs('admin.reels.index') ? 'active' : '' }}">
                         Tổng quan Dashboard
                     </a>
                     <a href="{{ route('admin.reels.videos.index') }}" class="menu-sub-item {{ request()->routeIs('admin.reels.videos.index') && !request()->routeIs('admin.reels.videos.create') ? 'active' : '' }}">
@@ -942,16 +976,16 @@
                 <!-- Nút Xem Website Ngoài Khách Hàng -->
                 <a href="{{ url('/') }}" target="_blank" class="topbar-btn" title="Mở trang chủ website (tab mới)">
                     <i class="fa-solid fa-arrow-up-right-from-square text-primary"></i>
-                    <span class="d-none d-md-inline ms-1.5 fw-medium">Xem website</span>
+                    <span class="d-none d-md-inline fw-medium">Xem website</span>
                 </a>
 
                 <!-- Nút Tạo Mới Nhanh Dropdown -->
                 <div class="dropdown">
-                    <button class="topbar-btn topbar-btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="Tạo mới nội dung nhanh">
+                    <button class="topbar-btn topbar-btn-primary" type="button" id="btnQuickCreate" onclick="toggleTopbarDropdown(event, 'menuQuickCreate')" title="Tạo mới nội dung nhanh">
                         <i class="fa-solid fa-plus"></i>
                         <span class="d-none d-sm-inline ms-1 fw-semibold">Tạo mới</span>
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-2" style="min-width: 210px; border-radius: 8px; border: 1px solid #e2e8f0 !important;">
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-2" id="menuQuickCreate" aria-labelledby="btnQuickCreate" style="min-width: 210px; border-radius: 8px; border: 1px solid #e2e8f0 !important;">
                         <li class="dropdown-header text-uppercase small fw-bold text-muted px-3 py-1" style="font-size: 11px;">Thao tác nhanh</li>
                         @if(Route::has('admin.posts.create'))
                             <li>
@@ -1009,7 +1043,7 @@
                     $userEmail = $user ? ($user->email ?? 'admin@nobifashion.vn') : 'admin@nobifashion.vn';
                 @endphp
                 <div class="dropdown">
-                    <button class="topbar-user-btn dropdown-toggle border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <button class="topbar-user-btn border-0" type="button" id="btnUserMenu" onclick="toggleTopbarDropdown(event, 'menuUserMenu')">
                         <div class="user-avatar">
                             {{ $userInitial }}
                         </div>
@@ -1019,7 +1053,7 @@
                         </div>
                         <i class="fa-solid fa-chevron-down text-muted ms-1" style="font-size: 10px;"></i>
                     </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-2" style="min-width: 190px; border-radius: 8px; border: 1px solid #e2e8f0 !important;">
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 py-2" id="menuUserMenu" aria-labelledby="btnUserMenu" style="min-width: 190px; border-radius: 8px; border: 1px solid #e2e8f0 !important;">
                         <li class="px-3 py-2 border-bottom">
                             <div class="fw-bold text-dark small">{{ $userName }}</div>
                             <div class="text-muted" style="font-size: 11px;">{{ $userEmail }}</div>
@@ -1183,14 +1217,10 @@
             @endif
 
             @if(request()->cookie('updated_account_success'))
-                <script>
-                    document.addEventListener("DOMContentLoaded", function() {
-                        showCustomToast(
-                            "Cập nhật tài khoản thành công. Vui lòng đăng nhập lại.",
-                            "success"
-                        );
-                    });
-                </script>
+                showCustomToast(
+                    "Cập nhật tài khoản thành công. Vui lòng đăng nhập lại.",
+                    "success"
+                );
             @endif
 
             alerts.forEach(a => showCustomToast(a.message, a.type));
@@ -1201,8 +1231,37 @@
         Cookie::queue(Cookie::forget('updated_account_success'));
     @endphp
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
     <script>
+        // Xử lý đóng/mở dropdown top-bar độc lập, chặn triệt để xung đột
+        window.toggleTopbarDropdown = function(event, menuId) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                if (event.stopImmediatePropagation) event.stopImmediatePropagation();
+            }
+            const menu = document.getElementById(menuId);
+            if (!menu) return;
+            const isShown = menu.classList.contains('show');
+            
+            // Đóng tất cả dropdown topbar khác
+            document.querySelectorAll('.top-bar .dropdown-menu').forEach(m => {
+                if (m !== menu) m.classList.remove('show');
+            });
+            
+            if (isShown) {
+                menu.classList.remove('show');
+            } else {
+                menu.classList.add('show');
+            }
+        };
+
+        // Đóng dropdown khi click ra ngoài bất kỳ đâu
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.top-bar .dropdown')) {
+                document.querySelectorAll('.top-bar .dropdown-menu').forEach(m => m.classList.remove('show'));
+            }
+        });
+
         // Load sidebar state from localStorage
         document.addEventListener('DOMContentLoaded', function() {
             const sidebar = document.getElementById('sidebar');
