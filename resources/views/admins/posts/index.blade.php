@@ -241,7 +241,8 @@
         }
         @media (min-width: 992px) {
             .table-card .table-responsive {
-                overflow: visible;
+                overflow-x: auto;
+                overflow-y: visible;
             }
         }
         .table-card-header {
@@ -299,12 +300,12 @@
             font-size: 12px;
             text-transform: uppercase;
             letter-spacing: 0.04em;
-            padding: 12px 14px;
+            padding: 10px 10px;
             border-bottom: 1px solid #e2e8f0;
             white-space: nowrap;
         }
         .clean-table td {
-            padding: 12px 14px;
+            padding: 10px 10px;
             border-bottom: 1px solid #f1f5f9;
             vertical-align: middle;
             color: #334155;
@@ -317,12 +318,11 @@
         .post-cell {
             display: flex;
             align-items: flex-start;
-            gap: 12px;
-            max-width: 440px;
+            gap: 10px;
         }
         .post-thumb-wrap {
-            width: 68px;
-            height: 44px;
+            width: 56px;
+            height: 38px;
             border-radius: 6px;
             overflow: hidden;
             background: #f1f5f9;
@@ -345,8 +345,9 @@
         .post-info {
             display: flex;
             flex-direction: column;
-            gap: 3px;
+            gap: 2px;
             min-width: 0;
+            flex: 1;
         }
         .post-title {
             font-weight: 600;
@@ -362,6 +363,20 @@
         .post-title:hover {
             color: #2563eb;
         }
+        .badge-featured-inline {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            padding: 1px 6px;
+            font-size: 10.5px;
+            font-weight: 600;
+            border-radius: 4px;
+            background: #fef3c7;
+            color: #b45309;
+            border: 1px solid #fde68a;
+            vertical-align: middle;
+            margin-left: 6px;
+        }
         .post-slug {
             font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
             font-size: 11px;
@@ -370,7 +385,7 @@
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
-            max-width: 320px;
+            max-width: 280px;
         }
         .post-tags-row {
             display: flex;
@@ -387,6 +402,28 @@
             border-radius: 4px;
             padding: 1px 6px;
             line-height: 1.3;
+        }
+
+        /* Post Author & Date Stack */
+        .post-author-date {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            font-size: 12px;
+            line-height: 1.35;
+        }
+        .post-author-name {
+            font-weight: 600;
+            color: #1e293b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 130px;
+        }
+        .post-publish-time {
+            color: #64748b;
+            font-size: 11.5px;
+            white-space: nowrap;
         }
 
         /* Status Badge */
@@ -1040,15 +1077,14 @@
             <table class="clean-table" id="postsTable">
                 <thead>
                     <tr>
-                        <th style="width: 44px; text-align: center;">
+                        <th style="width: 38px; text-align: center;">
                             <input class="form-check-input mt-0" type="checkbox" id="checkAll" style="cursor: pointer;">
                         </th>
-                        <th style="width: 50px; text-align: center;">ID</th>
+                        <th style="width: 48px; text-align: center;">ID</th>
                         <th>Bài viết</th>
-                        <th style="width: 140px;">Danh mục</th>
-                        <th style="width: 120px; text-align: center;">Trạng thái</th>
-                        <th style="width: 80px; text-align: center;">Nổi bật</th>
-                        <th style="width: 100px; text-align: center;">
+                        <th style="width: 120px;">Danh mục</th>
+                        <th style="width: 110px; text-align: center;">Trạng thái</th>
+                        <th style="width: 85px; text-align: center;">
                             @php
                                 $currentSort = $filters['sort'] ?? '';
                                 $nextSort = ($currentSort === 'view_desc') ? 'view_asc' : 'view_desc';
@@ -1066,9 +1102,8 @@
                                 Lượt xem {!! $sortIcon !!}
                             </a>
                         </th>
-                        <th style="width: 130px;">Tác giả</th>
-                        <th style="width: 120px;">Xuất bản</th>
-                        <th style="width: 110px; text-align: right;">Thao tác</th>
+                        <th style="width: 135px;">Tác giả / Ngày đăng</th>
+                        <th style="width: 96px; text-align: right;">Thao tác</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -1093,7 +1128,7 @@
                                 #{{ $post->id }}
                             </td>
 
-                            {{-- Bài viết (Ảnh + Tiêu đề + Slug + Tags) --}}
+                            {{-- Bài viết (Ảnh + Tiêu đề + Huy hiệu nổi bật + Slug + Tags) --}}
                             <td>
                                 <div class="post-cell">
                                     <div class="post-thumb-wrap">
@@ -1112,9 +1147,14 @@
                                         @endif
                                     </div>
                                     <div class="post-info">
-                                        <a href="{{ route('admin.posts.edit', $post) }}" class="post-title" title="{{ $post->title }}">
-                                            {{ renderMeta($post->title) }}
-                                        </a>
+                                        <div>
+                                            <a href="{{ route('admin.posts.edit', $post) }}" class="post-title d-inline" title="{{ $post->title }}">
+                                                {{ renderMeta($post->title) }}
+                                            </a>
+                                            @if($post->is_featured)
+                                                <span class="badge-featured-inline" title="Bài viết nổi bật">★ Nổi bật</span>
+                                            @endif
+                                        </div>
                                         <span class="post-slug" title="{{ $post->slug }}">
                                             {{ $post->slug }}
                                         </span>
@@ -1172,15 +1212,6 @@
                                 @endif
                             </td>
 
-                            {{-- Nổi bật --}}
-                            <td style="text-align: center;">
-                                @if($post->is_featured)
-                                    <span class="star-featured" title="Bài viết nổi bật">★</span>
-                                @else
-                                    <span class="text-muted small">—</span>
-                                @endif
-                            </td>
-
                             {{-- Lượt xem --}}
                             <td style="text-align: center;">
                                 <span class="views-badge" title="{{ number_format($post->views) }} lượt xem">
@@ -1189,23 +1220,20 @@
                                 </span>
                             </td>
 
-                            {{-- Tác giả --}}
+                            {{-- Tác giả / Ngày đăng (Gộp trực quan, tinh gọn) --}}
                             <td>
-                                <span style="font-weight: 500; font-size: 12.5px; color: #334155;">
-                                    {{ $post->author?->displayName() ?? '—' }}
-                                </span>
-                            </td>
-
-                            {{-- Ngày xuất bản --}}
-                            <td>
-                                <span style="font-size: 12px; color: #64748b;">
-                                    @if($post->published_at)
-                                        {{ $post->published_at->translatedFormat('d/m/Y') }}
-                                        <br><small class="text-muted">{{ $post->published_at->format('H:i') }}</small>
-                                    @else
-                                        —
-                                    @endif
-                                </span>
+                                <div class="post-author-date">
+                                    <span class="post-author-name" title="{{ $post->author?->displayName() }}">
+                                        {{ $post->author?->displayName() ?? '—' }}
+                                    </span>
+                                    <span class="post-publish-time">
+                                        @if($post->published_at)
+                                            <i class="fa-regular fa-clock me-1 text-muted" style="font-size: 10px;"></i>{{ $post->published_at->translatedFormat('d/m/Y') }} <small class="text-muted">{{ $post->published_at->format('H:i') }}</small>
+                                        @else
+                                            <span class="text-muted">—</span>
+                                        @endif
+                                    </span>
+                                </div>
                             </td>
 
                             {{-- Thao tác --}}
@@ -1296,7 +1324,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="10" style="text-align: center; padding: 48px 16px; color: #94a3b8;">
+                            <td colspan="8" style="text-align: center; padding: 48px 16px; color: #94a3b8;">
                                 <i class="fa-regular fa-newspaper" style="font-size: 36px; margin-bottom: 12px; display: block; color: #cbd5e1;"></i>
                                 <div style="font-weight: 600; font-size: 14px; color: #64748b;">Không tìm thấy bài viết nào</div>
                                 <div style="font-size: 12.5px; margin-top: 4px;">Thử thay đổi từ khóa tìm kiếm hoặc điều chỉnh lại các tiêu chí lọc phía trên.</div>
