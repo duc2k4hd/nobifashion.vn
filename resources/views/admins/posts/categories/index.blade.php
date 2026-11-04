@@ -18,18 +18,19 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
         }
         .cat-table th, .cat-table td {
-            padding: 12px 16px;
+            padding: 10px 10px;
             border-bottom: 1px solid #eef2f7;
-            font-size: 13.5px;
+            font-size: 13px;
             vertical-align: middle;
         }
         .cat-table th {
             background: #f8fafc;
             text-transform: uppercase;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.04em;
             color: #475569;
             font-weight: 600;
-            font-size: 12px;
+            font-size: 11.5px;
+            white-space: nowrap;
         }
         .cat-table tr:hover td {
             background: #f8fafc;
@@ -150,13 +151,12 @@
                     <table class="cat-table">
                         <thead>
                             <tr>
-                                <th style="width: 50px;">ID</th>
-                                <th>Tên danh mục</th>
-                                <th>Đường dẫn (Slug)</th>
-                                <th class="text-center" style="width: 100px;">Bài viết</th>
-                                <th class="text-center" style="width: 90px;">Thứ tự</th>
-                                <th class="text-center" style="width: 90px;">Trạng thái</th>
-                                <th class="text-end" style="width: 130px;">Hành động</th>
+                                <th style="width: 48px;">ID</th>
+                                <th>Tên danh mục / Đường dẫn</th>
+                                <th class="text-center" style="width: 75px;">Bài viết</th>
+                                <th class="text-center" style="width: 65px;">Thứ tự</th>
+                                <th class="text-center" style="width: 75px;">Trạng thái</th>
+                                <th class="text-end" style="width: 100px;">Hành động</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -165,12 +165,15 @@
                                     <td class="text-muted small">#{{ $cat->id }}</td>
                                     <td>
                                         <div class="fw-bold text-dark">{{ $cat->name }}</div>
-                                        @if($cat->description)
-                                            <div class="text-muted small text-truncate" style="max-width: 200px;">{{ $cat->description }}</div>
+                                        <div class="text-muted font-monospace" style="font-size: 11px;">/{{ $cat->slug }}</div>
+                                        @php
+                                            $cleanDesc = trim(strip_tags($cat->description ?? ''));
+                                        @endphp
+                                        @if(!empty($cleanDesc))
+                                            <div class="text-secondary small text-truncate" style="max-width: 250px;" title="{{ $cleanDesc }}">
+                                                {{ Str::limit($cleanDesc, 55) }}
+                                            </div>
                                         @endif
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-light text-dark font-monospace">{{ $cat->slug }}</span>
                                     </td>
                                     <td class="text-center">
                                         <a href="{{ route('admin.posts.index', ['category_id' => $cat->id]) }}" class="badge bg-primary text-white text-decoration-none rounded-pill">
@@ -186,18 +189,18 @@
                                         </div>
                                     </td>
                                     <td class="text-end">
-                                        <div class="d-inline-flex gap-1">
-                                            <a href="{{ route('client.blog.category', $cat) }}" target="_blank" class="btn btn-sm btn-outline-secondary" title="Xem ngoài web">
-                                                ↗
+                                        <div class="d-inline-flex gap-1 justify-content-end">
+                                            <a href="{{ route('client.blog.category', $cat) }}" target="_blank" class="btn btn-sm btn-outline-secondary" title="Xem ngoài web" style="padding: 3px 7px;">
+                                                <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 11px;"></i>
                                             </a>
-                                            <button class="btn btn-sm btn-outline-primary" onclick="editCategory({{ $cat->id }})" title="Chỉnh sửa">
-                                                ✏️
+                                            <button class="btn btn-sm btn-outline-primary" onclick="editCategory({{ $cat->id }})" title="Chỉnh sửa" style="padding: 3px 7px;">
+                                                <i class="fa-solid fa-pen-to-square" style="font-size: 11px;"></i>
                                             </button>
-                                            <form action="{{ route('admin.post-categories.destroy', $cat) }}" method="POST" onsubmit="return confirm('Bạn có chắc muốn xóa danh mục này? Các bài viết thuộc danh mục này sẽ được chuyển thành Không có danh mục.');">
+                                            <form action="{{ route('admin.post-categories.destroy', $cat) }}" method="POST" class="d-inline m-0" onsubmit="return confirm('Bạn có chắc muốn xóa danh mục này? Các bài viết thuộc danh mục này sẽ được chuyển thành Không có danh mục.');">
                                                 @csrf
                                                 @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa">
-                                                    🗑️
+                                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Xóa" style="padding: 3px 7px;">
+                                                    <i class="fa-solid fa-trash-can" style="font-size: 11px;"></i>
                                                 </button>
                                             </form>
                                         </div>
@@ -205,7 +208,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="text-center py-4 text-muted">
+                                    <td colspan="6" class="text-center py-4 text-muted">
                                         Chưa có danh mục bài viết nào.
                                     </td>
                                 </tr>
