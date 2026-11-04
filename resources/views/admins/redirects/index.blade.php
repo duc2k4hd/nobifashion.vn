@@ -1,6 +1,6 @@
 @extends('admins.layouts.master')
 
-@section('page-title', 'Quản lý chuyển hướng 301')
+@section('title', 'Quản lý chuyển hướng 301')
 
 @push('head')
     <link rel="shortcut icon" href="{{ asset('admins/img/icons/posts-icon.png') }}" type="image/png">
@@ -22,11 +22,16 @@
             border-radius: 4px;
         }
         .url-truncate {
-            max-width: 320px;
+            max-width: 210px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             display: inline-block;
+            vertical-align: middle;
+        }
+        .table th, .table td {
+            padding: 9px 8px;
+            font-size: 13px;
             vertical-align: middle;
         }
         .table th {
@@ -186,14 +191,14 @@
                             <th style="width: 40px;" class="text-center">
                                 <input class="form-check-input" type="checkbox" id="checkAll">
                             </th>
-                            <th style="width: 65px;">ID</th>
+                            <th style="width: 52px;">ID</th>
                             <th>Link cũ (Gốc / Slug)</th>
                             <th>Link mới (Đích đến)</th>
-                            <th style="width: 85px;" class="text-center">Mã HTTP</th>
-                            <th style="width: 100px;" class="text-center">Lượt Hits</th>
-                            <th style="width: 135px;">Lần cuối kích hoạt</th>
-                            <th style="width: 140px;" class="text-center">Trạng thái</th>
-                            <th style="width: 180px;" class="text-end pe-3">Thao tác</th>
+                            <th style="width: 70px;" class="text-center">Mã HTTP</th>
+                            <th style="width: 70px;" class="text-center">Lượt Hits</th>
+                            <th style="width: 105px;">Lần cuối</th>
+                            <th style="width: 75px;" class="text-center">Trạng thái</th>
+                            <th style="width: 95px;" class="text-end pe-2">Thao tác</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -242,25 +247,24 @@
                                     {{ $item->last_accessed_at ? $item->last_accessed_at->format('d/m/Y H:i') : 'Chưa có' }}
                                 </td>
                                 <td class="text-center">
-                                    <div class="d-inline-flex align-items-center gap-2">
+                                    <div class="d-inline-flex flex-column align-items-center gap-1">
                                         <div class="form-check form-switch m-0">
                                             <input class="form-check-input toggle-status" type="checkbox" role="switch"
                                                    data-id="{{ $item->id }}"
                                                    data-url="{{ route('admin.redirects.toggle', $item) }}"
                                                    {{ $item->is_active ? 'checked' : '' }} style="cursor: pointer;">
                                         </div>
-                                        <span class="badge {{ $item->is_active ? 'bg-success' : 'bg-secondary' }} status-badge-{{ $item->id }}" style="font-size: 0.72rem; min-width: 50px;">
+                                        <span class="badge {{ $item->is_active ? 'bg-success' : 'bg-secondary' }} status-badge-{{ $item->id }}" style="font-size: 0.68rem; padding: 2px 5px;">
                                             {{ $item->is_active ? 'Đang bật' : 'Tạm dừng' }}
                                         </span>
                                     </div>
                                 </td>
-                                <td class="text-end pe-3">
-                                    <div class="d-inline-flex align-items-center gap-1">
-                                        <a href="{{ url($item->old_url) }}" target="_blank" class="btn btn-sm btn-outline-secondary px-2 py-1 d-inline-flex align-items-center gap-1" title="Thử chuyển hướng link này">
+                                <td class="text-end pe-2">
+                                    <div class="d-inline-flex align-items-center gap-1 justify-content-end">
+                                        <a href="{{ url($item->old_url) }}" target="_blank" class="btn btn-sm btn-outline-secondary p-1" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;" title="Thử chuyển hướng link này">
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                                            <span>Thử</span>
                                         </a>
-                                        <button type="button" class="btn btn-sm btn-outline-primary px-2 py-1 btn-edit d-inline-flex align-items-center gap-1"
+                                        <button type="button" class="btn btn-sm btn-outline-primary p-1 btn-edit" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;"
                                                 data-id="{{ $item->id }}"
                                                 data-old-url="{{ $item->old_url }}"
                                                 data-new-url="{{ $item->new_url }}"
@@ -270,14 +274,12 @@
                                                 data-update-url="{{ route('admin.redirects.update', $item) }}"
                                                 title="Sửa chuyển hướng">
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-                                            <span>Sửa</span>
                                         </button>
-                                        <form action="{{ route('admin.redirects.destroy', $item) }}" method="POST" class="d-inline" onsubmit="return confirm('Bạn có chắc chắn muốn xóa chuyển hướng này?');">
+                                        <form action="{{ route('admin.redirects.destroy', $item) }}" method="POST" class="d-inline m-0" onsubmit="return confirm('Bạn có chắc chắn muốn xóa chuyển hướng này?');">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-outline-danger px-2 py-1 d-inline-flex align-items-center gap-1" title="Xóa chuyển hướng">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger p-1" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;" title="Xóa chuyển hướng">
                                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                                <span>Xóa</span>
                                             </button>
                                         </form>
                                     </div>
